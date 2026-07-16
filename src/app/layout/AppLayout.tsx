@@ -15,6 +15,7 @@ export function AppLayout() {
     year,
     yearId,
     setYearId,
+    canChangeYear,
   } = useAcademicSession();
   return (
     <div className="app-shell">
@@ -60,6 +61,7 @@ export function AppLayout() {
                 optionValue="id"
                 placeholder="Aucune année"
                 aria-label="Année scolaire de la session"
+                disabled={!canChangeYear}
                 onChange={(event) => {
                   const value = event.value as unknown;
                   if (typeof value === "string") setYearId(value);

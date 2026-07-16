@@ -1,39 +1,71 @@
 import { NavLink } from "react-router-dom";
-
-const availableSections = [
-  { path: "etablissement", icon: "pi-building", label: "Établissement" },
-  { path: "annees-scolaires", icon: "pi-calendar", label: "Années scolaires" },
-  { path: "cycles-niveaux", icon: "pi-sitemap", label: "Cycles et niveaux" },
-  { path: "matieres", icon: "pi-book", label: "Matières" },
+const groups = [
   {
-    path: "evaluations-formules",
-    icon: "pi-percentage",
-    label: "Évaluations et formules",
+    label: "Général",
+    sections: [
+      { path: "etablissement", icon: "pi-building", label: "Établissement" },
+      {
+        path: "annees-scolaires",
+        icon: "pi-calendar",
+        label: "Années scolaires",
+      },
+      {
+        path: "utilisateurs-roles",
+        icon: "pi-users",
+        label: "Personnes et accès",
+      },
+    ],
   },
   {
-    path: "regles-financieres",
-    icon: "pi-wallet",
-    label: "Règles financières",
+    label: "Pédagogie",
+    sections: [
+      {
+        path: "cycles-niveaux",
+        icon: "pi-sitemap",
+        label: "Cycles et niveaux",
+      },
+      { path: "periodes", icon: "pi-clock", label: "Périodes scolaires" },
+      { path: "matieres", icon: "pi-book", label: "Matières" },
+    ],
   },
   {
-    path: "utilisateurs-roles",
-    icon: "pi-users",
-    label: "Utilisateurs et rôles",
+    label: "Évaluation",
+    sections: [
+      {
+        path: "evaluations-formules",
+        icon: "pi-percentage",
+        label: "Types et formules",
+      },
+    ],
+  },
+  {
+    label: "Finances",
+    sections: [
+      {
+        path: "regles-financieres",
+        icon: "pi-wallet",
+        label: "Frais et règles",
+      },
+    ],
   },
 ] as const;
-
 export function SettingsSidebar() {
   return (
     <aside className="settings-sidebar" aria-label="Rubriques de paramétrage">
       <h2>Rubriques</h2>
-      <nav>
-        {availableSections.map((section) => (
-          <NavLink key={section.path} to={`/parametrage/${section.path}`}>
-            <i className={`pi ${section.icon}`} />
-            <span>{section.label}</span>
-          </NavLink>
-        ))}
-      </nav>
+      {groups.map((group) => (
+        <div className="settings-nav-group" key={group.label}>
+          <span className="settings-group-title">{group.label}</span>
+          <nav>
+            {group.sections.map((section) => (
+              <NavLink key={section.path} to={`/parametrage/${section.path}`}>
+                <i className={`pi ${section.icon}`} />
+                <span>{section.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      ))}
     </aside>
   );
 }

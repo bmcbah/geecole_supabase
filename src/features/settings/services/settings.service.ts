@@ -66,6 +66,11 @@ export async function createAcademicYear(
       { source_year_id: input.sourceYearId, target_year_id: data.id },
     );
     if (cloneError) throw cloneError;
+    const { error: periodsError } = await supabase.rpc(
+      "sync_all_academic_year_periods",
+      { target_year_id: data.id },
+    );
+    if (periodsError) throw periodsError;
   }
   return data;
 }
@@ -96,6 +101,13 @@ export async function cloneAcademicYearConfiguration(
     },
   );
   if (error) throw error;
+  if (options.structure) {
+    const { error: periodsError } = await supabase.rpc(
+      "sync_all_academic_year_periods",
+      { target_year_id: targetYearId },
+    );
+    if (periodsError) throw periodsError;
+  }
   return data;
 }
 

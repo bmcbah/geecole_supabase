@@ -10,6 +10,7 @@ import {
   structureItemSchema,
   type StructureItemInput,
 } from "../schemas/academic-structure.schema";
+import { generateCode } from "../../../shared/utils/generate-code";
 
 interface Props {
   kind: "cycle" | "niveau";
@@ -37,6 +38,8 @@ export function StructureItemDialog({
     control,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<StructureItemInput>({
     resolver: zodResolver(structureItemSchema),
@@ -74,20 +77,33 @@ export function StructureItemDialog({
         </div>
         <div className="field">
           <label htmlFor="structure-code">Code</label>
-          <Controller
-            name="code"
-            control={control}
-            render={({ field }) => (
-              <InputText
-                {...field}
-                id="structure-code"
-                onChange={(event) =>
-                  field.onChange(event.target.value.toUpperCase())
-                }
-                invalid={Boolean(errors.code)}
-              />
-            )}
-          />
+          <div className="input-with-action">
+            <Controller
+              name="code"
+              control={control}
+              render={({ field }) => (
+                <InputText
+                  {...field}
+                  id="structure-code"
+                  onChange={(event) =>
+                    field.onChange(event.target.value.toUpperCase())
+                  }
+                  invalid={Boolean(errors.code)}
+                />
+              )}
+            />
+            <Button
+              type="button"
+              label="Générer"
+              icon="pi pi-bolt"
+              outlined
+              onClick={() =>
+                setValue("code", generateCode(getValues("name")), {
+                  shouldValidate: true,
+                })
+              }
+            />
+          </div>
           {errors.code && (
             <small className="p-error">{errors.code.message}</small>
           )}

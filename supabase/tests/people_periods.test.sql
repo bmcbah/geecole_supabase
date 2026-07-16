@@ -1,0 +1,17 @@
+begin;
+select plan(13);
+select ok(to_regclass('public.people') is not null, 'table personnes présente');
+select ok(to_regclass('public.person_roles') is not null, 'table rôles présente');
+select ok(to_regclass('public.person_invitations') is not null, 'table invitations présente');
+select ok(to_regclass('public.academic_periods') is not null, 'table périodes présente');
+select ok(exists(select 1 from information_schema.columns where table_schema='public' and table_name='academic_cycles' and column_name='period_system'), 'organisation des périodes présente');
+select ok(to_regprocedure('public.sync_academic_year_periods(uuid,uuid)') is not null, 'génération des périodes présente');
+select ok(to_regprocedure('public.create_person_invitation(uuid)') is not null, 'création invitation présente');
+select ok(to_regprocedure('public.accept_person_invitation(text)') is not null, 'acceptation invitation présente');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid='public.people'::regclass), 'RLS personnes active');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid='public.academic_periods'::regclass), 'RLS périodes active');
+select table_privs_are('public','people','anon',array[]::text[]);
+select function_privs_are('public','create_person_invitation',array['uuid'],'authenticated',array['EXECUTE']);
+select function_privs_are('public','accept_person_invitation',array['text'],'authenticated',array['EXECUTE']);
+select * from finish();
+rollback;

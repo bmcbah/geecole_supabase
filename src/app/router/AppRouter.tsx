@@ -20,6 +20,11 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   })),
 );
+const InvitationPage = lazy(() =>
+  import("../../features/auth/pages/InvitationPage").then((module) => ({
+    default: module.InvitationPage,
+  })),
+);
 
 export function AppRouter() {
   return (
@@ -32,6 +37,7 @@ export function AppRouter() {
     >
       <Routes>
         <Route path="/connexion" element={<LoginPage />} />
+        <Route path="/invitation" element={<InvitationPage />} />
         <Route element={<ProtectedRoute />}>
           <Route
             element={

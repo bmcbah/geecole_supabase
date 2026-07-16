@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase/client";
+import type { Database } from "../../../shared/lib/supabase/database.types";
 
 export async function listSubjects(institutionId: string) {
   const { data, error } = await supabase
@@ -250,4 +251,72 @@ export async function updateMembership(
     .update(input)
     .eq("id", id);
   if (error) throw error;
+}
+
+export async function listPeople(institutionId: string) {
+  const [{ data: people, error }, { data: roles, error: rolesError }] =
+    await Promise.all([
+      supabase
+        .from("people")
+        .select("*")
+        .eq("institution_id", institutionId)
+        .order("last_name"),
+      supabase
+        .from("person_roles")
+        .select("*")
+        .eq("institution_id", institutionId),
+    ]);
+  if (error) throw error;
+  if (rolesError) throw rolesError;
+  return people.map((person) => ({
+    ...person,
+    roles: roles
+      .filter((role) => role.person_id === person.id)
+      .map((role) => role.role),
+  }));
+}
+export async function savePerson(
+  institutionId: string,
+  input: {
+    id?: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    status: string;
+    roles: Database["public"]["Enums"]["app_role"][];
+  },
+) {
+  const { data, error } = await supabase.rpc("save_person", {
+    target_institution_id: institutionId,
+    target_person_id: input.id ?? null,
+    person_first_name: input.firstName,
+    person_last_name: input.lastName,
+    person_email: input.email,
+    person_phone: input.phone,
+    person_status: input.status,
+    assigned_roles: input.roles,
+  });
+  if (error) throw error;
+  return data;
+}
+export async function deletePerson(id: string) {
+  const { error } = await supabase.from("people").delete().eq("id", id);
+  if (error) throw error;
+}
+export async function invitePerson(id: string) {
+  const { data, error } = await supabase.rpc("create_person_invitation", {
+    target_person_id: id,
+  });
+  if (error) throw error;
+  return data;
+}
+export async function listPersonInvitations(institutionId: string) {
+  const { data, error } = await supabase
+    .from("person_invitations")
+    .select("*")
+    .eq("institution_id", institutionId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }

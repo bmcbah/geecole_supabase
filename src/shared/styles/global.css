@@ -242,6 +242,11 @@ input {
   flex-direction: column;
   gap: 0.25rem;
 }
+.settings-nav-group + .settings-nav-group {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #edf0f4;
+}
 .settings-sidebar nav a,
 .settings-disabled {
   display: grid;
@@ -372,6 +377,24 @@ input {
   align-items: center;
   gap: 0.25rem;
 }
+.input-with-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+.input-with-action .p-inputtext {
+  width: 100%;
+}
+.role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.period-config {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
+  align-items: end;
+}
 @media (max-width: 800px) {
   .app-sidebar {
     width: 76px;
@@ -417,6 +440,9 @@ input {
   .settings-sidebar nav {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .period-config {
+    display: flex;
   }
   .settings-planned {
     display: none;

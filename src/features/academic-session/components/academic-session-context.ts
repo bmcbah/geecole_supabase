@@ -11,6 +11,7 @@ export interface AcademicSessionValue {
   yearId: string;
   loading: boolean;
   failure: string;
+  canChangeYear: boolean;
   setInstitutionId: (id: string) => void;
   setYearId: (id: string) => void;
   refresh: () => Promise<void>;

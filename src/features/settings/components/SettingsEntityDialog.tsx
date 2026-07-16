@@ -6,6 +6,7 @@ import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
+import { generateCode } from "../../../shared/utils/generate-code";
 
 export type EntityValue = string | number | boolean | null | undefined;
 export interface EntityField {
@@ -132,17 +133,33 @@ export function SettingsEntityDialog({
                     }
                   />
                 ) : (
-                  <InputText
-                    id={field.key}
-                    value={String(values[field.key] ?? "")}
-                    invalid={submitted && invalid(field)}
-                    onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: event.target.value,
-                      }))
-                    }
-                  />
+                  <div className="input-with-action">
+                    <InputText
+                      id={field.key}
+                      value={String(values[field.key] ?? "")}
+                      invalid={submitted && invalid(field)}
+                      onChange={(event) =>
+                        setValues((current) => ({
+                          ...current,
+                          [field.key]: event.target.value,
+                        }))
+                      }
+                    />
+                    {field.key === "code" && (
+                      <Button
+                        type="button"
+                        label="Générer"
+                        icon="pi pi-bolt"
+                        outlined
+                        onClick={() =>
+                          setValues((current) => ({
+                            ...current,
+                            code: generateCode(String(current.name ?? "")),
+                          }))
+                        }
+                      />
+                    )}
+                  </div>
                 )}
                 {submitted && invalid(field) && (
                   <small className="p-error">Ce champ est obligatoire.</small>

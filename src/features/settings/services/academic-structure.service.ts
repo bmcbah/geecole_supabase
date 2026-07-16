@@ -46,6 +46,51 @@ export async function setAnnualCycleLevels(
   return data;
 }
 
+export async function listAcademicPeriods(yearId: string) {
+  const { data, error } = await supabase
+    .from("academic_periods")
+    .select("*")
+    .eq("academic_year_id", yearId)
+    .order("sequence");
+  if (error) throw error;
+  return data;
+}
+export async function configureCyclePeriods(
+  cycleId: string,
+  periodSystem: string,
+  periodCount: number,
+) {
+  const { error } = await supabase
+    .from("academic_cycles")
+    .update({ period_system: periodSystem, period_count: periodCount })
+    .eq("id", cycleId);
+  if (error) throw error;
+}
+export async function generateAcademicPeriods(yearId: string, cycleId: string) {
+  const { data, error } = await supabase.rpc("sync_academic_year_periods", {
+    target_year_id: yearId,
+    target_cycle_id: cycleId,
+  });
+  if (error) throw error;
+  return data;
+}
+export async function saveAcademicPeriod(
+  input: {
+    name: string;
+    code: string;
+    starts_on: string;
+    ends_on: string;
+    status: string;
+  },
+  id: string,
+) {
+  const { error } = await supabase
+    .from("academic_periods")
+    .update(input)
+    .eq("id", id);
+  if (error) throw error;
+}
+
 const payload = (input: StructureItemInput) => ({
   name: input.name,
   code: input.code,
