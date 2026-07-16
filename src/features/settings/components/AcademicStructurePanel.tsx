@@ -11,26 +11,30 @@ import { useToast } from "../../../shared/components/toast-context";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import type { StructureItemInput } from "../schemas/academic-structure.schema";
 import {
-  deleteCycle,
+  deleteAnnualAcademicCycle,
   deleteLevel,
   generateAcademicPeriods,
   listAcademicStructure,
   listAnnualAcademicLevels,
-  saveCycle,
+  listAnnualAcademicCycles,
+  saveAnnualAcademicCycle,
   saveLevel,
   setAnnualCycleLevels,
 } from "../services/academic-structure.service";
-import type { AcademicCycle, GradeLevel } from "../types/academic-structure";
+import type {
+  AnnualAcademicCycle,
+  GradeLevel,
+} from "../types/academic-structure";
 import { StructureItemDialog } from "./StructureItemDialog";
 interface Props {
   institutionId: string;
 }
 type DialogState =
-  | { kind: "cycle"; item?: AcademicCycle }
-  | { kind: "niveau"; cycle: AcademicCycle; item?: GradeLevel }
+  | { kind: "cycle"; item?: AnnualAcademicCycle }
+  | { kind: "niveau"; cycle: AnnualAcademicCycle; item?: GradeLevel }
   | null;
 const toInput = (
-  item?: AcademicCycle | GradeLevel,
+  item?: AnnualAcademicCycle | GradeLevel,
 ): StructureItemInput | undefined =>
   item
     ? {
@@ -45,7 +49,7 @@ const toInput = (
         periodCount: "period_count" in item ? item.period_count : undefined,
       }
     : undefined;
-const periodLabel = (cycle: AcademicCycle) =>
+const periodLabel = (cycle: AnnualAcademicCycle) =>
   cycle.period_system === "semester"
     ? `${cycle.period_count} semestres`
     : cycle.period_system === "term"
@@ -54,7 +58,7 @@ const periodLabel = (cycle: AcademicCycle) =>
 export function AcademicStructurePanel({ institutionId }: Props) {
   const { year } = useAcademicSession();
   const notify = useToast();
-  const [cycles, setCycles] = useState<AcademicCycle[]>([]);
+  const [cycles, setCycles] = useState<AnnualAcademicCycle[]>([]);
   const [levels, setLevels] = useState<GradeLevel[]>([]);
   const [annualIds, setAnnualIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -66,12 +70,12 @@ export function AcademicStructurePanel({ institutionId }: Props) {
   const load = useCallback(async () => {
     if (!year) return;
     try {
-      const [structure, annual] = await Promise.all([
+      const [structure, annualCycles, annual] = await Promise.all([
         listAcademicStructure(institutionId),
+        listAnnualAcademicCycles(year.id),
         listAnnualAcademicLevels(year.id),
       ]);
-      const cycleIds = new Set(annual.map((item) => item.cycle_id));
-      setCycles(structure.cycles.filter((item) => cycleIds.has(item.id)));
+      setCycles(annualCycles);
       setLevels(structure.levels);
       setAnnualIds(annual.map((item) => item.level_id));
       setFailure("");
@@ -86,10 +90,10 @@ export function AcademicStructurePanel({ institutionId }: Props) {
     () =>
       new Map(
         cycles.map((cycle) => [
-          cycle.id,
+          cycle.cycle_id,
           levels.filter(
             (level) =>
-              level.cycle_id === cycle.id && annualIds.includes(level.id),
+              level.cycle_id === cycle.cycle_id && annualIds.includes(level.id),
           ),
         ]),
       ),
@@ -100,26 +104,26 @@ export function AcademicStructurePanel({ institutionId }: Props) {
     setSaving(true);
     try {
       if (dialog.kind === "cycle") {
-        const saved = await saveCycle(institutionId, input, dialog.item?.id);
+        const savedId = await saveAnnualAcademicCycle(
+          year.id,
+          input,
+          dialog.item?.id,
+        );
         if (
           !dialog.item ||
           dialog.item.period_system !== input.periodSystem ||
           dialog.item.period_count !== input.periodCount
-        )
-          await generateAcademicPeriods(year.id, saved.id);
-        if (!dialog.item) {
-          setDialog({ kind: "niveau", cycle: saved });
-          notify({
-            severity: "info",
-            summary: "Cycle créé",
-            detail: "Ajoutez maintenant son premier niveau.",
-          });
-          return;
+        ) {
+          const savedCycle = (await listAnnualAcademicCycles(year.id)).find(
+            (cycle) => cycle.id === savedId,
+          );
+          if (!savedCycle) throw new Error("annual_cycle_not_found");
+          await generateAcademicPeriods(year.id, savedCycle.cycle_id);
         }
       } else {
         const saved = await saveLevel(
           institutionId,
-          dialog.cycle.id,
+          dialog.cycle.cycle_id,
           input,
           dialog.item?.id,
         );
@@ -127,11 +131,11 @@ export function AcademicStructurePanel({ institutionId }: Props) {
           const currentIds = levels
             .filter(
               (item) =>
-                item.cycle_id === dialog.cycle.id &&
+                item.cycle_id === dialog.cycle.cycle_id &&
                 annualIds.includes(item.id),
             )
             .map((item) => item.id);
-          await setAnnualCycleLevels(year.id, dialog.cycle.id, [
+          await setAnnualCycleLevels(year.id, dialog.cycle.cycle_id, [
             ...currentIds,
             saved.id,
           ]);
@@ -144,13 +148,13 @@ export function AcademicStructurePanel({ institutionId }: Props) {
       notify({
         severity: "error",
         summary: "Enregistrement impossible",
-        detail: "Le nom ou le code existe peut-être déjà.",
+        detail: "Le code doit être unique dans l’année sélectionnée.",
       });
     } finally {
       setSaving(false);
     }
   };
-  const removeLevel = (cycle: AcademicCycle, level: GradeLevel) =>
+  const removeLevel = (cycle: AnnualAcademicCycle, level: GradeLevel) =>
     confirmDialog({
       header: "Supprimer le niveau",
       message: `Retirer ${level.name} de ${year?.name} ?`,
@@ -161,16 +165,16 @@ export function AcademicStructurePanel({ institutionId }: Props) {
       accept: () =>
         void (async () => {
           if (!year) return;
-          const remaining = (levelsByCycle.get(cycle.id) ?? [])
+          const remaining = (levelsByCycle.get(cycle.cycle_id) ?? [])
             .filter((item) => item.id !== level.id)
             .map((item) => item.id);
-          await setAnnualCycleLevels(year.id, cycle.id, remaining);
+          await setAnnualCycleLevels(year.id, cycle.cycle_id, remaining);
           try {
             await deleteLevel(level.id);
           } catch {
             await saveLevel(
               institutionId,
-              cycle.id,
+              cycle.cycle_id,
               { ...toInput(level)!, isActive: false },
               level.id,
             );
@@ -178,7 +182,7 @@ export function AcademicStructurePanel({ institutionId }: Props) {
           await load();
         })(),
     });
-  const removeCycle = (cycle: AcademicCycle) =>
+  const removeCycle = (cycle: AnnualAcademicCycle) =>
     confirmDialog({
       header: "Supprimer le cycle",
       message: `Retirer ${cycle.name} et ses niveaux de ${year?.name} ? L’historique des anciennes années sera conservé.`,
@@ -188,17 +192,7 @@ export function AcademicStructurePanel({ institutionId }: Props) {
       acceptClassName: "p-button-danger",
       accept: () =>
         void (async () => {
-          if (!year) return;
-          await setAnnualCycleLevels(year.id, cycle.id, []);
-          try {
-            await deleteCycle(cycle.id);
-          } catch {
-            await saveCycle(
-              institutionId,
-              { ...toInput(cycle)!, isActive: false },
-              cycle.id,
-            );
-          }
+          await deleteAnnualAcademicCycle(cycle.id);
           await load();
         })(),
     });
@@ -206,7 +200,7 @@ export function AcademicStructurePanel({ institutionId }: Props) {
   return (
     <Card
       title={`Cycles et niveaux — ${year?.name ?? ""}`}
-      subTitle="Les niveaux sont directement imbriqués dans leur cycle"
+      subTitle="Chaque cycle appartient à l’année sélectionnée et peut exister sans niveau"
     >
       <ConfirmDialog />
       <div className="panel-toolbar">
@@ -226,7 +220,7 @@ export function AcademicStructurePanel({ institutionId }: Props) {
       {cycles.length === 0 ? (
         <Message
           severity="info"
-          text="Aucun cycle actif pour cette année. Créez le premier cycle et ses niveaux."
+          text="Aucun cycle pour cette année. Vous pouvez créer un cycle avant d’ajouter ses niveaux."
         />
       ) : (
         <Accordion multiple activeIndex={[0]}>
@@ -278,7 +272,7 @@ export function AcademicStructurePanel({ institutionId }: Props) {
                 />
               </div>
               <DataTable
-                value={levelsByCycle.get(cycle.id) ?? []}
+                value={levelsByCycle.get(cycle.cycle_id) ?? []}
                 dataKey="id"
                 emptyMessage="Aucun niveau"
                 stripedRows

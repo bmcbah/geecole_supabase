@@ -132,6 +132,7 @@ export async function saveGradingFormula(
   yearId: string,
   input: {
     name: string;
+    code: string;
     expression: string;
     description: string | null;
     is_default: boolean;

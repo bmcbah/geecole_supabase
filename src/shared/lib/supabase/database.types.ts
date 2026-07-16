@@ -85,15 +85,48 @@ export interface Database {
           },
         ];
       };
-      academic_year_levels: {
+      academic_year_cycles: {
         Row: {
           id: string;
           institution_id: string;
           academic_year_id: string;
           cycle_id: string;
+          name: string;
+          code: string;
+          sort_order: number;
+          period_system: string;
+          period_count: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          name: string;
+          code: string;
+          sort_order?: number;
+          period_system?: string;
+          period_count?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["academic_year_cycles"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      academic_year_levels: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_cycle_id: string;
+          cycle_id: string;
           level_id: string;
           cycle_name_snapshot: string;
           level_name_snapshot: string;
+          level_code_snapshot: string;
           sort_order: number;
           is_active: boolean;
           cloned_from_id: string | null;
@@ -103,10 +136,12 @@ export interface Database {
           id?: string;
           institution_id: string;
           academic_year_id: string;
+          academic_year_cycle_id?: string;
           cycle_id: string;
           level_id: string;
           cycle_name_snapshot?: string;
           level_name_snapshot?: string;
+          level_code_snapshot?: string;
           sort_order?: number;
           is_active?: boolean;
           cloned_from_id?: string | null;
@@ -301,6 +336,7 @@ export interface Database {
           institution_id: string;
           academic_year_id: string;
           name: string;
+          code: string;
           expression: string;
           description: string | null;
           is_default: boolean;
@@ -311,6 +347,7 @@ export interface Database {
           institution_id: string;
           academic_year_id: string;
           name: string;
+          code: string;
           expression: string;
           description?: string | null;
           is_default?: boolean;
@@ -504,6 +541,19 @@ export interface Database {
       sync_all_academic_year_periods: {
         Args: { target_year_id: string };
         Returns: number;
+      };
+      save_academic_year_cycle: {
+        Args: {
+          target_year_id: string;
+          target_annual_cycle_id: string | null;
+          cycle_name: string;
+          cycle_code: string;
+          cycle_sort_order: number;
+          cycle_period_system: string;
+          cycle_period_count: number;
+          cycle_is_active: boolean;
+        };
+        Returns: string;
       };
       clone_academic_year_configuration: {
         Args: {

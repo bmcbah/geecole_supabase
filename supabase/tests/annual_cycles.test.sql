@@ -1,0 +1,14 @@
+begin;
+select plan(10);
+select ok(to_regclass('public.academic_year_cycles') is not null,'cycles annuels présents');
+select ok(exists(select 1 from information_schema.columns where table_schema='public' and table_name='academic_year_levels' and column_name='academic_year_cycle_id'),'liaison cycle annuel présente');
+select ok(exists(select 1 from information_schema.columns where table_schema='public' and table_name='grading_formulas' and column_name='code'),'code formule présent');
+select ok(exists(select 1 from pg_constraint where conname='academic_year_cycles_academic_year_id_code_key'),'code cycle unique par année');
+select ok(exists(select 1 from pg_constraint where conname='grading_formulas_year_code_unique'),'code formule unique par année');
+select ok(not exists(select 1 from pg_constraint where conname='assessment_types_academic_year_id_name_key'),'nom évaluation non unique');
+select ok(not exists(select 1 from pg_constraint where conname='grading_formulas_academic_year_id_name_key'),'nom formule non unique');
+select ok(to_regprocedure('public.save_academic_year_cycle(uuid,uuid,text,text,smallint,text,smallint,boolean)') is not null,'sauvegarde cycle annuel présente');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid='public.academic_year_cycles'::regclass),'RLS cycles annuels active');
+select table_privs_are('public','academic_year_cycles','anon',array[]::text[]);
+select * from finish();
+rollback;

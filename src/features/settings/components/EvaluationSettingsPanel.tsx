@@ -36,6 +36,7 @@ const assessmentFields: EntityField[] = [
 ];
 const formulaFields: EntityField[] = [
   { key: "name", label: "Nom", required: true },
+  { key: "code", label: "Code", required: true },
   { key: "expression", label: "Expression", type: "textarea", required: true },
   { key: "description", label: "Description", type: "textarea" },
   { key: "is_default", label: "Formule par défaut", type: "boolean" },
@@ -47,6 +48,9 @@ export function EvaluationSettingsPanel() {
   const [formulas, setFormulas] = useState<Formula[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [saving, setSaving] = useState(false);
+  const editable = Boolean(
+    year && !["closed", "archived"].includes(year.status),
+  );
   const load = useCallback(async () => {
     if (!year) return;
     const [a, f] = await Promise.all([
@@ -64,6 +68,7 @@ export function EvaluationSettingsPanel() {
       dialog?.kind === "formula"
         ? {
             name: dialog.item?.name ?? "",
+            code: dialog.item?.code ?? "",
             expression:
               dialog.item?.expression ??
               "(moyenne_notes * poids) / somme_poids",
@@ -102,6 +107,7 @@ export function EvaluationSettingsPanel() {
           year.id,
           {
             name: String(values.name),
+            code: String(values.code).toUpperCase(),
             expression: String(values.expression),
             description: String(values.description) || null,
             is_default: Boolean(values.is_default),
@@ -115,7 +121,7 @@ export function EvaluationSettingsPanel() {
       notify({
         severity: "error",
         summary: "Enregistrement impossible",
-        detail: "Vérifiez les valeurs et l’unicité du nom.",
+        detail: "Vérifiez les valeurs et l’unicité du code dans cette année.",
       });
     } finally {
       setSaving(false);
@@ -139,7 +145,7 @@ export function EvaluationSettingsPanel() {
       <Button
         icon="pi pi-pencil"
         text
-        disabled={year?.status !== "preparation"}
+        disabled={!editable}
         onClick={() =>
           setDialog(
             kind === "assessment"
@@ -152,7 +158,7 @@ export function EvaluationSettingsPanel() {
         icon="pi pi-trash"
         text
         severity="danger"
-        disabled={year?.status !== "preparation"}
+        disabled={!editable}
         onClick={() => void remove(kind, item.id)}
       />
     </div>
@@ -170,7 +176,7 @@ export function EvaluationSettingsPanel() {
             <Button
               label="Nouveau type"
               icon="pi pi-plus"
-              disabled={year?.status !== "preparation"}
+              disabled={!editable}
               onClick={() => setDialog({ kind: "assessment" })}
             />
           </div>
@@ -205,7 +211,7 @@ export function EvaluationSettingsPanel() {
             <Button
               label="Nouvelle formule"
               icon="pi pi-plus"
-              disabled={year?.status !== "preparation"}
+              disabled={!editable}
               onClick={() => setDialog({ kind: "formula" })}
             />
           </div>
@@ -216,6 +222,7 @@ export function EvaluationSettingsPanel() {
             stripedRows
           >
             <Column field="name" header="Formule" />
+            <Column field="code" header="Code" />
             <Column field="expression" header="Expression" />
             <Column
               header="Défaut"

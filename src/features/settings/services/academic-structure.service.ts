@@ -31,6 +31,43 @@ export async function listAnnualAcademicLevels(academicYearId: string) {
   if (error) throw error;
   return data;
 }
+export async function listAnnualAcademicCycles(academicYearId: string) {
+  const { data, error } = await supabase
+    .from("academic_year_cycles")
+    .select("*")
+    .eq("academic_year_id", academicYearId)
+    .order("sort_order")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function saveAnnualAcademicCycle(
+  academicYearId: string,
+  input: StructureItemInput,
+  id?: string,
+) {
+  const { data, error } = await supabase.rpc("save_academic_year_cycle", {
+    target_year_id: academicYearId,
+    target_annual_cycle_id: id ?? null,
+    cycle_name: input.name,
+    cycle_code: input.code.toUpperCase(),
+    cycle_sort_order: input.sortOrder,
+    cycle_period_system: input.periodSystem ?? "term",
+    cycle_period_count: input.periodCount ?? 3,
+    cycle_is_active: input.isActive,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteAnnualAcademicCycle(id: string) {
+  const { error } = await supabase
+    .from("academic_year_cycles")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
 
 export async function setAnnualCycleLevels(
   academicYearId: string,
