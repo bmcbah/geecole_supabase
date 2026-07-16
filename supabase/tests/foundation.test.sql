@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_table('public', 'institutions', 'institutions existe');
+select has_table('public', 'profiles', 'profiles existe');
+select has_table('public', 'memberships', 'memberships existe');
+select has_column('public', 'institutions', 'currency', 'devise configurable');
+select col_default_is('public', 'institutions', 'currency', '''GNF''::text', 'GNF par défaut');
+select col_default_is('public', 'institutions', 'timezone', '''Africa/Conakry''::text', 'Conakry par défaut');
+select row_security_active('public', 'institutions', 'RLS active sur institutions');
+select row_security_active('public', 'memberships', 'RLS active sur memberships');
+select * from finish();
+rollback;
