@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "primereact/button";
 import { Checkbox } from "primereact/checkbox";
@@ -28,6 +28,13 @@ const defaults: StructureItemInput = {
   isActive: true,
   periodSystem: "term",
   periodCount: 3,
+  subjectsPeriodScope: "all",
+  gradingScale: 20,
+  passAverage: 10,
+  rankingEnabled: true,
+  absencesOnReport: true,
+  capacity: null,
+  repeatAllowed: true,
 };
 export function StructureItemDialog({
   kind,
@@ -115,7 +122,48 @@ export function StructureItemDialog({
                 )}
               />
             </div>
+            <div className="field">
+              <label htmlFor="subject-period-scope">Matières par période</label>
+              <Controller
+                name="subjectsPeriodScope"
+                control={control}
+                render={({ field }) => (
+                  <Dropdown
+                    inputId="subject-period-scope"
+                    value={field.value}
+                    options={[
+                      {
+                        label: "Identiques pour toutes les périodes",
+                        value: "all",
+                      },
+                      {
+                        label: "Périodes sélectionnables",
+                        value: "selectable",
+                      },
+                    ]}
+                    onChange={(event) => field.onChange(event.value)}
+                  />
+                )}
+              />
+            </div>
+            <NumberField
+              name="gradingScale"
+              label="Barème par défaut"
+              control={control}
+            />
+            <NumberField
+              name="passAverage"
+              label="Moyenne de passage"
+              control={control}
+            />
           </div>
+        )}
+        {kind === "niveau" && (
+          <NumberField
+            name="capacity"
+            label="Capacité indicative"
+            control={control}
+          />
         )}
         <div className="field">
           <label htmlFor="structure-code">Code</label>
@@ -180,6 +228,27 @@ export function StructureItemDialog({
           />
           <label htmlFor="structure-active">Actif</label>
         </div>
+        {kind === "cycle" && (
+          <>
+            <BooleanField
+              name="rankingEnabled"
+              label="Afficher le classement"
+              control={control}
+            />
+            <BooleanField
+              name="absencesOnReport"
+              label="Afficher les absences au bulletin"
+              control={control}
+            />
+          </>
+        )}
+        {kind === "niveau" && (
+          <BooleanField
+            name="repeatAllowed"
+            label="Redoublement autorisé"
+            control={control}
+          />
+        )}
         <div className="dialog-actions">
           <Button
             type="button"
@@ -197,5 +266,59 @@ export function StructureItemDialog({
         </div>
       </form>
     </Dialog>
+  );
+}
+
+function NumberField({
+  name,
+  label,
+  control,
+}: {
+  name: "gradingScale" | "passAverage" | "capacity";
+  label: string;
+  control: Control<StructureItemInput>;
+}) {
+  return (
+    <div className="field">
+      <label htmlFor={name}>{label}</label>
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <InputNumber
+            inputId={name}
+            value={field.value ?? null}
+            onValueChange={(event) => field.onChange(event.value ?? null)}
+            min={0}
+          />
+        )}
+      />
+    </div>
+  );
+}
+function BooleanField({
+  name,
+  label,
+  control,
+}: {
+  name: "rankingEnabled" | "absencesOnReport" | "repeatAllowed";
+  label: string;
+  control: Control<StructureItemInput>;
+}) {
+  return (
+    <div className="checkbox-field">
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <Checkbox
+            inputId={name}
+            checked={Boolean(field.value)}
+            onChange={(event) => field.onChange(event.checked)}
+          />
+        )}
+      />
+      <label htmlFor={name}>{label}</label>
+    </div>
   );
 }

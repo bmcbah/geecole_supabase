@@ -8,9 +8,12 @@ import { useToast } from "../../../shared/components/toast-context";
 import type { Database } from "../../../shared/lib/supabase/database.types";
 import {
   deleteFinancialRule,
+  listFinancialRuleLevels,
   listFinancialRules,
   saveFinancialRule,
+  setFinancialRuleLevels,
 } from "../services/annual-settings.service";
+import { listAnnualAcademicLevels } from "../services/academic-structure.service";
 import {
   SettingsEntityDialog,
   type EntityField,
@@ -18,38 +21,31 @@ import {
 } from "./SettingsEntityDialog";
 import { SettingsPanelShell } from "./SettingsPanelShell";
 type Rule = Database["public"]["Tables"]["financial_rules"]["Row"];
-const fields: EntityField[] = [
-  { key: "name", label: "Libellé", required: true },
-  { key: "code", label: "Code", required: true },
-  {
-    key: "amount",
-    label: "Montant",
-    type: "number",
-    required: true,
-    suffix: " GNF",
-  },
-  {
-    key: "frequency",
-    label: "Périodicité",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Une fois", value: "once" },
-      { label: "Mensuelle", value: "monthly" },
-      { label: "Par période", value: "termly" },
-    ],
-  },
-  { key: "due_day", label: "Jour d’échéance", type: "number" },
-  { key: "is_active", label: "Règle active", type: "boolean" },
-];
 export function FinancialRulesSettingsPanel() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
   const [items, setItems] = useState<Rule[]>([]);
   const [editing, setEditing] = useState<Rule | null | undefined>(undefined);
   const [saving, setSaving] = useState(false);
+  const [levels, setLevels] = useState<
+    Awaited<ReturnType<typeof listAnnualAcademicLevels>>
+  >([]);
+  const [mappings, setMappings] = useState<
+    Awaited<ReturnType<typeof listFinancialRuleLevels>>
+  >([]);
+  const editable = Boolean(
+    year && !["closed", "archived"].includes(year.status),
+  );
   const load = useCallback(async () => {
-    setItems(year ? await listFinancialRules(year.id) : []);
+    if (!year) return;
+    const [rules, annualLevels, ruleLevels] = await Promise.all([
+      listFinancialRules(year.id),
+      listAnnualAcademicLevels(year.id),
+      listFinancialRuleLevels(year.id),
+    ]);
+    setItems(rules);
+    setLevels(annualLevels);
+    setMappings(ruleLevels);
   }, [year]);
   useEffect(() => {
     void load();
@@ -62,14 +58,24 @@ export function FinancialRulesSettingsPanel() {
       frequency: editing?.frequency ?? "once",
       due_day: editing?.due_day ?? null,
       is_active: editing?.is_active ?? true,
+      fee_type: editing?.fee_type ?? "enrollment",
+      is_mandatory: editing?.is_mandatory ?? true,
+      discount_allowed: editing?.discount_allowed ?? false,
+      amount_editable: editing?.amount_editable ?? false,
+      installment_count: editing?.installment_count ?? 1,
+      level_ids: editing
+        ? mappings
+            .filter((item) => item.financial_rule_id === editing.id)
+            .map((item) => item.academic_year_level_id)
+        : [],
     }),
-    [editing],
+    [editing, mappings],
   );
   const submit = async (values: Record<string, EntityValue>) => {
     if (!year) return;
     setSaving(true);
     try {
-      await saveFinancialRule(
+      const ruleId = await saveFinancialRule(
         institutionId,
         year.id,
         {
@@ -79,8 +85,17 @@ export function FinancialRulesSettingsPanel() {
           frequency: String(values.frequency),
           due_day: values.due_day === null ? null : Number(values.due_day),
           is_active: Boolean(values.is_active),
+          fee_type: String(values.fee_type),
+          is_mandatory: Boolean(values.is_mandatory),
+          discount_allowed: Boolean(values.discount_allowed),
+          amount_editable: Boolean(values.amount_editable),
+          installment_count: Number(values.installment_count),
         },
         editing?.id,
+      );
+      await setFinancialRuleLevels(
+        ruleId,
+        Array.isArray(values.level_ids) ? values.level_ids : [],
       );
       setEditing(undefined);
       await load();
@@ -137,14 +152,14 @@ export function FinancialRulesSettingsPanel() {
               <Button
                 icon="pi pi-pencil"
                 text
-                disabled={year?.status !== "preparation"}
+                disabled={!editable}
                 onClick={() => setEditing(row)}
               />
               <Button
                 icon="pi pi-trash"
                 text
                 severity="danger"
-                disabled={year?.status !== "preparation"}
+                disabled={!editable}
                 onClick={() => void remove(row.id)}
               />
             </div>
@@ -155,7 +170,75 @@ export function FinancialRulesSettingsPanel() {
         header="Règle financière"
         visible={editing !== undefined}
         loading={saving}
-        fields={fields}
+        fields={
+          [
+            { key: "name", label: "Libellé", required: true },
+            { key: "code", label: "Code", required: true },
+            {
+              key: "fee_type",
+              label: "Type de frais",
+              type: "select",
+              required: true,
+              options: [
+                { label: "Inscription", value: "enrollment" },
+                { label: "Réinscription", value: "reenrollment" },
+                { label: "Scolarité", value: "tuition" },
+                { label: "Autre", value: "other" },
+              ],
+            },
+            {
+              key: "level_ids",
+              label: "Niveaux concernés",
+              type: "multiselect",
+              required: true,
+              options: levels.map((level) => ({
+                label: `${level.cycle_name_snapshot} — ${level.level_name_snapshot}`,
+                value: level.id,
+              })),
+            },
+            {
+              key: "amount",
+              label: "Montant",
+              type: "number",
+              required: true,
+              suffix: " GNF",
+            },
+            {
+              key: "frequency",
+              label: "Périodicité",
+              type: "select",
+              required: true,
+              options: [
+                { label: "Une fois", value: "once" },
+                { label: "Mensuelle", value: "monthly" },
+                { label: "Par période", value: "termly" },
+              ],
+            },
+            {
+              key: "installment_count",
+              label: "Nombre d’échéances",
+              type: "number",
+              required: true,
+            },
+            { key: "due_day", label: "Jour d’échéance", type: "number" },
+            {
+              key: "is_mandatory",
+              label: "Frais obligatoire",
+              type: "boolean",
+            },
+            {
+              key: "discount_allowed",
+              label: "Remise autorisée",
+              type: "boolean",
+            },
+            {
+              key: "amount_editable",
+              label: "Montant modifiable à l’encaissement",
+              type: "boolean",
+            },
+            { key: "is_active", label: "Règle active", type: "boolean" },
+          ] as EntityField[]
+        }
         initial={initial}
         onHide={() => setEditing(undefined)}
         onSubmit={submit}

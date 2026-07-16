@@ -29,6 +29,11 @@ export interface Database {
           updated_at: string;
           period_system: string;
           period_count: number;
+          subjects_period_scope: string;
+          grading_scale: number;
+          pass_average: number;
+          ranking_enabled: boolean;
+          absences_on_report: boolean;
         };
         Insert: {
           id?: string;
@@ -39,6 +44,11 @@ export interface Database {
           is_active?: boolean;
           period_system?: string;
           period_count?: number;
+          subjects_period_scope?: string;
+          grading_scale?: number;
+          pass_average?: number;
+          ranking_enabled?: boolean;
+          absences_on_report?: boolean;
         };
         Update: Partial<
           Database["public"]["Tables"]["academic_cycles"]["Insert"]
@@ -98,6 +108,11 @@ export interface Database {
           period_count: number;
           is_active: boolean;
           created_at: string;
+          subjects_period_scope: string;
+          grading_scale: number;
+          pass_average: number;
+          ranking_enabled: boolean;
+          absences_on_report: boolean;
         };
         Insert: {
           id?: string;
@@ -110,6 +125,11 @@ export interface Database {
           period_system?: string;
           period_count?: number;
           is_active?: boolean;
+          subjects_period_scope?: string;
+          grading_scale?: number;
+          pass_average?: number;
+          ranking_enabled?: boolean;
+          absences_on_report?: boolean;
         };
         Update: Partial<
           Database["public"]["Tables"]["academic_year_cycles"]["Insert"]
@@ -228,6 +248,9 @@ export interface Database {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          capacity: number | null;
+          next_level_id: string | null;
+          repeat_allowed: boolean;
         };
         Insert: {
           id?: string;
@@ -237,6 +260,9 @@ export interface Database {
           code: string;
           sort_order?: number;
           is_active?: boolean;
+          capacity?: number | null;
+          next_level_id?: string | null;
+          repeat_allowed?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["grade_levels"]["Insert"]>;
         Relationships: [
@@ -286,6 +312,8 @@ export interface Database {
           subject_name_snapshot: string;
           coefficient: number;
           weekly_hours: number;
+          applies_all_periods: boolean;
+          period_ids: string[];
           created_at: string;
         };
         Insert: {
@@ -297,6 +325,8 @@ export interface Database {
           subject_name_snapshot?: string;
           coefficient?: number;
           weekly_hours?: number;
+          applies_all_periods?: boolean;
+          period_ids?: string[];
         };
         Update: Partial<
           Database["public"]["Tables"]["annual_subjects"]["Insert"]
@@ -369,6 +399,11 @@ export interface Database {
           frequency: string;
           is_active: boolean;
           created_at: string;
+          fee_type: string;
+          is_mandatory: boolean;
+          discount_allowed: boolean;
+          amount_editable: boolean;
+          installment_count: number;
         };
         Insert: {
           id?: string;
@@ -380,9 +415,32 @@ export interface Database {
           due_day?: number | null;
           frequency?: string;
           is_active?: boolean;
+          fee_type?: string;
+          is_mandatory?: boolean;
+          discount_allowed?: boolean;
+          amount_editable?: boolean;
+          installment_count?: number;
         };
         Update: Partial<
           Database["public"]["Tables"]["financial_rules"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      financial_rule_levels: {
+        Row: {
+          financial_rule_id: string;
+          academic_year_level_id: string;
+          institution_id: string;
+          academic_year_id: string;
+        };
+        Insert: {
+          financial_rule_id: string;
+          academic_year_level_id: string;
+          institution_id: string;
+          academic_year_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["financial_rule_levels"]["Insert"]
         >;
         Relationships: [];
       };
@@ -552,8 +610,17 @@ export interface Database {
           cycle_period_system: string;
           cycle_period_count: number;
           cycle_is_active: boolean;
+          cycle_subjects_period_scope: string;
+          cycle_grading_scale: number;
+          cycle_pass_average: number;
+          cycle_ranking_enabled: boolean;
+          cycle_absences_on_report: boolean;
         };
         Returns: string;
+      };
+      set_financial_rule_levels: {
+        Args: { target_rule_id: string; target_level_ids: string[] };
+        Returns: number;
       };
       clone_academic_year_configuration: {
         Args: {

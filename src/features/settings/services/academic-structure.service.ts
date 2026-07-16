@@ -56,6 +56,11 @@ export async function saveAnnualAcademicCycle(
     cycle_period_system: input.periodSystem ?? "term",
     cycle_period_count: input.periodCount ?? 3,
     cycle_is_active: input.isActive,
+    cycle_subjects_period_scope: input.subjectsPeriodScope ?? "all",
+    cycle_grading_scale: input.gradingScale ?? 20,
+    cycle_pass_average: input.passAverage ?? 10,
+    cycle_ranking_enabled: input.rankingEnabled ?? true,
+    cycle_absences_on_report: input.absencesOnReport ?? true,
   });
   if (error) throw error;
   return data;
@@ -173,7 +178,11 @@ export async function saveLevel(
   const query = id
     ? supabase
         .from("grade_levels")
-        .update(itemPayload(input))
+        .update({
+          ...itemPayload(input),
+          capacity: input.capacity ?? null,
+          repeat_allowed: input.repeatAllowed ?? true,
+        })
         .eq("id", id)
         .select()
         .single()
@@ -183,6 +192,8 @@ export async function saveLevel(
           institution_id: institutionId,
           cycle_id: cycleId,
           ...itemPayload(input),
+          capacity: input.capacity ?? null,
+          repeat_allowed: input.repeatAllowed ?? true,
         })
         .select()
         .single();

@@ -6,13 +6,15 @@ import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
+import { MultiSelect } from "primereact/multiselect";
 import { generateCode } from "../../../shared/utils/generate-code";
 
-export type EntityValue = string | number | boolean | null | undefined;
+export type EntityValue =
+  string | number | boolean | string[] | null | undefined;
 export interface EntityField {
   key: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "boolean" | "select";
+  type?: "text" | "textarea" | "number" | "boolean" | "select" | "multiselect";
   required?: boolean;
   options?: { label: string; value: string }[];
   suffix?: string;
@@ -89,7 +91,25 @@ export function SettingsEntityDialog({
             ) : (
               <>
                 <label htmlFor={field.key}>{field.label}</label>
-                {field.type === "select" ? (
+                {field.type === "multiselect" ? (
+                  <MultiSelect
+                    inputId={field.key}
+                    value={
+                      Array.isArray(values[field.key]) ? values[field.key] : []
+                    }
+                    options={field.options}
+                    optionLabel="label"
+                    optionValue="value"
+                    display="chip"
+                    filter
+                    onChange={(event) =>
+                      setValues((current) => ({
+                        ...current,
+                        [field.key]: event.value as string[],
+                      }))
+                    }
+                  />
+                ) : field.type === "select" ? (
                   <Dropdown
                     inputId={field.key}
                     value={values[field.key]}

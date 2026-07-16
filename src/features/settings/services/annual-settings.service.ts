@@ -45,6 +45,8 @@ export async function saveAnnualSubject(
     subject_id: string;
     coefficient: number;
     weekly_hours: number;
+    applies_all_periods: boolean;
+    period_ids: string[];
   },
   id?: string,
 ) {
@@ -166,6 +168,14 @@ export async function listFinancialRules(yearId: string) {
   if (error) throw error;
   return data;
 }
+export async function listFinancialRuleLevels(yearId: string) {
+  const { data, error } = await supabase
+    .from("financial_rule_levels")
+    .select("*")
+    .eq("academic_year_id", yearId);
+  if (error) throw error;
+  return data;
+}
 export async function saveFinancialRule(
   institutionId: string,
   yearId: string,
@@ -176,17 +186,42 @@ export async function saveFinancialRule(
     due_day: number | null;
     frequency: string;
     is_active: boolean;
+    fee_type: string;
+    is_mandatory: boolean;
+    discount_allowed: boolean;
+    amount_editable: boolean;
+    installment_count: number;
   },
   id?: string,
 ) {
   const query = id
-    ? supabase.from("financial_rules").update(input).eq("id", id)
-    : supabase.from("financial_rules").insert({
-        institution_id: institutionId,
-        academic_year_id: yearId,
-        ...input,
-      });
-  const { error } = await query;
+    ? supabase
+        .from("financial_rules")
+        .update(input)
+        .eq("id", id)
+        .select("id")
+        .single()
+    : supabase
+        .from("financial_rules")
+        .insert({
+          institution_id: institutionId,
+          academic_year_id: yearId,
+          ...input,
+        })
+        .select("id")
+        .single();
+  const { data, error } = await query;
+  if (error) throw error;
+  return data.id;
+}
+export async function setFinancialRuleLevels(
+  ruleId: string,
+  levelIds: string[],
+) {
+  const { error } = await supabase.rpc("set_financial_rule_levels", {
+    target_rule_id: ruleId,
+    target_level_ids: levelIds,
+  });
   if (error) throw error;
 }
 export async function deleteFinancialRule(id: string) {

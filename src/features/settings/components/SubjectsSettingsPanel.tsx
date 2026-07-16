@@ -10,7 +10,10 @@ import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { useToast } from "../../../shared/components/toast-context";
 import type { Database } from "../../../shared/lib/supabase/database.types";
-import { listAnnualAcademicLevels } from "../services/academic-structure.service";
+import {
+  listAcademicPeriods,
+  listAnnualAcademicLevels,
+} from "../services/academic-structure.service";
 import {
   deleteSubject,
   listAnnualSubjects,
@@ -40,19 +43,26 @@ export function SubjectsSettingsPanel() {
   const [target, setTarget] = useState<Subject[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [saving, setSaving] = useState(false);
+  const [periods, setPeriods] = useState<
+    Awaited<ReturnType<typeof listAcademicPeriods>>
+  >([]);
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
   const load = useCallback(async () => {
     if (!institutionId) return;
-    const [catalog, annualItems, annualLevels] = await Promise.all([
-      listSubjects(institutionId),
-      year ? listAnnualSubjects(year.id) : Promise.resolve([]),
-      year ? listAnnualAcademicLevels(year.id) : Promise.resolve([]),
-    ]);
+    const [catalog, annualItems, annualLevels, yearPeriods] = await Promise.all(
+      [
+        listSubjects(institutionId),
+        year ? listAnnualSubjects(year.id) : Promise.resolve([]),
+        year ? listAnnualAcademicLevels(year.id) : Promise.resolve([]),
+        year ? listAcademicPeriods(year.id) : Promise.resolve([]),
+      ],
+    );
     setSubjects(catalog);
     setAnnual(annualItems);
     setLevels(annualLevels);
+    setPeriods(yearPeriods);
     setLevelId((current) =>
       annualLevels.some((item) => item.id === current)
         ? current
@@ -89,6 +99,20 @@ export function SubjectsSettingsPanel() {
             required: true,
             suffix: " h",
           },
+          {
+            key: "applies_all_periods",
+            label: "Enseignée pendant toutes les périodes",
+            type: "boolean" as const,
+          },
+          {
+            key: "period_ids",
+            label: "Périodes concernées",
+            type: "multiselect" as const,
+            options: periods.map((period) => ({
+              label: period.name,
+              value: period.id,
+            })),
+          },
         ]
       : [
           { key: "name", label: "Nom de la matière", required: true },
@@ -105,6 +129,8 @@ export function SubjectsSettingsPanel() {
         ? {
             coefficient: dialog.item.coefficient,
             weekly_hours: dialog.item.weekly_hours,
+            applies_all_periods: dialog.item.applies_all_periods,
+            period_ids: dialog.item.period_ids,
           }
         : {
             name: dialog?.item?.name ?? "",
@@ -136,6 +162,10 @@ export function SubjectsSettingsPanel() {
             subject_id: dialog.item.subject_id,
             coefficient: Number(values.coefficient),
             weekly_hours: Number(values.weekly_hours),
+            applies_all_periods: Boolean(values.applies_all_periods),
+            period_ids: Array.isArray(values.period_ids)
+              ? values.period_ids
+              : [],
           },
           dialog.item.id,
         );

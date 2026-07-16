@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Accordion, AccordionTab } from "primereact/accordion";
+import { TabPanel, TabView } from "primereact/tabview";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Column } from "primereact/column";
@@ -47,6 +47,24 @@ const toInput = (
             ? (item.period_system as "term" | "semester" | "custom")
             : undefined,
         periodCount: "period_count" in item ? item.period_count : undefined,
+        subjectsPeriodScope:
+          "subjects_period_scope" in item
+            ? (item.subjects_period_scope as "all" | "selectable")
+            : undefined,
+        gradingScale:
+          "grading_scale" in item ? Number(item.grading_scale) : undefined,
+        passAverage:
+          "pass_average" in item ? Number(item.pass_average) : undefined,
+        rankingEnabled:
+          "ranking_enabled" in item ? Boolean(item.ranking_enabled) : undefined,
+        absencesOnReport:
+          "absences_on_report" in item
+            ? Boolean(item.absences_on_report)
+            : undefined,
+        capacity:
+          "capacity" in item ? Number(item.capacity) || null : undefined,
+        repeatAllowed:
+          "repeat_allowed" in item ? Boolean(item.repeat_allowed) : undefined,
       }
     : undefined;
 const periodLabel = (cycle: AnnualAcademicCycle) =>
@@ -223,9 +241,9 @@ export function AcademicStructurePanel({ institutionId }: Props) {
           text="Aucun cycle pour cette année. Vous pouvez créer un cycle avant d’ajouter ses niveaux."
         />
       ) : (
-        <Accordion multiple activeIndex={[0]}>
+        <TabView>
           {cycles.map((cycle) => (
-            <AccordionTab
+            <TabPanel
               key={cycle.id}
               header={
                 <div className="cycle-accordion-header">
@@ -303,9 +321,9 @@ export function AcademicStructurePanel({ institutionId }: Props) {
                   )}
                 />
               </DataTable>
-            </AccordionTab>
+            </TabPanel>
           ))}
-        </Accordion>
+        </TabView>
       )}
       <StructureItemDialog
         kind={dialog?.kind ?? "cycle"}
