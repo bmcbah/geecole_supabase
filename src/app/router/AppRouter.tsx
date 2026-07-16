@@ -35,7 +35,7 @@ export function AppRouter() {
           <Route element={<AppLayout />}>
             <Route index element={<Navigate to="/etablissement" replace />} />
             <Route path="/etablissement" element={<InstitutionPage />} />
-            <Route path="/parametrage" element={<SettingsPage />} />
+            <Route path="/parametrage/:section?" element={<SettingsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
