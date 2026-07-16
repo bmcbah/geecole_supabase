@@ -21,6 +21,31 @@ export async function listAcademicStructure(institutionId: string) {
   return { cycles: cyclesResult.data, levels: levelsResult.data };
 }
 
+export async function listAnnualAcademicLevels(academicYearId: string) {
+  const { data, error } = await supabase
+    .from("academic_year_levels")
+    .select("*")
+    .eq("academic_year_id", academicYearId)
+    .eq("is_active", true)
+    .order("sort_order");
+  if (error) throw error;
+  return data;
+}
+
+export async function setAnnualCycleLevels(
+  academicYearId: string,
+  cycleId: string,
+  levelIds: string[],
+) {
+  const { data, error } = await supabase.rpc("set_academic_year_cycle_levels", {
+    target_year_id: academicYearId,
+    target_cycle_id: cycleId,
+    target_level_ids: levelIds,
+  });
+  if (error) throw error;
+  return data;
+}
+
 const payload = (input: StructureItemInput) => ({
   name: input.name,
   code: input.code,

@@ -74,6 +74,37 @@ export interface Database {
           },
         ];
       };
+      academic_year_levels: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          level_id: string;
+          cycle_name_snapshot: string;
+          level_name_snapshot: string;
+          sort_order: number;
+          is_active: boolean;
+          cloned_from_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          level_id: string;
+          cycle_name_snapshot?: string;
+          level_name_snapshot?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          cloned_from_id?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["academic_year_levels"]["Insert"]
+        >;
+        Relationships: [];
+      };
       institutions: {
         Row: {
           id: string;
@@ -182,9 +213,21 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      clone_academic_year_levels: {
+        Args: { source_year_id: string; target_year_id: string };
+        Returns: number;
+      };
       create_institution: {
         Args: { institution_name: string; institution_slug: string };
         Returns: string;
+      };
+      set_academic_year_cycle_levels: {
+        Args: {
+          target_year_id: string;
+          target_cycle_id: string;
+          target_level_ids: string[];
+        };
+        Returns: number;
       };
     };
     Enums: {

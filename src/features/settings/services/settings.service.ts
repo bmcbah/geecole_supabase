@@ -49,13 +49,25 @@ export async function createAcademicYear(
   institutionId: string,
   input: AcademicYearInput,
 ) {
-  const { error } = await supabase.from("academic_years").insert({
-    institution_id: institutionId,
-    name: input.name,
-    starts_on: toDateOnly(input.startsOn),
-    ends_on: toDateOnly(input.endsOn),
-  });
+  const { data, error } = await supabase
+    .from("academic_years")
+    .insert({
+      institution_id: institutionId,
+      name: input.name,
+      starts_on: toDateOnly(input.startsOn),
+      ends_on: toDateOnly(input.endsOn),
+    })
+    .select("id")
+    .single();
   if (error) throw error;
+  if (input.sourceYearId) {
+    const { error: cloneError } = await supabase.rpc(
+      "clone_academic_year_levels",
+      { source_year_id: input.sourceYearId, target_year_id: data.id },
+    );
+    if (cloneError) throw cloneError;
+  }
+  return data;
 }
 
 export async function changeAcademicYearStatus(

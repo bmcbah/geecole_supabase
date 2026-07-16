@@ -19,6 +19,7 @@ export const academicYearSchema = z
     name: z.string().trim().min(4, "Le libellé est obligatoire").max(30),
     startsOn: z.date("Date de début obligatoire"),
     endsOn: z.date("Date de fin obligatoire"),
+    sourceYearId: z.string().uuid().optional(),
   })
   .refine((value) => value.startsOn < value.endsOn, {
     message: "La fin doit être postérieure au début",

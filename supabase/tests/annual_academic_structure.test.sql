@@ -1,0 +1,13 @@
+begin;
+select plan(9);
+select has_table('public', 'academic_year_levels', 'association annuelle existe');
+select has_column('public', 'academic_year_levels', 'level_name_snapshot', 'libellé historique conservé');
+select has_column('public', 'academic_year_levels', 'cloned_from_id', 'origine du clonage tracée');
+select has_index('public', 'academic_year_levels', 'academic_year_levels_year_cycle_idx', 'configuration annuelle indexée');
+select has_function('public', 'set_academic_year_cycle_levels', array['uuid','uuid','uuid[]'], 'sélection transactionnelle disponible');
+select has_function('public', 'clone_academic_year_levels', array['uuid','uuid'], 'clonage disponible');
+select has_trigger('public', 'academic_year_levels', 'academic_year_levels_prepare', 'snapshots préparés par la base');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid = 'public.academic_year_levels'::regclass), 'RLS active');
+select ok(not has_table_privilege('anon', 'public.academic_year_levels', 'SELECT'), 'anon sans accès');
+select * from finish();
+rollback;

@@ -2,29 +2,44 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Column } from "primereact/column";
-import {
-  DataTable,
-  type DataTableSelectionSingleChangeEvent,
-} from "primereact/datatable";
+import { DataTable } from "primereact/datatable";
+import { Dropdown } from "primereact/dropdown";
 import { Message } from "primereact/message";
+import { SelectButton } from "primereact/selectbutton";
 import { Tag } from "primereact/tag";
 import { useToast } from "../../../shared/components/toast-context";
+import type { StructureItemInput } from "../schemas/academic-structure.schema";
 import {
   listAcademicStructure,
+  listAnnualAcademicLevels,
   saveCycle,
   saveLevel,
+  setAnnualCycleLevels,
 } from "../services/academic-structure.service";
-import type { StructureItemInput } from "../schemas/academic-structure.schema";
+import { listAcademicYears } from "../services/settings.service";
 import type { AcademicCycle, GradeLevel } from "../types/academic-structure";
+import type { AcademicYear, AcademicYearStatus } from "../types/settings";
 import { StructureItemDialog } from "./StructureItemDialog";
 
 interface Props {
   institutionId: string;
 }
+type Mode = "catalog" | "annual";
 type DialogState = {
   kind: "cycle" | "niveau";
   item?: AcademicCycle | GradeLevel;
 } | null;
+
+const modes = [
+  { label: "Catalogue de l’école", value: "catalog", icon: "pi pi-book" },
+  { label: "Configuration annuelle", value: "annual", icon: "pi pi-calendar" },
+];
+const statusLabels: Record<AcademicYearStatus, string> = {
+  preparation: "Préparation",
+  open: "Ouverte",
+  closed: "Clôturée",
+  archived: "Archivée",
+};
 const toInput = (
   item?: AcademicCycle | GradeLevel,
 ): StructureItemInput | undefined =>
@@ -39,26 +54,43 @@ const toInput = (
 
 export function AcademicStructurePanel({ institutionId }: Props) {
   const notify = useToast();
+  const [mode, setMode] = useState<Mode>("catalog");
   const [cycles, setCycles] = useState<AcademicCycle[]>([]);
   const [levels, setLevels] = useState<GradeLevel[]>([]);
+  const [years, setYears] = useState<AcademicYear[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<AcademicCycle | null>(
     null,
   );
+  const [selectedYear, setSelectedYear] = useState<AcademicYear | null>(null);
+  const [annualLevelIds, setAnnualLevelIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState("");
   const [dialog, setDialog] = useState<DialogState>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setFailure("");
     try {
-      const data = await listAcademicStructure(institutionId);
-      setCycles(data.cycles);
-      setLevels(data.levels);
+      const [structure, academicYears] = await Promise.all([
+        listAcademicStructure(institutionId),
+        listAcademicYears(institutionId),
+      ]);
+      setCycles(structure.cycles);
+      setLevels(structure.levels);
+      setYears(academicYears);
       setSelectedCycle(
         (current) =>
-          data.cycles.find((item) => item.id === current?.id) ??
-          data.cycles[0] ??
+          structure.cycles.find((item) => item.id === current?.id) ??
+          structure.cycles[0] ??
+          null,
+      );
+      setSelectedYear(
+        (current) =>
+          academicYears.find((item) => item.id === current?.id) ??
+          academicYears.find((item) => item.status === "preparation") ??
+          academicYears.find((item) => item.status === "open") ??
+          academicYears[0] ??
           null,
       );
     } catch {
@@ -67,14 +99,33 @@ export function AcademicStructurePanel({ institutionId }: Props) {
       setLoading(false);
     }
   }, [institutionId]);
+
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    if (!selectedYear) {
+      setAnnualLevelIds([]);
+      return;
+    }
+    void listAnnualAcademicLevels(selectedYear.id)
+      .then((items) => setAnnualLevelIds(items.map((item) => item.level_id)))
+      .catch(() =>
+        setFailure("Impossible de charger la configuration annuelle."),
+      );
+  }, [selectedYear]);
+
   const visibleLevels = useMemo(
     () => levels.filter((item) => item.cycle_id === selectedCycle?.id),
     [levels, selectedCycle],
   );
-  const submit = async (input: StructureItemInput) => {
+  const selectedAnnualLevels = useMemo(
+    () => visibleLevels.filter((item) => annualLevelIds.includes(item.id)),
+    [annualLevelIds, visibleLevels],
+  );
+  const annualLocked = selectedYear?.status !== "preparation";
+
+  const submitCatalogItem = async (input: StructureItemInput) => {
     if (!dialog) return;
     setSaving(true);
     try {
@@ -88,7 +139,7 @@ export function AcademicStructurePanel({ institutionId }: Props) {
           dialog.item?.id,
         );
       setDialog(null);
-      notify({ severity: "success", summary: "Structure enregistrée" });
+      notify({ severity: "success", summary: "Catalogue enregistré" });
       await load();
     } catch {
       notify({
@@ -100,107 +151,245 @@ export function AcademicStructurePanel({ institutionId }: Props) {
       setSaving(false);
     }
   };
+  const saveAnnualConfiguration = async () => {
+    if (!selectedYear || !selectedCycle) return;
+    setSaving(true);
+    try {
+      await setAnnualCycleLevels(
+        selectedYear.id,
+        selectedCycle.id,
+        selectedAnnualLevels.map((item) => item.id),
+      );
+      notify({
+        severity: "success",
+        summary: "Configuration annuelle enregistrée",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Enregistrement impossible",
+        detail: "Seule une année en préparation peut être modifiée.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
   const status = (item: AcademicCycle | GradeLevel) => (
     <Tag
       value={item.is_active ? "Actif" : "Inactif"}
       severity={item.is_active ? "success" : "secondary"}
     />
   );
+
   if (failure) return <Message severity="error" text={failure} />;
   return (
-    <div className="structure-grid">
-      <Card
-        title="Cycles"
-        subTitle="Sélectionnez un cycle pour gérer ses niveaux"
-      >
-        <div className="panel-toolbar">
-          <span />
-          <Button
-            label="Ajouter un cycle"
-            icon="pi pi-plus"
-            size="small"
-            onClick={() => setDialog({ kind: "cycle" })}
+    <div className="structure-page">
+      <Card>
+        <div className="structure-heading">
+          <div>
+            <h2>Organisation pédagogique</h2>
+            <p>
+              Définissez d’abord le catalogue de l’école, puis activez les
+              niveaux réellement proposés pour chaque année scolaire.
+            </p>
+          </div>
+          <SelectButton
+            value={mode}
+            options={modes}
+            optionLabel="label"
+            optionValue="value"
+            onChange={(event) => {
+              const value = event.value as unknown;
+              if (value === "catalog" || value === "annual") setMode(value);
+            }}
+            allowEmpty={false}
           />
         </div>
-        <DataTable
-          value={cycles}
-          loading={loading}
-          dataKey="id"
-          selectionMode="single"
-          selection={selectedCycle}
-          onSelectionChange={(
-            event: DataTableSelectionSingleChangeEvent<AcademicCycle[]>,
-          ) => setSelectedCycle(event.value)}
-          emptyMessage="Aucun cycle"
-          stripedRows
+      </Card>
+
+      {mode === "catalog" ? (
+        <Card
+          title="Catalogue de l’école"
+          subTitle="Ces cycles et niveaux sont réutilisables d’une année à l’autre"
         >
-          <Column field="sort_order" header="#" />
-          <Column field="name" header="Cycle" />
-          <Column field="code" header="Code" />
-          <Column header="Statut" body={status} />
-          <Column
-            header=""
-            body={(item: AcademicCycle) => (
-              <Button
-                icon="pi pi-pencil"
-                aria-label={`Modifier ${item.name}`}
-                text
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setDialog({ kind: "cycle", item });
+          <div className="structure-filters">
+            <div className="field structure-cycle-field">
+              <label htmlFor="catalog-cycle">Cycle</label>
+              <Dropdown
+                inputId="catalog-cycle"
+                value={selectedCycle?.id}
+                options={cycles}
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Choisir un cycle"
+                loading={loading}
+                onChange={(event) => {
+                  const value = event.value as unknown;
+                  if (typeof value === "string")
+                    setSelectedCycle(
+                      cycles.find((item) => item.id === value) ?? null,
+                    );
                 }}
               />
-            )}
-          />
-        </DataTable>
-      </Card>
-      <Card
-        title={selectedCycle ? `Niveaux — ${selectedCycle.name}` : "Niveaux"}
-        subTitle="Les niveaux sont ordonnés dans leur cycle"
-      >
-        <div className="panel-toolbar">
-          <span />
-          <Button
-            label="Ajouter un niveau"
-            icon="pi pi-plus"
-            size="small"
-            disabled={!selectedCycle}
-            onClick={() => setDialog({ kind: "niveau" })}
-          />
-        </div>
-        <DataTable
-          value={visibleLevels}
-          loading={loading}
-          dataKey="id"
-          emptyMessage={
-            selectedCycle ? "Aucun niveau" : "Sélectionnez un cycle"
-          }
-          stripedRows
-        >
-          <Column field="sort_order" header="#" />
-          <Column field="name" header="Niveau" />
-          <Column field="code" header="Code" />
-          <Column header="Statut" body={status} />
-          <Column
-            header=""
-            body={(item: GradeLevel) => (
+            </div>
+            <div className="table-actions">
               <Button
+                label="Nouveau cycle"
+                icon="pi pi-plus"
+                outlined
+                onClick={() => setDialog({ kind: "cycle" })}
+              />
+              <Button
+                label="Modifier le cycle"
                 icon="pi pi-pencil"
-                aria-label={`Modifier ${item.name}`}
                 text
-                onClick={() => setDialog({ kind: "niveau", item })}
+                disabled={!selectedCycle}
+                onClick={() =>
+                  selectedCycle &&
+                  setDialog({ kind: "cycle", item: selectedCycle })
+                }
+              />
+            </div>
+          </div>
+          <div className="panel-toolbar">
+            <div>
+              <strong>Niveaux du cycle</strong>
+              <p>Ordonnez les niveaux dans le parcours de l’élève.</p>
+            </div>
+            <Button
+              label="Nouveau niveau"
+              icon="pi pi-plus"
+              disabled={!selectedCycle}
+              onClick={() => setDialog({ kind: "niveau" })}
+            />
+          </div>
+          <DataTable
+            value={visibleLevels}
+            loading={loading}
+            dataKey="id"
+            emptyMessage="Aucun niveau dans ce cycle"
+            stripedRows
+          >
+            <Column field="sort_order" header="Ordre" />
+            <Column field="name" header="Niveau" />
+            <Column field="code" header="Code" />
+            <Column header="Statut" body={status} />
+            <Column
+              header="Actions"
+              body={(item: GradeLevel) => (
+                <Button
+                  icon="pi pi-pencil"
+                  text
+                  aria-label={`Modifier ${item.name}`}
+                  onClick={() => setDialog({ kind: "niveau", item })}
+                />
+              )}
+            />
+          </DataTable>
+        </Card>
+      ) : (
+        <Card
+          title="Configuration annuelle"
+          subTitle="Choisissez les niveaux ouverts aux inscriptions pour l’année sélectionnée"
+        >
+          <div className="structure-filters annual-filters">
+            <div className="field">
+              <label htmlFor="annual-year">Année scolaire</label>
+              <Dropdown
+                inputId="annual-year"
+                value={selectedYear?.id}
+                options={years}
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Choisir une année"
+                onChange={(event) => {
+                  const value = event.value as unknown;
+                  if (typeof value === "string")
+                    setSelectedYear(
+                      years.find((item) => item.id === value) ?? null,
+                    );
+                }}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="annual-cycle">Cycle à configurer</label>
+              <Dropdown
+                inputId="annual-cycle"
+                value={selectedCycle?.id}
+                options={cycles.filter((item) => item.is_active)}
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Choisir un cycle"
+                onChange={(event) => {
+                  const value = event.value as unknown;
+                  if (typeof value === "string")
+                    setSelectedCycle(
+                      cycles.find((item) => item.id === value) ?? null,
+                    );
+                }}
+              />
+            </div>
+            {selectedYear && (
+              <Tag
+                value={statusLabels[selectedYear.status]}
+                severity={annualLocked ? "secondary" : "info"}
               />
             )}
-          />
-        </DataTable>
-      </Card>
+          </div>
+          {annualLocked && selectedYear ? (
+            <Message
+              severity="info"
+              text="Cette année n’est plus en préparation : sa structure est consultable mais verrouillée."
+            />
+          ) : (
+            <Message
+              severity="secondary"
+              text="Cochez les niveaux que l’école proposera cette année. Vous pourrez ensuite créer les classes et inscrire les élèves."
+            />
+          )}
+          <DataTable
+            value={visibleLevels.filter((item) => item.is_active)}
+            dataKey="id"
+            selectionMode="multiple"
+            isDataSelectable={() => !annualLocked}
+            selection={selectedAnnualLevels}
+            onSelectionChange={(event) => {
+              const selected = event.value;
+              const otherCycles = annualLevelIds.filter(
+                (id) => !visibleLevels.some((level) => level.id === id),
+              );
+              setAnnualLevelIds([
+                ...otherCycles,
+                ...selected.map((item) => item.id),
+              ]);
+            }}
+            emptyMessage="Aucun niveau actif dans ce cycle"
+            stripedRows
+          >
+            <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
+            <Column field="sort_order" header="Ordre" />
+            <Column field="name" header="Niveau" />
+            <Column field="code" header="Code" />
+          </DataTable>
+          <div className="form-actions structure-save">
+            <Button
+              label="Enregistrer les niveaux ouverts"
+              icon="pi pi-check"
+              loading={saving}
+              disabled={!selectedYear || !selectedCycle || annualLocked}
+              onClick={() => void saveAnnualConfiguration()}
+            />
+          </div>
+        </Card>
+      )}
+
       <StructureItemDialog
         kind={dialog?.kind ?? "cycle"}
         visible={Boolean(dialog)}
         loading={saving}
         initial={toInput(dialog?.item)}
         onHide={() => setDialog(null)}
-        onSubmit={submit}
+        onSubmit={submitCatalogItem}
       />
     </div>
   );

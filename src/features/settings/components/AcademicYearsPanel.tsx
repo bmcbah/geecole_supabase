@@ -108,7 +108,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
               summary: "Transition impossible",
               detail:
                 target === "open"
-                  ? "Une autre année est peut-être déjà ouverte."
+                  ? "Configurez au moins un niveau pour cette année et vérifiez qu’aucune autre année n’est ouverte."
                   : undefined,
             });
           }
@@ -214,6 +214,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
       <AcademicYearDialog
         visible={dialogOpen}
         loading={saving}
+        years={items}
         onHide={() => setDialogOpen(false)}
         onSubmit={create}
       />
