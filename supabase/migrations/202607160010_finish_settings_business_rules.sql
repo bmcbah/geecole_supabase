@@ -1,6 +1,3 @@
-create unique index academic_years_one_open_per_institution_idx
-  on public.academic_years(institution_id) where status='open';
-
 alter table public.academic_cycles
   add column subjects_period_scope text not null default 'all' check(subjects_period_scope in ('all','selectable')),
   add column grading_scale numeric(6,2) not null default 20 check(grading_scale>0),
