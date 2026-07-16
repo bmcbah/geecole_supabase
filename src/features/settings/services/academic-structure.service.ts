@@ -1,6 +1,44 @@
 import { supabase } from "../../../shared/lib/supabase/client";
 import type { StructureItemInput } from "../schemas/academic-structure.schema";
 
+export async function listCycleCatalog(institutionId: string) {
+  const [catalogResult, activationResult] = await Promise.all([
+    supabase
+      .from("cycle_catalog")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order"),
+    supabase
+      .from("institution_cycles")
+      .select("*")
+      .eq("institution_id", institutionId),
+  ]);
+  if (catalogResult.error) throw catalogResult.error;
+  if (activationResult.error) throw activationResult.error;
+  return catalogResult.data.map((catalog) => ({
+    ...catalog,
+    activation:
+      activationResult.data.find(
+        (item) => item.catalog_cycle_id === catalog.id,
+      ) ?? null,
+  }));
+}
+
+export async function setInstitutionCycle(
+  institutionId: string,
+  catalogCycleId: string,
+  active: boolean,
+  yearId?: string,
+) {
+  const { error } = await supabase.rpc("set_institution_cycle", {
+    target_institution_id: institutionId,
+    target_catalog_cycle_id: catalogCycleId,
+    target_active: active,
+    target_year_id: yearId ?? null,
+  });
+  if (error) throw error;
+}
+
 export async function listAcademicStructure(institutionId: string) {
   const [cyclesResult, levelsResult] = await Promise.all([
     supabase

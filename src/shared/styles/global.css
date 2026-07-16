@@ -516,3 +516,49 @@ input {
     display: none;
   }
 }
+.cycle-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.cycle-choice-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  padding: 1.15rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 1rem;
+  background: var(--surface-card);
+}
+.cycle-choice-card.is-active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--primary-color) 12%, transparent);
+}
+.cycle-choice-card .p-button {
+  grid-column: 1 / -1;
+}
+.cycle-choice-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.85rem;
+  background: var(--primary-50);
+  color: var(--primary-color);
+  font-size: 1.25rem;
+}
+.cycle-choice-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.cycle-choice-title h3,
+.cycle-choice-card p {
+  margin: 0;
+}
+.cycle-choice-card p {
+  margin-top: 0.35rem;
+  color: var(--text-color-secondary);
+}

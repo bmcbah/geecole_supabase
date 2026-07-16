@@ -5,7 +5,8 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { SettingsSidebar } from "../components/SettingsSidebar";
-import { AcademicStructurePanel } from "../components/AcademicStructurePanel";
+import { LevelsSettingsPanel } from "../components/AcademicStructurePanel";
+import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
 import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
@@ -39,7 +40,8 @@ export function SettingsPage() {
     ![
       "etablissement",
       "annees-scolaires",
-      "cycles-niveaux",
+      "cycles",
+      "niveaux",
       "matieres",
       "evaluations-formules",
       "regles-financieres",
@@ -72,8 +74,10 @@ export function SettingsPage() {
             />
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
-          ) : section === "cycles-niveaux" ? (
-            <AcademicStructurePanel institutionId={selected.id} />
+          ) : section === "cycles" ? (
+            <CyclesSettingsPanel />
+          ) : section === "niveaux" ? (
+            <LevelsSettingsPanel institutionId={selected.id} />
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
           ) : section === "evaluations-formules" ? (

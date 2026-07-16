@@ -17,6 +17,54 @@ export type AcademicYearStatus = "preparation" | "open" | "closed" | "archived";
 export interface Database {
   public: {
     Tables: {
+      cycle_catalog: {
+        Row: {
+          id: string;
+          name: string;
+          code: string;
+          description: string | null;
+          icon: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          code: string;
+          description?: string | null;
+          icon?: string;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["cycle_catalog"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      institution_cycles: {
+        Row: {
+          id: string;
+          institution_id: string;
+          catalog_cycle_id: string;
+          academic_cycle_id: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          catalog_cycle_id: string;
+          academic_cycle_id?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["institution_cycles"]["Insert"]
+        >;
+        Relationships: [];
+      };
       academic_cycles: {
         Row: {
           id: string;
@@ -571,6 +619,15 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      set_institution_cycle: {
+        Args: {
+          target_institution_id: string;
+          target_catalog_cycle_id: string;
+          target_active: boolean;
+          target_year_id: string | null;
+        };
+        Returns: string;
+      };
       accept_person_invitation: {
         Args: { raw_token: string };
         Returns: string;

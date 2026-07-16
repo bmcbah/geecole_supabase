@@ -11,7 +11,6 @@ import { useToast } from "../../../shared/components/toast-context";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import type { StructureItemInput } from "../schemas/academic-structure.schema";
 import {
-  deleteAnnualAcademicCycle,
   deleteLevel,
   generateAcademicPeriods,
   listAcademicStructure,
@@ -73,7 +72,7 @@ const periodLabel = (cycle: AnnualAcademicCycle) =>
     : cycle.period_system === "term"
       ? `${cycle.period_count} trimestres`
       : `${cycle.period_count} périodes`;
-export function AcademicStructurePanel({ institutionId }: Props) {
+export function LevelsSettingsPanel({ institutionId }: Props) {
   const { year } = useAcademicSession();
   const notify = useToast();
   const [cycles, setCycles] = useState<AnnualAcademicCycle[]>([]);
@@ -200,25 +199,11 @@ export function AcademicStructurePanel({ institutionId }: Props) {
           await load();
         })(),
     });
-  const removeCycle = (cycle: AnnualAcademicCycle) =>
-    confirmDialog({
-      header: "Supprimer le cycle",
-      message: `Retirer ${cycle.name} et ses niveaux de ${year?.name} ? L’historique des anciennes années sera conservé.`,
-      icon: "pi pi-exclamation-triangle",
-      acceptLabel: "Supprimer",
-      rejectLabel: "Annuler",
-      acceptClassName: "p-button-danger",
-      accept: () =>
-        void (async () => {
-          await deleteAnnualAcademicCycle(cycle.id);
-          await load();
-        })(),
-    });
   if (failure) return <Message severity="error" text={failure} />;
   return (
     <Card
-      title={`Cycles et niveaux — ${year?.name ?? ""}`}
-      subTitle="Chaque cycle appartient à l’année sélectionnée et peut exister sans niveau"
+      title={`Niveaux — ${year?.name ?? ""}`}
+      subTitle="Les onglets suivent automatiquement les cycles actifs de l’établissement"
     >
       <ConfirmDialog />
       <div className="panel-toolbar">
@@ -228,17 +213,11 @@ export function AcademicStructurePanel({ institutionId }: Props) {
             severity={editable ? "success" : "secondary"}
           />
         </div>
-        <Button
-          label="Nouveau cycle"
-          icon="pi pi-plus"
-          disabled={!editable}
-          onClick={() => setDialog({ kind: "cycle" })}
-        />
       </div>
       {cycles.length === 0 ? (
         <Message
           severity="info"
-          text="Aucun cycle pour cette année. Vous pouvez créer un cycle avant d’ajouter ses niveaux."
+          text="Aucun cycle actif. Activez d’abord un cycle dans la rubrique Cycles."
         />
       ) : (
         <TabView>
@@ -252,29 +231,6 @@ export function AcademicStructurePanel({ institutionId }: Props) {
                     <span>
                       {cycle.code} · {periodLabel(cycle)}
                     </span>
-                  </div>
-                  <div className="table-actions">
-                    <Button
-                      icon="pi pi-pencil"
-                      aria-label={`Modifier ${cycle.name}`}
-                      text
-                      disabled={!editable}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setDialog({ kind: "cycle", item: cycle });
-                      }}
-                    />
-                    <Button
-                      icon="pi pi-trash"
-                      aria-label={`Supprimer ${cycle.name}`}
-                      text
-                      severity="danger"
-                      disabled={!editable}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        removeCycle(cycle);
-                      }}
-                    />
                   </div>
                 </div>
               }

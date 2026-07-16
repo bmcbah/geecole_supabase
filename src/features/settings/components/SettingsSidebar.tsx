@@ -20,10 +20,11 @@ const groups = [
     label: "Pédagogie",
     sections: [
       {
-        path: "cycles-niveaux",
+        path: "cycles",
         icon: "pi-sitemap",
-        label: "Cycles et niveaux",
+        label: "Cycles",
       },
+      { path: "niveaux", icon: "pi-list", label: "Niveaux" },
       { path: "matieres", icon: "pi-book", label: "Matières" },
     ],
   },
