@@ -1,0 +1,226 @@
+:root {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: #1c2a3a;
+  background: #f5f7fb;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+button,
+input {
+  font: inherit;
+}
+.center-screen,
+.content-state {
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+}
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top left, #dff5ef 0, transparent 35%), #f5f7fb;
+}
+.auth-card {
+  width: min(100%, 440px);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 60px rgba(26, 46, 72, 0.1);
+}
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.form-stack .p-inputtext,
+.form-stack .p-password,
+.form-stack .p-password-input {
+  width: 100%;
+}
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+}
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 250px;
+  background: #103c38;
+  color: white;
+  padding: 1.5rem;
+}
+.brand {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #f2b84b;
+  color: #103c38;
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+.brand div {
+  display: flex;
+  flex-direction: column;
+}
+.brand small {
+  color: #b8d6d2;
+}
+.app-sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.7rem;
+  color: #d8ebe8;
+  text-decoration: none;
+}
+.app-sidebar nav a.active {
+  background: #21524d;
+  color: white;
+}
+.app-workspace {
+  margin-left: 250px;
+  width: calc(100% - 250px);
+}
+.app-header {
+  height: 72px;
+  padding: 0 2rem;
+  background: white;
+  border-bottom: 1px solid #e5eaf0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+.app-header > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.app-content {
+  padding: 2rem;
+  max-width: 1440px;
+  margin: auto;
+}
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.page-heading h1 {
+  margin: 0.25rem 0;
+  font-size: 2rem;
+}
+.page-heading p {
+  margin: 0;
+  color: #637083;
+}
+.eyebrow {
+  color: #187b70;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.empty-card {
+  text-align: center;
+  padding: 2rem;
+  border: 1px dashed #bdc8d4;
+  box-shadow: none;
+}
+.empty-icon {
+  font-size: 2.5rem;
+  color: #187b70;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.card-grid dl div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #edf0f4;
+}
+.card-grid dt {
+  color: #637083;
+}
+.card-grid dd {
+  margin: 0;
+  font-weight: 600;
+}
+.form-dialog {
+  width: min(92vw, 560px);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+@media (max-width: 800px) {
+  .app-sidebar {
+    width: 76px;
+    padding: 1rem;
+  }
+  .brand div,
+  .app-sidebar nav a:not(.active) {
+    font-size: 0;
+  }
+  .brand-mark {
+    flex: 0 0 auto;
+  }
+  .app-sidebar nav a {
+    justify-content: center;
+  }
+  .app-sidebar nav a i {
+    font-size: 1.25rem;
+  }
+  .app-workspace {
+    margin-left: 76px;
+    width: calc(100% - 76px);
+  }
+  .app-content {
+    padding: 1rem;
+  }
+  .page-heading {
+    flex-direction: column;
+  }
+  .app-header {
+    padding: 0 1rem;
+  }
+  .app-header small {
+    display: none;
+  }
+}
