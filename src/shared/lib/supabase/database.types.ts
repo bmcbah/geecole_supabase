@@ -533,6 +533,10 @@ export interface Database {
         };
         Returns: number;
       };
+      set_annual_level_subjects: {
+        Args: { target_year_level_id: string; target_subject_ids: string[] };
+        Returns: number;
+      };
     };
     Enums: {
       academic_year_status: AcademicYearStatus;

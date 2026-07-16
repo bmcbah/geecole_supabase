@@ -10,7 +10,6 @@ import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
 import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
 import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
-import { PeriodsSettingsPanel } from "../components/PeriodsSettingsPanel";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -42,7 +41,6 @@ export function SettingsPage() {
       "annees-scolaires",
       "cycles-niveaux",
       "matieres",
-      "periodes",
       "evaluations-formules",
       "regles-financieres",
       "utilisateurs-roles",
@@ -78,8 +76,6 @@ export function SettingsPage() {
             <AcademicStructurePanel institutionId={selected.id} />
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
-          ) : section === "periodes" ? (
-            <PeriodsSettingsPanel />
           ) : section === "evaluations-formules" ? (
             <EvaluationSettingsPanel />
           ) : section === "regles-financieres" ? (

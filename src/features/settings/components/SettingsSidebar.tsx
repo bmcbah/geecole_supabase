@@ -24,7 +24,6 @@ const groups = [
         icon: "pi-sitemap",
         label: "Cycles et niveaux",
       },
-      { path: "periodes", icon: "pi-clock", label: "Périodes scolaires" },
       { path: "matieres", icon: "pi-book", label: "Matières" },
     ],
   },

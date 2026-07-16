@@ -67,6 +67,17 @@ export async function deleteAnnualSubject(id: string) {
     .eq("id", id);
   if (error) throw error;
 }
+export async function setAnnualLevelSubjects(
+  yearLevelId: string,
+  subjectIds: string[],
+) {
+  const { data, error } = await supabase.rpc("set_annual_level_subjects", {
+    target_year_level_id: yearLevelId,
+    target_subject_ids: subjectIds,
+  });
+  if (error) throw error;
+  return data;
+}
 
 export async function listAssessmentTypes(yearId: string) {
   const { data, error } = await supabase

@@ -395,6 +395,51 @@ input {
   grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
   align-items: end;
 }
+.cycle-accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 1rem;
+}
+.cycle-accordion-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.cycle-accordion-header span,
+.subject-pick-item small {
+  color: #718096;
+  font-weight: 400;
+}
+.subject-level-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.subject-level-toolbar .field {
+  width: min(100%, 420px);
+}
+.subject-pick-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.picklist-save {
+  margin-top: 1rem;
+}
+.picklist-disabled {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.subject-details {
+  margin-top: 2rem;
+}
+.compact-grid {
+  margin-top: 0.25rem;
+}
 @media (max-width: 800px) {
   .app-sidebar {
     width: 76px;
@@ -443,6 +488,11 @@ input {
   }
   .period-config {
     display: flex;
+  }
+  .subject-level-toolbar,
+  .cycle-accordion-header {
+    align-items: stretch;
+    flex-direction: column;
   }
   .settings-planned {
     display: none;

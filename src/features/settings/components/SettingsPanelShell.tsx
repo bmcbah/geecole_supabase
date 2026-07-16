@@ -18,7 +18,9 @@ export function SettingsPanelShell({
   onAdd,
   children,
 }: Props) {
-  const editable = year?.status === "preparation";
+  const editable = Boolean(
+    year && !["closed", "archived"].includes(year.status),
+  );
   return (
     <Card title={title} subTitle={description}>
       {!year ? (
@@ -31,7 +33,7 @@ export function SettingsPanelShell({
           {!editable && (
             <Message
               severity="info"
-              text={`${year.name} est consultable en lecture seule. Sélectionnez une année en préparation pour modifier ce paramétrage.`}
+              text={`${year.name} est clôturée et reste consultable en lecture seule.`}
             />
           )}
           {addLabel && onAdd && (

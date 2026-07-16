@@ -91,7 +91,7 @@ export async function saveAcademicPeriod(
   if (error) throw error;
 }
 
-const payload = (input: StructureItemInput) => ({
+const itemPayload = (input: StructureItemInput) => ({
   name: input.name,
   code: input.code,
   sort_order: input.sortOrder,
@@ -103,12 +103,29 @@ export async function saveCycle(
   id?: string,
 ) {
   const query = id
-    ? supabase.from("academic_cycles").update(payload(input)).eq("id", id)
+    ? supabase
+        .from("academic_cycles")
+        .update({
+          ...itemPayload(input),
+          period_system: input.periodSystem ?? "term",
+          period_count: input.periodCount ?? 3,
+        })
+        .eq("id", id)
+        .select()
+        .single()
     : supabase
         .from("academic_cycles")
-        .insert({ institution_id: institutionId, ...payload(input) });
-  const { error } = await query;
+        .insert({
+          institution_id: institutionId,
+          ...itemPayload(input),
+          period_system: input.periodSystem ?? "term",
+          period_count: input.periodCount ?? 3,
+        })
+        .select()
+        .single();
+  const { data, error } = await query;
   if (error) throw error;
+  return data;
 }
 export async function saveLevel(
   institutionId: string,
@@ -117,12 +134,33 @@ export async function saveLevel(
   id?: string,
 ) {
   const query = id
-    ? supabase.from("grade_levels").update(payload(input)).eq("id", id)
-    : supabase.from("grade_levels").insert({
-        institution_id: institutionId,
-        cycle_id: cycleId,
-        ...payload(input),
-      });
-  const { error } = await query;
+    ? supabase
+        .from("grade_levels")
+        .update(itemPayload(input))
+        .eq("id", id)
+        .select()
+        .single()
+    : supabase
+        .from("grade_levels")
+        .insert({
+          institution_id: institutionId,
+          cycle_id: cycleId,
+          ...itemPayload(input),
+        })
+        .select()
+        .single();
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+export async function deleteCycle(id: string) {
+  const { error } = await supabase
+    .from("academic_cycles")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+export async function deleteLevel(id: string) {
+  const { error } = await supabase.from("grade_levels").delete().eq("id", id);
   if (error) throw error;
 }

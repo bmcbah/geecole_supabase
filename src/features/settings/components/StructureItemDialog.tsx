@@ -6,6 +6,7 @@ import { Checkbox } from "primereact/checkbox";
 import { Dialog } from "primereact/dialog";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
+import { Dropdown } from "primereact/dropdown";
 import {
   structureItemSchema,
   type StructureItemInput,
@@ -25,6 +26,8 @@ const defaults: StructureItemInput = {
   code: "",
   sortOrder: 0,
   isActive: true,
+  periodSystem: "term",
+  periodCount: 3,
 };
 export function StructureItemDialog({
   kind,
@@ -75,6 +78,45 @@ export function StructureItemDialog({
             <small className="p-error">{errors.name.message}</small>
           )}
         </div>
+        {kind === "cycle" && (
+          <div className="settings-grid compact-grid">
+            <div className="field">
+              <label htmlFor="period-system">Organisation de l’année</label>
+              <Controller
+                name="periodSystem"
+                control={control}
+                render={({ field }) => (
+                  <Dropdown
+                    inputId="period-system"
+                    value={field.value}
+                    options={[
+                      { label: "Trimestres", value: "term" },
+                      { label: "Semestres", value: "semester" },
+                      { label: "Personnalisée", value: "custom" },
+                    ]}
+                    onChange={(event) => field.onChange(event.value)}
+                  />
+                )}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="period-count">Nombre de périodes</label>
+              <Controller
+                name="periodCount"
+                control={control}
+                render={({ field }) => (
+                  <InputNumber
+                    inputId="period-count"
+                    value={field.value}
+                    min={1}
+                    max={6}
+                    onValueChange={(event) => field.onChange(event.value)}
+                  />
+                )}
+              />
+            </div>
+          </div>
+        )}
         <div className="field">
           <label htmlFor="structure-code">Code</label>
           <div className="input-with-action">

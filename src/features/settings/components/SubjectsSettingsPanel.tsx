@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
+import { Dropdown } from "primereact/dropdown";
+import { Message } from "primereact/message";
+import { PickList, type PickListChangeEvent } from "primereact/picklist";
 import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
@@ -9,23 +12,21 @@ import { useToast } from "../../../shared/components/toast-context";
 import type { Database } from "../../../shared/lib/supabase/database.types";
 import { listAnnualAcademicLevels } from "../services/academic-structure.service";
 import {
-  deleteAnnualSubject,
   deleteSubject,
   listAnnualSubjects,
   listSubjects,
   saveAnnualSubject,
   saveSubject,
+  setAnnualLevelSubjects,
 } from "../services/annual-settings.service";
 import { SettingsEntityDialog, type EntityValue } from "./SettingsEntityDialog";
 import { SettingsPanelShell } from "./SettingsPanelShell";
-
 type Subject = Database["public"]["Tables"]["subjects"]["Row"];
 type AnnualSubject = Database["public"]["Tables"]["annual_subjects"]["Row"];
 type DialogState =
   | { kind: "catalog"; item?: Subject }
-  | { kind: "annual"; item?: AnnualSubject }
+  | { kind: "annual"; item: AnnualSubject }
   | null;
-
 export function SubjectsSettingsPanel() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
@@ -34,8 +35,14 @@ export function SubjectsSettingsPanel() {
   const [levels, setLevels] = useState<
     Awaited<ReturnType<typeof listAnnualAcademicLevels>>
   >([]);
+  const [levelId, setLevelId] = useState("");
+  const [source, setSource] = useState<Subject[]>([]);
+  const [target, setTarget] = useState<Subject[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [saving, setSaving] = useState(false);
+  const editable = Boolean(
+    year && !["closed", "archived"].includes(year.status),
+  );
   const load = useCallback(async () => {
     if (!institutionId) return;
     const [catalog, annualItems, annualLevels] = await Promise.all([
@@ -46,32 +53,29 @@ export function SubjectsSettingsPanel() {
     setSubjects(catalog);
     setAnnual(annualItems);
     setLevels(annualLevels);
+    setLevelId((current) =>
+      annualLevels.some((item) => item.id === current)
+        ? current
+        : (annualLevels[0]?.id ?? ""),
+    );
   }, [institutionId, year]);
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    const assignedIds = new Set(
+      annual
+        .filter((item) => item.academic_year_level_id === levelId)
+        .map((item) => item.subject_id),
+    );
+    setTarget(subjects.filter((item) => assignedIds.has(item.id)));
+    setSource(
+      subjects.filter((item) => item.is_active && !assignedIds.has(item.id)),
+    );
+  }, [annual, levelId, subjects]);
   const fields =
     dialog?.kind === "annual"
       ? [
-          {
-            key: "academic_year_level_id",
-            label: "Niveau",
-            type: "select" as const,
-            required: true,
-            options: levels.map((item) => ({
-              label: `${item.cycle_name_snapshot} — ${item.level_name_snapshot}`,
-              value: item.id,
-            })),
-          },
-          {
-            key: "subject_id",
-            label: "Matière",
-            type: "select" as const,
-            required: true,
-            options: subjects
-              .filter((item) => item.is_active)
-              .map((item) => ({ label: item.name, value: item.id })),
-          },
           {
             key: "coefficient",
             label: "Coefficient",
@@ -99,10 +103,8 @@ export function SubjectsSettingsPanel() {
     () =>
       dialog?.kind === "annual"
         ? {
-            academic_year_level_id: dialog.item?.academic_year_level_id ?? "",
-            subject_id: dialog.item?.subject_id ?? "",
-            coefficient: dialog.item?.coefficient ?? 1,
-            weekly_hours: dialog.item?.weekly_hours ?? 0,
+            coefficient: dialog.item.coefficient,
+            weekly_hours: dialog.item.weekly_hours,
           }
         : {
             name: dialog?.item?.name ?? "",
@@ -130,12 +132,12 @@ export function SubjectsSettingsPanel() {
           institutionId,
           year.id,
           {
-            academic_year_level_id: String(values.academic_year_level_id),
-            subject_id: String(values.subject_id),
+            academic_year_level_id: dialog.item.academic_year_level_id,
+            subject_id: dialog.item.subject_id,
             coefficient: Number(values.coefficient),
             weekly_hours: Number(values.weekly_hours),
           },
-          dialog.item?.id,
+          dialog.item.id,
         );
       setDialog(null);
       await load();
@@ -146,55 +148,136 @@ export function SubjectsSettingsPanel() {
       setSaving(false);
     }
   };
-  const remove = async (kind: "catalog" | "annual", id: string) => {
+  const saveSelection = async () => {
+    if (!levelId) return;
+    setSaving(true);
     try {
-      await (kind === "catalog" ? deleteSubject(id) : deleteAnnualSubject(id));
+      await setAnnualLevelSubjects(
+        levelId,
+        target.map((item) => item.id),
+      );
       await load();
-    } catch {
       notify({
-        severity: "error",
-        summary: "Suppression impossible",
-        detail: "Cet élément est peut-être déjà utilisé.",
+        severity: "success",
+        summary: "Matières du niveau enregistrées",
       });
+    } catch {
+      notify({ severity: "error", summary: "Affectation impossible" });
+    } finally {
+      setSaving(false);
     }
   };
-  const actions = (
-    kind: "catalog" | "annual",
-    item: Subject | AnnualSubject,
-  ) => (
-    <div className="table-actions">
-      <Button
-        icon="pi pi-pencil"
-        text
-        disabled={kind === "annual" && year?.status !== "preparation"}
-        onClick={() =>
-          setDialog(
-            kind === "catalog"
-              ? { kind, item: item as Subject }
-              : { kind, item: item as AnnualSubject },
-          )
-        }
-      />
-      <Button
-        icon="pi pi-trash"
-        text
-        severity="danger"
-        disabled={kind === "annual" && year?.status !== "preparation"}
-        onClick={() => void remove(kind, item.id)}
-      />
+  const onTransfer = (event: PickListChangeEvent) => {
+    if (!editable) return;
+    setSource(event.source as Subject[]);
+    setTarget(event.target as Subject[]);
+  };
+  const assignedRows = annual.filter(
+    (item) =>
+      item.academic_year_level_id === levelId &&
+      target.some((subject) => subject.id === item.subject_id),
+  );
+  const levelOptions = levels.map((item) => ({
+    label: `${item.cycle_name_snapshot} — ${item.level_name_snapshot}`,
+    value: item.id,
+  }));
+  const itemTemplate = (item: Subject) => (
+    <div className="subject-pick-item">
+      <strong>{item.name}</strong>
+      <small>{item.code}</small>
     </div>
   );
-  const levelName = (row: AnnualSubject) =>
-    levels.find((item) => item.id === row.academic_year_level_id)
-      ?.level_name_snapshot ?? "Niveau retiré";
   return (
     <SettingsPanelShell
       title="Matières"
-      description="Catalogue permanent et matières proposées par niveau"
+      description="Une matière ajoutée au catalogue devient disponible pour tous les niveaux de l’établissement"
       year={year}
     >
       <TabView>
-        <TabPanel header="Catalogue de l’école">
+        <TabPanel header="Affectation par niveau">
+          <div className="subject-level-toolbar">
+            <div className="field">
+              <label htmlFor="subject-level">Cycle et niveau</label>
+              <Dropdown
+                inputId="subject-level"
+                value={levelId}
+                options={levelOptions}
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Choisir un niveau"
+                onChange={(event) => {
+                  const value = event.value as unknown;
+                  if (typeof value === "string") setLevelId(value);
+                }}
+              />
+            </div>
+            <Button
+              label="Nouvelle matière"
+              icon="pi pi-plus"
+              outlined
+              onClick={() => setDialog({ kind: "catalog" })}
+            />
+          </div>
+          {levelId ? (
+            <>
+              <PickList
+                dataKey="id"
+                source={source}
+                target={target}
+                onChange={onTransfer}
+                itemTemplate={itemTemplate}
+                sourceHeader="Disponibles dans l’établissement"
+                targetHeader="Enseignées dans ce niveau"
+                sourceStyle={{ height: "22rem" }}
+                targetStyle={{ height: "22rem" }}
+                filter
+                filterBy="name,code"
+                sourceFilterPlaceholder="Rechercher"
+                targetFilterPlaceholder="Rechercher"
+                className={!editable ? "picklist-disabled" : undefined}
+              />
+              <div className="form-actions picklist-save">
+                <Button
+                  label="Enregistrer l’affectation"
+                  icon="pi pi-check"
+                  loading={saving}
+                  disabled={!editable}
+                  onClick={() => void saveSelection()}
+                />
+              </div>
+              {assignedRows.length > 0 && (
+                <div className="subject-details">
+                  <h3>Coefficients et volumes horaires</h3>
+                  <DataTable value={assignedRows} dataKey="id" stripedRows>
+                    <Column field="subject_name_snapshot" header="Matière" />
+                    <Column field="coefficient" header="Coefficient" />
+                    <Column field="weekly_hours" header="Heures/semaine" />
+                    <Column
+                      header="Actions"
+                      body={(row: AnnualSubject) => (
+                        <Button
+                          icon="pi pi-sliders-h"
+                          label="Configurer"
+                          text
+                          disabled={!editable}
+                          onClick={() =>
+                            setDialog({ kind: "annual", item: row })
+                          }
+                        />
+                      )}
+                    />
+                  </DataTable>
+                </div>
+              )}
+            </>
+          ) : (
+            <Message
+              severity="info"
+              text="Activez d’abord un cycle et un niveau."
+            />
+          )}
+        </TabPanel>
+        <TabPanel header="Catalogue de l’établissement">
           <div className="panel-toolbar panel-toolbar-end">
             <span />
             <Button
@@ -222,33 +305,21 @@ export function SubjectsSettingsPanel() {
             />
             <Column
               header="Actions"
-              body={(row: Subject) => actions("catalog", row)}
-            />
-          </DataTable>
-        </TabPanel>
-        <TabPanel header={`Configuration ${year?.name ?? "annuelle"}`}>
-          <div className="panel-toolbar panel-toolbar-end">
-            <span />
-            <Button
-              label="Affecter une matière"
-              icon="pi pi-plus"
-              disabled={year?.status !== "preparation" || levels.length === 0}
-              onClick={() => setDialog({ kind: "annual" })}
-            />
-          </div>
-          <DataTable
-            value={annual}
-            dataKey="id"
-            emptyMessage="Aucune matière affectée"
-            stripedRows
-          >
-            <Column header="Niveau" body={levelName} />
-            <Column field="subject_name_snapshot" header="Matière" />
-            <Column field="coefficient" header="Coefficient" />
-            <Column field="weekly_hours" header="Heures/semaine" />
-            <Column
-              header="Actions"
-              body={(row: AnnualSubject) => actions("annual", row)}
+              body={(row: Subject) => (
+                <div className="table-actions">
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    onClick={() => setDialog({ kind: "catalog", item: row })}
+                  />
+                  <Button
+                    icon="pi pi-trash"
+                    text
+                    severity="danger"
+                    onClick={() => void deleteSubject(row.id).then(load)}
+                  />
+                </div>
+              )}
             />
           </DataTable>
         </TabPanel>
@@ -256,8 +327,8 @@ export function SubjectsSettingsPanel() {
       <SettingsEntityDialog
         header={
           dialog?.kind === "annual"
-            ? "Affectation annuelle"
-            : "Matière du catalogue"
+            ? "Configurer la matière"
+            : "Matière de l’établissement"
         }
         visible={Boolean(dialog)}
         loading={saving}
