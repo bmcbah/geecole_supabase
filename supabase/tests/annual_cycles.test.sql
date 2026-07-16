@@ -7,7 +7,7 @@ select ok(exists(select 1 from pg_constraint where conname='academic_year_cycles
 select ok(exists(select 1 from pg_constraint where conname='grading_formulas_year_code_unique'),'code formule unique par année');
 select ok(not exists(select 1 from pg_constraint where conname='assessment_types_academic_year_id_name_key'),'nom évaluation non unique');
 select ok(not exists(select 1 from pg_constraint where conname='grading_formulas_academic_year_id_name_key'),'nom formule non unique');
-select ok(to_regprocedure('public.save_academic_year_cycle(uuid,uuid,text,text,smallint,text,smallint,boolean)') is not null,'sauvegarde cycle annuel présente');
+select ok(to_regprocedure('public.save_academic_year_cycle(uuid,uuid,text,text,smallint,text,smallint,boolean,text,numeric,numeric,boolean,boolean)') is not null,'sauvegarde cycle annuel présente');
 select ok((select relrowsecurity from pg_catalog.pg_class where oid='public.academic_year_cycles'::regclass),'RLS cycles annuels active');
 select table_privs_are('public','academic_year_cycles','anon',array[]::text[]);
 select * from finish();
