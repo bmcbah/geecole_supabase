@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export default async function globalSetup() {
   const url = process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SERVICE_ROLE_KEY;
   const email = process.env.E2E_ADMIN_EMAIL;
   const password = process.env.E2E_ADMIN_PASSWORD;
   if (!url || !serviceKey || !email || !password)

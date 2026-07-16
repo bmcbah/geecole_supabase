@@ -22,7 +22,7 @@ export default defineConfig({
       VITE_SUPABASE_URL:
         process.env.VITE_SUPABASE_URL ?? "http://127.0.0.1:54321",
       VITE_SUPABASE_PUBLISHABLE_KEY:
-        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? process.env.ANON_KEY ?? "",
     },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
