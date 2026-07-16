@@ -5,18 +5,17 @@ Application de gestion scolaire destinée en priorité aux établissements guin�
 ## Prérequis
 
 - Node.js 22+
-- Docker
-- Supabase CLI
+- Docker Desktop (ou un moteur compatible Docker)
 
 ## Démarrage local
 
 ```bash
 npm install
-supabase start
+npx supabase start
 cp .env.example .env.local
 ```
 
-Copiez ensuite l'URL API et la clé `anon` affichées par `supabase status` dans `.env.local`, puis lancez :
+Copiez ensuite l'URL API et la clé publique affichées par `npx supabase status` dans `.env.local`, puis lancez :
 
 ```bash
 npm run supabase:reset
@@ -40,7 +39,7 @@ npm run supabase:test
 Après chaque modification du schéma :
 
 ```bash
-supabase gen types typescript --local > src/shared/lib/supabase/database.types.ts
+npx supabase gen types typescript --local > src/shared/lib/supabase/database.types.ts
 ```
 
 Le fichier généré doit être inclus dans le même commit que la migration.
