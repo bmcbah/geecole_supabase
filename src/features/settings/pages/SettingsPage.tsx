@@ -1,44 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
-import { getMyInstitutions } from "../../institutions/services/institution.service";
-import type { Institution } from "../../institutions/types/institution";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
-import { InstitutionSelector } from "../components/InstitutionSelector";
 import { SettingsSidebar } from "../components/SettingsSidebar";
 import { AcademicStructurePanel } from "../components/AcademicStructurePanel";
+import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
+import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
+import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
+import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
-  const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [selectedId, setSelectedId] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [failure, setFailure] = useState("");
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getMyInstitutions();
-      setInstitutions(data);
-      setSelectedId((current) => current || data[0]?.id || "");
-    } catch {
-      setFailure("Impossible de charger le paramétrage.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void load();
-  }, [load]);
-  const selected = useMemo(
-    () => institutions.find((item) => item.id === selectedId),
-    [institutions, selectedId],
-  );
-  const replaceInstitution = (updated: Institution) =>
-    setInstitutions((items) =>
-      items.map((item) => (item.id === updated.id ? updated : item)),
-    );
+  const {
+    institution: selected,
+    year,
+    loading,
+    failure,
+    refresh,
+  } = useAcademicSession();
   if (loading)
     return (
       <div className="content-state">
@@ -55,7 +36,15 @@ export function SettingsPage() {
     );
   if (!section) return <Navigate to="/parametrage/etablissement" replace />;
   if (
-    !["etablissement", "annees-scolaires", "cycles-niveaux"].includes(section)
+    ![
+      "etablissement",
+      "annees-scolaires",
+      "cycles-niveaux",
+      "matieres",
+      "evaluations-formules",
+      "regles-financieres",
+      "utilisateurs-roles",
+    ].includes(section)
   )
     return <Navigate to="/parametrage/etablissement" replace />;
   return (
@@ -66,11 +55,12 @@ export function SettingsPage() {
           <h1>Paramétrage</h1>
           <p>Configurez les règles propres à {selected.name}.</p>
         </div>
-        <InstitutionSelector
-          institutions={institutions}
-          value={selectedId}
-          onChange={setSelectedId}
-        />
+        {year && (
+          <div className="settings-year-context">
+            <small>Paramétrage affiché</small>
+            <strong>{year.name}</strong>
+          </div>
+        )}
       </div>
       <div className="settings-layout">
         <SettingsSidebar />
@@ -78,12 +68,20 @@ export function SettingsPage() {
           {section === "etablissement" ? (
             <InstitutionDetailsForm
               institution={selected}
-              onUpdated={replaceInstitution}
+              onUpdated={() => void refresh()}
             />
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
-          ) : (
+          ) : section === "cycles-niveaux" ? (
             <AcademicStructurePanel institutionId={selected.id} />
+          ) : section === "matieres" ? (
+            <SubjectsSettingsPanel />
+          ) : section === "evaluations-formules" ? (
+            <EvaluationSettingsPanel />
+          ) : section === "regles-financieres" ? (
+            <FinancialRulesSettingsPanel />
+          ) : (
+            <UsersSettingsPanel />
           )}
         </div>
       </div>

@@ -8,6 +8,7 @@ import { Message } from "primereact/message";
 import { SelectButton } from "primereact/selectbutton";
 import { Tag } from "primereact/tag";
 import { useToast } from "../../../shared/components/toast-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import type { StructureItemInput } from "../schemas/academic-structure.schema";
 import {
   listAcademicStructure,
@@ -16,9 +17,8 @@ import {
   saveLevel,
   setAnnualCycleLevels,
 } from "../services/academic-structure.service";
-import { listAcademicYears } from "../services/settings.service";
 import type { AcademicCycle, GradeLevel } from "../types/academic-structure";
-import type { AcademicYear, AcademicYearStatus } from "../types/settings";
+import type { AcademicYearStatus } from "../types/settings";
 import { StructureItemDialog } from "./StructureItemDialog";
 
 interface Props {
@@ -54,14 +54,13 @@ const toInput = (
 
 export function AcademicStructurePanel({ institutionId }: Props) {
   const notify = useToast();
+  const { year: selectedYear } = useAcademicSession();
   const [mode, setMode] = useState<Mode>("catalog");
   const [cycles, setCycles] = useState<AcademicCycle[]>([]);
   const [levels, setLevels] = useState<GradeLevel[]>([]);
-  const [years, setYears] = useState<AcademicYear[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<AcademicCycle | null>(
     null,
   );
-  const [selectedYear, setSelectedYear] = useState<AcademicYear | null>(null);
   const [annualLevelIds, setAnnualLevelIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,25 +71,13 @@ export function AcademicStructurePanel({ institutionId }: Props) {
     setLoading(true);
     setFailure("");
     try {
-      const [structure, academicYears] = await Promise.all([
-        listAcademicStructure(institutionId),
-        listAcademicYears(institutionId),
-      ]);
+      const structure = await listAcademicStructure(institutionId);
       setCycles(structure.cycles);
       setLevels(structure.levels);
-      setYears(academicYears);
       setSelectedCycle(
         (current) =>
           structure.cycles.find((item) => item.id === current?.id) ??
           structure.cycles[0] ??
-          null,
-      );
-      setSelectedYear(
-        (current) =>
-          academicYears.find((item) => item.id === current?.id) ??
-          academicYears.find((item) => item.status === "preparation") ??
-          academicYears.find((item) => item.status === "open") ??
-          academicYears[0] ??
           null,
       );
     } catch {
@@ -294,22 +281,10 @@ export function AcademicStructurePanel({ institutionId }: Props) {
         >
           <div className="structure-filters annual-filters">
             <div className="field">
-              <label htmlFor="annual-year">Année scolaire</label>
-              <Dropdown
-                inputId="annual-year"
-                value={selectedYear?.id}
-                options={years}
-                optionLabel="name"
-                optionValue="id"
-                placeholder="Choisir une année"
-                onChange={(event) => {
-                  const value = event.value as unknown;
-                  if (typeof value === "string")
-                    setSelectedYear(
-                      years.find((item) => item.id === value) ?? null,
-                    );
-                }}
-              />
+              <label>Année scolaire</label>
+              <strong>
+                {selectedYear?.name ?? "Aucune année sélectionnée"}
+              </strong>
             </div>
             <div className="field">
               <label htmlFor="annual-cycle">Cycle à configurer</label>

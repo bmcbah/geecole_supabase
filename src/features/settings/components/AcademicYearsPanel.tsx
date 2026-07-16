@@ -16,6 +16,8 @@ import {
 import type { AcademicYearInput } from "../schemas/settings.schema";
 import type { AcademicYear, AcademicYearStatus } from "../types/settings";
 import { AcademicYearDialog } from "./AcademicYearDialog";
+import { CloneAcademicYearDialog } from "./CloneAcademicYearDialog";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 
 interface Props {
   institutionId: string;
@@ -48,11 +50,13 @@ const actionLabels: Partial<Record<AcademicYearStatus, string>> = {
 
 export function AcademicYearsPanel({ institutionId }: Props) {
   const notify = useToast();
+  const { refresh } = useAcademicSession();
   const [items, setItems] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [cloneTarget, setCloneTarget] = useState<AcademicYear | null>(null);
   const load = useCallback(async () => {
     setLoading(true);
     setFailure("");
@@ -74,6 +78,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
       setDialogOpen(false);
       notify({ severity: "success", summary: "Année scolaire créée" });
       await load();
+      await refresh();
     } catch {
       notify({
         severity: "error",
@@ -143,6 +148,15 @@ export function AcademicYearsPanel({ institutionId }: Props) {
           onClick={() => transition(year)}
         />
       )}{" "}
+      {year.status === "preparation" && (
+        <Button
+          label="Cloner"
+          icon="pi pi-copy"
+          size="small"
+          text
+          onClick={() => setCloneTarget(year)}
+        />
+      )}
       {year.status === "preparation" && (
         <Button
           icon="pi pi-trash"
@@ -217,6 +231,13 @@ export function AcademicYearsPanel({ institutionId }: Props) {
         years={items}
         onHide={() => setDialogOpen(false)}
         onSubmit={create}
+      />
+      <CloneAcademicYearDialog
+        visible={Boolean(cloneTarget)}
+        target={cloneTarget}
+        years={items}
+        onHide={() => setCloneTarget(null)}
+        onCloned={load}
       />
     </Card>
   );

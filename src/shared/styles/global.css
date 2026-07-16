@@ -195,6 +195,30 @@ input {
   gap: 0.4rem;
   min-width: 260px;
 }
+.session-selectors,
+.session-user,
+.year-session-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.year-session-selector {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.year-session-selector .p-dropdown {
+  min-width: 180px;
+}
+.settings-year-context {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #dce5e3;
+  border-radius: 0.75rem;
+  background: #f4faf8;
+}
 .settings-layout {
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr);
@@ -321,6 +345,28 @@ input {
   margin: 0;
   color: #637083;
 }
+.panel-toolbar-end {
+  justify-content: flex-end;
+}
+.clone-dialog {
+  width: min(94vw, 620px);
+}
+.clone-options,
+.clone-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.clone-option,
+.clone-summary > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e8ef;
+  border-radius: 0.65rem;
+}
 .table-actions {
   display: flex;
   align-items: center;
@@ -381,6 +427,14 @@ input {
   }
   .app-header {
     padding: 0 1rem;
+  }
+  .session-selectors {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .session-user span,
+  .session-selectors > .p-tag {
+    display: none;
   }
   .app-header small {
     display: none;

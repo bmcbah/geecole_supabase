@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { AppLayout } from "../layout/AppLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { AcademicSessionProvider } from "../../features/academic-session/components/AcademicSessionProvider";
 
 const LoginPage = lazy(() =>
   import("../../features/auth/pages/LoginPage").then((module) => ({
@@ -32,7 +33,13 @@ export function AppRouter() {
       <Routes>
         <Route path="/connexion" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
+          <Route
+            element={
+              <AcademicSessionProvider>
+                <AppLayout />
+              </AcademicSessionProvider>
+            }
+          >
             <Route index element={<Navigate to="/etablissement" replace />} />
             <Route path="/etablissement" element={<InstitutionPage />} />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />

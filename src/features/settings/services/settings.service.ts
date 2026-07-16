@@ -62,12 +62,70 @@ export async function createAcademicYear(
   if (error) throw error;
   if (input.sourceYearId) {
     const { error: cloneError } = await supabase.rpc(
-      "clone_academic_year_levels",
+      "clone_academic_year_configuration",
       { source_year_id: input.sourceYearId, target_year_id: data.id },
     );
     if (cloneError) throw cloneError;
   }
   return data;
+}
+
+export interface CloneOptions {
+  structure: boolean;
+  subjects: boolean;
+  assessments: boolean;
+  finance: boolean;
+  users: boolean;
+}
+
+export async function cloneAcademicYearConfiguration(
+  sourceYearId: string,
+  targetYearId: string,
+  options: CloneOptions,
+) {
+  const { data, error } = await supabase.rpc(
+    "clone_academic_year_configuration",
+    {
+      source_year_id: sourceYearId,
+      target_year_id: targetYearId,
+      include_structure: options.structure,
+      include_subjects: options.subjects,
+      include_assessments: options.assessments,
+      include_finance: options.finance,
+      include_users: options.users,
+    },
+  );
+  if (error) throw error;
+  return data;
+}
+
+export async function getAcademicYearConfigurationCounts(yearId: string) {
+  const tables = [
+    "academic_year_levels",
+    "annual_subjects",
+    "assessment_types",
+    "grading_formulas",
+    "financial_rules",
+    "academic_year_user_assignments",
+  ] as const;
+  const results = await Promise.all(
+    tables.map((table) =>
+      supabase
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .eq("academic_year_id", yearId),
+    ),
+  );
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw failed.error;
+  return {
+    structure: results[0]!.count ?? 0,
+    subjects: results[1]!.count ?? 0,
+    assessments: results[2]!.count ?? 0,
+    formulas: results[3]!.count ?? 0,
+    finance: results[4]!.count ?? 0,
+    users: results[5]!.count ?? 0,
+  };
 }
 
 export async function changeAcademicYearStatus(

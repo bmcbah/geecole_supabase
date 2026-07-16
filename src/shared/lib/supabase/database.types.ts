@@ -210,9 +210,172 @@ export interface Database {
           },
         ];
       };
+      subjects: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          is_active?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["subjects"]["Insert"]>;
+        Relationships: [];
+      };
+      annual_subjects: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_level_id: string;
+          subject_id: string;
+          subject_name_snapshot: string;
+          coefficient: number;
+          weekly_hours: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_level_id: string;
+          subject_id: string;
+          subject_name_snapshot?: string;
+          coefficient?: number;
+          weekly_hours?: number;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["annual_subjects"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      assessment_types: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          name: string;
+          code: string;
+          weight: number;
+          scale: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          name: string;
+          code: string;
+          weight?: number;
+          scale?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["assessment_types"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      grading_formulas: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          name: string;
+          expression: string;
+          description: string | null;
+          is_default: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          name: string;
+          expression: string;
+          description?: string | null;
+          is_default?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["grading_formulas"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      financial_rules: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          name: string;
+          code: string;
+          amount: number;
+          due_day: number | null;
+          frequency: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          name: string;
+          code: string;
+          amount: number;
+          due_day?: number | null;
+          frequency?: string;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["financial_rules"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      academic_year_user_assignments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          membership_id: string;
+          responsibility: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          membership_id: string;
+          responsibility?: string | null;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["academic_year_user_assignments"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      clone_academic_year_configuration: {
+        Args: {
+          source_year_id: string;
+          target_year_id: string;
+          include_structure?: boolean;
+          include_subjects?: boolean;
+          include_assessments?: boolean;
+          include_finance?: boolean;
+          include_users?: boolean;
+        };
+        Returns: Json;
+      };
       clone_academic_year_levels: {
         Args: { source_year_id: string; target_year_id: string };
         Returns: number;
