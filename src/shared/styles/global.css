@@ -189,6 +189,38 @@ input {
   gap: 0.75rem;
   margin-top: 1rem;
 }
+.institution-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 260px;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+.panel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.panel-toolbar p {
+  margin: 0;
+  color: #637083;
+}
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
 @media (max-width: 800px) {
   .app-sidebar {
     width: 76px;
@@ -215,6 +247,13 @@ input {
     padding: 1rem;
   }
   .page-heading {
+    flex-direction: column;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .panel-toolbar {
+    align-items: flex-start;
     flex-direction: column;
   }
   .app-header {

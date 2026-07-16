@@ -18,6 +18,9 @@ export function AppLayout() {
           <NavLink to="/etablissement">
             <i className="pi pi-building" /> Établissement
           </NavLink>
+          <NavLink to="/parametrage">
+            <i className="pi pi-cog" /> Paramétrage
+          </NavLink>
         </nav>
       </aside>
       <section className="app-workspace">

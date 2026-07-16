@@ -6,9 +6,42 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 export type AppRole = "owner" | "admin" | "secretary" | "teacher" | "finance";
+export type AcademicYearStatus = "preparation" | "open" | "closed" | "archived";
 export interface Database {
   public: {
     Tables: {
+      academic_years: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          starts_on: string;
+          ends_on: string;
+          status: AcademicYearStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          starts_on: string;
+          ends_on: string;
+          status?: AcademicYearStatus;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["academic_years"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "academic_years_institution_id_fkey";
+            columns: ["institution_id"];
+            isOneToOne: false;
+            referencedRelation: "institutions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       institutions: {
         Row: {
           id: string;
@@ -83,7 +116,11 @@ export interface Database {
         Returns: string;
       };
     };
-    Enums: { app_role: AppRole; membership_status: "active" | "suspended" };
+    Enums: {
+      academic_year_status: AcademicYearStatus;
+      app_role: AppRole;
+      membership_status: "active" | "suspended";
+    };
     CompositeTypes: Record<string, never>;
   };
 }
