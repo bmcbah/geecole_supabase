@@ -10,6 +10,38 @@ export type AcademicYearStatus = "preparation" | "open" | "closed" | "archived";
 export interface Database {
   public: {
     Tables: {
+      academic_cycles: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["academic_cycles"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "academic_cycles_institution_id_fkey";
+            columns: ["institution_id"];
+            isOneToOne: false;
+            referencedRelation: "institutions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       academic_years: {
         Row: {
           id: string;
@@ -104,6 +136,45 @@ export interface Database {
             columns: ["institution_id"];
             isOneToOne: false;
             referencedRelation: "institutions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      grade_levels: {
+        Row: {
+          id: string;
+          institution_id: string;
+          cycle_id: string;
+          name: string;
+          code: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          cycle_id: string;
+          name: string;
+          code: string;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["grade_levels"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "grade_levels_institution_id_fkey";
+            columns: ["institution_id"];
+            isOneToOne: false;
+            referencedRelation: "institutions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "grade_levels_cycle_fk";
+            columns: ["cycle_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_cycles";
             referencedColumns: ["id"];
           },
         ];

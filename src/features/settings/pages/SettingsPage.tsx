@@ -8,6 +8,7 @@ import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { InstitutionSelector } from "../components/InstitutionSelector";
 import { SettingsSidebar } from "../components/SettingsSidebar";
+import { AcademicStructurePanel } from "../components/AcademicStructurePanel";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -53,7 +54,9 @@ export function SettingsPage() {
       />
     );
   if (!section) return <Navigate to="/parametrage/etablissement" replace />;
-  if (section !== "etablissement" && section !== "annees-scolaires")
+  if (
+    !["etablissement", "annees-scolaires", "cycles-niveaux"].includes(section)
+  )
     return <Navigate to="/parametrage/etablissement" replace />;
   return (
     <section>
@@ -77,8 +80,10 @@ export function SettingsPage() {
               institution={selected}
               onUpdated={replaceInstitution}
             />
-          ) : (
+          ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
+          ) : (
+            <AcademicStructurePanel institutionId={selected.id} />
           )}
         </div>
       </div>

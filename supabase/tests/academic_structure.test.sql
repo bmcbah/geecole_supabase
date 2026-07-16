@@ -1,0 +1,14 @@
+begin;
+select plan(10);
+select has_table('public', 'academic_cycles', 'academic_cycles existe');
+select has_table('public', 'grade_levels', 'grade_levels existe');
+select has_column('public', 'academic_cycles', 'sort_order', 'cycles ordonnables');
+select has_column('public', 'grade_levels', 'is_active', 'niveaux désactivables');
+select fk_ok('public', 'academic_cycles', 'institution_id', 'public', 'institutions', 'id', 'cycle rattaché à un établissement');
+select has_index('public', 'grade_levels', 'grade_levels_cycle_order_idx', 'niveaux indexés par cycle');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid = 'public.academic_cycles'::regclass), 'RLS active sur cycles');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid = 'public.grade_levels'::regclass), 'RLS active sur niveaux');
+select ok(has_table_privilege('authenticated', 'public.academic_cycles', 'INSERT'), 'authenticated crée selon RLS');
+select ok(not has_table_privilege('anon', 'public.grade_levels', 'SELECT'), 'anon ne lit pas les niveaux');
+select * from finish();
+rollback;

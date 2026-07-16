@@ -3,10 +3,10 @@ import { NavLink } from "react-router-dom";
 const availableSections = [
   { path: "etablissement", icon: "pi-building", label: "Établissement" },
   { path: "annees-scolaires", icon: "pi-calendar", label: "Années scolaires" },
+  { path: "cycles-niveaux", icon: "pi-sitemap", label: "Cycles et niveaux" },
 ] as const;
 
 const plannedSections = [
-  { icon: "pi-sitemap", label: "Cycles et niveaux" },
   { icon: "pi-book", label: "Matières" },
   { icon: "pi-percentage", label: "Évaluations et formules" },
   { icon: "pi-wallet", label: "Règles financières" },
