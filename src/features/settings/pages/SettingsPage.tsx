@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Navigate, useParams } from "react-router-dom";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
-import { TabPanel, TabView } from "primereact/tabview";
 import { getMyInstitutions } from "../../institutions/services/institution.service";
 import type { Institution } from "../../institutions/types/institution";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { InstitutionSelector } from "../components/InstitutionSelector";
+import { SettingsSidebar } from "../components/SettingsSidebar";
 
 export function SettingsPage() {
+  const { section } = useParams<{ section?: string }>();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,9 @@ export function SettingsPage() {
         text="Créez d’abord un établissement depuis la page Établissement."
       />
     );
+  if (!section) return <Navigate to="/parametrage/etablissement" replace />;
+  if (section !== "etablissement" && section !== "annees-scolaires")
+    return <Navigate to="/parametrage/etablissement" replace />;
   return (
     <section>
       <div className="page-heading">
@@ -64,17 +69,19 @@ export function SettingsPage() {
           onChange={setSelectedId}
         />
       </div>
-      <TabView>
-        <TabPanel header="Établissement" leftIcon="pi pi-building mr-2">
-          <InstitutionDetailsForm
-            institution={selected}
-            onUpdated={replaceInstitution}
-          />
-        </TabPanel>
-        <TabPanel header="Années scolaires" leftIcon="pi pi-calendar mr-2">
-          <AcademicYearsPanel institutionId={selected.id} />
-        </TabPanel>
-      </TabView>
+      <div className="settings-layout">
+        <SettingsSidebar />
+        <div className="settings-content">
+          {section === "etablissement" ? (
+            <InstitutionDetailsForm
+              institution={selected}
+              onUpdated={replaceInstitution}
+            />
+          ) : (
+            <AcademicYearsPanel institutionId={selected.id} />
+          )}
+        </div>
+      </div>
     </section>
   );
 }

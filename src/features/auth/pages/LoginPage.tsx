@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "primereact/button";
@@ -8,8 +9,17 @@ import { Password } from "primereact/password";
 import { Message } from "primereact/message";
 import { loginSchema, type LoginInput } from "../schemas/login.schema";
 import { signIn } from "../services/auth.service";
+import { useAuth } from "../components/auth-context";
+import { getPostLoginDestination } from "../navigation/post-login";
 
 export function LoginPage() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const destination = useMemo(
+    () => getPostLoginDestination(location.state),
+    [location.state],
+  );
   const [serverError, setServerError] = useState("");
   const {
     control,
@@ -27,6 +37,9 @@ export function LoginPage() {
       setServerError("Connexion impossible. Vérifiez vos identifiants.");
     }
   });
+  useEffect(() => {
+    if (user) void navigate(destination, { replace: true });
+  }, [destination, navigate, user]);
   return (
     <main className="auth-page">
       <Card

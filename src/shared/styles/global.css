@@ -195,6 +195,68 @@ input {
   gap: 0.4rem;
   min-width: 260px;
 }
+.settings-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.settings-sidebar {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8ef;
+  border-radius: 1rem;
+  background: white;
+}
+.settings-sidebar h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+.settings-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.settings-sidebar nav a,
+.settings-disabled {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 0.65rem;
+  color: #425267;
+  text-decoration: none;
+}
+.settings-sidebar nav a.active {
+  color: #0f6158;
+  background: #e7f5f2;
+  font-weight: 700;
+}
+.settings-planned {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #edf0f4;
+}
+.settings-group-title {
+  display: block;
+  margin: 0 0.5rem 0.5rem;
+  color: #7a8798;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.settings-disabled {
+  color: #8c98a6;
+}
+.settings-disabled small {
+  font-size: 0.65rem;
+}
+.settings-content {
+  min-width: 0;
+}
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -251,6 +313,19 @@ input {
   }
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-sidebar {
+    position: static;
+  }
+  .settings-sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings-planned {
+    display: none;
   }
   .panel-toolbar {
     align-items: flex-start;
