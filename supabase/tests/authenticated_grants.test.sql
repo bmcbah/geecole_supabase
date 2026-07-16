@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated lit son profil');
+select ok(has_table_privilege('authenticated', 'public.profiles', 'UPDATE'), 'authenticated modifie son profil selon RLS');
+select ok(has_table_privilege('authenticated', 'public.institutions', 'SELECT'), 'authenticated lit ses établissements');
+select ok(has_table_privilege('authenticated', 'public.institutions', 'UPDATE'), 'authenticated modifie un établissement selon RLS');
+select ok(has_table_privilege('authenticated', 'public.memberships', 'SELECT'), 'authenticated lit ses appartenances');
+select ok(has_table_privilege('authenticated', 'public.academic_years', 'INSERT'), 'authenticated crée une année selon RLS');
+select ok(not has_table_privilege('anon', 'public.institutions', 'SELECT'), 'anon ne lit pas les établissements');
+select ok(not has_table_privilege('anon', 'public.academic_years', 'SELECT'), 'anon ne lit pas les années scolaires');
+select * from finish();
+rollback;
