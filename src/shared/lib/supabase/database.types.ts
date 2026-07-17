@@ -47,6 +47,123 @@ export interface Database {
         >;
         Relationships: [];
       };
+      school_classes: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_level_id: string;
+          name: string;
+          code: string;
+          capacity: number | null;
+          room: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_level_id: string;
+          name: string;
+          code: string;
+          capacity?: number | null;
+          room?: string | null;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["school_classes"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      class_assignments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          enrollment_id: string;
+          class_id: string;
+          starts_on: string;
+          ends_on: string | null;
+          end_reason: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          enrollment_id: string;
+          class_id: string;
+          starts_on?: string;
+          ends_on?: string | null;
+          end_reason?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["class_assignments"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      document_requirements: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          required_for_pre_registration: boolean;
+          required_for_confirmation: boolean;
+          expires: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          required_for_pre_registration?: boolean;
+          required_for_confirmation?: boolean;
+          expires?: boolean;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["document_requirements"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      student_documents: {
+        Row: {
+          id: string;
+          institution_id: string;
+          student_id: string;
+          enrollment_id: string | null;
+          requirement_id: string;
+          status: "missing" | "provided" | "not_applicable" | "rejected";
+          file_path: string | null;
+          notes: string | null;
+          received_on: string | null;
+          reviewed_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          student_id: string;
+          enrollment_id?: string | null;
+          requirement_id: string;
+          status?: "missing" | "provided" | "not_applicable" | "rejected";
+          file_path?: string | null;
+          notes?: string | null;
+          received_on?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["student_documents"]["Insert"]
+        >;
+        Relationships: [];
+      };
       reenrollment_policies: {
         Row: {
           institution_id: string;
@@ -818,6 +935,14 @@ export interface Database {
           change_reason?: string | null;
         };
         Returns: void;
+      };
+      assign_enrollment_to_class: {
+        Args: {
+          target_enrollment: string;
+          target_class: string;
+          change_reason?: string | null;
+        };
+        Returns: string;
       };
       create_student_enrollment: {
         Args: {

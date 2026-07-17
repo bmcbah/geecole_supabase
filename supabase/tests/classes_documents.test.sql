@@ -1,0 +1,13 @@
+begin;
+select plan(10);
+select has_table('public','school_classes');
+select has_table('public','class_assignments');
+select has_table('public','document_requirements');
+select has_table('public','student_documents');
+select has_function('public','assign_enrollment_to_class',array['uuid','uuid','text']);
+select ok((select relrowsecurity from pg_class where oid='public.school_classes'::regclass),'classes RLS');
+select ok((select relrowsecurity from pg_class where oid='public.class_assignments'::regclass),'assignments RLS');
+select ok((select relrowsecurity from pg_class where oid='public.document_requirements'::regclass),'requirements RLS');
+select ok((select relrowsecurity from pg_class where oid='public.student_documents'::regclass),'documents RLS');
+select table_privs_are('public','student_documents','anon',array[]::text[]);
+select * from finish(); rollback;

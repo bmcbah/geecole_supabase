@@ -45,6 +45,11 @@ const BatchReenrollmentPage = lazy(() =>
     (module) => ({ default: module.BatchReenrollmentPage }),
   ),
 );
+const ClassesPage = lazy(() =>
+  import("../../modules/schooling/pages/ClassesPage").then((module) => ({
+    default: module.ClassesPage,
+  })),
+);
 
 export function AppRouter() {
   return (
@@ -76,6 +81,7 @@ export function AppRouter() {
             />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
+            <Route path="/scolarite/classes" element={<ClassesPage />} />
             <Route
               path="/scolarite/inscriptions/nouvelle"
               element={<EnrollmentPage />}

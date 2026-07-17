@@ -31,6 +31,9 @@ export function AppLayout() {
           <NavLink to="/scolarite/eleves">
             <i className="pi pi-graduation-cap" /> Scolarité
           </NavLink>
+          <NavLink to="/scolarite/classes">
+            <i className="pi pi-users" /> Classes
+          </NavLink>
           <NavLink to="/parametrage">
             <i className="pi pi-cog" /> Paramétrage
           </NavLink>

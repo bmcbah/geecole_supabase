@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "primereact/button";
+import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import { InputSwitch } from "primereact/inputswitch";
 import { Message } from "primereact/message";
@@ -68,16 +69,11 @@ export function ReenrollmentPolicyPanel({
     ],
   ] as const;
   return (
-    <section className="settings-section-panel policy-flat-panel medium-controls">
-      <header>
-        <div>
-          <h2>Règles de réinscription</h2>
-          <p>
-            Définissez comment un élève poursuit son parcours d’une année à
-            l’autre.
-          </p>
-        </div>
-      </header>
+    <Card
+      title="Règles de réinscription"
+      subTitle="Définissez comment un élève poursuit son parcours d’une année à l’autre."
+      className="settings-section-card policy-card medium-controls"
+    >
       <div className="policy-list">
         {switches.map(([key, label, help]) => (
           <div className="policy-row" key={key}>
@@ -154,6 +150,6 @@ export function ReenrollmentPolicyPanel({
           }}
         />
       </div>
-    </section>
+    </Card>
   );
 }

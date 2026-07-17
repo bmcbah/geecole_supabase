@@ -8,6 +8,7 @@ import { useAcademicSession } from "../../../features/academic-session/component
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { StudentProfileActions } from "../components/StudentProfileActions";
 import { AddGuardianDialog } from "../components/AddGuardianDialog";
+import { StudentDocumentsPanel } from "../components/StudentDocumentsPanel";
 import { getStudent } from "../services/schooling.service";
 
 type StudentDetail = Awaited<ReturnType<typeof getStudent>>;
@@ -197,6 +198,20 @@ export function StudentProfilePage() {
             severity="info"
             text="Les résultats seront disponibles après ouverture du module Notes."
           />
+        </TabPanel>
+        <TabPanel header="Documents" leftIcon="pi pi-file mr-2">
+          {enrollment ? (
+            <StudentDocumentsPanel
+              institutionId={institutionId}
+              studentId={student.id}
+              enrollmentId={enrollment.id}
+            />
+          ) : (
+            <Message
+              severity="info"
+              text="Aucune inscription pour cette année."
+            />
+          )}
         </TabPanel>
         <TabPanel header="Finances" leftIcon="pi pi-wallet mr-2">
           <Message
