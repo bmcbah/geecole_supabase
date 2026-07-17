@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
+
 const groups = [
   {
-    label: "Général",
+    label: "Administration",
     sections: [
-      { path: "etablissement", icon: "pi-building", label: "Établissement" },
+      { path: "etablissement", icon: "pi-cog", label: "Général" },
       {
         path: "annees-scolaires",
         icon: "pi-calendar",
@@ -19,11 +20,7 @@ const groups = [
   {
     label: "Pédagogie",
     sections: [
-      {
-        path: "cycles",
-        icon: "pi-sitemap",
-        label: "Cycles",
-      },
+      { path: "cycles", icon: "pi-sitemap", label: "Cycles" },
       { path: "niveaux", icon: "pi-list", label: "Niveaux" },
       { path: "classes", icon: "pi-users", label: "Classes" },
       { path: "matieres", icon: "pi-book", label: "Matières" },
@@ -50,6 +47,7 @@ const groups = [
     ],
   },
 ] as const;
+
 export function SettingsSidebar() {
   return (
     <aside className="settings-sidebar" aria-label="Rubriques de paramétrage">

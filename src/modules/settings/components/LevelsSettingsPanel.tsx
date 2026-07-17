@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TabPanel, TabView } from "primereact/tabview";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
+import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
-import { useToast } from "../../../shared/components/toast-context";
-import { useAcademicSession } from "../../academic-session/components/academic-session-context";
-import type { StructureItemInput } from "../schemas/academic-structure.schema";
+import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import type { StructureItemInput } from "../../../features/settings/schemas/academic-structure.schema";
 import {
   deleteLevel,
   generateAcademicPeriods,
@@ -18,20 +17,25 @@ import {
   saveAnnualAcademicCycle,
   saveLevel,
   setAnnualCycleLevels,
-} from "../services/academic-structure.service";
+} from "../../../features/settings/services/academic-structure.service";
 import type {
   AnnualAcademicCycle,
   GradeLevel,
-} from "../types/academic-structure";
-import { StructureItemDialog } from "./StructureItemDialog";
+} from "../../../features/settings/types/academic-structure";
+import { StructureItemDialog } from "../../../features/settings/components/StructureItemDialog";
+import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
+import { useToast } from "../../../shared/components/toast-context";
+
 interface Props {
   institutionId: string;
 }
+
 type DialogState =
   | { kind: "cycle"; item?: AnnualAcademicCycle }
   | { kind: "niveau"; cycle: AnnualAcademicCycle; item?: GradeLevel }
   | null;
+
 const toInput = (
   item?: AnnualAcademicCycle | GradeLevel,
 ): StructureItemInput | undefined =>
@@ -60,18 +64,19 @@ const toInput = (
           "absences_on_report" in item
             ? Boolean(item.absences_on_report)
             : undefined,
-        capacity:
-          "capacity" in item ? Number(item.capacity) || null : undefined,
+        capacity: "capacity" in item ? Number(item.capacity) || null : undefined,
         repeatAllowed:
           "repeat_allowed" in item ? Boolean(item.repeat_allowed) : undefined,
       }
     : undefined;
+
 const periodLabel = (cycle: AnnualAcademicCycle) =>
   cycle.period_system === "semester"
     ? `${cycle.period_count} semestres`
     : cycle.period_system === "term"
       ? `${cycle.period_count} trimestres`
       : `${cycle.period_count} périodes`;
+
 export function LevelsSettingsPanel({ institutionId }: Props) {
   const { year } = useAcademicSession();
   const notify = useToast();
@@ -85,6 +90,7 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
+
   const load = useCallback(async () => {
     if (!year) return;
     try {
@@ -101,9 +107,11 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
       setFailure("Impossible de charger les cycles et niveaux.");
     }
   }, [institutionId, year]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const levelsByCycle = useMemo(
     () =>
       new Map(
@@ -117,6 +125,7 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
       ),
     [annualIds, cycles, levels],
   );
+
   const submit = async (input: StructureItemInput) => {
     if (!dialog || !year) return;
     setSaving(true);
@@ -172,6 +181,7 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
       setSaving(false);
     }
   };
+
   const removeLevel = (cycle: AnnualAcademicCycle, level: GradeLevel) =>
     confirmDialog({
       header: "Supprimer le niveau",
@@ -200,71 +210,83 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
           await load();
         })(),
     });
+
+  if (!year) {
+    return (
+      <Message
+        severity="warn"
+        text="Créez ou sélectionnez une année scolaire avant de configurer les niveaux."
+      />
+    );
+  }
+
   if (failure) return <Message severity="error" text={failure} />;
+
+  if (cycles.length === 0) {
+    return (
+      <Message
+        severity="info"
+        text="Aucun cycle actif. Activez d’abord un cycle dans la rubrique Cycles."
+      />
+    );
+  }
+
+  const readOnlyAlert = !editable ? (
+    <Message
+      severity="info"
+      text={`${year.name} est clôturée et reste consultable en lecture seule.`}
+    />
+  ) : undefined;
+
   return (
-    <section className="settings-panel-surface">
-      <header className="settings-panel-heading">
-        <div>
-          <h2>Niveaux — {year?.name ?? ""}</h2>
-          <p>
-            Les onglets suivent automatiquement les cycles actifs de
-            l’établissement
-          </p>
-        </div>
-      </header>
+    <section>
       <ConfirmDialog />
-      <div className="panel-toolbar">
-        <div>
-          <Tag
-            value={editable ? "Modifiable" : "Lecture seule"}
-            severity={editable ? "success" : "secondary"}
-          />
-        </div>
-      </div>
-      {cycles.length === 0 ? (
-        <Message
-          severity="info"
-          text="Aucun cycle actif. Activez d’abord un cycle dans la rubrique Cycles."
-        />
-      ) : (
-        <>
-          <TableSearch value={search} onChange={setSearch} />
-          <TabView>
-            {cycles.map((cycle) => (
-              <TabPanel
-                key={cycle.id}
-                header={
-                  <div className="cycle-accordion-header">
-                    <div>
-                      <strong>{cycle.name}</strong>
-                      <span>
-                        {cycle.code} · {periodLabel(cycle)}
-                      </span>
-                    </div>
-                  </div>
+      <TabView>
+        {cycles.map((cycle) => {
+          const cycleLevels = levelsByCycle.get(cycle.cycle_id) ?? [];
+          return (
+            <TabPanel key={cycle.id} header={cycle.name}>
+              <TablePanel
+                title={`Niveaux — ${cycle.name}`}
+                description={`${cycle.code} · ${periodLabel(cycle)} · ${year.name}`}
+                meta={
+                  <Tag
+                    value={`${cycleLevels.length} niveau${cycleLevels.length > 1 ? "x" : ""}`}
+                    severity="secondary"
+                  />
                 }
-              >
-                <div className="panel-toolbar">
-                  <p>Niveaux actifs de ce cycle pour {year?.name}</p>
-                  <div className="table-actions">
+                alerts={readOnlyAlert}
+                search={
+                  <TableSearch
+                    id={`levels-search-${cycle.id}`}
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Rechercher un niveau"
+                  />
+                }
+                actions={
+                  <div className="flex items-center gap-2">
                     <Button
                       label="Configurer le cycle"
                       icon="pi pi-cog"
                       severity="secondary"
                       outlined
+                      size="small"
                       disabled={!editable}
                       onClick={() => setDialog({ kind: "cycle", item: cycle })}
                     />
                     <Button
                       label="Ajouter un niveau"
                       icon="pi pi-plus"
+                      size="small"
                       disabled={!editable}
                       onClick={() => setDialog({ kind: "niveau", cycle })}
                     />
                   </div>
-                </div>
+                }
+              >
                 <DataTable
-                  value={levelsByCycle.get(cycle.cycle_id) ?? []}
+                  value={cycleLevels}
                   globalFilter={search}
                   globalFilterFields={[
                     "name",
@@ -277,17 +299,22 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
                   dataKey="id"
                   emptyMessage="Aucun niveau"
                   stripedRows
+                  responsiveLayout="scroll"
+                  size="small"
                 >
                   <Column field="sort_order" header="Ordre" />
                   <Column field="name" header="Niveau" />
                   <Column field="code" header="Code" />
                   <Column
                     header="Actions"
+                    headerClassName="text-right"
+                    bodyClassName="text-right"
                     body={(level: GradeLevel) => (
-                      <div className="table-actions">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           icon="pi pi-pencil"
                           text
+                          size="small"
                           disabled={!editable}
                           onClick={() =>
                             setDialog({ kind: "niveau", cycle, item: level })
@@ -296,6 +323,7 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
                         <Button
                           icon="pi pi-trash"
                           text
+                          size="small"
                           severity="danger"
                           disabled={!editable}
                           onClick={() => removeLevel(cycle, level)}
@@ -304,11 +332,12 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
                     )}
                   />
                 </DataTable>
-              </TabPanel>
-            ))}
-          </TabView>
-        </>
-      )}
+              </TablePanel>
+            </TabPanel>
+          );
+        })}
+      </TabView>
+
       <StructureItemDialog
         kind={dialog?.kind ?? "cycle"}
         visible={Boolean(dialog)}

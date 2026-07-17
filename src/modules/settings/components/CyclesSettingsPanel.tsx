@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { useToast } from "../../../shared/components/toast-context";
+import { Panel } from "../../../shared/components/layout/Panel";
 import {
   listCycleCatalog,
   setInstitutionCycle,
@@ -17,16 +17,21 @@ export function CyclesSettingsPanel() {
     Awaited<ReturnType<typeof listCycleCatalog>>
   >([]);
   const [busyId, setBusyId] = useState("");
+
   const load = useCallback(
     async () => setItems(await listCycleCatalog(institutionId)),
     [institutionId],
   );
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
+  const activeCount = items.filter((item) => item.activation?.is_active).length;
+
   const toggle = async (id: string, active: boolean) => {
     setBusyId(id);
     try {
@@ -42,43 +47,66 @@ export function CyclesSettingsPanel() {
       setBusyId("");
     }
   };
+
+  const alert = !year ? (
+    <Message
+      severity="warn"
+      text="Sélectionnez une année scolaire avant d’activer les cycles."
+    />
+  ) : !editable ? (
+    <Message
+      severity="info"
+      text={`${year.name} est clôturée et reste consultable en lecture seule.`}
+    />
+  ) : undefined;
+
   return (
-    <Card
-      title="Cycles de l’établissement"
-      subTitle="Activez les cycles proposés par votre établissement. Le référentiel est administré depuis la base."
-    >
-      {!year && (
-        <Message
-          severity="warn"
-          text="Sélectionnez une année scolaire avant d’activer les cycles."
+    <Panel
+      title="Cycles"
+      description="Activez uniquement les parcours proposés par l’établissement."
+      meta={
+        <Tag
+          value={`${activeCount} actif${activeCount > 1 ? "s" : ""}`}
+          severity="info"
         />
-      )}
-      <div className="cycle-catalog-grid" data-testid="cycle-catalog">
+      }
+      alerts={alert}
+    >
+      <div className="divide-y divide-slate-200" data-testid="cycle-catalog">
         {items.map((item) => {
           const active = Boolean(item.activation?.is_active);
           return (
             <article
-              className={`cycle-choice-card ${active ? "is-active" : ""}`}
+              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
               key={item.id}
               data-testid={`cycle-${item.code}`}
             >
-              <div className="cycle-choice-icon">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                 <i className={`pi ${item.icon}`} />
-              </div>
-              <div>
-                <div className="cycle-choice-title">
-                  <h3>{item.name}</h3>
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    {item.name}
+                  </h3>
                   <Tag
                     value={active ? "Actif" : "Inactif"}
                     severity={active ? "success" : "secondary"}
                   />
+                  <span className="text-xs font-medium text-slate-400">
+                    {item.code}
+                  </span>
                 </div>
-                <p>{item.description}</p>
-                <small>{item.code}</small>
+                <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                  {item.description}
+                </p>
               </div>
+
               <Button
                 label={active ? "Désactiver" : "Activer"}
                 icon={active ? "pi pi-times" : "pi pi-check"}
+                size="small"
                 outlined={!active}
                 severity={active ? "secondary" : undefined}
                 disabled={!editable}
@@ -90,6 +118,6 @@ export function CyclesSettingsPanel() {
           );
         })}
       </div>
-    </Card>
+    </Panel>
   );
 }

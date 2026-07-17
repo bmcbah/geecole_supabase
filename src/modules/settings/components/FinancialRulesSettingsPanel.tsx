@@ -2,26 +2,29 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
+import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../academic-session/components/academic-session-context";
-import { useToast } from "../../../shared/components/toast-context";
-import type { Database } from "../../../shared/lib/supabase/database.types";
+import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
 import {
   deleteFinancialRule,
   listFinancialRuleLevels,
   listFinancialRules,
   saveFinancialRule,
   setFinancialRuleLevels,
-} from "../services/annual-settings.service";
-import { listAnnualAcademicLevels } from "../services/academic-structure.service";
+} from "../../../features/settings/services/annual-settings.service";
+import { listAnnualAcademicLevels } from "../../../features/settings/services/academic-structure.service";
 import {
   SettingsEntityDialog,
   type EntityField,
   type EntityValue,
-} from "./SettingsEntityDialog";
-import { SettingsPanelShell } from "./SettingsPanelShell";
+} from "../../../features/settings/components/SettingsEntityDialog";
+import type { Database } from "../../../shared/lib/supabase/database.types";
+import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
+import { useToast } from "../../../shared/components/toast-context";
+
 type Rule = Database["public"]["Tables"]["financial_rules"]["Row"];
+
 export function FinancialRulesSettingsPanel() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
@@ -38,6 +41,7 @@ export function FinancialRulesSettingsPanel() {
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
+
   const load = useCallback(async () => {
     if (!year) return;
     const [rules, annualLevels, ruleLevels] = await Promise.all([
@@ -49,9 +53,11 @@ export function FinancialRulesSettingsPanel() {
     setLevels(annualLevels);
     setMappings(ruleLevels);
   }, [year]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const initial = useMemo<Record<string, EntityValue>>(
     () => ({
       name: editing?.name ?? "",
@@ -73,6 +79,7 @@ export function FinancialRulesSettingsPanel() {
     }),
     [editing, mappings],
   );
+
   const submit = async (values: Record<string, EntityValue>) => {
     if (!year) return;
     setSaving(true);
@@ -108,6 +115,7 @@ export function FinancialRulesSettingsPanel() {
       setSaving(false);
     }
   };
+
   const remove = async (id: string) => {
     try {
       await deleteFinancialRule(id);
@@ -116,72 +124,118 @@ export function FinancialRulesSettingsPanel() {
       notify({ severity: "error", summary: "Suppression impossible" });
     }
   };
+
+  if (!year) {
+    return (
+      <Message
+        severity="warn"
+        text="Créez ou sélectionnez une année scolaire avant de configurer les frais."
+      />
+    );
+  }
+
+  const readOnlyAlert = !editable ? (
+    <Message
+      severity="info"
+      text={`${year.name} est clôturée et reste consultable en lecture seule.`}
+    />
+  ) : undefined;
+
   return (
-    <SettingsPanelShell
-      title="Règles financières"
-      description="Frais et échéances applicables à l’année sélectionnée"
-      year={year}
-      addLabel="Nouvelle règle"
-      onAdd={() => setEditing(null)}
-    >
-      <TableSearch value={search} onChange={setSearch} />
-      <DataTable
-        value={items}
-        globalFilter={search}
-        globalFilterFields={[
-          "name",
-          "code",
-          "amount",
-          "frequency",
-          "due_day",
-          "fee_type",
-          "is_active",
-          "is_mandatory",
-        ]}
-        dataKey="id"
-        emptyMessage="Aucune règle financière"
-        stripedRows
+    <>
+      <TablePanel
+        title="Frais"
+        description="Configurez les frais, montants et échéances de l’année sélectionnée."
+        meta={
+          <Tag
+            value={`${items.length} frais`}
+            severity="secondary"
+          />
+        }
+        alerts={readOnlyAlert}
+        search={
+          <TableSearch
+            id="financial-rules-search"
+            value={search}
+            onChange={setSearch}
+            placeholder="Rechercher un frais"
+          />
+        }
+        actions={
+          <Button
+            label="Nouveau frais"
+            icon="pi pi-plus"
+            size="small"
+            disabled={!editable}
+            onClick={() => setEditing(null)}
+          />
+        }
       >
-        <Column field="name" header="Frais" />
-        <Column field="code" header="Code" />
-        <Column
-          header="Montant"
-          body={(row: Rule) => `${row.amount.toLocaleString("fr-GN")} GNF`}
-        />
-        <Column field="frequency" header="Périodicité" />
-        <Column field="due_day" header="Échéance" />
-        <Column
-          header="Statut"
-          body={(row: Rule) => (
-            <Tag
-              value={row.is_active ? "Active" : "Inactive"}
-              severity={row.is_active ? "success" : "secondary"}
-            />
-          )}
-        />
-        <Column
-          header="Actions"
-          body={(row: Rule) => (
-            <div className="table-actions">
-              <Button
-                icon="pi pi-pencil"
-                text
-                disabled={!editable}
-                onClick={() => setEditing(row)}
+        <DataTable
+          value={items}
+          globalFilter={search}
+          globalFilterFields={[
+            "name",
+            "code",
+            "amount",
+            "frequency",
+            "due_day",
+            "fee_type",
+            "is_active",
+            "is_mandatory",
+          ]}
+          dataKey="id"
+          emptyMessage="Aucun frais"
+          stripedRows
+          responsiveLayout="scroll"
+          size="small"
+        >
+          <Column field="name" header="Frais" />
+          <Column field="code" header="Code" />
+          <Column
+            header="Montant"
+            body={(row: Rule) => `${row.amount.toLocaleString("fr-GN")} GNF`}
+          />
+          <Column field="frequency" header="Périodicité" />
+          <Column field="due_day" header="Échéance" />
+          <Column
+            header="Statut"
+            body={(row: Rule) => (
+              <Tag
+                value={row.is_active ? "Actif" : "Inactif"}
+                severity={row.is_active ? "success" : "secondary"}
               />
-              <Button
-                icon="pi pi-trash"
-                text
-                severity="danger"
-                disabled={!editable}
-                onClick={() => void remove(row.id)}
-              />
-            </div>
-          )}
-        />
-      </DataTable>
+            )}
+          />
+          <Column
+            header="Actions"
+            headerClassName="text-right"
+            bodyClassName="text-right"
+            body={(row: Rule) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button
+                  icon="pi pi-pencil"
+                  text
+                  size="small"
+                  disabled={!editable}
+                  onClick={() => setEditing(row)}
+                />
+                <Button
+                  icon="pi pi-trash"
+                  text
+                  size="small"
+                  severity="danger"
+                  disabled={!editable}
+                  onClick={() => void remove(row.id)}
+                />
+              </div>
+            )}
+          />
+        </DataTable>
+      </TablePanel>
+
       <SettingsEntityDialog
-        header="Règle financière"
+        header="Frais"
         visible={editing !== undefined}
         loading={saving}
         fields={
@@ -250,13 +304,13 @@ export function FinancialRulesSettingsPanel() {
               label: "Montant modifiable à l’encaissement",
               type: "boolean",
             },
-            { key: "is_active", label: "Règle active", type: "boolean" },
+            { key: "is_active", label: "Frais actif", type: "boolean" },
           ] as EntityField[]
         }
         initial={initial}
         onHide={() => setEditing(undefined)}
         onSubmit={submit}
       />
-    </SettingsPanelShell>
+    </>
   );
 }

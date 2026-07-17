@@ -6,11 +6,15 @@ import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
+import { Message } from "primereact/message";
+import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
 import {
   listAnnualAcademicCycles,
   listAnnualAcademicLevels,
 } from "../../../features/settings/services/academic-structure.service";
+import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { TableSearch } from "../../../shared/components/TableSearch";
 import {
   archiveClass,
   createClass,
@@ -35,6 +39,7 @@ export function ClassesPage() {
   const [editing, setEditing] = useState<SchoolClass | null | undefined>(
     undefined,
   );
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     name: "",
     code: "",
@@ -44,22 +49,26 @@ export function ClassesPage() {
     room: "",
   });
   const merged = institution?.class_structure_mode === "classes_as_levels";
+
   const load = useCallback(async () => {
     if (!yearId) return;
-    const [classData, levelData, cycleData, assignmentData] = await Promise.all(
-      [
+    const [classData, levelData, cycleData, assignmentData] =
+      await Promise.all([
         listClasses(yearId),
         listAnnualAcademicLevels(yearId),
         listAnnualAcademicCycles(yearId),
         listAssignments(yearId),
-      ],
-    );
+      ]);
     setClasses(classData);
     setLevels(levelData);
     setCycles(cycleData);
     setAssignments(assignmentData);
   }, [yearId]);
-  useEffect(() => void load(), [load]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const counts = useMemo(
     () =>
       Object.fromEntries(
@@ -71,6 +80,17 @@ export function ClassesPage() {
       ),
     [assignments, classes],
   );
+
+  const filteredClasses = useMemo(() => {
+    const value = search.trim().toLocaleLowerCase("fr");
+    if (!value) return classes;
+    return classes.filter((item) =>
+      `${item.name} ${item.code} ${item.room ?? ""}`
+        .toLocaleLowerCase("fr")
+        .includes(value),
+    );
+  }, [classes, search]);
+
   const open = (item?: SchoolClass) => {
     setEditing(item ?? null);
     setForm(
@@ -93,8 +113,9 @@ export function ClassesPage() {
           },
     );
   };
+
   const submit = async () => {
-    if (editing)
+    if (editing) {
       await saveClass(
         {
           institution_id: institutionId,
@@ -107,7 +128,7 @@ export function ClassesPage() {
         },
         editing.id,
       );
-    else
+    } else {
       await createClass({
         yearId,
         annualLevelId: form.levelId || null,
@@ -117,71 +138,100 @@ export function ClassesPage() {
         capacity: form.capacity,
         room: form.room,
       });
+    }
     await load();
     setEditing(undefined);
   };
+
   return (
     <section className="medium-controls">
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Paramétrage · {year?.name}</span>
-          <h1>Classes</h1>
-          <p>
-            Configurez les classes annuelles. L’affectation se fait depuis la
-            fiche ou la liste des élèves.
-          </p>
-        </div>
-        <Button
-          label="Créer une classe"
-          icon="pi pi-plus"
-          onClick={() => open()}
-        />
-      </header>
-      {merged && (
-        <div className="students-filter-zone">
-          <strong>Mode fusionné activé</strong>
-          <p>
-            Chaque nouvelle classe crée automatiquement le niveau pédagogique
-            portant le même nom.
-          </p>
-        </div>
-      )}
-      <DataTable
-        value={classes}
-        dataKey="id"
-        emptyMessage="Aucune classe pour cette année."
+      <TablePanel
+        title="Classes"
+        description={`Configurez les classes annuelles${year?.name ? ` pour ${year.name}` : ""}. L’affectation se fait depuis la fiche ou la liste des élèves.`}
+        meta={
+          <Tag
+            value={`${filteredClasses.length} classe${filteredClasses.length > 1 ? "s" : ""}`}
+            severity="secondary"
+          />
+        }
+        alerts={
+          merged ? (
+            <Message
+              severity="info"
+              text="Mode fusionné activé : chaque nouvelle classe crée automatiquement le niveau pédagogique portant le même nom."
+            />
+          ) : undefined
+        }
+        search={
+          <TableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder="Rechercher une classe"
+            id="classes-search"
+          />
+        }
+        actions={
+          <Button
+            label="Créer une classe"
+            icon="pi pi-plus"
+            size="small"
+            onClick={() => open()}
+          />
+        }
       >
-        <Column field="name" header="Classe" />
-        <Column
-          header="Niveau"
-          body={(item: SchoolClass) =>
-            levels.find((level) => level.id === item.academic_year_level_id)
-              ?.level_name_snapshot
-          }
-        />
-        <Column
-          header="Effectif"
-          body={(item: SchoolClass) =>
-            `${counts[item.id] ?? 0} / ${item.capacity ?? "∞"}`
-          }
-        />
-        <Column header="Salle" body={(item: SchoolClass) => item.room || "—"} />
-        <Column
-          header="Actions"
-          body={(item: SchoolClass) => (
-            <div className="table-actions">
-              <Button icon="pi pi-pencil" text onClick={() => open(item)} />
-              <Button
-                icon="pi pi-archive"
-                text
-                severity="danger"
-                disabled={!item.is_active}
-                onClick={() => void archiveClass(item.id).then(load)}
-              />
-            </div>
-          )}
-        />
-      </DataTable>
+        <DataTable
+          value={filteredClasses}
+          dataKey="id"
+          emptyMessage="Aucune classe pour cette année."
+          responsiveLayout="scroll"
+          stripedRows
+          size="small"
+        >
+          <Column field="name" header="Classe" />
+          <Column
+            header="Niveau"
+            body={(item: SchoolClass) =>
+              levels.find(
+                (level) => level.id === item.academic_year_level_id,
+              )?.level_name_snapshot
+            }
+          />
+          <Column
+            header="Effectif"
+            body={(item: SchoolClass) =>
+              `${counts[item.id] ?? 0} / ${item.capacity ?? "∞"}`
+            }
+          />
+          <Column
+            header="Salle"
+            body={(item: SchoolClass) => item.room || "—"}
+          />
+          <Column
+            header="Actions"
+            headerClassName="text-right"
+            bodyClassName="text-right"
+            body={(item: SchoolClass) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button
+                  icon="pi pi-pencil"
+                  text
+                  size="small"
+                  onClick={() => open(item)}
+                />
+                <Button
+                  icon="pi pi-archive"
+                  text
+                  size="small"
+                  severity="danger"
+                  disabled={!item.is_active}
+                  onClick={() => void archiveClass(item.id).then(load)}
+                />
+              </div>
+            )}
+          />
+        </DataTable>
+      </TablePanel>
+
       <Dialog
         header={editing ? "Modifier la classe" : "Nouvelle classe"}
         visible={editing !== undefined}
@@ -253,7 +303,10 @@ export function ClassesPage() {
               value={form.capacity}
               min={1}
               onValueChange={(event) =>
-                setForm((value) => ({ ...value, capacity: event.value ?? 30 }))
+                setForm((value) => ({
+                  ...value,
+                  capacity: event.value ?? 30,
+                }))
               }
             />
           </label>
@@ -270,7 +323,11 @@ export function ClassesPage() {
           </label>
         </div>
         <div className="dialog-actions">
-          <Button label="Annuler" text onClick={() => setEditing(undefined)} />
+          <Button
+            label="Annuler"
+            text
+            onClick={() => setEditing(undefined)}
+          />
           <Button
             label="Enregistrer"
             disabled={

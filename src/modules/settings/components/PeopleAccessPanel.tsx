@@ -7,23 +7,23 @@ import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { MultiSelect } from "primereact/multiselect";
-import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../academic-session/components/academic-session-context";
-import { useToast } from "../../../shared/components/toast-context";
-import type { AppRole } from "../../../shared/lib/supabase/database.types";
+import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
 import {
   deletePerson,
   invitePerson,
   listPeople,
   listPersonInvitations,
   savePerson,
-} from "../services/annual-settings.service";
-import { SettingsPanelShell } from "./SettingsPanelShell";
+} from "../../../features/settings/services/annual-settings.service";
+import type { AppRole } from "../../../shared/lib/supabase/database.types";
+import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
+import { useToast } from "../../../shared/components/toast-context";
 
 type Person = Awaited<ReturnType<typeof listPeople>>[number];
 type Invitation = Awaited<ReturnType<typeof listPersonInvitations>>[number];
+
 const roleOptions: { label: string; value: AppRole }[] = [
   { label: "Élève", value: "student" },
   { label: "Parent", value: "parent" },
@@ -32,19 +32,21 @@ const roleOptions: { label: string; value: AppRole }[] = [
   { label: "Finance", value: "finance" },
   { label: "Administrateur", value: "admin" },
 ];
+
 const roleLabel = (role: AppRole) =>
   roleOptions.find((item) => item.value === role)?.label ?? role;
+
 const emptyForm = {
   firstName: "",
   lastName: "",
   email: "",
   phone: "",
-  status: "active",
+  status: "active" as "active" | "inactive",
   roles: ["student"] as AppRole[],
 };
 
-export function UsersSettingsPanel() {
-  const { institutionId, year } = useAcademicSession();
+export function PeopleAccessPanel() {
+  const { institutionId } = useAcademicSession();
   const notify = useToast();
   const [people, setPeople] = useState<Person[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -52,7 +54,9 @@ export function UsersSettingsPanel() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [invitationLink, setInvitationLink] = useState("");
-  const [search, setSearch] = useState("");
+  const [peopleSearch, setPeopleSearch] = useState("");
+  const [invitationSearch, setInvitationSearch] = useState("");
+
   const load = useCallback(async () => {
     if (!institutionId) return;
     const [persons, invites] = await Promise.all([
@@ -62,9 +66,11 @@ export function UsersSettingsPanel() {
     setPeople(persons);
     setInvitations(invites);
   }, [institutionId]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const open = (person?: Person) => {
     setEditing(person ?? null);
     setForm(
@@ -80,12 +86,9 @@ export function UsersSettingsPanel() {
         : emptyForm,
     );
   };
+
   const submit = async () => {
-    if (
-      !form.firstName.trim() ||
-      !form.lastName.trim() ||
-      form.roles.length === 0
-    )
+    if (!form.firstName.trim() || !form.lastName.trim() || form.roles.length === 0)
       return;
     setSaving(true);
     try {
@@ -103,6 +106,7 @@ export function UsersSettingsPanel() {
       setSaving(false);
     }
   };
+
   const remove = async (id: string) => {
     try {
       await deletePerson(id);
@@ -115,11 +119,11 @@ export function UsersSettingsPanel() {
       });
     }
   };
+
   const invite = async (person: Person) => {
     try {
       const token = await invitePerson(person.id);
-      const link = `${window.location.origin}/invitation?token=${token}`;
-      setInvitationLink(link);
+      setInvitationLink(`${window.location.origin}/invitation?token=${token}`);
       await load();
     } catch {
       notify({
@@ -129,173 +133,198 @@ export function UsersSettingsPanel() {
       });
     }
   };
-  const normalizedSearch = search.trim().toLocaleLowerCase("fr");
-  const filteredPeople = useMemo(
-    () =>
-      people.filter((person) => {
-        if (!normalizedSearch) return true;
-        const values = [
-          person.first_name,
-          person.last_name,
-          person.email,
-          person.phone,
-          person.status,
-          person.auth_user_id
-            ? "compte lié accès connexion"
-            : "sans compte invitation",
-          ...person.roles,
-          ...person.roles.map(roleLabel),
-        ];
-        return values.some((value) =>
-          String(value ?? "")
-            .toLocaleLowerCase("fr")
-            .includes(normalizedSearch),
-        );
-      }),
-    [people, normalizedSearch],
-  );
-  const filteredInvitations = useMemo(
-    () =>
-      invitations.filter((invitation) => {
-        if (!normalizedSearch) return true;
-        const person = people.find((item) => item.id === invitation.person_id);
-        return [
-          invitation.email,
-          invitation.status,
-          invitation.expires_at,
-          person?.first_name,
-          person?.last_name,
-        ].some((value) =>
-          String(value ?? "")
-            .toLocaleLowerCase("fr")
-            .includes(normalizedSearch),
-        );
-      }),
-    [invitations, people, normalizedSearch],
-  );
+
+  const filteredPeople = useMemo(() => {
+    const query = peopleSearch.trim().toLocaleLowerCase("fr");
+    if (!query) return people;
+    return people.filter((person) =>
+      [
+        person.first_name,
+        person.last_name,
+        person.email,
+        person.phone,
+        person.status,
+        ...person.roles,
+        ...person.roles.map(roleLabel),
+      ].some((value) =>
+        String(value ?? "").toLocaleLowerCase("fr").includes(query),
+      ),
+    );
+  }, [people, peopleSearch]);
+
+  const filteredInvitations = useMemo(() => {
+    const query = invitationSearch.trim().toLocaleLowerCase("fr");
+    if (!query) return invitations;
+    return invitations.filter((invitation) => {
+      const person = people.find((item) => item.id === invitation.person_id);
+      return [
+        invitation.email,
+        invitation.status,
+        invitation.expires_at,
+        person?.first_name,
+        person?.last_name,
+      ].some((value) =>
+        String(value ?? "").toLocaleLowerCase("fr").includes(query),
+      );
+    });
+  }, [invitationSearch, invitations, people]);
+
   return (
-    <SettingsPanelShell
-      title="Personnes et accès"
-      description="Élèves, parents et personnel ; le compte de connexion reste facultatif"
-      year={year}
-    >
-      <TableSearch value={search} onChange={setSearch} />
-      <TabView>
-        <TabPanel header="Personnes">
-          <div className="panel-toolbar panel-toolbar-end">
-            <span />
-            <Button
-              label="Nouvelle personne"
-              icon="pi pi-plus"
-              onClick={() => open()}
-            />
-          </div>
-          <DataTable
-            value={filteredPeople}
-            dataKey="id"
-            emptyMessage="Aucune personne"
-            stripedRows
-          >
-            <Column
-              header="Nom"
-              body={(row: Person) => `${row.first_name} ${row.last_name}`}
-            />
-            <Column field="phone" header="Téléphone" />
-            <Column field="email" header="E-mail" />
-            <Column
-              header="Rôles"
-              body={(row: Person) => (
-                <div className="role-tags">
-                  {row.roles.map((role) => (
-                    <Tag
-                      key={role}
-                      value={roleLabel(role)}
-                      severity={
-                        role === "student"
-                          ? "info"
-                          : role === "parent"
-                            ? "warning"
-                            : "secondary"
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            />
-            <Column
-              header="Accès"
-              body={(row: Person) =>
-                row.auth_user_id ? (
-                  <Tag value="Compte lié" severity="success" />
-                ) : (
-                  <Button
-                    label="Inviter"
-                    icon="pi pi-send"
-                    size="small"
-                    text
-                    disabled={!row.email}
-                    onClick={() => void invite(row)}
-                  />
-                )
-              }
-            />
-            <Column
-              header="Actions"
-              body={(row: Person) => (
-                <div className="table-actions">
-                  <Button icon="pi pi-pencil" text onClick={() => open(row)} />
-                  <Button
-                    icon="pi pi-trash"
-                    text
-                    severity="danger"
-                    onClick={() => void remove(row.id)}
-                  />
-                </div>
-              )}
-            />
-          </DataTable>
-        </TabPanel>
-        <TabPanel header="Invitations">
-          <DataTable
-            value={filteredInvitations}
-            dataKey="id"
-            emptyMessage="Aucune invitation"
-            stripedRows
-          >
-            <Column field="email" header="E-mail" />
-            <Column
-              header="Personne"
-              body={(row: Invitation) => {
-                const person = people.find((item) => item.id === row.person_id);
-                return person
-                  ? `${person.first_name} ${person.last_name}`
-                  : "Personne supprimée";
-              }}
-            />
-            <Column
-              header="Statut"
-              body={(row: Invitation) => (
-                <Tag
-                  value={row.status}
-                  severity={
-                    row.status === "accepted"
-                      ? "success"
-                      : row.status === "pending"
-                        ? "info"
-                        : "secondary"
-                  }
+    <section className="space-y-6">
+      <TablePanel
+        title="Personnes"
+        description="Gérez les élèves, parents et membres du personnel de l’établissement."
+        meta={
+          <Tag
+            value={`${filteredPeople.length} personne${filteredPeople.length > 1 ? "s" : ""}`}
+            severity="secondary"
+          />
+        }
+        search={
+          <TableSearch
+            id="people-search"
+            value={peopleSearch}
+            onChange={setPeopleSearch}
+            placeholder="Rechercher une personne"
+          />
+        }
+        actions={
+          <Button
+            label="Nouvelle personne"
+            icon="pi pi-plus"
+            size="small"
+            onClick={() => open()}
+          />
+        }
+      >
+        <DataTable
+          value={filteredPeople}
+          dataKey="id"
+          emptyMessage="Aucune personne"
+          stripedRows
+          responsiveLayout="scroll"
+          size="small"
+        >
+          <Column
+            header="Nom"
+            body={(row: Person) => `${row.first_name} ${row.last_name}`}
+          />
+          <Column field="phone" header="Téléphone" />
+          <Column field="email" header="E-mail" />
+          <Column
+            header="Rôles"
+            body={(row: Person) => (
+              <div className="flex flex-wrap gap-1">
+                {row.roles.map((role) => (
+                  <Tag key={role} value={roleLabel(role)} severity="secondary" />
+                ))}
+              </div>
+            )}
+          />
+          <Column
+            header="Accès"
+            body={(row: Person) =>
+              row.auth_user_id ? (
+                <Tag value="Compte lié" severity="success" />
+              ) : (
+                <Button
+                  label="Inviter"
+                  icon="pi pi-send"
+                  size="small"
+                  text
+                  disabled={!row.email}
+                  onClick={() => void invite(row)}
                 />
-              )}
-            />
-            <Column
-              header="Expiration"
-              body={(row: Invitation) =>
-                new Date(row.expires_at).toLocaleDateString("fr-GN")
-              }
-            />
-          </DataTable>
-        </TabPanel>
-      </TabView>
+              )
+            }
+          />
+          <Column
+            header="Actions"
+            headerClassName="text-right"
+            bodyClassName="text-right"
+            body={(row: Person) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button
+                  icon="pi pi-pencil"
+                  text
+                  size="small"
+                  aria-label={`Modifier ${row.first_name} ${row.last_name}`}
+                  onClick={() => open(row)}
+                />
+                <Button
+                  icon="pi pi-trash"
+                  text
+                  size="small"
+                  severity="danger"
+                  aria-label={`Supprimer ${row.first_name} ${row.last_name}`}
+                  onClick={() => void remove(row.id)}
+                />
+              </div>
+            )}
+          />
+        </DataTable>
+      </TablePanel>
+
+      <TablePanel
+        title="Invitations"
+        description="Suivez les invitations de connexion envoyées aux personnes."
+        meta={
+          <Tag
+            value={`${filteredInvitations.length} invitation${filteredInvitations.length > 1 ? "s" : ""}`}
+            severity="secondary"
+          />
+        }
+        search={
+          <TableSearch
+            id="invitations-search"
+            value={invitationSearch}
+            onChange={setInvitationSearch}
+            placeholder="Rechercher une invitation"
+          />
+        }
+      >
+        <DataTable
+          value={filteredInvitations}
+          dataKey="id"
+          emptyMessage="Aucune invitation"
+          stripedRows
+          responsiveLayout="scroll"
+          size="small"
+        >
+          <Column field="email" header="E-mail" />
+          <Column
+            header="Personne"
+            body={(row: Invitation) => {
+              const person = people.find((item) => item.id === row.person_id);
+              return person
+                ? `${person.first_name} ${person.last_name}`
+                : "Personne supprimée";
+            }}
+          />
+          <Column
+            header="Statut"
+            body={(row: Invitation) => (
+              <Tag
+                value={row.status}
+                severity={
+                  row.status === "accepted"
+                    ? "success"
+                    : row.status === "pending"
+                      ? "info"
+                      : "secondary"
+                }
+              />
+            )}
+          />
+          <Column
+            header="Expiration"
+            body={(row: Invitation) =>
+              new Date(row.expires_at).toLocaleDateString("fr-GN")
+            }
+          />
+        </DataTable>
+      </TablePanel>
+
       <Dialog
         header={editing ? "Modifier la personne" : "Nouvelle personne"}
         visible={editing !== undefined}
@@ -337,10 +366,7 @@ export function UsersSettingsPanel() {
                 id="person-phone"
                 value={form.phone}
                 onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    phone: event.target.value,
-                  }))
+                  setForm((current) => ({ ...current, phone: event.target.value }))
                 }
               />
             </div>
@@ -350,10 +376,7 @@ export function UsersSettingsPanel() {
                 id="person-email"
                 value={form.email}
                 onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    email: event.target.value,
-                  }))
+                  setForm((current) => ({ ...current, email: event.target.value }))
                 }
               />
             </div>
@@ -384,9 +407,8 @@ export function UsersSettingsPanel() {
                   { label: "Inactif", value: "inactive" },
                 ]}
                 onChange={(event) => {
-                  const value = event.value as unknown;
-                  if (value === "active" || value === "inactive")
-                    setForm((current) => ({ ...current, status: value }));
+                  const value = event.value as "active" | "inactive";
+                  setForm((current) => ({ ...current, status: value }));
                 }}
               />
             </div>
@@ -411,6 +433,7 @@ export function UsersSettingsPanel() {
           </div>
         </div>
       </Dialog>
+
       <Dialog
         header="Invitation créée"
         visible={Boolean(invitationLink)}
@@ -442,6 +465,6 @@ export function UsersSettingsPanel() {
           </div>
         </div>
       </Dialog>
-    </SettingsPanelShell>
+    </section>
   );
 }

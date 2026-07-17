@@ -6,28 +6,34 @@ import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { useToast } from "../../../shared/components/toast-context";
+import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { TableSearch } from "../../../shared/components/TableSearch";
+import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
 import {
   changeAcademicYearStatus,
   createAcademicYear,
   deleteAcademicYear,
   listAcademicYears,
-} from "../services/settings.service";
-import type { AcademicYearInput } from "../schemas/settings.schema";
-import type { AcademicYear, AcademicYearStatus } from "../types/settings";
-import { AcademicYearDialog } from "./AcademicYearDialog";
-import { CloneAcademicYearDialog } from "./CloneAcademicYearDialog";
-import { useAcademicSession } from "../../academic-session/components/academic-session-context";
-import { TableSearch } from "../../../shared/components/TableSearch";
+} from "../../../features/settings/services/settings.service";
+import type { AcademicYearInput } from "../../../features/settings/schemas/settings.schema";
+import type {
+  AcademicYear,
+  AcademicYearStatus,
+} from "../../../features/settings/types/settings";
+import { AcademicYearDialog } from "../../../features/settings/components/AcademicYearDialog";
+import { CloneAcademicYearDialog } from "../../../features/settings/components/CloneAcademicYearDialog";
 
 interface Props {
   institutionId: string;
 }
+
 const labels: Record<AcademicYearStatus, string> = {
   preparation: "Préparation",
   open: "Ouverte",
   closed: "Clôturée",
   archived: "Archivée",
 };
+
 const severities: Record<
   AcademicYearStatus,
   "info" | "success" | "warning" | "secondary"
@@ -37,11 +43,13 @@ const severities: Record<
   closed: "warning",
   archived: "secondary",
 };
+
 const nextStatus: Partial<Record<AcademicYearStatus, AcademicYearStatus>> = {
   preparation: "open",
   open: "closed",
   closed: "archived",
 };
+
 const actionLabels: Partial<Record<AcademicYearStatus, string>> = {
   preparation: "Ouvrir",
   open: "Clôturer",
@@ -58,6 +66,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cloneTarget, setCloneTarget] = useState<AcademicYear | null>(null);
   const [search, setSearch] = useState("");
+
   const load = useCallback(async () => {
     setLoading(true);
     setFailure("");
@@ -69,9 +78,11 @@ export function AcademicYearsPanel({ institutionId }: Props) {
       setLoading(false);
     }
   }, [institutionId]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   const create = async (input: AcademicYearInput) => {
     setSaving(true);
     try {
@@ -90,9 +101,11 @@ export function AcademicYearsPanel({ institutionId }: Props) {
       setSaving(false);
     }
   };
+
   const transition = (year: AcademicYear) => {
     const target = nextStatus[year.status];
     if (!target) return;
+
     confirmDialog({
       header: `${actionLabels[year.status]} l’année`,
       message: `Confirmer le passage de ${year.name} au statut « ${labels[target]} » ? Cette transition ne peut pas être annulée.`,
@@ -121,6 +134,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
         })(),
     });
   };
+
   const remove = (year: AcademicYear) =>
     confirmDialog({
       header: "Supprimer l’année en préparation",
@@ -139,8 +153,9 @@ export function AcademicYearsPanel({ institutionId }: Props) {
           }
         })(),
     });
+
   const actions = (year: AcademicYear) => (
-    <div className="table-actions">
+    <div className="flex items-center justify-end gap-1">
       {nextStatus[year.status] && (
         <Button
           label={actionLabels[year.status]}
@@ -148,7 +163,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
           outlined
           onClick={() => transition(year)}
         />
-      )}{" "}
+      )}
       {year.status === "preparation" && (
         <Button
           label="Cloner"
@@ -170,72 +185,80 @@ export function AcademicYearsPanel({ institutionId }: Props) {
       )}
     </div>
   );
+
   return (
-    <section className="settings-panel-surface">
-      <header className="settings-panel-heading">
-        <div>
-          <h2>Années scolaires</h2>
-          <p>Une seule année peut être ouverte à la fois</p>
-        </div>
-      </header>
+    <section>
       <ConfirmDialog />
-      <div className="panel-toolbar">
-        <p>
-          Préparez l’année, ouvrez-la pour les opérations courantes, puis
-          clôturez-la.
-        </p>
-        <Button
-          label="Nouvelle année"
-          icon="pi pi-plus"
-          onClick={() => setDialogOpen(true)}
-        />
-      </div>
-      {failure ? (
-        <Message severity="error" text={failure} />
-      ) : (
-        <>
-          <TableSearch value={search} onChange={setSearch} />
-          <DataTable
-            value={items}
-            globalFilter={search}
-            globalFilterFields={["name", "starts_on", "ends_on", "status"]}
-            loading={loading}
-            dataKey="id"
-            emptyMessage="Aucune année scolaire"
-            stripedRows
-            responsiveLayout="scroll"
-          >
-            <Column field="name" header="Année" />
-            <Column
-              field="starts_on"
-              header="Début"
-              body={(row: AcademicYear) =>
-                new Date(`${row.starts_on}T00:00:00`).toLocaleDateString(
-                  "fr-GN",
-                )
-              }
-            />
-            <Column
-              field="ends_on"
-              header="Fin"
-              body={(row: AcademicYear) =>
-                new Date(`${row.ends_on}T00:00:00`).toLocaleDateString("fr-GN")
-              }
-            />
-            <Column
-              field="status"
-              header="Statut"
-              body={(row: AcademicYear) => (
-                <Tag
-                  value={labels[row.status]}
-                  severity={severities[row.status]}
-                />
-              )}
-            />
-            <Column header="Actions" body={actions} />
-          </DataTable>
-        </>
-      )}
+      <TablePanel
+        title="Années scolaires"
+        description="Une seule année peut être ouverte à la fois. Préparez-la, ouvrez-la, puis clôturez-la."
+        meta={
+          <Tag
+            value={`${items.length} année${items.length > 1 ? "s" : ""}`}
+            severity="secondary"
+          />
+        }
+        alerts={failure ? <Message severity="error" text={failure} /> : undefined}
+        search={
+          <TableSearch
+            value={search}
+            onChange={setSearch}
+            placeholder="Rechercher une année"
+            id="academic-years-search"
+          />
+        }
+        actions={
+          <Button
+            label="Nouvelle année"
+            icon="pi pi-plus"
+            size="small"
+            onClick={() => setDialogOpen(true)}
+          />
+        }
+      >
+        <DataTable
+          value={items}
+          globalFilter={search}
+          globalFilterFields={["name", "starts_on", "ends_on", "status"]}
+          loading={loading}
+          dataKey="id"
+          emptyMessage="Aucune année scolaire"
+          stripedRows
+          responsiveLayout="scroll"
+          size="small"
+          className="border-0"
+        >
+          <Column field="name" header="Année" />
+          <Column
+            field="starts_on"
+            header="Début"
+            body={(row: AcademicYear) =>
+              new Date(`${row.starts_on}T00:00:00`).toLocaleDateString("fr-GN")
+            }
+          />
+          <Column
+            field="ends_on"
+            header="Fin"
+            body={(row: AcademicYear) =>
+              new Date(`${row.ends_on}T00:00:00`).toLocaleDateString("fr-GN")
+            }
+          />
+          <Column
+            field="status"
+            header="Statut"
+            body={(row: AcademicYear) => (
+              <Tag value={labels[row.status]} severity={severities[row.status]} />
+            )}
+          />
+          <Column
+            header="Actions"
+            body={actions}
+            headerClassName="text-right"
+            bodyClassName="text-right"
+          />
+        </DataTable>
+      </TablePanel>
+
       <AcademicYearDialog
         visible={dialogOpen}
         loading={saving}

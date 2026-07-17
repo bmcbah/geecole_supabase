@@ -1,0 +1,19 @@
+@layer theme, utilities;
+
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme {
+  --color-brand-50: #f4faf8;
+  --color-brand-100: #e7f5f2;
+  --color-brand-200: #d8ebe8;
+  --color-brand-300: #b8d6d2;
+  --color-brand-500: #187b70;
+  --color-brand-600: #0f6158;
+  --color-brand-700: #21524d;
+  --color-brand-900: #103c38;
+  --color-accent-500: #f2b84b;
+  --color-surface-page: #f5f7fb;
+  --color-text-primary: #1c2a3a;
+  --color-text-muted: #637083;
+}
