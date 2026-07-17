@@ -1,14 +1,19 @@
 import { useId, type ReactNode } from "react";
+import { Card } from "primereact/card";
 import { Toolbar } from "primereact/toolbar";
+import { PageHeader } from "./PageHeader";
 
 type TablePanelProps = {
   title: ReactNode;
   description?: ReactNode;
   meta?: ReactNode;
+  headerActions?: ReactNode;
   alerts?: ReactNode;
+  toolbarStart?: ReactNode;
+  toolbarEnd?: ReactNode;
   search?: ReactNode;
   actions?: ReactNode;
-  /** @deprecated Use search and actions to preserve the shared toolbar layout. */
+  /** @deprecated Use toolbarStart and toolbarEnd. */
   toolbar?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -22,7 +27,10 @@ export function TablePanel({
   title,
   description,
   meta,
+  headerActions,
   alerts,
+  toolbarStart,
+  toolbarEnd,
   search,
   actions,
   toolbar,
@@ -31,55 +39,61 @@ export function TablePanel({
   contentClassName,
 }: TablePanelProps) {
   const titleId = useId();
-  const toolbarStart = toolbar ?? search;
-  const toolbarEnd = toolbar ? undefined : actions;
-  const hasToolbar = Boolean(toolbarStart || toolbarEnd);
+  const start = toolbar ?? toolbarStart ?? search;
+  const end = toolbar ? undefined : (toolbarEnd ?? actions);
+  const hasToolbar = Boolean(start || end);
 
   return (
-    <section aria-labelledby={titleId} className={className}>
-      <header className="mb-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2
-            id={titleId}
-            className="m-0 text-lg font-semibold leading-6 text-slate-900"
-          >
-            {title}
-          </h2>
-          {meta}
-        </div>
-
-        {description ? (
-          <p className="mb-0 mt-0.5 text-xs leading-5 text-slate-500">
-            {description}
-          </p>
-        ) : null}
-      </header>
-
-      {alerts ? (
-        <div className="mb-3 text-base [&_.p-message]:w-full">{alerts}</div>
-      ) : null}
-
-      {hasToolbar ? (
-        <Toolbar
-          start={toolbarStart}
-          end={toolbarEnd}
-          className="mb-3 min-h-0 rounded-none border-0 bg-transparent p-0"
+    <Card
+      className={joinClassNames(
+        "overflow-hidden rounded-xl border border-slate-200 shadow-sm",
+        "[&_.p-card-body]:p-0 [&_.p-card-content]:p-0",
+        className,
+      )}
+    >
+      <section aria-labelledby={titleId}>
+        <PageHeader
+          title={
+            <span id={titleId}>
+              {title}
+            </span>
+          }
+          description={description}
+          meta={meta}
+          actions={headerActions}
+          headingAs="h2"
+          compact
+          className="px-4 pt-4"
         />
-      ) : null}
 
-      <div
-        className={joinClassNames(
-          "overflow-hidden rounded-lg border border-slate-200",
-          "[&_.p-datatable]:border-0 [&_.p-datatable-wrapper]:border-0",
-          "[&_.p-datatable-thead>tr>th]:px-3 [&_.p-datatable-thead>tr>th]:py-2",
-          "[&_.p-datatable-thead>tr>th]:text-xs [&_.p-datatable-thead>tr>th]:font-semibold",
-          "[&_.p-datatable-tbody>tr>td]:px-3 [&_.p-datatable-tbody>tr>td]:py-2",
-          "[&_.p-datatable-tbody>tr>td]:text-sm",
-          contentClassName,
-        )}
-      >
-        {children}
-      </div>
-    </section>
+        {alerts ? (
+          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-base [&_.p-message]:w-full">
+            {alerts}
+          </div>
+        ) : null}
+
+        {hasToolbar ? (
+          <Toolbar
+            start={start}
+            end={end}
+            className="min-h-0 rounded-none border-0 border-b border-slate-200 bg-white px-4 py-3"
+          />
+        ) : null}
+
+        <div
+          className={joinClassNames(
+            "overflow-hidden",
+            "[&_.p-datatable]:border-0 [&_.p-datatable-wrapper]:border-0",
+            "[&_.p-datatable-thead>tr>th]:px-3 [&_.p-datatable-thead>tr>th]:py-2",
+            "[&_.p-datatable-thead>tr>th]:text-xs [&_.p-datatable-thead>tr>th]:font-semibold",
+            "[&_.p-datatable-tbody>tr>td]:px-3 [&_.p-datatable-tbody>tr>td]:py-2",
+            "[&_.p-datatable-tbody>tr>td]:text-sm",
+            contentClassName,
+          )}
+        >
+          {children}
+        </div>
+      </section>
+    </Card>
   );
 }
