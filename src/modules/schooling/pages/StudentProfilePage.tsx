@@ -5,6 +5,7 @@ import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { TabPanel, TabView } from "primereact/tabview";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { StudentProfileActions } from "../components/StudentProfileActions";
 import { AddGuardianDialog } from "../components/AddGuardianDialog";
@@ -41,14 +42,16 @@ export function StudentProfilePage() {
   const { student, enrollment, guardians } = detail;
   return (
     <section className="student-profile-page medium-controls">
-      <Button
-        label="Retour aux élèves"
-        icon="pi pi-arrow-left"
-        text
-        onClick={() => void navigate("/scolarite/eleves")}
-      />
-      <header className="student-profile-header">
-        <div className="student-profile-main">
+      <PageHeader
+        backAction={
+          <Button
+            label="Retour aux élèves"
+            icon="pi pi-arrow-left"
+            text
+            onClick={() => void navigate("/scolarite/eleves")}
+          />
+        }
+        leading={
           <StudentAvatarUpload
             institutionId={institutionId}
             studentId={student.id}
@@ -57,20 +60,16 @@ export function StudentProfilePage() {
             path={student.photo_url}
             onSaved={reload}
           />
-          <div>
-            <span className="eyebrow">{student.matricule}</span>
-            <h1>
-              {student.first_name} {student.last_name}
-            </h1>
-            <p>
-              {enrollment
-                ? `${enrollment.cycle_name_snapshot} · ${enrollment.level_name_snapshot} · ${year?.name}`
-                : "Aucune inscription pour cette année"}
-            </p>
-          </div>
-        </div>
-        <div className="student-profile-header-actions">
-          {enrollment && (
+        }
+        eyebrow={student.matricule}
+        title={`${student.first_name} ${student.last_name}`}
+        description={
+          enrollment
+            ? `${enrollment.cycle_name_snapshot} · ${enrollment.level_name_snapshot} · ${year?.name}`
+            : "Aucune inscription pour cette année"
+        }
+        meta={
+          enrollment ? (
             <EnrollmentStatusTag
               status={
                 enrollment.status as Parameters<
@@ -78,25 +77,29 @@ export function StudentProfilePage() {
                 >[0]["status"]
               }
             />
-          )}
-          {enrollment?.status === "confirmed" && (
-            <Button
-              label="Réinscrire"
-              icon="pi pi-refresh"
-              outlined
-              onClick={() =>
-                void navigate(`/scolarite/eleves/${studentId}/reinscription`)
-              }
+          ) : undefined
+        }
+        actions={
+          <>
+            {enrollment?.status === "confirmed" && (
+              <Button
+                label="Réinscrire"
+                icon="pi pi-refresh"
+                outlined
+                onClick={() =>
+                  void navigate(`/scolarite/eleves/${studentId}/reinscription`)
+                }
+              />
+            )}
+            <StudentProfileActions
+              student={student}
+              guardian={guardians[0]}
+              enrollment={enrollment}
+              onSaved={reload}
             />
-          )}
-          <StudentProfileActions
-            student={student}
-            guardian={guardians[0]}
-            enrollment={enrollment}
-            onSaved={reload}
-          />
-        </div>
-      </header>
+          </>
+        }
+      />
       <TabView className="student-profile-tabs">
         <TabPanel header="Vue d’ensemble" leftIcon="pi pi-home mr-2">
           <div className="profile-overview-grid">
