@@ -51,6 +51,8 @@ Les actions dangereuses demandent un motif, pas seulement une confirmation oui/n
 
 Écran comparatif : année précédente à gauche, proposition pour la nouvelle année à droite. Les changements et nouveaux frais sont surlignés avant validation.
 
+Le parcours explique les politiques actives : traitement des anciennes dettes, origine de la décision scolaire, redoublement, classe obligatoire, frais automatiques et statut produit par une opération groupée. Une règle bloquante reste visible avec sa cause et l'action attendue.
+
 ## Préinscription et inscription — parcours validé
 
 L'assistant utilise sept étapes courtes :

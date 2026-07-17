@@ -59,6 +59,27 @@ La confirmation :
 - Affiche les dettes antérieures sans les mélanger aux frais de la nouvelle année.
 - Conserve l'historique complet des inscriptions.
 
+### Politiques configurables de réinscription
+
+Les règles suivantes sont définies par l'établissement et ne sont jamais codées en dur :
+
+- autoriser la préparation des réinscriptions avant la clôture de l'année courante ;
+- autoriser une confirmation directe ou imposer un brouillon ;
+- anciennes dettes : information, avertissement ou blocage ;
+- exiger ou non une décision scolaire ;
+- reprendre la décision du bulletin final lorsqu'elle existe ;
+- autoriser sa correction uniquement aux rôles habilités et avec un motif ;
+- redoublement : autorisé, soumis à dérogation ou interdit ;
+- classe obligatoire ou facultative à la confirmation ;
+- générer automatiquement ou manuellement les frais de réinscription ;
+- autoriser ou non la préparation groupée ;
+- résultat d'une préparation groupée : brouillon, préinscription ou inscription confirmée ;
+- proposer le cycle suivant uniquement s'il est actif dans l'établissement pour l'année cible.
+
+Valeurs par défaut recommandées : préparation anticipée autorisée, confirmation directe autorisée, anciennes dettes avec avertissement, décision scolaire obligatoire, décision du bulletin proposée mais corrigeable avec motif, redoublement soumis à la règle du niveau, classe facultative, frais automatiques, préparation groupée en brouillon et passage vers un cycle suivant uniquement s'il est actif.
+
+Une surcharge peut être définie pour une année en préparation. La valeur effectivement appliquée est conservée sur la réinscription afin qu'un changement futur ne modifie pas l'historique.
+
 ## Classes
 
 Une classe est une division annuelle d'un niveau : par exemple 7e A. Sa capacité peut bloquer ou avertir selon le paramétrage. Un transfert entre classes est historisé.
