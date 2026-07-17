@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
@@ -25,6 +24,9 @@ export function StudentsPage() {
   const [cycle, setCycle] = useState("");
   const [gender, setGender] = useState("");
   const [contact, setContact] = useState("");
+  const [guardian, setGuardian] = useState("");
+  const [birthFrom, setBirthFrom] = useState("");
+  const [birthTo, setBirthTo] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const load = useCallback(async () => {
     if (!institutionId || !yearId) return;
@@ -56,13 +58,29 @@ export function StudentsPage() {
           (!level || student.levelName === level) &&
           (!cycle || student.cycleName === cycle) &&
           (!gender || student.gender === gender) &&
+          (!guardian || student.guardianName === guardian) &&
+          (!birthFrom ||
+            Boolean(student.birthDate && student.birthDate >= birthFrom)) &&
+          (!birthTo ||
+            Boolean(student.birthDate && student.birthDate <= birthTo)) &&
           (!contact ||
             (contact === "present"
               ? Boolean(student.guardianPhone)
               : !student.guardianPhone))
         );
       }),
-    [students, query, status, level, cycle, gender, contact],
+    [
+      students,
+      query,
+      status,
+      level,
+      cycle,
+      gender,
+      contact,
+      guardian,
+      birthFrom,
+      birthTo,
+    ],
   );
   if (!yearId)
     return (
@@ -88,7 +106,7 @@ export function StudentsPage() {
           onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
         />
       </header>
-      <Card className="schooling-list-card">
+      <div className="students-filter-zone">
         <div className="schooling-filters">
           <label className="field schooling-search">
             <span>Rechercher</span>
@@ -175,6 +193,36 @@ export function StudentsPage() {
                 onChange={(e) => setContact(String(e.value))}
               />
             </label>
+            <label className="field">
+              <span>Responsable principal</span>
+              <Dropdown
+                value={guardian}
+                filter
+                options={[
+                  { label: "Tous les responsables", value: "" },
+                  ...Array.from(
+                    new Set(students.map((item) => item.guardianName)),
+                  ).map((value) => ({ label: value, value })),
+                ]}
+                onChange={(e) => setGuardian(String(e.value))}
+              />
+            </label>
+            <label className="field">
+              <span>Naissance à partir du</span>
+              <InputText
+                type="date"
+                value={birthFrom}
+                onChange={(e) => setBirthFrom(e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span>Naissance jusqu’au</span>
+              <InputText
+                type="date"
+                value={birthTo}
+                onChange={(e) => setBirthTo(e.target.value)}
+              />
+            </label>
             <div className="filter-reset">
               <Button
                 label="Réinitialiser les filtres"
@@ -186,12 +234,17 @@ export function StudentsPage() {
                   setCycle("");
                   setGender("");
                   setContact("");
+                  setGuardian("");
+                  setBirthFrom("");
+                  setBirthTo("");
                   setQuery("");
                 }}
               />
             </div>
           </div>
         )}
+      </div>
+      <div className="data-surface">
         {failure && <Message severity="error" text={failure} />}
         {loading ? (
           <div className="content-state">
@@ -262,7 +315,7 @@ export function StudentsPage() {
             />
           </DataTable>
         )}
-      </Card>
+      </div>
     </section>
   );
 }

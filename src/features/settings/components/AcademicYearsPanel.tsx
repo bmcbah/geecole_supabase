@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Column } from "primereact/column";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { DataTable } from "primereact/datatable";
@@ -18,6 +17,7 @@ import type { AcademicYear, AcademicYearStatus } from "../types/settings";
 import { AcademicYearDialog } from "./AcademicYearDialog";
 import { CloneAcademicYearDialog } from "./CloneAcademicYearDialog";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { TableSearch } from "../../../shared/components/TableSearch";
 
 interface Props {
   institutionId: string;
@@ -57,6 +57,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
   const [failure, setFailure] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cloneTarget, setCloneTarget] = useState<AcademicYear | null>(null);
+  const [search, setSearch] = useState("");
   const load = useCallback(async () => {
     setLoading(true);
     setFailure("");
@@ -170,10 +171,13 @@ export function AcademicYearsPanel({ institutionId }: Props) {
     </div>
   );
   return (
-    <Card
-      title="Années scolaires"
-      subTitle="Une seule année peut être ouverte à la fois"
-    >
+    <section className="settings-panel-surface">
+      <header className="settings-panel-heading">
+        <div>
+          <h2>Années scolaires</h2>
+          <p>Une seule année peut être ouverte à la fois</p>
+        </div>
+      </header>
       <ConfirmDialog />
       <div className="panel-toolbar">
         <p>
@@ -189,41 +193,48 @@ export function AcademicYearsPanel({ institutionId }: Props) {
       {failure ? (
         <Message severity="error" text={failure} />
       ) : (
-        <DataTable
-          value={items}
-          loading={loading}
-          dataKey="id"
-          emptyMessage="Aucune année scolaire"
-          stripedRows
-          responsiveLayout="scroll"
-        >
-          <Column field="name" header="Année" />
-          <Column
-            field="starts_on"
-            header="Début"
-            body={(row: AcademicYear) =>
-              new Date(`${row.starts_on}T00:00:00`).toLocaleDateString("fr-GN")
-            }
-          />
-          <Column
-            field="ends_on"
-            header="Fin"
-            body={(row: AcademicYear) =>
-              new Date(`${row.ends_on}T00:00:00`).toLocaleDateString("fr-GN")
-            }
-          />
-          <Column
-            field="status"
-            header="Statut"
-            body={(row: AcademicYear) => (
-              <Tag
-                value={labels[row.status]}
-                severity={severities[row.status]}
-              />
-            )}
-          />
-          <Column header="Actions" body={actions} />
-        </DataTable>
+        <>
+          <TableSearch value={search} onChange={setSearch} />
+          <DataTable
+            value={items}
+            globalFilter={search}
+            globalFilterFields={["name", "starts_on", "ends_on", "status"]}
+            loading={loading}
+            dataKey="id"
+            emptyMessage="Aucune année scolaire"
+            stripedRows
+            responsiveLayout="scroll"
+          >
+            <Column field="name" header="Année" />
+            <Column
+              field="starts_on"
+              header="Début"
+              body={(row: AcademicYear) =>
+                new Date(`${row.starts_on}T00:00:00`).toLocaleDateString(
+                  "fr-GN",
+                )
+              }
+            />
+            <Column
+              field="ends_on"
+              header="Fin"
+              body={(row: AcademicYear) =>
+                new Date(`${row.ends_on}T00:00:00`).toLocaleDateString("fr-GN")
+              }
+            />
+            <Column
+              field="status"
+              header="Statut"
+              body={(row: AcademicYear) => (
+                <Tag
+                  value={labels[row.status]}
+                  severity={severities[row.status]}
+                />
+              )}
+            />
+            <Column header="Actions" body={actions} />
+          </DataTable>
+        </>
       )}
       <AcademicYearDialog
         visible={dialogOpen}
@@ -239,6 +250,6 @@ export function AcademicYearsPanel({ institutionId }: Props) {
         onHide={() => setCloneTarget(null)}
         onCloned={load}
       />
-    </Card>
+    </section>
   );
 }

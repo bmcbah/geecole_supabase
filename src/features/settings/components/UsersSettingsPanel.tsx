@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
@@ -20,6 +20,7 @@ import {
   savePerson,
 } from "../services/annual-settings.service";
 import { SettingsPanelShell } from "./SettingsPanelShell";
+import { TableSearch } from "../../../shared/components/TableSearch";
 
 type Person = Awaited<ReturnType<typeof listPeople>>[number];
 type Invitation = Awaited<ReturnType<typeof listPersonInvitations>>[number];
@@ -51,6 +52,7 @@ export function UsersSettingsPanel() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [invitationLink, setInvitationLink] = useState("");
+  const [search, setSearch] = useState("");
   const load = useCallback(async () => {
     if (!institutionId) return;
     const [persons, invites] = await Promise.all([
@@ -127,12 +129,57 @@ export function UsersSettingsPanel() {
       });
     }
   };
+  const normalizedSearch = search.trim().toLocaleLowerCase("fr");
+  const filteredPeople = useMemo(
+    () =>
+      people.filter((person) => {
+        if (!normalizedSearch) return true;
+        const values = [
+          person.first_name,
+          person.last_name,
+          person.email,
+          person.phone,
+          person.status,
+          person.auth_user_id
+            ? "compte lié accès connexion"
+            : "sans compte invitation",
+          ...person.roles,
+          ...person.roles.map(roleLabel),
+        ];
+        return values.some((value) =>
+          String(value ?? "")
+            .toLocaleLowerCase("fr")
+            .includes(normalizedSearch),
+        );
+      }),
+    [people, normalizedSearch],
+  );
+  const filteredInvitations = useMemo(
+    () =>
+      invitations.filter((invitation) => {
+        if (!normalizedSearch) return true;
+        const person = people.find((item) => item.id === invitation.person_id);
+        return [
+          invitation.email,
+          invitation.status,
+          invitation.expires_at,
+          person?.first_name,
+          person?.last_name,
+        ].some((value) =>
+          String(value ?? "")
+            .toLocaleLowerCase("fr")
+            .includes(normalizedSearch),
+        );
+      }),
+    [invitations, people, normalizedSearch],
+  );
   return (
     <SettingsPanelShell
       title="Personnes et accès"
       description="Élèves, parents et personnel ; le compte de connexion reste facultatif"
       year={year}
     >
+      <TableSearch value={search} onChange={setSearch} />
       <TabView>
         <TabPanel header="Personnes">
           <div className="panel-toolbar panel-toolbar-end">
@@ -144,7 +191,7 @@ export function UsersSettingsPanel() {
             />
           </div>
           <DataTable
-            value={people}
+            value={filteredPeople}
             dataKey="id"
             emptyMessage="Aucune personne"
             stripedRows
@@ -210,7 +257,7 @@ export function UsersSettingsPanel() {
         </TabPanel>
         <TabPanel header="Invitations">
           <DataTable
-            value={invitations}
+            value={filteredInvitations}
             dataKey="id"
             emptyMessage="Aucune invitation"
             stripedRows

@@ -24,6 +24,7 @@ import {
 } from "../services/annual-settings.service";
 import { SettingsEntityDialog, type EntityValue } from "./SettingsEntityDialog";
 import { SettingsPanelShell } from "./SettingsPanelShell";
+import { TableSearch } from "../../../shared/components/TableSearch";
 type Subject = Database["public"]["Tables"]["subjects"]["Row"];
 type AnnualSubject = Database["public"]["Tables"]["annual_subjects"]["Row"];
 type DialogState =
@@ -43,6 +44,7 @@ export function SubjectsSettingsPanel() {
   const [target, setTarget] = useState<Subject[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
   const [periods, setPeriods] = useState<
     Awaited<ReturnType<typeof listAcademicPeriods>>
   >([]);
@@ -223,6 +225,7 @@ export function SubjectsSettingsPanel() {
       description="Une matière ajoutée au catalogue devient disponible pour tous les niveaux de l’établissement"
       year={year}
     >
+      <TableSearch value={search} onChange={setSearch} />
       <TabView>
         <TabPanel header="Affectation par niveau">
           <div className="subject-level-toolbar">
@@ -278,7 +281,18 @@ export function SubjectsSettingsPanel() {
               {assignedRows.length > 0 && (
                 <div className="subject-details">
                   <h3>Coefficients et volumes horaires</h3>
-                  <DataTable value={assignedRows} dataKey="id" stripedRows>
+                  <DataTable
+                    value={assignedRows}
+                    globalFilter={search}
+                    globalFilterFields={[
+                      "subject_name_snapshot",
+                      "subject_code_snapshot",
+                      "coefficient",
+                      "weekly_hours",
+                    ]}
+                    dataKey="id"
+                    stripedRows
+                  >
                     <Column field="subject_name_snapshot" header="Matière" />
                     <Column field="coefficient" header="Coefficient" />
                     <Column field="weekly_hours" header="Heures/semaine" />
@@ -318,6 +332,8 @@ export function SubjectsSettingsPanel() {
           </div>
           <DataTable
             value={subjects}
+            globalFilter={search}
+            globalFilterFields={["name", "code", "is_active"]}
             dataKey="id"
             emptyMessage="Aucune matière"
             stripedRows

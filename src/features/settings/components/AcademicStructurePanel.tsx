@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TabPanel, TabView } from "primereact/tabview";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Column } from "primereact/column";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { DataTable } from "primereact/datatable";
@@ -25,6 +24,7 @@ import type {
   GradeLevel,
 } from "../types/academic-structure";
 import { StructureItemDialog } from "./StructureItemDialog";
+import { TableSearch } from "../../../shared/components/TableSearch";
 interface Props {
   institutionId: string;
 }
@@ -80,6 +80,7 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
   const [annualIds, setAnnualIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
   const [failure, setFailure] = useState("");
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
@@ -201,10 +202,16 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
     });
   if (failure) return <Message severity="error" text={failure} />;
   return (
-    <Card
-      title={`Niveaux — ${year?.name ?? ""}`}
-      subTitle="Les onglets suivent automatiquement les cycles actifs de l’établissement"
-    >
+    <section className="settings-panel-surface">
+      <header className="settings-panel-heading">
+        <div>
+          <h2>Niveaux — {year?.name ?? ""}</h2>
+          <p>
+            Les onglets suivent automatiquement les cycles actifs de
+            l’établissement
+          </p>
+        </div>
+      </header>
       <ConfirmDialog />
       <div className="panel-toolbar">
         <div>
@@ -220,75 +227,87 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
           text="Aucun cycle actif. Activez d’abord un cycle dans la rubrique Cycles."
         />
       ) : (
-        <TabView>
-          {cycles.map((cycle) => (
-            <TabPanel
-              key={cycle.id}
-              header={
-                <div className="cycle-accordion-header">
-                  <div>
-                    <strong>{cycle.name}</strong>
-                    <span>
-                      {cycle.code} · {periodLabel(cycle)}
-                    </span>
+        <>
+          <TableSearch value={search} onChange={setSearch} />
+          <TabView>
+            {cycles.map((cycle) => (
+              <TabPanel
+                key={cycle.id}
+                header={
+                  <div className="cycle-accordion-header">
+                    <div>
+                      <strong>{cycle.name}</strong>
+                      <span>
+                        {cycle.code} · {periodLabel(cycle)}
+                      </span>
+                    </div>
+                  </div>
+                }
+              >
+                <div className="panel-toolbar">
+                  <p>Niveaux actifs de ce cycle pour {year?.name}</p>
+                  <div className="table-actions">
+                    <Button
+                      label="Configurer le cycle"
+                      icon="pi pi-cog"
+                      severity="secondary"
+                      outlined
+                      disabled={!editable}
+                      onClick={() => setDialog({ kind: "cycle", item: cycle })}
+                    />
+                    <Button
+                      label="Ajouter un niveau"
+                      icon="pi pi-plus"
+                      disabled={!editable}
+                      onClick={() => setDialog({ kind: "niveau", cycle })}
+                    />
                   </div>
                 </div>
-              }
-            >
-              <div className="panel-toolbar">
-                <p>Niveaux actifs de ce cycle pour {year?.name}</p>
-                <div className="table-actions">
-                  <Button
-                    label="Configurer le cycle"
-                    icon="pi pi-cog"
-                    severity="secondary"
-                    outlined
-                    disabled={!editable}
-                    onClick={() => setDialog({ kind: "cycle", item: cycle })}
+                <DataTable
+                  value={levelsByCycle.get(cycle.cycle_id) ?? []}
+                  globalFilter={search}
+                  globalFilterFields={[
+                    "name",
+                    "code",
+                    "sort_order",
+                    "capacity",
+                    "is_active",
+                    "repeat_allowed",
+                  ]}
+                  dataKey="id"
+                  emptyMessage="Aucun niveau"
+                  stripedRows
+                >
+                  <Column field="sort_order" header="Ordre" />
+                  <Column field="name" header="Niveau" />
+                  <Column field="code" header="Code" />
+                  <Column
+                    header="Actions"
+                    body={(level: GradeLevel) => (
+                      <div className="table-actions">
+                        <Button
+                          icon="pi pi-pencil"
+                          text
+                          disabled={!editable}
+                          onClick={() =>
+                            setDialog({ kind: "niveau", cycle, item: level })
+                          }
+                        />
+                        <Button
+                          icon="pi pi-trash"
+                          text
+                          severity="danger"
+                          disabled={!editable}
+                          onClick={() => removeLevel(cycle, level)}
+                        />
+                      </div>
+                    )}
                   />
-                  <Button
-                    label="Ajouter un niveau"
-                    icon="pi pi-plus"
-                    disabled={!editable}
-                    onClick={() => setDialog({ kind: "niveau", cycle })}
-                  />
-                </div>
-              </div>
-              <DataTable
-                value={levelsByCycle.get(cycle.cycle_id) ?? []}
-                dataKey="id"
-                emptyMessage="Aucun niveau"
-                stripedRows
-              >
-                <Column field="sort_order" header="Ordre" />
-                <Column field="name" header="Niveau" />
-                <Column field="code" header="Code" />
-                <Column
-                  header="Actions"
-                  body={(level: GradeLevel) => (
-                    <div className="table-actions">
-                      <Button
-                        icon="pi pi-pencil"
-                        text
-                        disabled={!editable}
-                        onClick={() =>
-                          setDialog({ kind: "niveau", cycle, item: level })
-                        }
-                      />
-                      <Button
-                        icon="pi pi-trash"
-                        text
-                        severity="danger"
-                        disabled={!editable}
-                        onClick={() => removeLevel(cycle, level)}
-                      />
-                    </div>
-                  )}
-                />
-              </DataTable>
-            </TabPanel>
-          ))}
-        </TabView>
+                </DataTable>
+              </TabPanel>
+            ))}
+          </TabView>
+        </>
       )}
       <StructureItemDialog
         kind={dialog?.kind ?? "cycle"}
@@ -298,6 +317,6 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
         onHide={() => setDialog(null)}
         onSubmit={submit}
       />
-    </Card>
+    </section>
   );
 }
