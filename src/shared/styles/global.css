@@ -456,11 +456,34 @@ input {
 .student-profile-tabs {
   margin-top: 0.75rem;
 }
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+}
+.p-tabview .p-tabview-panels {
+  padding: 1rem 0;
+}
 .student-profile-header {
   padding: 1rem 1.25rem;
   border: 1px solid #e3e9ef;
   border-radius: 0.8rem;
   background: white;
+}
+.student-profile-header-actions,
+.student-profile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.student-profile-header-actions {
+  flex-direction: column;
+  align-items: flex-end;
+}
+.menu-danger .p-menuitem-text,
+.menu-danger .p-menuitem-icon {
+  color: #b42318;
 }
 .profile-overview-grid {
   display: grid;
@@ -754,6 +777,14 @@ input {
 .subject-pick-item small {
   color: #718096;
   font-weight: 400;
+}
+.cycle-accordion-header strong {
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+.cycle-accordion-header span {
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 .subject-level-toolbar {
   display: flex;

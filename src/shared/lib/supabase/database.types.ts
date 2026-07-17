@@ -767,6 +767,14 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      change_enrollment_status: {
+        Args: {
+          target_enrollment_id: string;
+          target_status: string;
+          change_reason?: string | null;
+        };
+        Returns: void;
+      };
       create_student_enrollment: {
         Args: {
           target_institution_id: string;

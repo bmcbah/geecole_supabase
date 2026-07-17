@@ -1,0 +1,10 @@
+begin;
+select plan(6);
+select has_table('public', 'enrollment_status_history', 'status history exists');
+select has_function('public', 'change_enrollment_status', array['uuid','enrollment_status','text'], 'status transition RPC exists');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid = 'public.enrollment_status_history'::regclass), 'RLS active on status history');
+select is(has_table_privilege('authenticated','public.enrollment_status_history','select'), true, 'history readable by authenticated users');
+select table_privs_are('public','enrollment_status_history','anon',array[]::text[]);
+select is(has_function_privilege('authenticated','public.change_enrollment_status(uuid,enrollment_status,text)','execute'), true, 'authenticated can call transition RPC');
+select * from finish();
+rollback;

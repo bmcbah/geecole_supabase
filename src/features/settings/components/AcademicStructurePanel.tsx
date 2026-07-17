@@ -237,13 +237,22 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
             >
               <div className="panel-toolbar">
                 <p>Niveaux actifs de ce cycle pour {year?.name}</p>
-                <Button
-                  label="Ajouter un niveau"
-                  icon="pi pi-plus"
-                  size="small"
-                  disabled={!editable}
-                  onClick={() => setDialog({ kind: "niveau", cycle })}
-                />
+                <div className="table-actions">
+                  <Button
+                    label="Configurer le cycle"
+                    icon="pi pi-cog"
+                    severity="secondary"
+                    outlined
+                    disabled={!editable}
+                    onClick={() => setDialog({ kind: "cycle", item: cycle })}
+                  />
+                  <Button
+                    label="Ajouter un niveau"
+                    icon="pi pi-plus"
+                    disabled={!editable}
+                    onClick={() => setDialog({ kind: "niveau", cycle })}
+                  />
+                </div>
               </div>
               <DataTable
                 value={levelsByCycle.get(cycle.cycle_id) ?? []}

@@ -147,3 +147,44 @@ export async function getStudent(studentId: string, yearId: string) {
     guardians: guardianResult.data,
   };
 }
+
+export async function updateStudent(
+  studentId: string,
+  input: {
+    first_name: string;
+    last_name: string;
+    birth_date: string | null;
+    birth_place: string;
+    address: string;
+  },
+) {
+  const { error } = await supabase
+    .from("students")
+    .update(input)
+    .eq("id", studentId);
+  if (error) throw error;
+}
+
+export async function updateGuardian(
+  guardianId: string,
+  input: { first_name: string; last_name: string; primary_phone: string },
+) {
+  const { error } = await supabase
+    .from("guardians")
+    .update(input)
+    .eq("id", guardianId);
+  if (error) throw error;
+}
+
+export async function changeEnrollmentStatus(
+  enrollmentId: string,
+  status: "confirmed" | "cancelled" | "rejected" | "withdrawn" | "transferred",
+  reason?: string,
+) {
+  const { error } = await supabase.rpc("change_enrollment_status", {
+    target_enrollment_id: enrollmentId,
+    target_status: status,
+    change_reason: reason ?? null,
+  });
+  if (error) throw error;
+}

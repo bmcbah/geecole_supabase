@@ -6,6 +6,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { TabPanel, TabView } from "primereact/tabview";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
+import { StudentProfileActions } from "../components/StudentProfileActions";
 import { getStudent } from "../services/schooling.service";
 
 type StudentDetail = Awaited<ReturnType<typeof getStudent>>;
@@ -21,6 +22,10 @@ export function StudentProfilePage() {
       .then(setDetail)
       .catch(() => setFailure("Impossible de charger la fiche élève."));
   }, [studentId, yearId]);
+  const reload = async () => {
+    if (!studentId || !yearId) return;
+    setDetail(await getStudent(studentId, yearId));
+  };
   if (failure) return <Message severity="error" text={failure} />;
   if (!detail)
     return (
@@ -55,15 +60,23 @@ export function StudentProfilePage() {
             </p>
           </div>
         </div>
-        {enrollment && (
-          <EnrollmentStatusTag
-            status={
-              enrollment.status as Parameters<
-                typeof EnrollmentStatusTag
-              >[0]["status"]
-            }
+        <div className="student-profile-header-actions">
+          {enrollment && (
+            <EnrollmentStatusTag
+              status={
+                enrollment.status as Parameters<
+                  typeof EnrollmentStatusTag
+                >[0]["status"]
+              }
+            />
+          )}
+          <StudentProfileActions
+            student={student}
+            guardian={guardians[0]}
+            enrollment={enrollment}
+            onSaved={reload}
           />
-        )}
+        </div>
       </header>
       <TabView className="student-profile-tabs">
         <TabPanel header="Vue d’ensemble" leftIcon="pi pi-home mr-2">
