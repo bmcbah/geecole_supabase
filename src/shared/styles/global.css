@@ -326,9 +326,48 @@ input {
   color: inherit;
 }
 .policy-card {
-  margin-top: 1.25rem;
   box-shadow: none;
   border: 1px solid #dfe7e5;
+}
+.institution-settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.institution-settings-stack > .p-card {
+  margin: 0;
+}
+.medium-controls .field {
+  gap: 0.45rem;
+}
+.medium-controls .field > label,
+.medium-controls .field > span:first-child {
+  color: #425267;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.medium-controls .p-inputtext,
+.medium-controls .p-dropdown,
+.medium-controls .p-multiselect,
+.medium-controls .p-calendar,
+.medium-controls .p-inputnumber-input {
+  min-height: 42px;
+}
+.medium-controls .p-dropdown-label,
+.medium-controls .p-multiselect-label {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.medium-controls .p-button:not(.p-button-icon-only) {
+  min-height: 42px;
+  padding: 0.65rem 1rem;
+}
+.institution-settings-stack .settings-grid,
+.policy-card .schooling-form-grid {
+  grid-template-columns: repeat(2, minmax(220px, 360px));
 }
 .policy-list {
   display: flex;
@@ -430,6 +469,10 @@ input {
   }
   .enrollment-dialog .p-steps-title {
     display: none;
+  }
+  .institution-settings-stack .settings-grid,
+  .policy-card .schooling-form-grid {
+    grid-template-columns: 1fr;
   }
 }
 .institution-selector {

@@ -70,7 +70,7 @@ export function EnrollmentPolicyPanel({
     <Card
       title="Règles d’inscription"
       subTitle="Ces choix pilotent le parcours Scolarité de cet établissement."
-      className="policy-card"
+      className="settings-section-card policy-card medium-controls"
     >
       <div className="policy-list">
         {switches.map((item) => (

@@ -171,7 +171,7 @@ export function EnrollmentPage() {
   if (!yearId)
     return <Message severity="warn" text="Sélectionnez une année scolaire." />;
   return (
-    <section className="enrollment-page">
+    <section className="enrollment-page medium-controls">
       <header className="page-heading">
         <div>
           <span className="eyebrow">Scolarité · {year?.name}</span>

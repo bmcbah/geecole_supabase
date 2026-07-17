@@ -72,7 +72,7 @@ export function StudentsPage() {
       />
     );
   return (
-    <section>
+    <section className="medium-controls">
       <header className="page-heading">
         <div>
           <span className="eyebrow">Scolarité · {year?.name}</span>

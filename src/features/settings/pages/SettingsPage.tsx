@@ -11,6 +11,7 @@ import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
 import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
 import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
+import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -68,10 +69,13 @@ export function SettingsPage() {
         <SettingsSidebar />
         <div className="settings-content">
           {section === "etablissement" ? (
-            <InstitutionDetailsForm
-              institution={selected}
-              onUpdated={() => void refresh()}
-            />
+            <div className="institution-settings-stack medium-controls">
+              <InstitutionDetailsForm
+                institution={selected}
+                onUpdated={() => void refresh()}
+              />
+              <EnrollmentPolicyPanel institutionId={selected.id} />
+            </div>
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
           ) : section === "cycles" ? (
