@@ -239,7 +239,7 @@ export function AcademicYearsPanel({ institutionId }: Props) {
             stripedRows
             responsiveLayout="scroll"
             size="small"
-            className="border-0"
+            className=""
           >
             <Column field="name" header="Année" />
             <Column

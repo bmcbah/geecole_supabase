@@ -23,29 +23,30 @@ export function SettingsTablePanel({
   return (
     <section
       className={joinClassNames(
-        "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm",
+        "overflow-hidden rounded-xl bg-white shadow-sm",
         className,
       )}
     >
       {sectionHeader ? (
-        <div className="border-b border-slate-200 px-4 py-3">
+        <div className="border-slate-200 px-4 py-3">
           {sectionHeader}
         </div>
       ) : null}
 
       {alert ? (
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-base [&_.p-message]:w-full">
+        <div className="border-slate-200 bg-slate-50 px-4 py-3 text-sm [&_.p-message]:w-full">
           {alert}
         </div>
       ) : null}
 
       {toolbar ? (
-        <div className="border-b border-slate-200 px-4 py-3">{toolbar}</div>
+        <div className="border-slate-200 px-4 py-3">{toolbar}</div>
       ) : null}
 
       <div
         className={joinClassNames(
           "overflow-hidden",
+          "px-4 pb-3",
           "[&_.p-datatable]:border-0 [&_.p-datatable-wrapper]:border-0",
           "[&_.p-datatable-thead>tr>th]:px-3 [&_.p-datatable-thead>tr>th]:py-2",
           "[&_.p-datatable-thead>tr>th]:text-xs [&_.p-datatable-thead>tr>th]:font-semibold",
