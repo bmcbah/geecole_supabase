@@ -82,7 +82,10 @@ export function SettingsPage() {
         <SettingsSidebar />
         <div className="settings-content">
           {section === "etablissement" ? (
-            <Accordion activeIndex={0} className="compact-settings-accordion">
+            <Accordion
+              activeIndex={0}
+              className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5"
+            >
               <AccordionTab header="Informations générales">
                 <InstitutionDetailsForm
                   institution={selected}
