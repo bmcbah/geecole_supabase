@@ -15,6 +15,16 @@ export function ClassOrganizationCard({
   const notify = useToast();
   const [mode, setMode] = useState(institution.class_structure_mode);
   const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await updateClassStructureMode(institution.id, mode);
+      await onSaved();
+      notify({ severity: "success", summary: "Organisation enregistrée" });
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <Card
       title="Organisation des classes"
@@ -46,19 +56,7 @@ export function ClassOrganizationCard({
           icon="pi pi-check"
           loading={busy}
           disabled={mode === institution.class_structure_mode}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await updateClassStructureMode(institution.id, mode);
-              await onSaved();
-              notify({
-                severity: "success",
-                summary: "Organisation enregistrée",
-              });
-            } finally {
-              setBusy(false);
-            }
-          }}
+          onClick={() => void save()}
         />
       </div>
     </Card>
