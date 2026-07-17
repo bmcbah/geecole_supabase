@@ -4,6 +4,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
+import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deleteFinancialRule,
@@ -18,10 +19,11 @@ import {
   type EntityField,
   type EntityValue,
 } from "../../settings/components/SettingsEntityDialog";
-import type { Database } from "../../../shared/lib/supabase/database.types";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
+import type { Database } from "../../../shared/lib/supabase/database.types";
 
 type Rule = Database["public"]["Tables"]["financial_rules"]["Row"];
 
@@ -143,96 +145,103 @@ export function FinancialRulesSettingsPanel() {
 
   return (
     <>
-      <TablePanel
-        title="Frais"
-        description="Configurez les frais, montants et échéances de l’année sélectionnée."
-        meta={
-          <Tag
-            value={`${items.length} frais`}
-            severity="secondary"
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Frais"
+            description="Configurez les frais, montants et échéances de l’année sélectionnée."
+            meta={<Tag value={`${items.length} frais`} severity="secondary" />}
+            headingAs="h2"
+            compact
           />
         }
-        alerts={readOnlyAlert}
-        search={
-          <TableSearch
-            id="financial-rules-search"
-            value={search}
-            onChange={setSearch}
-            placeholder="Rechercher un frais"
-          />
-        }
-        actions={
-          <Button
-            label="Nouveau frais"
-            icon="pi pi-plus"
-            size="small"
-            disabled={!editable}
-            onClick={() => setEditing(null)}
-          />
-        }
-      >
-        <DataTable
-          value={items}
-          globalFilter={search}
-          globalFilterFields={[
-            "name",
-            "code",
-            "amount",
-            "frequency",
-            "due_day",
-            "fee_type",
-            "is_active",
-            "is_mandatory",
-          ]}
-          dataKey="id"
-          emptyMessage="Aucun frais"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column field="name" header="Frais" />
-          <Column field="code" header="Code" />
-          <Column
-            header="Montant"
-            body={(row: Rule) => `${row.amount.toLocaleString("fr-GN")} GNF`}
-          />
-          <Column field="frequency" header="Périodicité" />
-          <Column field="due_day" header="Échéance" />
-          <Column
-            header="Statut"
-            body={(row: Rule) => (
-              <Tag
-                value={row.is_active ? "Actif" : "Inactif"}
-                severity={row.is_active ? "success" : "secondary"}
+        alert={readOnlyAlert}
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                id="financial-rules-search"
+                value={search}
+                onChange={setSearch}
+                placeholder="Rechercher un frais"
               />
-            )}
+            }
+            end={
+              <Button
+                label="Nouveau frais"
+                icon="pi pi-plus"
+                size="small"
+                disabled={!editable}
+                onClick={() => setEditing(null)}
+              />
+            }
+            className="min-h-0 rounded-none border-0 bg-transparent p-0"
           />
-          <Column
-            header="Actions"
-            headerClassName="text-right"
-            bodyClassName="text-right"
-            body={(row: Rule) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  icon="pi pi-pencil"
-                  text
-                  size="small"
-                  disabled={!editable}
-                  onClick={() => setEditing(row)}
+        }
+        dataTable={
+          <DataTable
+            value={items}
+            globalFilter={search}
+            globalFilterFields={[
+              "name",
+              "code",
+              "amount",
+              "frequency",
+              "due_day",
+              "fee_type",
+              "is_active",
+              "is_mandatory",
+            ]}
+            dataKey="id"
+            emptyMessage="Aucun frais"
+            stripedRows
+            responsiveLayout="scroll"
+            size="small"
+          >
+            <Column field="name" header="Frais" />
+            <Column field="code" header="Code" />
+            <Column
+              header="Montant"
+              body={(row: Rule) => `${row.amount.toLocaleString("fr-GN")} GNF`}
+            />
+            <Column field="frequency" header="Périodicité" />
+            <Column field="due_day" header="Échéance" />
+            <Column
+              header="Statut"
+              body={(row: Rule) => (
+                <Tag
+                  value={row.is_active ? "Actif" : "Inactif"}
+                  severity={row.is_active ? "success" : "secondary"}
                 />
-                <Button
-                  icon="pi pi-trash"
-                  text
-                  size="small"
-                  severity="danger"
-                  disabled={!editable}
-                  onClick={() => void remove(row.id)}
-                />
-              </div>
-            )}
-          />
-        </DataTable>
-      </TablePanel>
+              )}
+            />
+            <Column
+              header="Actions"
+              headerClassName="text-right"
+              bodyClassName="text-right"
+              body={(row: Rule) => (
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    size="small"
+                    disabled={!editable}
+                    onClick={() => setEditing(row)}
+                  />
+                  <Button
+                    icon="pi pi-trash"
+                    text
+                    size="small"
+                    severity="danger"
+                    disabled={!editable}
+                    onClick={() => void remove(row.id)}
+                  />
+                </div>
+              )}
+            />
+          </DataTable>
+        }
+      />
 
       <SettingsEntityDialog
         header="Frais"
