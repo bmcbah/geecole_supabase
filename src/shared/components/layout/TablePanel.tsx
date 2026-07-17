@@ -7,10 +7,12 @@ type TablePanelProps = {
   meta?: ReactNode;
   search?: ReactNode;
   actions?: ReactNode;
+  /** @deprecated Prefer search and actions so the toolbar stays aligned. */
   toolbar?: ReactNode;
   alerts?: ReactNode;
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
 };
 
 export function TablePanel({
@@ -23,15 +25,9 @@ export function TablePanel({
   alerts,
   children,
   className = "",
+  contentClassName = "",
 }: TablePanelProps) {
-  const toolbarContent = toolbar ?? (
-    search || actions ? (
-      <>
-        {search}
-        {actions}
-      </>
-    ) : null
-  );
+  const hasToolbar = Boolean(toolbar || search || actions);
 
   return (
     <section className={`bg-white ${className}`.trim()}>
@@ -53,14 +49,17 @@ export function TablePanel({
         <div className="mb-3 text-base [&_.p-message]:w-full">{alerts}</div>
       )}
 
-      {toolbarContent && (
+      {hasToolbar && (
         <Toolbar
-          start={toolbarContent}
+          start={toolbar ?? search}
+          end={toolbar ? undefined : actions}
           className="mb-3 rounded-none border-0 bg-transparent p-0"
         />
       )}
 
-      <div className="overflow-hidden rounded-lg border border-slate-200">
+      <div
+        className={`overflow-hidden rounded-lg border border-slate-200 ${contentClassName}`.trim()}
+      >
         {children}
       </div>
     </section>
