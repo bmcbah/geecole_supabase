@@ -80,3 +80,13 @@ export async function getEnrollmentAssignment(enrollmentId: string) {
   if (error) throw error;
   return data;
 }
+export async function updateClassStructureMode(
+  institutionId: string,
+  mode: "levels_and_classes" | "classes_as_levels",
+) {
+  const { error } = await supabase
+    .from("institutions")
+    .update({ class_structure_mode: mode })
+    .eq("id", institutionId);
+  if (error) throw error;
+}

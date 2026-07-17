@@ -3,8 +3,8 @@ import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import type { Institution } from "../../../features/institutions/types/institution";
-import { supabase } from "../../../shared/lib/supabase/client";
 import { useToast } from "../../../shared/components/toast-context";
+import { updateClassStructureMode } from "../services/classes.service";
 export function ClassOrganizationCard({
   institution,
   onSaved,
@@ -46,23 +46,18 @@ export function ClassOrganizationCard({
           icon="pi pi-check"
           loading={busy}
           disabled={mode === institution.class_structure_mode}
-          onClick={() => {
+          onClick={async () => {
             setBusy(true);
-            void supabase
-              .from("institutions")
-              .update({ class_structure_mode: mode })
-              .eq("id", institution.id)
-              .then(({ error }) => {
-                if (error) throw error;
-                return onSaved();
-              })
-              .then(() =>
-                notify({
-                  severity: "success",
-                  summary: "Organisation enregistrée",
-                }),
-              )
-              .finally(() => setBusy(false));
+            try {
+              await updateClassStructureMode(institution.id, mode);
+              await onSaved();
+              notify({
+                severity: "success",
+                summary: "Organisation enregistrée",
+              });
+            } finally {
+              setBusy(false);
+            }
           }}
         />
       </div>
