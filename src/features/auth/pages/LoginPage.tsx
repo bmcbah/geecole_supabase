@@ -40,19 +40,22 @@ export function LoginPage() {
   useEffect(() => {
     if (user) void navigate(destination, { replace: true });
   }, [destination, navigate, user]);
+
   return (
-    <main className="auth-page">
+    <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top_left,#dff5ef_0,transparent_35%)] bg-surface-page p-6">
       <Card
-        className="auth-card"
+        className="w-full max-w-[440px] rounded-2xl shadow-[0_20px_60px_rgba(26,46,72,0.1)]"
         title="Connexion à GeeCole"
         subTitle="Gestion scolaire simple et adaptée à votre établissement"
       >
         <form
           onSubmit={(event) => void submit(event)}
-          className="form-stack"
+          className="flex flex-col gap-3 [&_.p-inputtext]:w-full [&_.p-password-input]:w-full [&_.p-password]:w-full"
           noValidate
         >
-          <label htmlFor="email">Adresse e-mail</label>
+          <label htmlFor="email" className="text-sm font-medium">
+            Adresse e-mail
+          </label>
           <Controller
             name="email"
             control={control}
@@ -68,7 +71,10 @@ export function LoginPage() {
           {errors.email && (
             <small className="p-error">{errors.email.message}</small>
           )}
-          <label htmlFor="password">Mot de passe</label>
+
+          <label htmlFor="password" className="mt-1 text-sm font-medium">
+            Mot de passe
+          </label>
           <Controller
             name="password"
             control={control}
@@ -86,8 +92,10 @@ export function LoginPage() {
           {errors.password && (
             <small className="p-error">{errors.password.message}</small>
           )}
+
           {serverError && <Message severity="error" text={serverError} />}
           <Button
+            className="mt-2"
             type="submit"
             label="Se connecter"
             icon="pi pi-sign-in"
