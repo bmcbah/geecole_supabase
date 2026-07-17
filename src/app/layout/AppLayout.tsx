@@ -5,6 +5,14 @@ import { Tag } from "primereact/tag";
 import { useAuth } from "../../features/auth/components/auth-context";
 import { useAcademicSession } from "../../features/academic-session/components/academic-session-context";
 
+const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
+  [
+    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium no-underline transition-colors",
+    isActive
+      ? "bg-brand-700 text-white"
+      : "text-brand-200 hover:bg-white/10 hover:text-white",
+  ].join(" ");
+
 export function AppLayout() {
   const { user, signOut } = useAuth();
   const {
@@ -17,30 +25,36 @@ export function AppLayout() {
     setYearId,
     canChangeYear,
   } = useAcademicSession();
+
   return (
-    <div className="app-shell">
-      <aside className="app-sidebar">
-        <div className="brand">
-          <span className="brand-mark">G</span>
-          <div>
+    <div className="min-h-screen bg-surface-page text-text-primary lg:flex">
+      <aside className="bg-brand-900 p-6 text-white lg:fixed lg:inset-y-0 lg:left-0 lg:w-[250px]">
+        <div className="mb-8 flex items-center gap-3">
+          <span className="grid size-[42px] place-items-center rounded-xl bg-accent-500 text-xl font-extrabold text-brand-900">
+            G
+          </span>
+          <div className="flex flex-col">
             <strong>GeeCole</strong>
-            <small>Gestion scolaire</small>
+            <small className="text-brand-300">Gestion scolaire</small>
           </div>
         </div>
-        <nav aria-label="Navigation principale">
-          <NavLink to="/scolarite/eleves">
+
+        <nav aria-label="Navigation principale" className="flex flex-col gap-1">
+          <NavLink to="/scolarite/eleves" className={navLinkClassName}>
             <i className="pi pi-graduation-cap" /> Scolarité
           </NavLink>
-          <NavLink to="/parametrage">
+          <NavLink to="/parametrage" className={navLinkClassName}>
             <i className="pi pi-cog" /> Paramétrage
           </NavLink>
         </nav>
       </aside>
-      <section className="app-workspace">
-        <header className="app-header">
-          <div className="session-selectors">
+
+      <section className="min-w-0 flex-1 lg:ml-[250px]">
+        <header className="flex min-h-[72px] flex-col gap-4 border-b border-slate-200 bg-white px-4 py-3 md:flex-row md:items-center md:justify-end md:px-8">
+          <div className="flex flex-wrap items-center gap-3">
             {institutions.length > 1 && (
               <Dropdown
+                className="min-w-64"
                 value={institutionId}
                 options={institutions}
                 optionLabel="name"
@@ -52,9 +66,11 @@ export function AppLayout() {
                 }}
               />
             )}
-            <div className="year-session-selector">
-              <small>Année de travail</small>
+
+            <div className="flex flex-col items-start gap-1">
+              <small className="text-xs text-text-muted">Année de travail</small>
               <Dropdown
+                className="min-w-44"
                 value={yearId}
                 options={years}
                 optionLabel="name"
@@ -68,6 +84,7 @@ export function AppLayout() {
                 }}
               />
             </div>
+
             {year && (
               <Tag
                 value={year.status === "open" ? "En cours" : year.status}
@@ -75,8 +92,11 @@ export function AppLayout() {
               />
             )}
           </div>
-          <div className="session-user">
-            <span>{user?.email}</span>
+
+          <div className="flex items-center gap-3 md:ml-4">
+            <span className="max-w-64 truncate text-sm text-text-muted">
+              {user?.email}
+            </span>
             <Button
               label="Déconnexion"
               icon="pi pi-sign-out"
@@ -86,7 +106,8 @@ export function AppLayout() {
             />
           </div>
         </header>
-        <main className="app-content">
+
+        <main className="mx-auto max-w-[1440px] p-4 md:p-8">
           <Outlet />
         </main>
       </section>
