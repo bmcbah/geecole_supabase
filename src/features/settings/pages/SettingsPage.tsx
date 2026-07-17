@@ -33,7 +33,7 @@ export function SettingsPage() {
     return (
       <Message
         severity="warn"
-        text="Créez d’abord un établissement depuis la page Établissement."
+        text="Aucun établissement n’est associé à votre compte."
       />
     );
   if (!section) return <Navigate to="/parametrage/etablissement" replace />;

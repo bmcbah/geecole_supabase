@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { TabPanel, TabView } from "primereact/tabview";
@@ -31,14 +30,14 @@ export function StudentProfilePage() {
     );
   const { student, enrollment, guardians } = detail;
   return (
-    <section>
+    <section className="student-profile-page medium-controls">
       <Button
         label="Retour aux élèves"
         icon="pi pi-arrow-left"
         text
         onClick={() => void navigate("/scolarite/eleves")}
       />
-      <Card className="student-profile-header">
+      <header className="student-profile-header">
         <div className="student-profile-main">
           <span className="student-avatar student-avatar-large">
             {student.first_name[0]}
@@ -65,11 +64,12 @@ export function StudentProfilePage() {
             }
           />
         )}
-      </Card>
+      </header>
       <TabView className="student-profile-tabs">
         <TabPanel header="Vue d’ensemble" leftIcon="pi pi-home mr-2">
-          <div className="profile-card-grid">
-            <Card title="Identité">
+          <div className="profile-overview-grid">
+            <section className="profile-section">
+              <h2>Identité</h2>
               <dl className="profile-dl">
                 <div>
                   <dt>Date de naissance</dt>
@@ -88,8 +88,9 @@ export function StudentProfilePage() {
                   <dd>{student.address || "Non renseignée"}</dd>
                 </div>
               </dl>
-            </Card>
-            <Card title="Responsable principal">
+            </section>
+            <section className="profile-section">
+              <h2>Responsable principal</h2>
               {guardians[0] ? (
                 <dl className="profile-dl">
                   <div>
@@ -106,8 +107,9 @@ export function StudentProfilePage() {
               ) : (
                 <Message severity="warn" text="Aucun responsable" />
               )}
-            </Card>
-            <Card title="Scolarité">
+            </section>
+            <section className="profile-section">
+              <h2>Scolarité</h2>
               <dl className="profile-dl">
                 <div>
                   <dt>Année</dt>
@@ -122,20 +124,27 @@ export function StudentProfilePage() {
                   <dd>Non affecté</dd>
                 </div>
               </dl>
-            </Card>
+            </section>
           </div>
         </TabPanel>
         <TabPanel header="Responsables" leftIcon="pi pi-users mr-2">
-          <div className="profile-card-grid">
+          <div className="guardian-list">
             {guardians.map((guardian) => (
-              <Card
-                key={guardian.id}
-                title={`${guardian.first_name} ${guardian.last_name}`}
-              >
-                <p>
-                  <i className="pi pi-phone" /> {guardian.primary_phone}
-                </p>
-              </Card>
+              <div className="guardian-line" key={guardian.id}>
+                <span className="student-avatar">
+                  {guardian.first_name[0]}
+                  {guardian.last_name[0]}
+                </span>
+                <div>
+                  <strong>
+                    {guardian.first_name} {guardian.last_name}
+                  </strong>
+                  <small>
+                    <i className="pi pi-phone" /> {guardian.primary_phone}
+                  </small>
+                </div>
+                <Button label="Modifier" icon="pi pi-pencil" text disabled />
+              </div>
             ))}
           </div>
         </TabPanel>

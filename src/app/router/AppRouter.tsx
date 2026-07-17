@@ -10,11 +10,6 @@ const LoginPage = lazy(() =>
     default: module.LoginPage,
   })),
 );
-const InstitutionPage = lazy(() =>
-  import("../../features/institutions/pages/InstitutionPage").then(
-    (module) => ({ default: module.InstitutionPage }),
-  ),
-);
 const SettingsPage = lazy(() =>
   import("../../features/settings/pages/SettingsPage").then((module) => ({
     default: module.SettingsPage,
@@ -61,8 +56,14 @@ export function AppRouter() {
               </AcademicSessionProvider>
             }
           >
-            <Route index element={<Navigate to="/etablissement" replace />} />
-            <Route path="/etablissement" element={<InstitutionPage />} />
+            <Route
+              index
+              element={<Navigate to="/parametrage/etablissement" replace />}
+            />
+            <Route
+              path="/etablissement"
+              element={<Navigate to="/parametrage/etablissement" replace />}
+            />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
             <Route

@@ -121,8 +121,8 @@ input {
   align-items: flex-end;
 }
 .app-content {
-  padding: 2rem;
-  max-width: 1440px;
+  padding: 1.5rem;
+  max-width: 1320px;
   margin: auto;
 }
 .page-heading {
@@ -130,11 +130,11 @@ input {
   justify-content: space-between;
   align-items: flex-start;
   gap: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 .page-heading h1 {
   margin: 0.25rem 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
 }
 .page-heading p {
   margin: 0;
@@ -351,19 +351,19 @@ input {
 .medium-controls .p-multiselect,
 .medium-controls .p-calendar,
 .medium-controls .p-inputnumber-input {
-  min-height: 42px;
+  min-height: 38px;
 }
 .medium-controls .p-dropdown-label,
 .medium-controls .p-multiselect-label {
   display: flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 36px;
   padding-top: 0;
   padding-bottom: 0;
 }
 .medium-controls .p-button:not(.p-button-icon-only) {
-  min-height: 42px;
-  padding: 0.65rem 1rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
 }
 .institution-settings-stack .settings-grid,
 .policy-card .schooling-form-grid {
@@ -435,7 +435,7 @@ input {
 .clickable-row:hover {
   background: #f4faf8 !important;
 }
-.student-profile-header .p-card-content,
+.student-profile-header,
 .student-profile-main {
   display: flex;
   align-items: center;
@@ -446,19 +446,69 @@ input {
   justify-content: flex-start;
 }
 .student-profile-main h1 {
-  margin: 0.15rem 0;
+  margin: 0.1rem 0;
+  font-size: 1.55rem;
 }
 .student-profile-main p {
   margin: 0;
   color: #637083;
 }
 .student-profile-tabs {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
-.profile-card-grid {
+.student-profile-header {
+  padding: 1rem 1.25rem;
+  border: 1px solid #e3e9ef;
+  border-radius: 0.8rem;
+  background: white;
+}
+.profile-overview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid #e3e9ef;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.profile-section {
+  padding: 1rem;
+  min-width: 0;
+}
+.profile-section + .profile-section {
+  border-left: 1px solid #e3e9ef;
+}
+.profile-section h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+.profile-dl div {
+  grid-template-columns: minmax(100px, 42%) minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+.guardian-list {
+  border: 1px solid #e3e9ef;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.guardian-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+.guardian-line + .guardian-line {
+  border-top: 1px solid #edf1f4;
+}
+.guardian-line > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.guardian-line small {
+  color: #637083;
 }
 @media (max-width: 760px) {
   .schooling-form-grid {
@@ -473,6 +523,13 @@ input {
   .institution-settings-stack .settings-grid,
   .policy-card .schooling-form-grid {
     grid-template-columns: 1fr;
+  }
+  .profile-overview-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-section + .profile-section {
+    border-top: 1px solid #e3e9ef;
+    border-left: 0;
   }
 }
 .institution-selector {
