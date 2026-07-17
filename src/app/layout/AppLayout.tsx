@@ -1,9 +1,7 @@
 import { useMemo, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
-import { Menu } from "primereact/menu";
-import type { MenuItem } from "primereact/menuitem";
 import { Tag } from "primereact/tag";
 import { useAuth } from "../../modules/auth/components/auth-context";
 import { useAcademicSession } from "../../modules/academic-session/components/academic-session-context";
@@ -41,6 +39,12 @@ const navigation: NavigationGroup[] = [
   },
 ];
 
+const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
+  [
+    "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium no-underline transition-colors",
+    isActive ? "bg-brand-700 text-white" : "text-brand-200 hover:bg-white/10 hover:text-white",
+  ].join(" ");
+
 export function AppLayout() {
   const { user, signOut } = useAuth();
   const {
@@ -58,6 +62,9 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(navigation.map((group) => [group.label, location.pathname.startsWith(group.match)])),
+  );
 
   const activePage = useMemo(() => {
     for (const group of navigation) {
@@ -68,44 +75,8 @@ export function AppLayout() {
   }, [location.pathname]);
 
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
-
-  const menuModel = useMemo<MenuItem[]>(
-    () =>
-      navigation.map((group) => ({
-        label: group.label,
-        icon: `pi ${group.icon}`,
-        items: group.items.map((item) => {
-          const active = location.pathname.startsWith(item.to);
-          return {
-            label: item.label,
-            icon: `pi ${item.icon}`,
-            command: () => {
-              void navigate(item.to);
-              closeMobileSidebar();
-            },
-            template: () => (
-              <button
-                type="button"
-                className={[
-                  "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors",
-                  active
-                    ? "bg-brand-700 text-white"
-                    : "text-brand-200 hover:bg-white/10 hover:text-white",
-                ].join(" ")}
-                onClick={() => {
-                  void navigate(item.to);
-                  closeMobileSidebar();
-                }}
-              >
-                <i className={`pi ${item.icon}`} />
-                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-              </button>
-            ),
-          };
-        }),
-      })),
-    [location.pathname, navigate],
-  );
+  const toggleGroup = (label: string) =>
+    setExpandedGroups((current) => ({ ...current, [label]: !current[label] }));
 
   const sidebar = (
     <div className="flex h-full flex-col bg-brand-900 text-white">
@@ -118,14 +89,10 @@ export function AppLayout() {
             closeMobileSidebar();
           }}
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-500 text-lg font-extrabold text-brand-900">
-            G
-          </span>
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-500 text-lg font-extrabold text-brand-900">G</span>
           <span className="flex min-w-0 flex-col">
             <strong className="text-base">GeeCole</strong>
-            <small className="truncate text-xs text-brand-300">
-              {institution?.name ?? "Gestion scolaire"}
-            </small>
+            <small className="truncate text-xs text-brand-300">{institution?.name ?? "Gestion scolaire"}</small>
           </span>
         </button>
         <button
@@ -153,11 +120,39 @@ export function AppLayout() {
         </button>
       </div>
 
-      <nav aria-label="Navigation principale" className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
-        <Menu
-          model={menuModel}
-          className="w-full border-0 bg-transparent p-0 [&_.p-menu-list]:space-y-2 [&_.p-submenu-header]:bg-transparent [&_.p-submenu-header]:px-4 [&_.p-submenu-header]:py-2.5 [&_.p-submenu-header]:text-sm [&_.p-submenu-header]:font-semibold [&_.p-submenu-header]:text-white [&_.p-menuitem-content]:rounded-xl [&_.p-menuitem-content]:bg-transparent [&_.p-menuitem-link]:px-4 [&_.p-menuitem-link]:py-2.5 [&_.p-menuitem-link]:text-brand-200 [&_.p-menuitem-link:hover]:bg-white/10 [&_.p-menuitem-link:hover]:text-white"
-        />
+      <nav aria-label="Navigation principale" className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-4">
+        {navigation.map((group) => {
+          const expanded = expandedGroups[group.label] ?? false;
+          const active = location.pathname.startsWith(group.match);
+          return (
+            <section key={group.label}>
+              <button
+                type="button"
+                className={[
+                  "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition-colors",
+                  active ? "bg-white/10 text-white" : "text-brand-200 hover:bg-white/10 hover:text-white",
+                ].join(" ")}
+                aria-expanded={expanded}
+                onClick={() => toggleGroup(group.label)}
+              >
+                <i className={`pi ${group.icon}`} />
+                <span className="flex-1">{group.label}</span>
+                <i className={`pi pi-chevron-down text-[10px] transition-transform ${expanded ? "rotate-180" : ""}`} />
+              </button>
+
+              {expanded ? (
+                <div className="mt-1 space-y-1 pl-3">
+                  {group.items.map((item) => (
+                    <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
+                      <i className={`pi ${item.icon}`} />
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          );
+        })}
       </nav>
 
       <div className="border-t border-white/10 p-4">
@@ -180,12 +175,7 @@ export function AppLayout() {
 
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Fermer la navigation"
-            className="absolute inset-0 bg-brand-900/60 backdrop-blur-sm"
-            onClick={closeMobileSidebar}
-          />
+          <button type="button" aria-label="Fermer la navigation" className="absolute inset-0 bg-brand-900/60 backdrop-blur-sm" onClick={closeMobileSidebar} />
           <aside className="relative h-full w-[min(86vw,272px)] shadow-2xl">{sidebar}</aside>
         </div>
       ) : null}
@@ -208,26 +198,12 @@ export function AppLayout() {
                 <i className="pi pi-chevron-right text-[9px]" />
                 <span className="truncate text-brand-700">{activePage.page}</span>
               </div>
-              <p className="mt-0.5 truncate text-sm font-semibold text-slate-900">
-                {institution?.name ?? "Espace de gestion"}
-              </p>
+              <p className="mt-0.5 truncate text-sm font-semibold text-slate-900">{institution?.name ?? "Espace de gestion"}</p>
             </div>
 
             <div className="hidden items-center gap-2 xl:flex">
-              <Button
-                label="Nouvelle inscription"
-                icon="pi pi-user-plus"
-                size="small"
-                onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
-              />
-              <Button
-                label="Réinscriptions"
-                icon="pi pi-refresh"
-                severity="secondary"
-                outlined
-                size="small"
-                onClick={() => void navigate("/scolarite/reinscriptions")}
-              />
+              <Button label="Nouvelle inscription" icon="pi pi-user-plus" size="small" onClick={() => void navigate("/scolarite/inscriptions/nouvelle")} />
+              <Button label="Réinscriptions" icon="pi pi-refresh" severity="secondary" outlined size="small" onClick={() => void navigate("/scolarite/reinscriptions")} />
             </div>
 
             <div className="hidden h-8 w-px bg-slate-200 md:block" />
@@ -261,12 +237,7 @@ export function AppLayout() {
                   if (typeof value === "string") setYearId(value);
                 }}
               />
-              {year ? (
-                <Tag
-                  value={year.status === "open" ? "En cours" : year.status}
-                  severity={year.status === "open" ? "success" : "secondary"}
-                />
-              ) : null}
+              {year ? <Tag value={year.status === "open" ? "En cours" : year.status} severity={year.status === "open" ? "success" : "secondary"} /> : null}
             </div>
 
             <div className="relative">
@@ -276,9 +247,7 @@ export function AppLayout() {
                 aria-expanded={profileOpen}
                 onClick={() => setProfileOpen((value) => !value)}
               >
-                <span className="grid size-8 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">
-                  {(user?.email?.[0] ?? "U").toUpperCase()}
-                </span>
+                <span className="grid size-8 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
                 <i className="pi pi-chevron-down hidden text-[9px] text-slate-400 sm:block" />
               </button>
 
@@ -288,31 +257,13 @@ export function AppLayout() {
                     <p className="truncate text-sm font-semibold text-slate-900">{user?.email}</p>
                     <p className="text-xs text-slate-500">Compte utilisateur</p>
                   </div>
-                  <button
-                    type="button"
-                    className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      void navigate("/parametrage/utilisateurs-roles");
-                    }}
-                  >
+                  <button type="button" className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50" onClick={() => { setProfileOpen(false); void navigate("/parametrage/utilisateurs-roles"); }}>
                     <i className="pi pi-users" /> Personnes et accès
                   </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      void navigate("/parametrage/etablissement");
-                    }}
-                  >
+                  <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50" onClick={() => { setProfileOpen(false); void navigate("/parametrage/etablissement"); }}>
                     <i className="pi pi-cog" /> Paramètres
                   </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                    onClick={() => void signOut()}
-                  >
+                  <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => void signOut()}>
                     <i className="pi pi-sign-out" /> Déconnexion
                   </button>
                 </div>
@@ -322,37 +273,13 @@ export function AppLayout() {
 
           <div className="flex gap-2 overflow-x-auto border-t border-slate-100 px-4 py-2 md:hidden">
             {institutions.length > 1 ? (
-              <Dropdown
-                className="min-w-52"
-                value={institutionId}
-                options={institutions}
-                optionLabel="name"
-                optionValue="id"
-                onChange={(event) => {
-                  const value = event.value as unknown;
-                  if (typeof value === "string") setInstitutionId(value);
-                }}
-              />
+              <Dropdown className="min-w-52" value={institutionId} options={institutions} optionLabel="name" optionValue="id" onChange={(event) => { const value = event.value as unknown; if (typeof value === "string") setInstitutionId(value); }} />
             ) : null}
-            <Dropdown
-              className="min-w-44"
-              value={yearId}
-              options={years}
-              optionLabel="name"
-              optionValue="id"
-              placeholder="Aucune année"
-              disabled={!canChangeYear}
-              onChange={(event) => {
-                const value = event.value as unknown;
-                if (typeof value === "string") setYearId(value);
-              }}
-            />
+            <Dropdown className="min-w-44" value={yearId} options={years} optionLabel="name" optionValue="id" placeholder="Aucune année" disabled={!canChangeYear} onChange={(event) => { const value = event.value as unknown; if (typeof value === "string") setYearId(value); }} />
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1600px] p-4 md:p-6 xl:p-8">
-          <Outlet />
-        </main>
+        <main className="mx-auto max-w-[1600px] p-4 md:p-6 xl:p-8"><Outlet /></main>
       </section>
     </div>
   );
