@@ -267,7 +267,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-68 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[272px] lg:block">
         {sidebar}
       </aside>
 
@@ -285,7 +285,7 @@ export function AppLayout() {
         </div>
       ) : null}
 
-      <section className="min-w-0 lg:pl-68">
+      <section className="min-w-0 lg:pl-[272px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex min-h-16 items-center gap-3 px-4 md:px-6 xl:px-8">
             <button
