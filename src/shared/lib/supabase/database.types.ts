@@ -17,6 +17,36 @@ export type AcademicYearStatus = "preparation" | "open" | "closed" | "archived";
 export interface Database {
   public: {
     Tables: {
+      enrollment_policies: {
+        Row: {
+          institution_id: string;
+          allow_pre_registration: boolean;
+          allow_direct_enrollment: boolean;
+          require_payment_before_confirmation: boolean;
+          require_class_assignment: boolean;
+          count_pre_registration_in_capacity: boolean;
+          capacity_mode: "information" | "warning" | "blocking";
+          allow_missing_documents: boolean;
+          student_number_pattern: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          institution_id: string;
+          allow_pre_registration?: boolean;
+          allow_direct_enrollment?: boolean;
+          require_payment_before_confirmation?: boolean;
+          require_class_assignment?: boolean;
+          count_pre_registration_in_capacity?: boolean;
+          capacity_mode?: "information" | "warning" | "blocking";
+          allow_missing_documents?: boolean;
+          student_number_pattern?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["enrollment_policies"]["Insert"]
+        >;
+        Relationships: [];
+      };
       students: {
         Row: {
           id: string;

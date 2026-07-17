@@ -35,6 +35,11 @@ const StudentProfilePage = lazy(() =>
     default: module.StudentProfilePage,
   })),
 );
+const EnrollmentPage = lazy(() =>
+  import("../../modules/schooling/pages/EnrollmentPage").then((module) => ({
+    default: module.EnrollmentPage,
+  })),
+);
 
 export function AppRouter() {
   return (
@@ -60,6 +65,10 @@ export function AppRouter() {
             <Route path="/etablissement" element={<InstitutionPage />} />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
+            <Route
+              path="/scolarite/inscriptions/nouvelle"
+              element={<EnrollmentPage />}
+            />
             <Route
               path="/scolarite/eleves/:studentId"
               element={<StudentProfilePage />}

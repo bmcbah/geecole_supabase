@@ -9,8 +9,6 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
-import { listAnnualAcademicLevels } from "../../../features/settings/services/academic-structure.service";
-import { EnrollmentDialog } from "../components/EnrollmentDialog";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { listStudents } from "../services/schooling.service";
 import type { StudentListItem } from "../types/schooling";
@@ -19,26 +17,22 @@ export function StudentsPage() {
   const navigate = useNavigate();
   const { institutionId, yearId, year } = useAcademicSession();
   const [students, setStudents] = useState<StudentListItem[]>([]);
-  const [levels, setLevels] = useState<
-    Awaited<ReturnType<typeof listAnnualAcademicLevels>>
-  >([]);
   const [loading, setLoading] = useState(true);
   const [failure, setFailure] = useState("");
-  const [dialog, setDialog] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [level, setLevel] = useState("");
+  const [cycle, setCycle] = useState("");
+  const [gender, setGender] = useState("");
+  const [contact, setContact] = useState("");
+  const [advanced, setAdvanced] = useState(false);
   const load = useCallback(async () => {
     if (!institutionId || !yearId) return;
     setLoading(true);
     setFailure("");
     try {
-      const [studentData, levelData] = await Promise.all([
-        listStudents(institutionId, yearId),
-        listAnnualAcademicLevels(yearId),
-      ]);
+      const studentData = await listStudents(institutionId, yearId);
       setStudents(studentData);
-      setLevels(levelData);
     } catch {
       setFailure("Impossible de charger les élèves de cette année scolaire.");
     } finally {
@@ -59,10 +53,16 @@ export function StudentsPage() {
           (!query ||
             searchable.includes(query.trim().toLocaleLowerCase("fr"))) &&
           (!status || student.status === status) &&
-          (!level || student.levelName === level)
+          (!level || student.levelName === level) &&
+          (!cycle || student.cycleName === cycle) &&
+          (!gender || student.gender === gender) &&
+          (!contact ||
+            (contact === "present"
+              ? Boolean(student.guardianPhone)
+              : !student.guardianPhone))
         );
       }),
-    [students, query, status, level],
+    [students, query, status, level, cycle, gender, contact],
   );
   if (!yearId)
     return (
@@ -85,40 +85,113 @@ export function StudentsPage() {
         <Button
           label="Nouvelle inscription"
           icon="pi pi-user-plus"
-          onClick={() => setDialog(true)}
+          onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
         />
       </header>
       <Card className="schooling-list-card">
         <div className="schooling-filters">
-          <span className="p-input-icon-left schooling-search">
-            <i className="pi pi-search" />
-            <InputText
-              value={query}
-              placeholder="Nom, matricule ou téléphone"
-              onChange={(e) => setQuery(e.target.value)}
+          <label className="field schooling-search">
+            <span>Rechercher</span>
+            <span className="p-input-icon-left">
+              <i className="pi pi-search" />
+              <InputText
+                value={query}
+                placeholder="Nom, matricule ou téléphone"
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </span>
+          </label>
+          <label className="field">
+            <span>Statut</span>
+            <Dropdown
+              value={status}
+              options={[
+                { label: "Tous les statuts", value: "" },
+                { label: "Préinscrits", value: "pre_registered" },
+                { label: "Inscrits", value: "confirmed" },
+                { label: "Transférés", value: "transferred" },
+              ]}
+              onChange={(e) => setStatus(String(e.value))}
             />
-          </span>
-          <Dropdown
-            value={status}
-            options={[
-              { label: "Tous les statuts", value: "" },
-              { label: "Préinscrits", value: "pre_registered" },
-              { label: "Inscrits", value: "confirmed" },
-              { label: "Transférés", value: "transferred" },
-            ]}
-            onChange={(e) => setStatus(String(e.value))}
-          />
-          <Dropdown
-            value={level}
-            options={[
-              { label: "Tous les niveaux", value: "" },
-              ...Array.from(
-                new Set(students.map((item) => item.levelName)),
-              ).map((value) => ({ label: value, value })),
-            ]}
-            onChange={(e) => setLevel(String(e.value))}
+          </label>
+          <label className="field">
+            <span>Niveau</span>
+            <Dropdown
+              value={level}
+              options={[
+                { label: "Tous les niveaux", value: "" },
+                ...Array.from(
+                  new Set(students.map((item) => item.levelName)),
+                ).map((value) => ({ label: value, value })),
+              ]}
+              onChange={(e) => setLevel(String(e.value))}
+            />
+          </label>
+          <Button
+            label={advanced ? "Masquer les filtres" : "Filtres avancés"}
+            icon="pi pi-sliders-h"
+            severity="secondary"
+            outlined
+            onClick={() => setAdvanced((value) => !value)}
           />
         </div>
+        {advanced && (
+          <div className="advanced-filters">
+            <label className="field">
+              <span>Cycle</span>
+              <Dropdown
+                value={cycle}
+                options={[
+                  { label: "Tous les cycles", value: "" },
+                  ...Array.from(
+                    new Set(students.map((item) => item.cycleName)),
+                  ).map((value) => ({ label: value, value })),
+                ]}
+                onChange={(e) => setCycle(String(e.value))}
+              />
+            </label>
+            <label className="field">
+              <span>Sexe</span>
+              <Dropdown
+                value={gender}
+                options={[
+                  { label: "Tous", value: "" },
+                  { label: "Féminin", value: "female" },
+                  { label: "Masculin", value: "male" },
+                  { label: "Autre", value: "other" },
+                ]}
+                onChange={(e) => setGender(String(e.value))}
+              />
+            </label>
+            <label className="field">
+              <span>Responsable joignable</span>
+              <Dropdown
+                value={contact}
+                options={[
+                  { label: "Tous", value: "" },
+                  { label: "Avec téléphone", value: "present" },
+                  { label: "Sans téléphone", value: "missing" },
+                ]}
+                onChange={(e) => setContact(String(e.value))}
+              />
+            </label>
+            <div className="filter-reset">
+              <Button
+                label="Réinitialiser les filtres"
+                icon="pi pi-filter-slash"
+                text
+                onClick={() => {
+                  setStatus("");
+                  setLevel("");
+                  setCycle("");
+                  setGender("");
+                  setContact("");
+                  setQuery("");
+                }}
+              />
+            </div>
+          </div>
+        )}
         {failure && <Message severity="error" text={failure} />}
         {loading ? (
           <div className="content-state">
@@ -190,14 +263,6 @@ export function StudentsPage() {
           </DataTable>
         )}
       </Card>
-      <EnrollmentDialog
-        visible={dialog}
-        institutionId={institutionId}
-        yearId={yearId}
-        levels={levels}
-        onHide={() => setDialog(false)}
-        onSaved={() => void load()}
-      />
     </section>
   );
 }

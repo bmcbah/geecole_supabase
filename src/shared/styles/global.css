@@ -249,6 +249,107 @@ input {
   padding-bottom: 1.25rem;
   flex-wrap: wrap;
 }
+.schooling-filters > .field {
+  min-width: 190px;
+}
+.advanced-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #f7fafc;
+  border: 1px solid #e3e9ef;
+  border-radius: 0.8rem;
+}
+.advanced-filters .p-dropdown {
+  width: 100%;
+}
+.filter-reset {
+  display: flex;
+  align-items: flex-end;
+}
+.enrollment-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.enrollment-page .p-steps {
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+.enrollment-step {
+  min-height: 360px;
+  padding: 0.5rem 0 1rem;
+}
+.enrollment-step h2 {
+  margin-bottom: 0.25rem;
+}
+.enrollment-step > p {
+  color: #637083;
+}
+.enrollment-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e6ebf0;
+}
+.duplicate-row,
+.document-row,
+.guardian-result {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #e0e7ec;
+  border-radius: 0.7rem;
+  margin-top: 0.5rem;
+  background: white;
+}
+.duplicate-row {
+  justify-content: space-between;
+}
+.duplicate-row > span {
+  display: flex;
+  flex-direction: column;
+}
+.guardian-search {
+  margin: 1rem 0;
+}
+.guardian-search .field {
+  max-width: 560px;
+}
+.guardian-result {
+  width: 100%;
+  justify-content: space-between;
+  cursor: pointer;
+  color: inherit;
+}
+.policy-card {
+  margin-top: 1.25rem;
+  box-shadow: none;
+  border: 1px solid #dfe7e5;
+}
+.policy-list {
+  display: flex;
+  flex-direction: column;
+}
+.policy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #edf1f3;
+}
+.policy-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.policy-row small {
+  color: #637083;
+}
 .schooling-search {
   flex: 1;
   min-width: 280px;

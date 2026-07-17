@@ -17,6 +17,7 @@ import {
   type InstitutionInput,
 } from "../schemas/institution.schema";
 import type { Institution } from "../types/institution";
+import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
 
 const defaults: InstitutionInput = {
   name: "",
@@ -120,6 +121,7 @@ export function InstitutionPage() {
                   <dd>{item.phone ?? "Non renseigné"}</dd>
                 </div>
               </dl>
+              <EnrollmentPolicyPanel institutionId={item.id} />
             </Card>
           ))}
         </div>

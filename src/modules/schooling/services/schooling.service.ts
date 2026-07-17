@@ -82,6 +82,21 @@ export async function findDuplicateCandidates(
   }));
 }
 
+export async function searchGuardians(institutionId: string, query: string) {
+  const normalized = query.trim();
+  if (normalized.length < 3) return [];
+  const { data, error } = await supabase
+    .from("guardians")
+    .select("*")
+    .eq("institution_id", institutionId)
+    .or(
+      `primary_phone.ilike.%${normalized}%,first_name.ilike.%${normalized}%,last_name.ilike.%${normalized}%`,
+    )
+    .limit(8);
+  if (error) throw error;
+  return data;
+}
+
 export async function createEnrollment(
   institutionId: string,
   yearId: string,
