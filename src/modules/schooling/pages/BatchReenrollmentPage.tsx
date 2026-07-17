@@ -6,6 +6,7 @@ import { DataTable } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
 import { Message } from "primereact/message";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useToast } from "../../../shared/components/toast-context";
 import {
   batchReenrollStudents,
@@ -48,20 +49,26 @@ export function BatchReenrollmentPage() {
   }, [institutionId, targetYears, yearId]);
   const created = results.filter((item) => item.status === "created").length;
   return (
-    <section className="medium-controls">
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Scolarité · {year?.name}</span>
-          <h1>Réinscriptions groupées</h1>
-          <p>Sélectionnez les élèves à promouvoir vers leur niveau suivant.</p>
-        </div>
-        <Button
-          label="Retour aux élèves"
-          icon="pi pi-arrow-left"
-          text
-          onClick={() => void navigate("/scolarite/eleves")}
-        />
-      </header>
+    <section className="medium-controls space-y-4">
+      <PageHeader
+        eyebrow={`Scolarité${year?.name ? ` · ${year.name}` : ""}`}
+        title="Réinscriptions groupées"
+        description="Sélectionnez les élèves à promouvoir vers leur niveau suivant."
+        meta={
+          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+            {selected.length} sélectionné(s)
+          </span>
+        }
+        actions={
+          <Button
+            label="Retour aux élèves"
+            icon="pi pi-arrow-left"
+            text
+            size="small"
+            onClick={() => void navigate("/scolarite/eleves")}
+          />
+        }
+      />
       {!allowed && (
         <Message
           severity="warn"
@@ -89,6 +96,7 @@ export function BatchReenrollmentPage() {
           icon="pi pi-refresh"
           disabled={!allowed || !targetYearId || !selected.length}
           loading={loading}
+          size="small"
           onClick={() => {
             setLoading(true);
             setResults([]);
