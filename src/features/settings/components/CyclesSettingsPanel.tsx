@@ -4,6 +4,7 @@ import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { useToast } from "../../../shared/components/toast-context";
+import { Panel } from "../../../shared/components/layout/Panel";
 import {
   listCycleCatalog,
   setInstitutionCycle,
@@ -29,7 +30,6 @@ export function CyclesSettingsPanel() {
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
-
   const activeCount = items.filter((item) => item.activation?.is_active).length;
 
   const toggle = async (id: string, active: boolean) => {
@@ -48,91 +48,76 @@ export function CyclesSettingsPanel() {
     }
   };
 
+  const alert = !year ? (
+    <Message
+      severity="warn"
+      text="Sélectionnez une année scolaire avant d’activer les cycles."
+    />
+  ) : !editable ? (
+    <Message
+      severity="info"
+      text={`${year.name} est clôturée et reste consultable en lecture seule.`}
+    />
+  ) : undefined;
+
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-slate-900">Cycles</h2>
-            <Tag value={`${activeCount} actif${activeCount > 1 ? "s" : ""}`} severity="info" />
-          </div>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Activez uniquement les parcours réellement proposés pendant {year?.name ?? "l’année sélectionnée"}.
-          </p>
-        </div>
+    <Panel
+      title="Cycles"
+      description="Activez uniquement les parcours proposés par l’établissement."
+      meta={
         <Tag
-          value={editable ? "Modifiable" : "Lecture seule"}
-          severity={editable ? "success" : "secondary"}
+          value={`${activeCount} actif${activeCount > 1 ? "s" : ""}`}
+          severity="info"
         />
-      </div>
-
-      {!year && (
-        <div className="border-b border-slate-200 bg-amber-50 px-4 py-2">
-          <Message
-            severity="warn"
-            text="Sélectionnez une année scolaire avant d’activer les cycles."
-          />
-        </div>
-      )}
-
-      <div
-        className="grid gap-px bg-slate-200 sm:grid-cols-2 xl:grid-cols-3"
-        data-testid="cycle-catalog"
-      >
+      }
+      alerts={alert}
+    >
+      <div className="divide-y divide-slate-200" data-testid="cycle-catalog">
         {items.map((item) => {
           const active = Boolean(item.activation?.is_active);
           return (
             <article
-              className={`group flex min-h-40 flex-col justify-between bg-white p-4 transition ${
-                active ? "ring-1 ring-inset ring-brand-200" : "hover:bg-slate-50"
-              }`}
+              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
               key={item.id}
               data-testid={`cycle-${item.code}`}
             >
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${
-                      active
-                        ? "bg-brand-50 text-brand-600"
-                        : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    <i className={`pi ${item.icon}`} />
-                  </span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                <i className={`pi ${item.icon}`} />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    {item.name}
+                  </h3>
                   <Tag
                     value={active ? "Actif" : "Inactif"}
                     severity={active ? "success" : "secondary"}
                   />
+                  <span className="text-xs font-medium text-slate-400">
+                    {item.code}
+                  </span>
                 </div>
-                <h3 className="mt-3 text-sm font-semibold text-slate-900">
-                  {item.name}
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
+                <p className="mt-0.5 text-xs leading-5 text-slate-500">
                   {item.description}
                 </p>
               </div>
 
-              <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                <span className="font-mono text-[11px] uppercase tracking-wide text-slate-400">
-                  {item.code}
-                </span>
-                <Button
-                  label={active ? "Désactiver" : "Activer"}
-                  icon={active ? "pi pi-times" : "pi pi-check"}
-                  size="small"
-                  outlined={!active}
-                  severity={active ? "secondary" : undefined}
-                  disabled={!editable}
-                  loading={busyId === item.id}
-                  onClick={() => void toggle(item.id, !active)}
-                  data-testid={`toggle-${item.code}`}
-                />
-              </div>
+              <Button
+                label={active ? "Désactiver" : "Activer"}
+                icon={active ? "pi pi-times" : "pi pi-check"}
+                size="small"
+                outlined={!active}
+                severity={active ? "secondary" : undefined}
+                disabled={!editable}
+                loading={busyId === item.id}
+                onClick={() => void toggle(item.id, !active)}
+                data-testid={`toggle-${item.code}`}
+              />
             </article>
           );
         })}
       </div>
-    </section>
+    </Panel>
   );
 }
