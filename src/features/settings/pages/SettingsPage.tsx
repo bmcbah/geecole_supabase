@@ -82,32 +82,54 @@ export function SettingsPage() {
         <SettingsSidebar />
         <div className="settings-content">
           {section === "etablissement" ? (
-            <Accordion
-              activeIndex={0}
-              className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5"
-            >
-              <AccordionTab header="Informations générales">
-                <InstitutionDetailsForm
-                  institution={selected}
-                  onUpdated={() => void refresh()}
-                />
-              </AccordionTab>
-              <AccordionTab header="Règles d’inscription">
-                <EnrollmentPolicyPanel institutionId={selected.id} />
-              </AccordionTab>
-              <AccordionTab header="Règles de réinscription">
-                <ReenrollmentPolicyPanel institutionId={selected.id} />
-              </AccordionTab>
-              <AccordionTab header="Documents requis">
-                <DocumentRequirementsPanel institutionId={selected.id} />
-              </AccordionTab>
-              <AccordionTab header="Organisation des classes">
-                <ClassOrganizationCard
-                  institution={selected}
-                  onSaved={refresh}
-                />
-              </AccordionTab>
-            </Accordion>
+            <div className="space-y-3">
+              <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-slate-900">
+                    Informations générales
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Identité, coordonnées et préférences utilisées dans toute l’application.
+                  </p>
+                </div>
+                <div className="p-3">
+                  <InstitutionDetailsForm
+                    institution={selected}
+                    onUpdated={() => void refresh()}
+                  />
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-2 px-1">
+                  <h2 className="text-sm font-semibold text-slate-900">
+                    Options avancées
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Ouvrez uniquement la rubrique que vous souhaitez modifier.
+                  </p>
+                </div>
+                <Accordion
+                  className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5"
+                >
+                  <AccordionTab header="Règles d’inscription">
+                    <EnrollmentPolicyPanel institutionId={selected.id} />
+                  </AccordionTab>
+                  <AccordionTab header="Règles de réinscription">
+                    <ReenrollmentPolicyPanel institutionId={selected.id} />
+                  </AccordionTab>
+                  <AccordionTab header="Documents requis">
+                    <DocumentRequirementsPanel institutionId={selected.id} />
+                  </AccordionTab>
+                  <AccordionTab header="Organisation des classes">
+                    <ClassOrganizationCard
+                      institution={selected}
+                      onSaved={refresh}
+                    />
+                  </AccordionTab>
+                </Accordion>
+              </section>
+            </div>
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
           ) : section === "cycles" ? (
