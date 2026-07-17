@@ -8,20 +8,20 @@ import { Tag } from "primereact/tag";
 import { useToast } from "../../../shared/components/toast-context";
 import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   changeAcademicYearStatus,
   createAcademicYear,
   deleteAcademicYear,
   listAcademicYears,
-} from "../../../features/settings/services/settings.service";
-import type { AcademicYearInput } from "../../../features/settings/schemas/settings.schema";
+} from "../../settings/services/settings.service";
+import type { AcademicYearInput } from "../../settings/schemas/settings.schema";
 import type {
   AcademicYear,
   AcademicYearStatus,
-} from "../../../features/settings/types/settings";
-import { AcademicYearDialog } from "../../../features/settings/components/AcademicYearDialog";
-import { CloneAcademicYearDialog } from "../../../features/settings/components/CloneAcademicYearDialog";
+} from "../../settings/types/settings";
+import { AcademicYearDialog } from "../../settings/components/AcademicYearDialog";
+import { CloneAcademicYearDialog } from "../../settings/components/CloneAcademicYearDialog";
 
 interface Props {
   institutionId: string;

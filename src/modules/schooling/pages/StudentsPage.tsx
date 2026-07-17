@@ -8,7 +8,7 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { listStudents } from "../services/schooling.service";

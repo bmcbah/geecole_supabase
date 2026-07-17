@@ -8,14 +8,14 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { MultiSelect } from "primereact/multiselect";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deletePerson,
   invitePerson,
   listPeople,
   listPersonInvitations,
   savePerson,
-} from "../../../features/settings/services/annual-settings.service";
+} from "../../settings/services/annual-settings.service";
 import type { AppRole } from "../../../shared/lib/supabase/database.types";
 import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";

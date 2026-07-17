@@ -2,8 +2,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
 import { Tag } from "primereact/tag";
-import { useAuth } from "../../features/auth/components/auth-context";
-import { useAcademicSession } from "../../features/academic-session/components/academic-session-context";
+import { useAuth } from "../../modules/auth/components/auth-context";
+import { useAcademicSession } from "../../modules/academic-session/components/academic-session-context";
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [

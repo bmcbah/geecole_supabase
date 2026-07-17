@@ -4,7 +4,7 @@ import { Button } from "primereact/button";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { TabPanel, TabView } from "primereact/tabview";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { StudentProfileActions } from "../components/StudentProfileActions";
 import { AddGuardianDialog } from "../components/AddGuardianDialog";

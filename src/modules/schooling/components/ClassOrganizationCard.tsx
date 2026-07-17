@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
-import type { Institution } from "../../../features/institutions/types/institution";
+import type { Institution } from "../../institutions/types/institution";
 import { useToast } from "../../../shared/components/toast-context";
 import { updateClassStructureMode } from "../services/classes.service";
 export function ClassOrganizationCard({

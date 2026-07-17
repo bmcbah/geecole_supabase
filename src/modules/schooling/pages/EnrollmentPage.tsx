@@ -7,8 +7,8 @@ import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Steps } from "primereact/steps";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
-import { listAnnualAcademicLevels } from "../../../features/settings/services/academic-structure.service";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { listAnnualAcademicLevels } from "../../settings/services/academic-structure.service";
 import { enrollmentSchema } from "../schemas/enrollment.schema";
 import {
   getEnrollmentPolicy,

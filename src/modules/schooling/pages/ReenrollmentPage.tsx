@@ -5,8 +5,8 @@ import { Dropdown } from "primereact/dropdown";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
-import { listAnnualAcademicLevels } from "../../../features/settings/services/academic-structure.service";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { listAnnualAcademicLevels } from "../../settings/services/academic-structure.service";
 import { useToast } from "../../../shared/components/toast-context";
 import { getStudent } from "../services/schooling.service";
 import {

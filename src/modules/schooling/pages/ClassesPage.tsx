@@ -8,11 +8,11 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   listAnnualAcademicCycles,
   listAnnualAcademicLevels,
-} from "../../../features/settings/services/academic-structure.service";
+} from "../../settings/services/academic-structure.service";
 import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import {

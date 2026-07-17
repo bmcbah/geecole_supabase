@@ -4,20 +4,20 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deleteFinancialRule,
   listFinancialRuleLevels,
   listFinancialRules,
   saveFinancialRule,
   setFinancialRuleLevels,
-} from "../../../features/settings/services/annual-settings.service";
-import { listAnnualAcademicLevels } from "../../../features/settings/services/academic-structure.service";
+} from "../../settings/services/annual-settings.service";
+import { listAnnualAcademicLevels } from "../../settings/services/academic-structure.service";
 import {
   SettingsEntityDialog,
   type EntityField,
   type EntityValue,
-} from "../../../features/settings/components/SettingsEntityDialog";
+} from "../../settings/components/SettingsEntityDialog";
 import type { Database } from "../../../shared/lib/supabase/database.types";
 import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";

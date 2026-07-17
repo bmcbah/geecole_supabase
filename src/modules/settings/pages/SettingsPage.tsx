@@ -8,16 +8,16 @@ import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { SettingsSidebar } from "../components/SettingsSidebar";
 import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
-import { AcademicYearsPanel } from "../../../modules/settings/components/AcademicYearsPanel";
-import { LevelsSettingsPanel } from "../../../modules/settings/components/LevelsSettingsPanel";
-import { FinancialRulesSettingsPanel } from "../../../modules/settings/components/FinancialRulesSettingsPanel";
-import { PeopleAccessPanel } from "../../../modules/settings/components/PeopleAccessPanel";
-import { EvaluationSettingsPage } from "../../../modules/settings/pages/EvaluationSettingsPage";
-import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
-import { ReenrollmentPolicyPanel } from "../../../modules/schooling/components/ReenrollmentPolicyPanel";
-import { DocumentRequirementsPanel } from "../../../modules/schooling/components/DocumentRequirementsPanel";
-import { ClassOrganizationCard } from "../../../modules/schooling/components/ClassOrganizationCard";
-import { ClassesPage } from "../../../modules/schooling/pages/ClassesPage";
+import { AcademicYearsPanel } from "../../settings/components/AcademicYearsPanel";
+import { LevelsSettingsPanel } from "../../settings/components/LevelsSettingsPanel";
+import { FinancialRulesSettingsPanel } from "../../settings/components/FinancialRulesSettingsPanel";
+import { PeopleAccessPanel } from "../../settings/components/PeopleAccessPanel";
+import { EvaluationSettingsPage } from "../../settings/pages/EvaluationSettingsPage";
+import { EnrollmentPolicyPanel } from "../../schooling/components/EnrollmentPolicyPanel";
+import { ReenrollmentPolicyPanel } from "../../schooling/components/ReenrollmentPolicyPanel";
+import { DocumentRequirementsPanel } from "../../schooling/components/DocumentRequirementsPanel";
+import { ClassOrganizationCard } from "../../schooling/components/ClassOrganizationCard";
+import { ClassesPage } from "../../schooling/pages/ClassesPage";
 
 const sections = [
   "etablissement",
