@@ -8,6 +8,7 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { MultiSelect } from "primereact/multiselect";
 import { Tag } from "primereact/tag";
+import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deletePerson,
@@ -17,7 +18,8 @@ import {
   savePerson,
 } from "../../settings/services/annual-settings.service";
 import type { AppRole } from "../../../shared/lib/supabase/database.types";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
 
@@ -44,6 +46,9 @@ const emptyForm = {
   status: "active" as "active" | "inactive",
   roles: ["student"] as AppRole[],
 };
+
+const toolbarClassName =
+  "min-h-0 rounded-none border-0 bg-transparent p-0";
 
 export function PeopleAccessPanel() {
   const { institutionId } = useAcademicSession();
@@ -171,159 +176,183 @@ export function PeopleAccessPanel() {
 
   return (
     <section className="space-y-6">
-      <TablePanel
-        title="Personnes"
-        description="Gérez les élèves, parents et membres du personnel de l’établissement."
-        meta={
-          <Tag
-            value={`${filteredPeople.length} personne${filteredPeople.length > 1 ? "s" : ""}`}
-            severity="secondary"
-          />
-        }
-        search={
-          <TableSearch
-            id="people-search"
-            value={peopleSearch}
-            onChange={setPeopleSearch}
-            placeholder="Rechercher une personne"
-          />
-        }
-        actions={
-          <Button
-            label="Nouvelle personne"
-            icon="pi pi-plus"
-            size="small"
-            onClick={() => open()}
-          />
-        }
-      >
-        <DataTable
-          value={filteredPeople}
-          dataKey="id"
-          emptyMessage="Aucune personne"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column
-            header="Nom"
-            body={(row: Person) => `${row.first_name} ${row.last_name}`}
-          />
-          <Column field="phone" header="Téléphone" />
-          <Column field="email" header="E-mail" />
-          <Column
-            header="Rôles"
-            body={(row: Person) => (
-              <div className="flex flex-wrap gap-1">
-                {row.roles.map((role) => (
-                  <Tag key={role} value={roleLabel(role)} severity="secondary" />
-                ))}
-              </div>
-            )}
-          />
-          <Column
-            header="Accès"
-            body={(row: Person) =>
-              row.auth_user_id ? (
-                <Tag value="Compte lié" severity="success" />
-              ) : (
-                <Button
-                  label="Inviter"
-                  icon="pi pi-send"
-                  size="small"
-                  text
-                  disabled={!row.email}
-                  onClick={() => void invite(row)}
-                />
-              )
-            }
-          />
-          <Column
-            header="Actions"
-            headerClassName="text-right"
-            bodyClassName="text-right"
-            body={(row: Person) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  icon="pi pi-pencil"
-                  text
-                  size="small"
-                  aria-label={`Modifier ${row.first_name} ${row.last_name}`}
-                  onClick={() => open(row)}
-                />
-                <Button
-                  icon="pi pi-trash"
-                  text
-                  size="small"
-                  severity="danger"
-                  aria-label={`Supprimer ${row.first_name} ${row.last_name}`}
-                  onClick={() => void remove(row.id)}
-                />
-              </div>
-            )}
-          />
-        </DataTable>
-      </TablePanel>
-
-      <TablePanel
-        title="Invitations"
-        description="Suivez les invitations de connexion envoyées aux personnes."
-        meta={
-          <Tag
-            value={`${filteredInvitations.length} invitation${filteredInvitations.length > 1 ? "s" : ""}`}
-            severity="secondary"
-          />
-        }
-        search={
-          <TableSearch
-            id="invitations-search"
-            value={invitationSearch}
-            onChange={setInvitationSearch}
-            placeholder="Rechercher une invitation"
-          />
-        }
-      >
-        <DataTable
-          value={filteredInvitations}
-          dataKey="id"
-          emptyMessage="Aucune invitation"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column field="email" header="E-mail" />
-          <Column
-            header="Personne"
-            body={(row: Invitation) => {
-              const person = people.find((item) => item.id === row.person_id);
-              return person
-                ? `${person.first_name} ${person.last_name}`
-                : "Personne supprimée";
-            }}
-          />
-          <Column
-            header="Statut"
-            body={(row: Invitation) => (
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Personnes"
+            description="Gérez les élèves, parents et membres du personnel de l’établissement."
+            meta={
               <Tag
-                value={row.status}
-                severity={
-                  row.status === "accepted"
-                    ? "success"
-                    : row.status === "pending"
-                      ? "info"
-                      : "secondary"
-                }
+                value={`${filteredPeople.length} personne${filteredPeople.length > 1 ? "s" : ""}`}
+                severity="secondary"
               />
-            )}
-          />
-          <Column
-            header="Expiration"
-            body={(row: Invitation) =>
-              new Date(row.expires_at).toLocaleDateString("fr-GN")
             }
+            headingAs="h2"
+            compact
           />
-        </DataTable>
-      </TablePanel>
+        }
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                id="people-search"
+                value={peopleSearch}
+                onChange={setPeopleSearch}
+                placeholder="Rechercher une personne"
+              />
+            }
+            end={
+              <Button
+                label="Nouvelle personne"
+                icon="pi pi-plus"
+                size="small"
+                onClick={() => open()}
+              />
+            }
+            className={toolbarClassName}
+          />
+        }
+        dataTable={
+          <DataTable
+            value={filteredPeople}
+            dataKey="id"
+            emptyMessage="Aucune personne"
+            stripedRows
+            responsiveLayout="scroll"
+            size="small"
+          >
+            <Column
+              header="Nom"
+              body={(row: Person) => `${row.first_name} ${row.last_name}`}
+            />
+            <Column field="phone" header="Téléphone" />
+            <Column field="email" header="E-mail" />
+            <Column
+              header="Rôles"
+              body={(row: Person) => (
+                <div className="flex flex-wrap gap-1">
+                  {row.roles.map((role) => (
+                    <Tag key={role} value={roleLabel(role)} severity="secondary" />
+                  ))}
+                </div>
+              )}
+            />
+            <Column
+              header="Accès"
+              body={(row: Person) =>
+                row.auth_user_id ? (
+                  <Tag value="Compte lié" severity="success" />
+                ) : (
+                  <Button
+                    label="Inviter"
+                    icon="pi pi-send"
+                    size="small"
+                    text
+                    disabled={!row.email}
+                    onClick={() => void invite(row)}
+                  />
+                )
+              }
+            />
+            <Column
+              header="Actions"
+              headerClassName="text-right"
+              bodyClassName="text-right"
+              body={(row: Person) => (
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    size="small"
+                    aria-label={`Modifier ${row.first_name} ${row.last_name}`}
+                    onClick={() => open(row)}
+                  />
+                  <Button
+                    icon="pi pi-trash"
+                    text
+                    size="small"
+                    severity="danger"
+                    aria-label={`Supprimer ${row.first_name} ${row.last_name}`}
+                    onClick={() => void remove(row.id)}
+                  />
+                </div>
+              )}
+            />
+          </DataTable>
+        }
+      />
+
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Invitations"
+            description="Suivez les invitations de connexion envoyées aux personnes."
+            meta={
+              <Tag
+                value={`${filteredInvitations.length} invitation${filteredInvitations.length > 1 ? "s" : ""}`}
+                severity="secondary"
+              />
+            }
+            headingAs="h2"
+            compact
+          />
+        }
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                id="invitations-search"
+                value={invitationSearch}
+                onChange={setInvitationSearch}
+                placeholder="Rechercher une invitation"
+              />
+            }
+            className={toolbarClassName}
+          />
+        }
+        dataTable={
+          <DataTable
+            value={filteredInvitations}
+            dataKey="id"
+            emptyMessage="Aucune invitation"
+            stripedRows
+            responsiveLayout="scroll"
+            size="small"
+          >
+            <Column field="email" header="E-mail" />
+            <Column
+              header="Personne"
+              body={(row: Invitation) => {
+                const person = people.find((item) => item.id === row.person_id);
+                return person
+                  ? `${person.first_name} ${person.last_name}`
+                  : "Personne supprimée";
+              }}
+            />
+            <Column
+              header="Statut"
+              body={(row: Invitation) => (
+                <Tag
+                  value={row.status}
+                  severity={
+                    row.status === "accepted"
+                      ? "success"
+                      : row.status === "pending"
+                        ? "info"
+                        : "secondary"
+                  }
+                />
+              )}
+            />
+            <Column
+              header="Expiration"
+              body={(row: Invitation) =>
+                new Date(row.expires_at).toLocaleDateString("fr-GN")
+              }
+            />
+          </DataTable>
+        }
+      />
 
       <Dialog
         header={editing ? "Modifier la personne" : "Nouvelle personne"}
