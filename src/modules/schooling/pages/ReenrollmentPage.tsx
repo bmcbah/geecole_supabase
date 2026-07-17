@@ -127,179 +127,154 @@ export function ReenrollmentPage() {
           text="Créez ou ouvrez d’abord l’année scolaire cible et sa structure pédagogique."
         />
       )}
-      <div className="console-workbench">
-        <div className="console-workbench-main">
-          <section className="console-panel reenrollment-target-panel">
-            <header className="console-panel-heading">
-              <div>
-                <span className="console-section-index">01</span>
-                <h2>Destination scolaire</h2>
-                <p>Sélectionnez l’année et le niveau d’accueil.</p>
-              </div>
-            </header>
-            <div className="schooling-form-grid">
-              <label className="field">
-                <span>Année scolaire</span>
-                <Dropdown
-                  value={targetYearId}
-                  options={targetYears}
-                  optionLabel="name"
-                  optionValue="id"
-                  placeholder="Choisir l’année"
-                  onChange={(event) => setTargetYearId(String(event.value))}
-                />
-              </label>
-              <label className="field">
-                <span>Niveau proposé</span>
-                <Dropdown
-                  value={targetLevelId}
-                  options={levels}
-                  optionLabel="level_name_snapshot"
-                  optionValue="id"
-                  placeholder="Choisir le niveau"
-                  onChange={(event) => setTargetLevelId(String(event.value))}
-                />
-              </label>
-            </div>
-          </section>
-          <section className="console-panel reenrollment-decision">
-            <header className="console-panel-heading">
-              <div>
-                <span className="console-section-index">02</span>
-                <h2>Décision et statut</h2>
-                <p>Validez la progression et l’état initial du dossier.</p>
-              </div>
-            </header>
-            <div className="schooling-form-grid">
-              <label className="field">
-                <span>Décision scolaire</span>
-                <Dropdown
-                  value={decision}
-                  options={[
-                    { label: "Promotion", value: "promotion" },
-                    {
-                      label: "Redoublement",
-                      value: "repeat",
-                      disabled: policy.repeat_mode === "forbidden",
-                    },
-                    { label: "Saut de niveau", value: "skip" },
-                    { label: "Décision exceptionnelle", value: "exceptional" },
-                  ]}
-                  optionDisabled="disabled"
-                  onChange={(event) => setDecision(String(event.value))}
-                />
-              </label>
-              <label className="field">
-                <span>Statut créé</span>
-                <Dropdown
-                  value={status}
-                  options={[
-                    { label: "Brouillon", value: "draft" },
-                    { label: "Préinscrit", value: "pre_registered" },
-                    ...(policy.allow_direct_confirmation
-                      ? [{ label: "Confirmé", value: "confirmed" }]
-                      : []),
-                  ]}
-                  onChange={(event) => setStatus(event.value as typeof status)}
-                />
-              </label>
-              {needsReason && (
-                <label className="field field-span">
-                  <span>Motif obligatoire</span>
-                  <InputTextarea
-                    rows={3}
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                  />
-                </label>
-              )}
-            </div>
-          </section>
-        </div>
-        <aside className="console-summary-panel">
-          <header>
-            <span className="step-label">Récapitulatif</span>
-            <h2>Nouvelle inscription</h2>
-          </header>
-          <dl className="console-summary-list">
+      <div className="reenrollment-comparison">
+        <section className="reenrollment-side current">
+          <span className="step-label">Situation actuelle</span>
+          <h2>{enrollment.level_name_snapshot}</h2>
+          <dl className="profile-dl">
             <div>
-              <dt>Élève</dt>
-              <dd>
-                {student.first_name} {student.last_name}
-              </dd>
+              <dt>Année</dt>
+              <dd>{years.find((item) => item.id === yearId)?.name}</dd>
             </div>
             <div>
-              <dt>Situation actuelle</dt>
-              <dd>
-                {years.find((item) => item.id === yearId)?.name}
-                <small>
-                  {enrollment.cycle_name_snapshot} ·{" "}
-                  {enrollment.level_name_snapshot}
-                </small>
-              </dd>
+              <dt>Cycle</dt>
+              <dd>{enrollment.cycle_name_snapshot}</dd>
             </div>
             <div>
-              <dt>Année cible</dt>
-              <dd>{targetYear?.name || "À sélectionner"}</dd>
-            </div>
-            <div>
-              <dt>Niveau cible</dt>
-              <dd>{targetLevel?.level_name_snapshot || "À sélectionner"}</dd>
-            </div>
-            <div>
-              <dt>Décision</dt>
-              <dd>
-                {decision === "promotion"
-                  ? "Promotion"
-                  : "Décision particulière"}
-              </dd>
+              <dt>Statut</dt>
+              <dd>Inscription confirmée</dd>
             </div>
           </dl>
-          <Message
-            severity="info"
-            text="Aucune donnée de l’année actuelle ne sera modifiée."
-          />
-          <div className="console-summary-action">
-            <Button
-              label="Créer la réinscription"
-              icon="pi pi-check"
-              disabled={
-                !targetYearId ||
-                !targetLevelId ||
-                (needsReason && !reason.trim())
-              }
-              loading={saving}
-              onClick={() => {
-                setSaving(true);
-                void reenrollStudent({
-                  sourceEnrollmentId: enrollment.id,
-                  academicYearId: targetYearId,
-                  annualLevelId: targetLevelId,
-                  decision,
-                  status,
-                  reason,
-                })
-                  .then(() => {
-                    notify({
-                      severity: "success",
-                      summary: "Réinscription créée",
-                      detail: `${student.first_name} est ${status === "confirmed" ? "réinscrit" : "préinscrit"}.`,
-                    });
-                    void navigate("/scolarite/eleves");
-                  })
-                  .catch((error: { message?: string }) =>
-                    notify({
-                      severity: "error",
-                      summary: "Réinscription impossible",
-                      detail: error.message,
-                    }),
-                  )
-                  .finally(() => setSaving(false));
-              }}
-            />
+        </section>
+        <i className="pi pi-arrow-right reenrollment-arrow" />
+        <section className="reenrollment-side target">
+          <span className="step-label">Nouvelle année</span>
+          <div className="schooling-form-grid single-column">
+            <label className="field">
+              <span>Année scolaire</span>
+              <Dropdown
+                value={targetYearId}
+                options={targetYears}
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Choisir l’année"
+                onChange={(event) => setTargetYearId(String(event.value))}
+              />
+            </label>
+            <label className="field">
+              <span>Niveau proposé</span>
+              <Dropdown
+                value={targetLevelId}
+                options={levels}
+                optionLabel="level_name_snapshot"
+                optionValue="id"
+                placeholder="Choisir le niveau"
+                onChange={(event) => setTargetLevelId(String(event.value))}
+              />
+            </label>
           </div>
-        </aside>
+        </section>
       </div>
+      <section className="reenrollment-decision">
+        <header>
+          <div>
+            <h2>Décision et validation</h2>
+            <p>
+              La proposition reste modifiable selon les règles de
+              l’établissement.
+            </p>
+          </div>
+        </header>
+        <div className="schooling-form-grid">
+          <label className="field">
+            <span>Décision scolaire</span>
+            <Dropdown
+              value={decision}
+              options={[
+                { label: "Promotion", value: "promotion" },
+                {
+                  label: "Redoublement",
+                  value: "repeat",
+                  disabled: policy.repeat_mode === "forbidden",
+                },
+                { label: "Saut de niveau", value: "skip" },
+                { label: "Décision exceptionnelle", value: "exceptional" },
+              ]}
+              optionDisabled="disabled"
+              onChange={(event) => setDecision(String(event.value))}
+            />
+          </label>
+          <label className="field">
+            <span>Statut créé</span>
+            <Dropdown
+              value={status}
+              options={[
+                { label: "Brouillon", value: "draft" },
+                { label: "Préinscrit", value: "pre_registered" },
+                ...(policy.allow_direct_confirmation
+                  ? [{ label: "Confirmé", value: "confirmed" }]
+                  : []),
+              ]}
+              onChange={(event) => setStatus(event.value as typeof status)}
+            />
+          </label>
+          {needsReason && (
+            <label className="field field-span">
+              <span>Motif obligatoire</span>
+              <InputTextarea
+                rows={3}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </label>
+          )}
+        </div>
+        <div className="reenrollment-summary">
+          <strong>Récapitulatif</strong>
+          <span>
+            {targetYear?.name || "Année à choisir"} ·{" "}
+            {targetLevel?.level_name_snapshot || "Niveau à choisir"} ·{" "}
+            {decision === "promotion" ? "Promotion" : "Décision particulière"}
+          </span>
+        </div>
+        <div className="dialog-actions">
+          <Button
+            label="Créer la réinscription"
+            icon="pi pi-check"
+            disabled={
+              !targetYearId || !targetLevelId || (needsReason && !reason.trim())
+            }
+            loading={saving}
+            onClick={() => {
+              setSaving(true);
+              void reenrollStudent({
+                sourceEnrollmentId: enrollment.id,
+                academicYearId: targetYearId,
+                annualLevelId: targetLevelId,
+                decision,
+                status,
+                reason,
+              })
+                .then(() => {
+                  notify({
+                    severity: "success",
+                    summary: "Réinscription créée",
+                    detail: `${student.first_name} est ${status === "confirmed" ? "réinscrit" : "préinscrit"}.`,
+                  });
+                  void navigate("/scolarite/eleves");
+                })
+                .catch((error: { message?: string }) =>
+                  notify({
+                    severity: "error",
+                    summary: "Réinscription impossible",
+                    detail: error.message,
+                  }),
+                )
+                .finally(() => setSaving(false));
+            }}
+          />
+        </div>
+      </section>
     </section>
   );
 }
