@@ -4,20 +4,32 @@ import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
-import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { SettingsSidebar } from "../components/SettingsSidebar";
-import { LevelsSettingsPanel } from "../components/AcademicStructurePanel";
 import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
-import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
-import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
-import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
+import { AcademicYearsPanel } from "../../../modules/settings/components/AcademicYearsPanel";
+import { LevelsSettingsPanel } from "../../../modules/settings/components/LevelsSettingsPanel";
+import { FinancialRulesSettingsPanel } from "../../../modules/settings/components/FinancialRulesSettingsPanel";
+import { PeopleAccessPanel } from "../../../modules/settings/components/PeopleAccessPanel";
+import { EvaluationSettingsPage } from "../../../modules/settings/pages/EvaluationSettingsPage";
 import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
 import { ReenrollmentPolicyPanel } from "../../../modules/schooling/components/ReenrollmentPolicyPanel";
 import { DocumentRequirementsPanel } from "../../../modules/schooling/components/DocumentRequirementsPanel";
 import { ClassOrganizationCard } from "../../../modules/schooling/components/ClassOrganizationCard";
 import { ClassesPage } from "../../../modules/schooling/pages/ClassesPage";
+
+const sections = [
+  "etablissement",
+  "annees-scolaires",
+  "cycles",
+  "niveaux",
+  "classes",
+  "matieres",
+  "evaluations-formules",
+  "regles-financieres",
+  "utilisateurs-roles",
+] as const;
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -29,39 +41,30 @@ export function SettingsPage() {
     refresh,
   } = useAcademicSession();
 
-  if (loading)
+  if (loading) {
     return (
       <div className="content-state">
         <ProgressSpinner />
       </div>
     );
+  }
 
   if (failure) return <Message severity="error" text={failure} />;
 
-  if (!selected)
+  if (!selected) {
     return (
       <Message
         severity="warn"
         text="Aucun établissement n’est associé à votre compte."
       />
     );
+  }
 
   if (!section) return <Navigate to="/parametrage/etablissement" replace />;
 
-  if (
-    ![
-      "etablissement",
-      "annees-scolaires",
-      "cycles",
-      "niveaux",
-      "classes",
-      "matieres",
-      "evaluations-formules",
-      "regles-financieres",
-      "utilisateurs-roles",
-    ].includes(section)
-  )
+  if (!sections.includes(section as (typeof sections)[number])) {
     return <Navigate to="/parametrage/etablissement" replace />;
+  }
 
   return (
     <section className="space-y-3">
@@ -89,7 +92,8 @@ export function SettingsPage() {
                     Informations générales
                   </h2>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    Identité, coordonnées et préférences utilisées dans toute l’application.
+                    Identité, coordonnées et préférences utilisées dans toute
+                    l’application.
                   </p>
                 </div>
                 <div className="p-3">
@@ -109,9 +113,7 @@ export function SettingsPage() {
                     Ouvrez uniquement la rubrique que vous souhaitez modifier.
                   </p>
                 </div>
-                <Accordion
-                  className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5"
-                >
+                <Accordion className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5">
                   <AccordionTab header="Règles d’inscription">
                     <EnrollmentPolicyPanel institutionId={selected.id} />
                   </AccordionTab>
@@ -141,11 +143,11 @@ export function SettingsPage() {
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
           ) : section === "evaluations-formules" ? (
-            <EvaluationSettingsPanel />
+            <EvaluationSettingsPage />
           ) : section === "regles-financieres" ? (
             <FinancialRulesSettingsPanel />
           ) : (
-            <UsersSettingsPanel />
+            <PeopleAccessPanel />
           )}
         </div>
       </div>
