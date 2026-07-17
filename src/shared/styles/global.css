@@ -1099,6 +1099,384 @@ input {
 .cycle-choice-card p {
   margin: 0;
 }
+
+/* Console design system */
+:root {
+  color: #242424;
+  background: #f8f8f8;
+  --console-border: #e5e5e5;
+  --console-muted: #6b6b6b;
+  --console-hover: #f3f3f3;
+  --console-accent: #1f9d75;
+}
+body {
+  background: #f8f8f8;
+}
+.app-sidebar {
+  width: 224px;
+  padding: 1rem 0.75rem;
+  background: #1c1c1c;
+  border-right: 1px solid #303030;
+}
+.app-workspace {
+  margin-left: 224px;
+  width: calc(100% - 224px);
+}
+.brand {
+  gap: 0.65rem;
+  height: 42px;
+  margin-bottom: 1rem;
+  padding: 0 0.5rem;
+}
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  background: #3ecf8e;
+  color: #13251e;
+  font-size: 0.9rem;
+}
+.brand strong {
+  font-size: 0.9rem;
+}
+.brand small {
+  color: #8f8f8f;
+  font-size: 0.72rem;
+}
+.app-sidebar nav a {
+  gap: 0.65rem;
+  min-height: 34px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 5px;
+  color: #bdbdbd;
+  font-size: 0.84rem;
+}
+.app-sidebar nav a:hover {
+  color: white;
+  background: #262626;
+}
+.app-sidebar nav a.active {
+  background: #303030;
+  color: #fff;
+}
+.app-sidebar nav a i {
+  font-size: 0.9rem;
+}
+.app-header {
+  height: 54px;
+  padding: 0 1.25rem;
+  border-color: var(--console-border);
+  background: #fff;
+}
+.app-content {
+  max-width: 1440px;
+  padding: 1.25rem 1.5rem 2rem;
+}
+.page-heading {
+  margin-bottom: 1rem;
+}
+.page-heading h1 {
+  margin: 0.15rem 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+.page-heading p {
+  color: var(--console-muted);
+  font-size: 0.875rem;
+}
+.eyebrow {
+  color: var(--console-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+}
+.p-button {
+  border-radius: 5px;
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+.p-button:not(.p-button-text):not(.p-button-outlined) {
+  border-color: #1f9d75;
+  background: #1f9d75;
+}
+.p-inputtext,
+.p-dropdown,
+.p-multiselect,
+.p-inputnumber-input,
+.p-calendar .p-inputtext,
+.p-inputtextarea {
+  border-color: #d7d7d7;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.p-inputtext:enabled:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-inputtextarea:enabled:focus {
+  border-color: #888;
+  box-shadow: 0 0 0 1px #888;
+}
+.medium-controls .p-inputtext,
+.medium-controls .p-dropdown,
+.medium-controls .p-multiselect,
+.medium-controls .p-calendar,
+.medium-controls .p-inputnumber-input {
+  min-height: 34px;
+}
+.medium-controls .p-button:not(.p-button-icon-only) {
+  min-height: 34px;
+  padding: 0.4rem 0.75rem;
+}
+.settings-layout {
+  grid-template-columns: 224px minmax(0, 1fr);
+  gap: 1.25rem;
+}
+.settings-sidebar {
+  top: 0.75rem;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--console-border);
+  border-radius: 0;
+  background: transparent;
+}
+.settings-sidebar h2 {
+  padding: 0 0.75rem;
+  font-size: 0.78rem;
+  color: #444;
+}
+.settings-nav-group + .settings-nav-group {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-color: var(--console-border);
+}
+.settings-group-title {
+  margin: 0 0.7rem 0.3rem;
+  color: #8a8a8a;
+  font-size: 0.64rem;
+}
+.settings-sidebar nav a,
+.settings-disabled {
+  min-height: 32px;
+  margin-right: 0.75rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 4px;
+  color: #555;
+  font-size: 0.8rem;
+}
+.settings-sidebar nav a:hover {
+  background: #eee;
+}
+.settings-sidebar nav a.active {
+  background: #e8e8e8;
+  color: #1f1f1f;
+  font-weight: 600;
+}
+.settings-sidebar nav a.active i {
+  color: var(--console-accent);
+}
+.settings-year-context {
+  padding: 0.4rem 0.65rem;
+  border-radius: 5px;
+  background: #fff;
+}
+.settings-panel-heading {
+  padding: 0 0 0.65rem;
+}
+.settings-panel-heading h2 {
+  font-size: 1rem;
+}
+.console-panel,
+.settings-section-panel {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--console-border);
+  border-radius: 6px;
+  background: #fff;
+}
+.console-panel-heading {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--console-border);
+  background: #fcfcfc;
+}
+.console-panel-heading h2 {
+  margin: 0;
+  color: #262626;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.console-panel-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--console-muted);
+  font-size: 0.78rem;
+}
+.console-panel > form,
+.console-panel > .policy-list,
+.console-panel > .schooling-form-grid {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.console-panel > .dialog-actions {
+  padding: 0 1rem 1rem;
+}
+.policy-row {
+  padding: 0.72rem 0;
+}
+.policy-row strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.policy-row small {
+  font-size: 0.75rem;
+}
+.students-filter-zone {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.schooling-filters {
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid var(--console-border);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: #fff;
+}
+.schooling-filters .field > span:first-child {
+  display: none;
+}
+.advanced-filters {
+  gap: 0.65rem;
+  padding: 0.75rem;
+  margin: 0;
+  border-color: var(--console-border);
+  border-bottom: 0;
+  border-radius: 0;
+  background: #fafafa;
+}
+.data-surface,
+.p-datatable {
+  border-color: var(--console-border);
+  border-radius: 0 0 6px 6px;
+}
+.p-datatable .p-datatable-thead > tr > th {
+  padding: 0.58rem 0.7rem;
+  border-color: var(--console-border);
+  background: #f7f7f7;
+  color: #666;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.58rem 0.7rem;
+  font-size: 0.82rem;
+}
+.p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background: #fff;
+}
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--console-hover);
+}
+.student-profile-header {
+  padding: 0.85rem 1rem;
+  border-color: var(--console-border);
+  border-radius: 6px;
+}
+.student-avatar-large {
+  width: 46px;
+  height: 46px;
+  font-size: 0.9rem;
+}
+.student-profile-main h1 {
+  font-size: 1.2rem;
+}
+.profile-overview-grid,
+.guardian-list {
+  border-color: var(--console-border);
+  border-radius: 6px;
+}
+.console-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1rem;
+  align-items: start;
+}
+.console-workbench-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.reenrollment-target-panel .schooling-form-grid,
+.reenrollment-decision .schooling-form-grid {
+  padding: 1rem;
+}
+.console-section-index {
+  float: left;
+  margin-right: 0.65rem;
+  color: #999;
+  font:
+    600 0.7rem ui-monospace,
+    monospace;
+}
+.console-summary-panel {
+  position: sticky;
+  top: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--console-border);
+  border-radius: 6px;
+  background: #fff;
+}
+.console-summary-panel > header {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--console-border);
+  background: #fcfcfc;
+}
+.console-summary-panel h2 {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+.console-summary-list {
+  margin: 0;
+}
+.console-summary-list > div {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ededed;
+}
+.console-summary-list dt {
+  margin-bottom: 0.2rem;
+  color: #777;
+  font-size: 0.7rem;
+}
+.console-summary-list dd {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.console-summary-list small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #777;
+  font-weight: 400;
+}
+.console-summary-panel .p-message {
+  margin: 0.75rem;
+  font-size: 0.75rem;
+}
+.console-summary-action {
+  padding: 0.75rem;
+  border-top: 1px solid var(--console-border);
+}
+.console-summary-action .p-button {
+  width: 100%;
+  justify-content: center;
+}
+@media (max-width: 900px) {
+  .console-workbench {
+    grid-template-columns: 1fr;
+  }
+  .console-summary-panel {
+    position: static;
+  }
+}
 .cycle-choice-card p {
   margin-top: 0.35rem;
   color: var(--text-color-secondary);

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Controller, useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import type { Institution } from "../../institutions/types/institution";
@@ -47,10 +46,16 @@ export function InstitutionDetailsForm({ institution, onUpdated }: Props) {
     }
   });
   return (
-    <Card
-      title="Informations générales"
-      subTitle="Ces valeurs seront utilisées dans les documents et calculs de l’établissement"
-    >
+    <section className="settings-section-panel console-panel">
+      <header className="console-panel-heading">
+        <div>
+          <h2>Informations générales</h2>
+          <p>
+            Ces valeurs seront utilisées dans les documents et calculs de
+            l’établissement.
+          </p>
+        </div>
+      </header>
       <form
         className="settings-grid"
         onSubmit={(event) => void submit(event)}
@@ -108,7 +113,7 @@ export function InstitutionDetailsForm({ institution, onUpdated }: Props) {
           />
         </div>
       </form>
-    </Card>
+    </section>
   );
 }
 

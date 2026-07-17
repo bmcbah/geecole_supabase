@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import { InputSwitch } from "primereact/inputswitch";
 import { InputText } from "primereact/inputtext";
@@ -67,11 +66,13 @@ export function EnrollmentPolicyPanel({
     },
   ];
   return (
-    <Card
-      title="Règles d’inscription"
-      subTitle="Ces choix pilotent le parcours Scolarité de cet établissement."
-      className="settings-section-card policy-card medium-controls"
-    >
+    <section className="settings-section-panel console-panel medium-controls">
+      <header className="console-panel-heading">
+        <div>
+          <h2>Règles d’inscription</h2>
+          <p>Ces choix pilotent le parcours Scolarité de cet établissement.</p>
+        </div>
+      </header>
       <div className="policy-list">
         {switches.map((item) => (
           <div className="policy-row" key={item.key}>
@@ -126,6 +127,6 @@ export function EnrollmentPolicyPanel({
           }}
         />
       </div>
-    </Card>
+    </section>
   );
 }

@@ -58,8 +58,8 @@ export function ReenrollmentPolicyPanel({
     ],
   ] as const;
   return (
-    <section className="settings-section-panel policy-flat-panel medium-controls">
-      <header>
+    <section className="settings-section-panel console-panel medium-controls">
+      <header className="console-panel-heading">
         <div>
           <h2>Règles de réinscription</h2>
           <p>
