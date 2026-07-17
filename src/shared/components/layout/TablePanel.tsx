@@ -1,29 +1,47 @@
 import { useId, type ReactNode } from "react";
-import { Card } from "primereact/card";
 import { Toolbar } from "primereact/toolbar";
 import { PageHeader } from "./PageHeader";
 
 type TablePanelProps = {
-  title: ReactNode;
-  description?: ReactNode;
-  meta?: ReactNode;
-  headerActions?: ReactNode;
-  alerts?: ReactNode;
-  toolbarStart?: ReactNode;
-  toolbarEnd?: ReactNode;
-  search?: ReactNode;
-  actions?: ReactNode;
-  /** @deprecated Use toolbarStart and toolbarEnd. */
+  sectionHeader?: ReactNode;
+  alert?: ReactNode;
   toolbar?: ReactNode;
-  children: ReactNode;
+  dataTable?: ReactNode;
+  children?: ReactNode;
   className?: string;
   contentClassName?: string;
+
+  /** @deprecated Compose the header and pass it through sectionHeader. */
+  title?: ReactNode;
+  /** @deprecated Compose the header and pass it through sectionHeader. */
+  description?: ReactNode;
+  /** @deprecated Compose the header and pass it through sectionHeader. */
+  meta?: ReactNode;
+  /** @deprecated Compose the header and pass it through sectionHeader. */
+  headerActions?: ReactNode;
+  /** @deprecated Use alert. */
+  alerts?: ReactNode;
+  /** @deprecated Compose the toolbar and pass it through toolbar. */
+  toolbarStart?: ReactNode;
+  /** @deprecated Compose the toolbar and pass it through toolbar. */
+  toolbarEnd?: ReactNode;
+  /** @deprecated Compose the toolbar and pass it through toolbar. */
+  search?: ReactNode;
+  /** @deprecated Compose the toolbar and pass it through toolbar. */
+  actions?: ReactNode;
 };
 
 const joinClassNames = (...classNames: Array<string | undefined>) =>
   classNames.filter(Boolean).join(" ");
 
 export function TablePanel({
+  sectionHeader,
+  alert,
+  toolbar,
+  dataTable,
+  children,
+  className,
+  contentClassName,
   title,
   description,
   meta,
@@ -33,53 +51,61 @@ export function TablePanel({
   toolbarEnd,
   search,
   actions,
-  toolbar,
-  children,
-  className,
-  contentClassName,
 }: TablePanelProps) {
   const titleId = useId();
-  const start = toolbar ?? toolbarStart ?? search;
-  const end = toolbar ? undefined : (toolbarEnd ?? actions);
-  const hasToolbar = Boolean(start || end);
+  const legacyHeader = title ? (
+    <PageHeader
+      title={<span id={titleId}>{title}</span>}
+      description={description}
+      meta={meta}
+      actions={headerActions}
+      headingAs="h2"
+      compact
+    />
+  ) : null;
+  const legacyToolbarStart = toolbarStart ?? search;
+  const legacyToolbarEnd = toolbarEnd ?? actions;
+  const legacyToolbar =
+    legacyToolbarStart || legacyToolbarEnd ? (
+      <Toolbar
+        start={legacyToolbarStart}
+        end={legacyToolbarEnd}
+        className="min-h-0 rounded-none border-0 bg-transparent p-0"
+      />
+    ) : null;
+
+  const headerSlot = sectionHeader ?? legacyHeader;
+  const alertSlot = alert ?? alerts;
+  const toolbarSlot = toolbar ?? legacyToolbar;
+  const dataTableSlot = dataTable ?? children;
 
   return (
-    <Card
+    <section
+      aria-labelledby={title ? titleId : undefined}
       className={joinClassNames(
-        "overflow-hidden rounded-xl border border-slate-200 shadow-sm",
-        "[&_.p-card-body]:p-0 [&_.p-card-content]:p-0",
+        "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm",
         className,
       )}
     >
-      <section aria-labelledby={titleId}>
-        <PageHeader
-          title={
-            <span id={titleId}>
-              {title}
-            </span>
-          }
-          description={description}
-          meta={meta}
-          actions={headerActions}
-          headingAs="h2"
-          compact
-          className="px-4 pt-4"
-        />
+      {headerSlot ? (
+        <div className="border-b border-slate-200 px-4 py-3">
+          {headerSlot}
+        </div>
+      ) : null}
 
-        {alerts ? (
-          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-base [&_.p-message]:w-full">
-            {alerts}
-          </div>
-        ) : null}
+      {alertSlot ? (
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-base [&_.p-message]:w-full">
+          {alertSlot}
+        </div>
+      ) : null}
 
-        {hasToolbar ? (
-          <Toolbar
-            start={start}
-            end={end}
-            className="min-h-0 rounded-none border-0 border-b border-slate-200 bg-white px-4 py-3"
-          />
-        ) : null}
+      {toolbarSlot ? (
+        <div className="border-b border-slate-200 px-4 py-3">
+          {toolbarSlot}
+        </div>
+      ) : null}
 
+      {dataTableSlot ? (
         <div
           className={joinClassNames(
             "overflow-hidden",
@@ -91,9 +117,9 @@ export function TablePanel({
             contentClassName,
           )}
         >
-          {children}
+          {dataTableSlot}
         </div>
-      </section>
-    </Card>
+      ) : null}
+    </section>
   );
 }
