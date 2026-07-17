@@ -28,6 +28,9 @@ export function AppLayout() {
           </div>
         </div>
         <nav aria-label="Navigation principale">
+          <NavLink to="/scolarite/eleves">
+            <i className="pi pi-graduation-cap" /> Scolarité
+          </NavLink>
           <NavLink to="/etablissement">
             <i className="pi pi-building" /> Établissement
           </NavLink>

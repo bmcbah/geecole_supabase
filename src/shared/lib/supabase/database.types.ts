@@ -17,6 +17,30 @@ export type AcademicYearStatus = "preparation" | "open" | "closed" | "archived";
 export interface Database {
   public: {
     Tables: {
+      students: {
+        Row: { id: string; institution_id: string; matricule: string; first_name: string; last_name: string; other_names: string | null; gender: string; birth_date: string | null; birth_date_is_approximate: boolean; birth_place: string | null; nationality: string; address: string | null; photo_url: string | null; birth_certificate_number: string | null; previous_school: string | null; previous_level: string | null; status: "active" | "inactive"; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; matricule: string; first_name: string; last_name: string; gender: string; birth_date?: string | null; birth_place?: string | null; address?: string | null };
+        Update: Partial<Database["public"]["Tables"]["students"]["Insert"]>;
+        Relationships: [];
+      };
+      guardians: {
+        Row: { id: string; institution_id: string; first_name: string; last_name: string; primary_phone: string; secondary_phone: string | null; address: string | null; occupation: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; first_name: string; last_name: string; primary_phone: string };
+        Update: Partial<Database["public"]["Tables"]["guardians"]["Insert"]>;
+        Relationships: [];
+      };
+      student_guardians: {
+        Row: { student_id: string; guardian_id: string; relationship: string; is_primary_contact: boolean; is_financial_responsible: boolean; is_emergency_contact: boolean; can_pick_up: boolean; receives_communications: boolean };
+        Insert: { student_id: string; guardian_id: string; relationship: string; is_primary_contact?: boolean; is_financial_responsible?: boolean; is_emergency_contact?: boolean; can_pick_up?: boolean; receives_communications?: boolean };
+        Update: Partial<Database["public"]["Tables"]["student_guardians"]["Insert"]>;
+        Relationships: [];
+      };
+      enrollments: {
+        Row: { id: string; institution_id: string; academic_year_id: string; student_id: string; academic_year_level_id: string; status: string; admission_date: string; origin: string; level_name_snapshot: string; cycle_name_snapshot: string; cancellation_reason: string | null; confirmed_at: string | null; created_by: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; academic_year_id: string; student_id: string; academic_year_level_id: string; status?: string; admission_date?: string; origin?: string; level_name_snapshot: string; cycle_name_snapshot: string };
+        Update: Partial<Database["public"]["Tables"]["enrollments"]["Insert"]>;
+        Relationships: [];
+      };
       cycle_catalog: {
         Row: {
           id: string;
@@ -619,6 +643,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      create_student_enrollment: {
+        Args: { target_institution_id: string; target_academic_year_id: string; target_annual_level_id: string; student_first_name: string; student_last_name: string; student_gender: string; student_birth_date: string | null; student_birth_place: string; student_address: string; guardian_first_name: string; guardian_last_name: string; guardian_phone: string; guardian_relationship: string; enrollment_kind: string };
+        Returns: string;
+      };
       set_institution_cycle: {
         Args: {
           target_institution_id: string;
