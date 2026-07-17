@@ -15,7 +15,7 @@ import {
   SettingsEntityDialog,
   type EntityField,
   type EntityValue,
-} from "../components/SettingsEntityDialog";
+} from "./SettingsEntityDialog";
 import type { Database } from "../../../shared/lib/supabase/database.types";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";

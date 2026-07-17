@@ -193,9 +193,9 @@ export function StudentsPage() {
                   <label className="field min-w-[16rem] flex-1">
                     <span>Rechercher</span>
                     <span className="p-input-icon-left w-full">
-                      <i className="pi pi-search" />
+                      <i className="pi pi-search ps-2" />
                       <InputText
-                        className="w-full"
+                        className="w-full ps-7 text-sm"
                         value={query}
                         placeholder="Nom, matricule ou téléphone"
                         onChange={(event) => setQuery(event.target.value)}
