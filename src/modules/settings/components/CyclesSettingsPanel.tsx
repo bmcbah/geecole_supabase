@@ -81,7 +81,7 @@ export function CyclesSettingsPanel() {
       contentClassName="bg-slate-50 p-4 sm:p-5"
       dataTable={
         <div
-          className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+          className="grid gap-3 md:grid-cols-2 xl:grid-cols-2"
           data-testid="cycle-catalog"
         >
           {items.map((item) => {

@@ -173,7 +173,7 @@ export function PeopleAccessPanel() {
   }, [invitationSearch, invitations, people]);
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3 bg-white p-4">
       <PageHeader
         title="Personnes et accès"
         description="Gérez les personnes de l’établissement et suivez leurs invitations de connexion."
