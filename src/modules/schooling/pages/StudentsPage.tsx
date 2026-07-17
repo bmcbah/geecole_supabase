@@ -133,7 +133,7 @@ export function StudentsPage() {
             rowsPerPageOptions={[10, 25, 50]}
             emptyMessage="Aucun élève ne correspond à cette recherche."
             onRowClick={(event) =>
-              navigate(`/scolarite/eleves/${event.data.id}`)
+              void navigate(`/scolarite/eleves/${event.data.id}`)
             }
             rowClassName={() => "clickable-row"}
           >
@@ -182,7 +182,7 @@ export function StudentsPage() {
                   rounded
                   onClick={(event) => {
                     event.stopPropagation();
-                    navigate(`/scolarite/eleves/${item.id}`);
+                    void navigate(`/scolarite/eleves/${item.id}`);
                   }}
                 />
               )}
