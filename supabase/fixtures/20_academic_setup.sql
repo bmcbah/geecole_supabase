@@ -77,8 +77,29 @@ insert into public.academic_year_levels (
   ('28000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '25000000-0000-0000-0000-000000000003', '26000000-0000-0000-0000-000000000005', '23000000-0000-0000-0000-000000000002', '27000000-0000-0000-0000-000000000003', 'Collège', '7e année', 'C7', 70, true),
   ('28000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000001', '25000000-0000-0000-0000-000000000003', '26000000-0000-0000-0000-000000000006', '23000000-0000-0000-0000-000000000003', '27000000-0000-0000-0000-000000000005', 'Lycée', '11e année', 'L11', 110, true);
 
-insert into public.enrollment_policies (institution_id) values ('20000000-0000-0000-0000-000000000001');
-insert into public.reenrollment_policies (institution_id) values ('20000000-0000-0000-0000-000000000001');
+-- These rows are created automatically by institution triggers.
+-- Fixtures configure them explicitly instead of inserting duplicate primary keys.
+update public.enrollment_policies
+set allow_pre_registration = true,
+    allow_direct_enrollment = true,
+    require_payment_before_confirmation = false,
+    require_class_assignment = false,
+    count_pre_registration_in_capacity = false,
+    capacity_mode = 'warning',
+    allow_missing_documents = true,
+    student_number_pattern = 'EL-{YYYY}-{SEQ}'
+where institution_id = '20000000-0000-0000-0000-000000000001';
+
+update public.reenrollment_policies
+set allow_early_preparation = true,
+    allow_direct_confirmation = true,
+    debt_mode = 'warning',
+    require_academic_decision = true,
+    allow_decision_override = true,
+    repeat_mode = 'exception',
+    require_class_assignment = false,
+    auto_generate_fees = true
+where institution_id = '20000000-0000-0000-0000-000000000001';
 
 -- Historical, current and future years.
 update public.academic_years set status = 'open' where id = '25000000-0000-0000-0000-000000000001';
