@@ -30,9 +30,14 @@ const groups = [
     label: "Évaluation",
     sections: [
       {
-        path: "evaluations-formules",
+        path: "types-notes",
+        icon: "pi-tags",
+        label: "Types de notes",
+      },
+      {
+        path: "formules-calcul",
         icon: "pi-percentage",
-        label: "Types et formules",
+        label: "Formules de calcul",
       },
     ],
   },
