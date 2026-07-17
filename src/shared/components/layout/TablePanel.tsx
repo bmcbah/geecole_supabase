@@ -21,31 +21,28 @@ export function TablePanel({
 }: TablePanelProps) {
   return (
     <section
-      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${className}`.trim()}
+      className={`overflow-hidden rounded-lg border border-slate-200 bg-white ${className}`.trim()}
     >
-      <div className="border-b border-slate-200 px-4 py-3 sm:px-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-              {meta && <div className="flex flex-wrap items-center gap-2">{meta}</div>}
-            </div>
-            {description && (
-              <p className="mt-1 max-w-3xl text-sm leading-5 text-slate-500">
-                {description}
-              </p>
-            )}
-          </div>
-          {toolbar && (
-            <div className="flex shrink-0 flex-wrap items-end gap-2 lg:justify-end">
-              {toolbar}
-            </div>
+      <div className="flex min-h-12 flex-col gap-2 border-b border-slate-200 px-3 py-2 lg:flex-row lg:items-center">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+          <h2 className="shrink-0 text-sm font-semibold text-slate-900">{title}</h2>
+          {meta && <div className="flex shrink-0 items-center gap-1.5">{meta}</div>}
+          {description && (
+            <span className="min-w-0 truncate text-xs text-slate-500">
+              {description}
+            </span>
           )}
         </div>
+
+        {toolbar && (
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5 lg:justify-end">
+            {toolbar}
+          </div>
+        )}
       </div>
 
       {alerts && (
-        <div className="space-y-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
+        <div className="space-y-1 border-b border-slate-200 bg-slate-50 px-3 py-2">
           {alerts}
         </div>
       )}
