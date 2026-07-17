@@ -10,9 +10,8 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { Tag } from "primereact/tag";
 import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
-import { PageHeader } from "../../../shared/components/layout/PageHeader";
-import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
+import { SchoolingPanel } from "../components/SchoolingPanel";
 import { listStudents } from "../services/schooling.service";
 import type { StudentListItem } from "../types/schooling";
 
@@ -100,23 +99,10 @@ export function StudentsPage() {
           (!birthFrom || Boolean(student.birthDate && student.birthDate >= birthFrom)) &&
           (!birthTo || Boolean(student.birthDate && student.birthDate <= birthTo)) &&
           (!contact ||
-            (contact === "present"
-              ? Boolean(student.guardianPhone)
-              : !student.guardianPhone))
+            (contact === "present" ? Boolean(student.guardianPhone) : !student.guardianPhone))
         );
       }),
-    [
-      students,
-      query,
-      status,
-      level,
-      cycle,
-      gender,
-      contact,
-      guardian,
-      birthFrom,
-      birthTo,
-    ],
+    [students, query, status, level, cycle, gender, contact, guardian, birthFrom, birthTo],
   );
 
   const activeFilterCount = [
@@ -152,252 +138,244 @@ export function StudentsPage() {
     );
   }
 
-  return (
-    <section className="medium-controls">
-      <SettingsTablePanel
-        sectionHeader={
-          <PageHeader
-            eyebrow={`Scolarité · ${year?.name ?? "Année scolaire"}`}
-            title="Élèves"
-            description="Retrouvez les élèves inscrits ou préinscrits pour l’année de travail."
-            meta={
-              <Tag
-                value={`${filtered.length} élève${filtered.length > 1 ? "s" : ""}`}
-                severity="info"
+  const toolbar = (
+    <div className="space-y-3">
+      <Toolbar
+        start={
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="field min-w-[16rem] flex-1">
+              <span>Rechercher</span>
+              <span className="p-input-icon-left w-full">
+                <i className="pi pi-search ps-2" />
+                <InputText
+                  className="w-full ps-7 text-sm"
+                  value={query}
+                  placeholder="Nom, matricule ou téléphone"
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </span>
+            </label>
+            <label className="field min-w-[12rem]">
+              <span>Statut</span>
+              <Dropdown
+                className="w-full"
+                value={status}
+                options={[
+                  { label: "Tous les statuts", value: "" },
+                  { label: "Préinscrits", value: "pre_registered" },
+                  { label: "Inscrits", value: "confirmed" },
+                  { label: "Transférés", value: "transferred" },
+                ]}
+                onChange={(event) => setStatus(String(event.value))}
               />
-            }
-            actions={
-              <>
-                <Button
-                  label="Réinscriptions groupées"
-                  icon="pi pi-refresh"
-                  severity="secondary"
-                  outlined
-                  onClick={() => void navigate("/scolarite/reinscriptions")}
-                />
-                <Button
-                  label="Nouvelle inscription"
-                  icon="pi pi-user-plus"
-                  onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
-                />
-              </>
-            }
-          />
-        }
-        alert={failure ? <Message severity="error" text={failure} /> : undefined}
-        toolbar={
-          <div className="space-y-3">
-            <Toolbar
-              start={
-                <div className="flex flex-wrap items-end gap-2">
-                  <label className="field min-w-[16rem] flex-1">
-                    <span>Rechercher</span>
-                    <span className="p-input-icon-left w-full">
-                      <i className="pi pi-search ps-2" />
-                      <InputText
-                        className="w-full ps-7 text-sm"
-                        value={query}
-                        placeholder="Nom, matricule ou téléphone"
-                        onChange={(event) => setQuery(event.target.value)}
-                      />
-                    </span>
-                  </label>
-                  <label className="field min-w-[12rem]">
-                    <span>Statut</span>
-                    <Dropdown
-                      className="w-full"
-                      value={status}
-                      options={[
-                        { label: "Tous les statuts", value: "" },
-                        { label: "Préinscrits", value: "pre_registered" },
-                        { label: "Inscrits", value: "confirmed" },
-                        { label: "Transférés", value: "transferred" },
-                      ]}
-                      onChange={(event) => setStatus(String(event.value))}
-                    />
-                  </label>
-                  <label className="field min-w-[12rem]">
-                    <span>Niveau</span>
-                    <Dropdown
-                      className="w-full"
-                      value={level}
-                      options={levelOptions}
-                      onChange={(event) => setLevel(String(event.value))}
-                    />
-                  </label>
-                </div>
-              }
-              end={
-                <div className="flex items-center gap-2">
-                  {activeFilterCount > 0 ? (
-                    <Tag
-                      value={`${activeFilterCount} filtre${activeFilterCount > 1 ? "s" : ""}`}
-                      severity="info"
-                    />
-                  ) : null}
-                  {activeFilterCount > 0 ? (
-                    <Button
-                      label="Réinitialiser"
-                      icon="pi pi-filter-slash"
-                      severity="secondary"
-                      text
-                      onClick={resetFilters}
-                    />
-                  ) : null}
-                  <Button
-                    label={advanced ? "Masquer" : "Filtres avancés"}
-                    icon={advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
-                    severity="secondary"
-                    outlined
-                    onClick={() => setAdvanced((value) => !value)}
-                  />
-                </div>
-              }
-              className="min-h-0 rounded-none border-0 bg-transparent p-0"
-            />
-
-            {advanced ? (
-              <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-3">
-                <label className="field">
-                  <span>Cycle</span>
-                  <Dropdown
-                    className="w-full"
-                    value={cycle}
-                    options={cycleOptions}
-                    onChange={(event) => setCycle(String(event.value))}
-                  />
-                </label>
-                <label className="field">
-                  <span>Sexe</span>
-                  <Dropdown
-                    className="w-full"
-                    value={gender}
-                    options={[
-                      { label: "Tous", value: "" },
-                      { label: "Féminin", value: "female" },
-                      { label: "Masculin", value: "male" },
-                      { label: "Autre", value: "other" },
-                    ]}
-                    onChange={(event) => setGender(String(event.value))}
-                  />
-                </label>
-                <label className="field">
-                  <span>Responsable joignable</span>
-                  <Dropdown
-                    className="w-full"
-                    value={contact}
-                    options={[
-                      { label: "Tous", value: "" },
-                      { label: "Avec téléphone", value: "present" },
-                      { label: "Sans téléphone", value: "missing" },
-                    ]}
-                    onChange={(event) => setContact(String(event.value))}
-                  />
-                </label>
-                <label className="field">
-                  <span>Responsable principal</span>
-                  <Dropdown
-                    className="w-full"
-                    value={guardian}
-                    filter
-                    options={guardianOptions}
-                    onChange={(event) => setGuardian(String(event.value))}
-                  />
-                </label>
-                <label className="field">
-                  <span>Naissance à partir du</span>
-                  <InputText
-                    className="w-full"
-                    type="date"
-                    value={birthFrom}
-                    onChange={(event) => setBirthFrom(event.target.value)}
-                  />
-                </label>
-                <label className="field">
-                  <span>Naissance jusqu’au</span>
-                  <InputText
-                    className="w-full"
-                    type="date"
-                    value={birthTo}
-                    onChange={(event) => setBirthTo(event.target.value)}
-                  />
-                </label>
-              </div>
-            ) : null}
+            </label>
+            <label className="field min-w-[12rem]">
+              <span>Niveau</span>
+              <Dropdown
+                className="w-full"
+                value={level}
+                options={levelOptions}
+                onChange={(event) => setLevel(String(event.value))}
+              />
+            </label>
           </div>
         }
-        dataTable={
-          loading ? (
-            <div className="content-state">
-              <ProgressSpinner />
-            </div>
-          ) : (
-            <DataTable
-              value={filtered}
-              dataKey="id"
-              paginator
-              rows={10}
-              rowsPerPageOptions={[10, 25, 50]}
-              emptyMessage="Aucun élève ne correspond à cette recherche."
-              onRowClick={(event) =>
-                void navigate(`/scolarite/eleves/${event.data.id}`)
-              }
-              rowClassName={() => "clickable-row"}
-            >
-              <Column
-                header="Élève"
-                body={(item: StudentListItem) => (
-                  <div className="student-identity">
-                    <span className="student-avatar">
-                      {item.firstName[0]}
-                      {item.lastName[0]}
-                    </span>
-                    <div>
-                      <strong>
-                        {item.firstName} {item.lastName}
-                      </strong>
-                      <small>{item.matricule}</small>
-                    </div>
-                  </div>
-                )}
-                sortable
-                sortField="lastName"
+        end={
+          <div className="flex items-center gap-2">
+            {activeFilterCount > 0 ? (
+              <Tag
+                value={`${activeFilterCount} filtre${activeFilterCount > 1 ? "s" : ""}`}
+                severity="info"
               />
-              <Column field="cycleName" header="Cycle" sortable />
-              <Column field="levelName" header="Niveau" sortable />
-              <Column
-                header="Responsable"
-                body={(item: StudentListItem) => (
-                  <div className="student-contact">
-                    <span>{item.guardianName}</span>
-                    <small>{item.guardianPhone}</small>
-                  </div>
-                )}
+            ) : null}
+            {activeFilterCount > 0 ? (
+              <Button
+                label="Réinitialiser"
+                icon="pi pi-filter-slash"
+                severity="secondary"
+                text
+                onClick={resetFilters}
               />
-              <Column
-                header="Statut"
-                body={(item: StudentListItem) => (
-                  <EnrollmentStatusTag status={item.status} />
-                )}
-              />
-              <Column
-                body={(item: StudentListItem) => (
-                  <Button
-                    aria-label={`Ouvrir ${item.firstName} ${item.lastName}`}
-                    icon="pi pi-chevron-right"
-                    text
-                    rounded
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void navigate(`/scolarite/eleves/${item.id}`);
-                    }}
-                  />
-                )}
-              />
-            </DataTable>
-          )
+            ) : null}
+            <Button
+              label={advanced ? "Masquer" : "Filtres avancés"}
+              icon={advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
+              severity="secondary"
+              outlined
+              onClick={() => setAdvanced((value) => !value)}
+            />
+          </div>
         }
+        className="min-h-0 rounded-none border-0 bg-transparent p-0"
       />
-    </section>
+
+      {advanced ? (
+        <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-3">
+          <label className="field">
+            <span>Cycle</span>
+            <Dropdown
+              className="w-full"
+              value={cycle}
+              options={cycleOptions}
+              onChange={(event) => setCycle(String(event.value))}
+            />
+          </label>
+          <label className="field">
+            <span>Sexe</span>
+            <Dropdown
+              className="w-full"
+              value={gender}
+              options={[
+                { label: "Tous", value: "" },
+                { label: "Féminin", value: "female" },
+                { label: "Masculin", value: "male" },
+                { label: "Autre", value: "other" },
+              ]}
+              onChange={(event) => setGender(String(event.value))}
+            />
+          </label>
+          <label className="field">
+            <span>Responsable joignable</span>
+            <Dropdown
+              className="w-full"
+              value={contact}
+              options={[
+                { label: "Tous", value: "" },
+                { label: "Avec téléphone", value: "present" },
+                { label: "Sans téléphone", value: "missing" },
+              ]}
+              onChange={(event) => setContact(String(event.value))}
+            />
+          </label>
+          <label className="field">
+            <span>Responsable principal</span>
+            <Dropdown
+              className="w-full"
+              value={guardian}
+              filter
+              options={guardianOptions}
+              onChange={(event) => setGuardian(String(event.value))}
+            />
+          </label>
+          <label className="field">
+            <span>Naissance à partir du</span>
+            <InputText
+              className="w-full"
+              type="date"
+              value={birthFrom}
+              onChange={(event) => setBirthFrom(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>Naissance jusqu’au</span>
+            <InputText
+              className="w-full"
+              type="date"
+              value={birthTo}
+              onChange={(event) => setBirthTo(event.target.value)}
+            />
+          </label>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <SchoolingPanel
+      className="medium-controls"
+      path={`Scolarité · ${year?.name ?? "Année scolaire"}`}
+      title="Élèves"
+      description="Retrouvez les élèves inscrits ou préinscrits pour l’année de travail."
+      meta={
+        <Tag
+          value={`${filtered.length} élève${filtered.length > 1 ? "s" : ""}`}
+          severity="info"
+        />
+      }
+      actions={
+        <>
+          <Button
+            label="Réinscriptions groupées"
+            icon="pi pi-refresh"
+            severity="secondary"
+            outlined
+            onClick={() => void navigate("/scolarite/reinscriptions")}
+          />
+          <Button
+            label="Nouvelle inscription"
+            icon="pi pi-user-plus"
+            onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
+          />
+        </>
+      }
+      alert={failure ? <Message severity="error" text={failure} /> : undefined}
+      toolbar={toolbar}
+    >
+      {loading ? (
+        <div className="content-state">
+          <ProgressSpinner />
+        </div>
+      ) : (
+        <DataTable
+          value={filtered}
+          dataKey="id"
+          paginator
+          rows={10}
+          rowsPerPageOptions={[10, 25, 50]}
+          emptyMessage="Aucun élève ne correspond à cette recherche."
+          onRowClick={(event) => void navigate(`/scolarite/eleves/${event.data.id}`)}
+          rowClassName={() => "clickable-row"}
+        >
+          <Column
+            header="Élève"
+            body={(item: StudentListItem) => (
+              <div className="student-identity">
+                <span className="student-avatar">
+                  {item.firstName[0]}
+                  {item.lastName[0]}
+                </span>
+                <div>
+                  <strong>
+                    {item.firstName} {item.lastName}
+                  </strong>
+                  <small>{item.matricule}</small>
+                </div>
+              </div>
+            )}
+            sortable
+            sortField="lastName"
+          />
+          <Column field="cycleName" header="Cycle" sortable />
+          <Column field="levelName" header="Niveau" sortable />
+          <Column
+            header="Responsable"
+            body={(item: StudentListItem) => (
+              <div className="student-contact">
+                <span>{item.guardianName}</span>
+                <small>{item.guardianPhone}</small>
+              </div>
+            )}
+          />
+          <Column
+            header="Statut"
+            body={(item: StudentListItem) => <EnrollmentStatusTag status={item.status} />}
+          />
+          <Column
+            body={(item: StudentListItem) => (
+              <Button
+                aria-label={`Ouvrir ${item.firstName} ${item.lastName}`}
+                icon="pi pi-chevron-right"
+                text
+                rounded
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void navigate(`/scolarite/eleves/${item.id}`);
+                }}
+              />
+            )}
+          />
+        </DataTable>
+      )}
+    </SchoolingPanel>
   );
 }
