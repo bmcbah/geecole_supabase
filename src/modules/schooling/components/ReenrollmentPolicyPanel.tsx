@@ -56,6 +56,16 @@ export function ReenrollmentPolicyPanel({
       "Préparer les frais automatiquement",
       "Les frais de réinscription seront générés lors de l’ouverture du module Finances.",
     ],
+    [
+      "allow_batch",
+      "Autoriser les réinscriptions groupées",
+      "Permet de préparer plusieurs dossiers en une seule opération.",
+    ],
+    [
+      "require_active_next_cycle",
+      "Exiger l’activation du cycle suivant",
+      "Bloque une promotion si le prochain cycle n’est pas actif dans l’année cible.",
+    ],
   ] as const;
   return (
     <section className="settings-section-panel policy-flat-panel medium-controls">
@@ -105,6 +115,20 @@ export function ReenrollmentPolicyPanel({
               { label: "Interdit", value: "forbidden" },
             ]}
             onChange={(event) => change("repeat_mode", String(event.value))}
+          />
+        </label>
+        <label className="field">
+          <span>Statut des réinscriptions groupées</span>
+          <Dropdown
+            value={policy.batch_result_status}
+            options={[
+              { label: "Brouillon", value: "draft" },
+              { label: "Préinscrit", value: "pre_registered" },
+              { label: "Confirmé", value: "confirmed" },
+            ]}
+            onChange={(event) =>
+              change("batch_result_status", String(event.value))
+            }
           />
         </label>
       </div>

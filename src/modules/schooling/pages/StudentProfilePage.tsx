@@ -7,15 +7,17 @@ import { TabPanel, TabView } from "primereact/tabview";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { StudentProfileActions } from "../components/StudentProfileActions";
+import { AddGuardianDialog } from "../components/AddGuardianDialog";
 import { getStudent } from "../services/schooling.service";
 
 type StudentDetail = Awaited<ReturnType<typeof getStudent>>;
 export function StudentProfilePage() {
   const { studentId = "" } = useParams();
   const navigate = useNavigate();
-  const { yearId, year } = useAcademicSession();
+  const { yearId, year, institutionId } = useAcademicSession();
   const [detail, setDetail] = useState<StudentDetail | null>(null);
   const [failure, setFailure] = useState("");
+  const [guardianDialog, setGuardianDialog] = useState(false);
   useEffect(() => {
     if (!studentId || !yearId) return;
     getStudent(studentId, yearId)
@@ -151,6 +153,13 @@ export function StudentProfilePage() {
           </div>
         </TabPanel>
         <TabPanel header="Responsables" leftIcon="pi pi-users mr-2">
+          <div className="panel-toolbar panel-toolbar-end">
+            <Button
+              label="Ajouter un responsable"
+              icon="pi pi-user-plus"
+              onClick={() => setGuardianDialog(true)}
+            />
+          </div>
           <div className="guardian-list">
             {guardians.map((guardian) => (
               <div className="guardian-line" key={guardian.id}>
@@ -199,6 +208,13 @@ export function StudentProfilePage() {
           <Message severity="info" text="Aucun document ajouté." />
         </TabPanel>
       </TabView>
+      <AddGuardianDialog
+        visible={guardianDialog}
+        institutionId={institutionId}
+        studentId={student.id}
+        onHide={() => setGuardianDialog(false)}
+        onSaved={reload}
+      />
     </section>
   );
 }

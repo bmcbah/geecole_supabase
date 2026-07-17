@@ -46,3 +46,24 @@ export async function reenrollStudent(input: {
   if (error) throw error;
   return data;
 }
+
+export type BatchReenrollmentResult = {
+  source_enrollment_id: string;
+  student_id: string;
+  status: "created" | "error";
+  enrollment_id?: string;
+  target_level?: string;
+  reason?: string;
+};
+
+export async function batchReenrollStudents(
+  enrollmentIds: string[],
+  academicYearId: string,
+) {
+  const { data, error } = await supabase.rpc("batch_reenroll_students", {
+    source_enrollments: enrollmentIds,
+    target_academic_year: academicYearId,
+  });
+  if (error) throw error;
+  return data as unknown as BatchReenrollmentResult[];
+}

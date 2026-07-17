@@ -9,6 +9,7 @@ export type EnrollmentStatus =
 
 export interface StudentListItem {
   id: string;
+  enrollmentId: string;
   matricule: string;
   firstName: string;
   lastName: string;

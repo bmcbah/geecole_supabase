@@ -40,6 +40,11 @@ const ReenrollmentPage = lazy(() =>
     default: module.ReenrollmentPage,
   })),
 );
+const BatchReenrollmentPage = lazy(() =>
+  import("../../modules/schooling/pages/BatchReenrollmentPage").then(
+    (module) => ({ default: module.BatchReenrollmentPage }),
+  ),
+);
 
 export function AppRouter() {
   return (
@@ -82,6 +87,10 @@ export function AppRouter() {
             <Route
               path="/scolarite/eleves/:studentId/reinscription"
               element={<ReenrollmentPage />}
+            />
+            <Route
+              path="/scolarite/reinscriptions"
+              element={<BatchReenrollmentPage />}
             />
           </Route>
         </Route>

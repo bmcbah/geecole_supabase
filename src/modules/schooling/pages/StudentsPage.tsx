@@ -100,11 +100,20 @@ export function StudentsPage() {
             travail.
           </p>
         </div>
-        <Button
-          label="Nouvelle inscription"
-          icon="pi pi-user-plus"
-          onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
-        />
+        <div className="page-heading-actions">
+          <Button
+            label="Réinscriptions groupées"
+            icon="pi pi-refresh"
+            severity="secondary"
+            outlined
+            onClick={() => void navigate("/scolarite/reinscriptions")}
+          />
+          <Button
+            label="Nouvelle inscription"
+            icon="pi pi-user-plus"
+            onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
+          />
+        </div>
       </header>
       <div className="students-filter-zone">
         <div className="schooling-filters">

@@ -58,6 +58,9 @@ export interface Database {
           repeat_mode: "allowed" | "exception" | "forbidden";
           require_class_assignment: boolean;
           auto_generate_fees: boolean;
+          allow_batch: boolean;
+          batch_result_status: "draft" | "pre_registered" | "confirmed";
+          require_active_next_cycle: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -71,6 +74,9 @@ export interface Database {
           repeat_mode?: "allowed" | "exception" | "forbidden";
           require_class_assignment?: boolean;
           auto_generate_fees?: boolean;
+          allow_batch?: boolean;
+          batch_result_status?: "draft" | "pre_registered" | "confirmed";
+          require_active_next_cycle?: boolean;
         };
         Update: Partial<
           Database["public"]["Tables"]["reenrollment_policies"]["Insert"]
@@ -840,6 +846,36 @@ export interface Database {
           target_decision: string;
           target_enrollment_status: string;
           target_reason?: string | null;
+        };
+        Returns: string;
+      };
+      batch_reenroll_students: {
+        Args: { source_enrollments: string[]; target_academic_year: string };
+        Returns: Json;
+      };
+      link_student_guardian: {
+        Args: {
+          target_student_id: string;
+          target_guardian_id: string;
+          guardian_relationship: string;
+          primary_contact?: boolean;
+          financial_responsible?: boolean;
+          emergency_contact?: boolean;
+          pickup_allowed?: boolean;
+          communications_enabled?: boolean;
+        };
+        Returns: void;
+      };
+      create_and_link_guardian: {
+        Args: {
+          target_student_id: string;
+          guardian_first_name: string;
+          guardian_last_name: string;
+          guardian_phone: string;
+          guardian_relationship: string;
+          primary_contact?: boolean;
+          financial_responsible?: boolean;
+          emergency_contact?: boolean;
         };
         Returns: string;
       };

@@ -43,6 +43,7 @@ export async function listStudents(
     return [
       {
         id: student.id,
+        enrollmentId: enrollment.id,
         matricule: student.matricule,
         firstName: student.first_name,
         lastName: student.last_name,
@@ -95,6 +96,50 @@ export async function searchGuardians(institutionId: string, query: string) {
     .limit(8);
   if (error) throw error;
   return data;
+}
+
+export async function linkGuardian(input: {
+  studentId: string;
+  guardianId: string;
+  relationship: string;
+  primary: boolean;
+  financial: boolean;
+  emergency: boolean;
+}) {
+  const { error } = await supabase.rpc("link_student_guardian", {
+    target_student_id: input.studentId,
+    target_guardian_id: input.guardianId,
+    guardian_relationship: input.relationship,
+    primary_contact: input.primary,
+    financial_responsible: input.financial,
+    emergency_contact: input.emergency,
+    pickup_allowed: false,
+    communications_enabled: true,
+  });
+  if (error) throw error;
+}
+
+export async function createAndLinkGuardian(input: {
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  relationship: string;
+  primary: boolean;
+  financial: boolean;
+  emergency: boolean;
+}) {
+  const { error } = await supabase.rpc("create_and_link_guardian", {
+    target_student_id: input.studentId,
+    guardian_first_name: input.firstName,
+    guardian_last_name: input.lastName,
+    guardian_phone: input.phone,
+    guardian_relationship: input.relationship,
+    primary_contact: input.primary,
+    financial_responsible: input.financial,
+    emergency_contact: input.emergency,
+  });
+  if (error) throw error;
 }
 
 export async function createEnrollment(
