@@ -36,7 +36,7 @@ export function StudentProfilePage() {
         label="Retour aux élèves"
         icon="pi pi-arrow-left"
         text
-        onClick={() => navigate("/scolarite/eleves")}
+        onClick={() => void navigate("/scolarite/eleves")}
       />
       <Card className="student-profile-header">
         <div className="student-profile-main">
