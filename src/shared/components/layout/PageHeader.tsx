@@ -22,31 +22,33 @@ export function PageHeader({
   className = "",
 }: PageHeaderProps) {
   return (
-    <header
-      className={`border-b border-slate-200 pb-6 ${className}`.trim()}
-    >
-      {backAction && <div className="mb-4">{backAction}</div>}
+    <header className={`border-b border-slate-200 pb-4 ${className}`.trim()}>
+      {backAction && <div className="mb-2">{backAction}</div>}
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
           {leading && <div className="shrink-0">{leading}</div>}
 
           <div className="min-w-0">
             {eyebrow && (
-              <div className="text-sm font-semibold uppercase tracking-[0.14em] text-brand-600">
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-600">
                 {eyebrow}
               </div>
             )}
 
-            <div className={`${eyebrow ? "mt-2" : ""} flex flex-wrap items-center gap-3`}>
-              <h1 className="min-w-0 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <div
+              className={`${eyebrow ? "mt-1" : ""} flex flex-wrap items-center gap-2`}
+            >
+              <h1 className="min-w-0 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 {title}
               </h1>
-              {meta && <div className="flex flex-wrap items-center gap-2">{meta}</div>}
+              {meta && (
+                <div className="flex flex-wrap items-center gap-1.5">{meta}</div>
+              )}
             </div>
 
             {description && (
-              <div className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+              <div className="mt-1.5 max-w-3xl text-sm leading-5 text-slate-600">
                 {description}
               </div>
             )}
@@ -54,7 +56,7 @@ export function PageHeader({
         </div>
 
         {actions && (
-          <div className="flex shrink-0 flex-wrap items-center gap-3 lg:justify-end">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 md:justify-end">
             {actions}
           </div>
         )}
