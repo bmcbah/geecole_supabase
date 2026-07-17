@@ -2,6 +2,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { SettingsSidebar } from "../components/SettingsSidebar";
@@ -56,20 +57,19 @@ export function SettingsPage() {
   )
     return <Navigate to="/parametrage/etablissement" replace />;
   return (
-    <section>
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Administration</span>
-          <h1>Paramétrage</h1>
-          <p>Configurez les règles propres à {selected.name}.</p>
-        </div>
-        {year && (
-          <div className="settings-year-context">
-            <small>Paramétrage affiché</small>
-            <strong>{year.name}</strong>
-          </div>
-        )}
-      </div>
+    <section className="space-y-4">
+      <PageHeader
+        eyebrow="Administration"
+        title="Paramétrage"
+        description={`Configurez les règles propres à ${selected.name}.`}
+        meta={
+          year ? (
+            <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+              {year.name}
+            </span>
+          ) : undefined
+        }
+      />
       <div className="settings-layout">
         <SettingsSidebar />
         <div className="settings-content">
