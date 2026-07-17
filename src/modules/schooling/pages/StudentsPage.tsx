@@ -7,7 +7,9 @@ import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
+import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { listStudents } from "../services/schooling.service";
 import type { StudentListItem } from "../types/schooling";
@@ -91,30 +93,28 @@ export function StudentsPage() {
     );
   return (
     <section className="medium-controls">
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Scolarité · {year?.name}</span>
-          <h1>Élèves</h1>
-          <p>
-            Retrouvez les élèves inscrits ou préinscrits pour l’année de
-            travail.
-          </p>
-        </div>
-        <div className="page-heading-actions">
-          <Button
-            label="Réinscriptions groupées"
-            icon="pi pi-refresh"
-            severity="secondary"
-            outlined
-            onClick={() => void navigate("/scolarite/reinscriptions")}
-          />
-          <Button
-            label="Nouvelle inscription"
-            icon="pi pi-user-plus"
-            onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
-          />
-        </div>
-      </header>
+      <PageHeader
+        eyebrow={`Scolarité · ${year?.name ?? "Année scolaire"}`}
+        title="Élèves"
+        description="Retrouvez les élèves inscrits ou préinscrits pour l’année de travail."
+        meta={<Tag value={`${filtered.length} élève${filtered.length > 1 ? "s" : ""}`} severity="info" />}
+        actions={
+          <>
+            <Button
+              label="Réinscriptions groupées"
+              icon="pi pi-refresh"
+              severity="secondary"
+              outlined
+              onClick={() => void navigate("/scolarite/reinscriptions")}
+            />
+            <Button
+              label="Nouvelle inscription"
+              icon="pi pi-user-plus"
+              onClick={() => void navigate("/scolarite/inscriptions/nouvelle")}
+            />
+          </>
+        }
+      />
       <div className="students-filter-zone">
         <div className="schooling-filters">
           <label className="field schooling-search">
