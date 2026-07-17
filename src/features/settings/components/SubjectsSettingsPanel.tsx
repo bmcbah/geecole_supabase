@@ -5,7 +5,6 @@ import { DataTable } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
 import { Message } from "primereact/message";
 import { PickList, type PickListChangeEvent } from "primereact/picklist";
-import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { useToast } from "../../../shared/components/toast-context";
@@ -23,14 +22,15 @@ import {
   setAnnualLevelSubjects,
 } from "../services/annual-settings.service";
 import { SettingsEntityDialog, type EntityValue } from "./SettingsEntityDialog";
-import { SettingsPanelShell } from "./SettingsPanelShell";
 import { TableSearch } from "../../../shared/components/TableSearch";
+
 type Subject = Database["public"]["Tables"]["subjects"]["Row"];
 type AnnualSubject = Database["public"]["Tables"]["annual_subjects"]["Row"];
 type DialogState =
   | { kind: "catalog"; item?: Subject }
   | { kind: "annual"; item: AnnualSubject }
   | null;
+
 export function SubjectsSettingsPanel() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
@@ -48,19 +48,19 @@ export function SubjectsSettingsPanel() {
   const [periods, setPeriods] = useState<
     Awaited<ReturnType<typeof listAcademicPeriods>>
   >([]);
+
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
+
   const load = useCallback(async () => {
     if (!institutionId) return;
-    const [catalog, annualItems, annualLevels, yearPeriods] = await Promise.all(
-      [
-        listSubjects(institutionId),
-        year ? listAnnualSubjects(year.id) : Promise.resolve([]),
-        year ? listAnnualAcademicLevels(year.id) : Promise.resolve([]),
-        year ? listAcademicPeriods(year.id) : Promise.resolve([]),
-      ],
-    );
+    const [catalog, annualItems, annualLevels, yearPeriods] = await Promise.all([
+      listSubjects(institutionId),
+      year ? listAnnualSubjects(year.id) : Promise.resolve([]),
+      year ? listAnnualAcademicLevels(year.id) : Promise.resolve([]),
+      year ? listAcademicPeriods(year.id) : Promise.resolve([]),
+    ]);
     setSubjects(catalog);
     setAnnual(annualItems);
     setLevels(annualLevels);
@@ -71,9 +71,11 @@ export function SubjectsSettingsPanel() {
         : (annualLevels[0]?.id ?? ""),
     );
   }, [institutionId, year]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
   useEffect(() => {
     const assignedIds = new Set(
       annual
@@ -85,6 +87,7 @@ export function SubjectsSettingsPanel() {
       subjects.filter((item) => item.is_active && !assignedIds.has(item.id)),
     );
   }, [annual, levelId, subjects]);
+
   const fields =
     dialog?.kind === "annual"
       ? [
@@ -125,6 +128,7 @@ export function SubjectsSettingsPanel() {
             type: "boolean" as const,
           },
         ];
+
   const initial = useMemo<Record<string, EntityValue>>(
     () =>
       dialog?.kind === "annual"
@@ -141,6 +145,7 @@ export function SubjectsSettingsPanel() {
           },
     [dialog],
   );
+
   const submit = async (values: Record<string, EntityValue>) => {
     if (!dialog || !year) return;
     setSaving(true);
@@ -165,9 +170,7 @@ export function SubjectsSettingsPanel() {
             coefficient: Number(values.coefficient),
             weekly_hours: Number(values.weekly_hours),
             applies_all_periods: Boolean(values.applies_all_periods),
-            period_ids: Array.isArray(values.period_ids)
-              ? values.period_ids
-              : [],
+            period_ids: Array.isArray(values.period_ids) ? values.period_ids : [],
           },
           dialog.item.id,
         );
@@ -180,6 +183,7 @@ export function SubjectsSettingsPanel() {
       setSaving(false);
     }
   };
+
   const saveSelection = async () => {
     if (!levelId) return;
     setSaving(true);
@@ -199,37 +203,51 @@ export function SubjectsSettingsPanel() {
       setSaving(false);
     }
   };
+
   const onTransfer = (event: PickListChangeEvent) => {
     if (!editable) return;
     setSource(event.source as Subject[]);
     setTarget(event.target as Subject[]);
   };
+
   const assignedRows = annual.filter(
     (item) =>
       item.academic_year_level_id === levelId &&
       target.some((subject) => subject.id === item.subject_id),
   );
+
   const levelOptions = levels.map((item) => ({
     label: `${item.cycle_name_snapshot} — ${item.level_name_snapshot}`,
     value: item.id,
   }));
+
   const itemTemplate = (item: Subject) => (
     <div className="subject-pick-item">
       <strong>{item.name}</strong>
       <small>{item.code}</small>
     </div>
   );
+
   return (
-    <SettingsPanelShell
-      title="Matières"
-      description="Une matière ajoutée au catalogue devient disponible pour tous les niveaux de l’établissement"
-      year={year}
-    >
-      <TableSearch value={search} onChange={setSearch} />
-      <TabView>
-        <TabPanel header="Affectation par niveau">
-          <div className="subject-level-toolbar">
-            <div className="field">
+    <div className="space-y-3">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Affectation par niveau
+              </h2>
+              <Tag
+                value={editable ? "Modifiable" : "Lecture seule"}
+                severity={editable ? "success" : "secondary"}
+              />
+            </div>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Choisissez un niveau puis organisez les matières enseignées.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="field min-w-64">
               <label htmlFor="subject-level">Cycle et niveau</label>
               <Dropdown
                 inputId="subject-level"
@@ -247,129 +265,159 @@ export function SubjectsSettingsPanel() {
             <Button
               label="Nouvelle matière"
               icon="pi pi-plus"
+              size="small"
               outlined
               onClick={() => setDialog({ kind: "catalog" })}
             />
           </div>
-          {levelId ? (
-            <>
-              <PickList
-                dataKey="id"
-                source={source}
-                target={target}
-                onChange={onTransfer}
-                itemTemplate={itemTemplate}
-                sourceHeader="Disponibles dans l’établissement"
-                targetHeader="Enseignées dans ce niveau"
-                sourceStyle={{ height: "22rem" }}
-                targetStyle={{ height: "22rem" }}
-                filter
-                filterBy="name,code"
-                sourceFilterPlaceholder="Rechercher"
-                targetFilterPlaceholder="Rechercher"
-                className={!editable ? "picklist-disabled" : undefined}
+        </div>
+
+        {levelId ? (
+          <div className="space-y-3 p-3">
+            <PickList
+              dataKey="id"
+              source={source}
+              target={target}
+              onChange={onTransfer}
+              itemTemplate={itemTemplate}
+              sourceHeader="Disponibles"
+              targetHeader="Enseignées dans ce niveau"
+              sourceStyle={{ height: "18rem" }}
+              targetStyle={{ height: "18rem" }}
+              filter
+              filterBy="name,code"
+              sourceFilterPlaceholder="Rechercher"
+              targetFilterPlaceholder="Rechercher"
+              className={!editable ? "picklist-disabled" : undefined}
+            />
+            <div className="flex justify-end">
+              <Button
+                label="Enregistrer l’affectation"
+                icon="pi pi-check"
+                size="small"
+                loading={saving}
+                disabled={!editable}
+                onClick={() => void saveSelection()}
               />
-              <div className="form-actions picklist-save">
-                <Button
-                  label="Enregistrer l’affectation"
-                  icon="pi pi-check"
-                  loading={saving}
-                  disabled={!editable}
-                  onClick={() => void saveSelection()}
-                />
-              </div>
-              {assignedRows.length > 0 && (
-                <div className="subject-details">
-                  <h3>Coefficients et volumes horaires</h3>
-                  <DataTable
-                    value={assignedRows}
-                    globalFilter={search}
-                    globalFilterFields={[
-                      "subject_name_snapshot",
-                      "subject_code_snapshot",
-                      "coefficient",
-                      "weekly_hours",
-                    ]}
-                    dataKey="id"
-                    stripedRows
-                  >
-                    <Column field="subject_name_snapshot" header="Matière" />
-                    <Column field="coefficient" header="Coefficient" />
-                    <Column field="weekly_hours" header="Heures/semaine" />
-                    <Column
-                      header="Actions"
-                      body={(row: AnnualSubject) => (
-                        <Button
-                          icon="pi pi-sliders-h"
-                          label="Configurer"
-                          text
-                          disabled={!editable}
-                          onClick={() =>
-                            setDialog({ kind: "annual", item: row })
-                          }
-                        />
-                      )}
-                    />
-                  </DataTable>
-                </div>
-              )}
-            </>
-          ) : (
+            </div>
+          </div>
+        ) : (
+          <div className="p-3">
             <Message
               severity="info"
               text="Activez d’abord un cycle et un niveau."
             />
-          )}
-        </TabPanel>
-        <TabPanel header="Catalogue de l’établissement">
-          <div className="panel-toolbar panel-toolbar-end">
-            <span />
-            <Button
-              label="Nouvelle matière"
-              icon="pi pi-plus"
-              onClick={() => setDialog({ kind: "catalog" })}
-            />
+          </div>
+        )}
+      </section>
+
+      {assignedRows.length > 0 && (
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">
+                Coefficients et volumes horaires
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Paramètres spécifiques au niveau sélectionné.
+              </p>
+            </div>
+            <TableSearch value={search} onChange={setSearch} />
           </div>
           <DataTable
-            value={subjects}
+            value={assignedRows}
             globalFilter={search}
-            globalFilterFields={["name", "code", "is_active"]}
+            globalFilterFields={[
+              "subject_name_snapshot",
+              "subject_code_snapshot",
+              "coefficient",
+              "weekly_hours",
+            ]}
             dataKey="id"
-            emptyMessage="Aucune matière"
             stripedRows
           >
-            <Column field="name" header="Matière" />
-            <Column field="code" header="Code" />
+            <Column field="subject_name_snapshot" header="Matière" />
+            <Column field="coefficient" header="Coefficient" />
+            <Column field="weekly_hours" header="Heures/semaine" />
             <Column
-              header="Statut"
-              body={(row: Subject) => (
-                <Tag
-                  value={row.is_active ? "Active" : "Inactive"}
-                  severity={row.is_active ? "success" : "secondary"}
+              header="Actions"
+              body={(row: AnnualSubject) => (
+                <Button
+                  icon="pi pi-sliders-h"
+                  label="Configurer"
+                  size="small"
+                  text
+                  disabled={!editable}
+                  onClick={() => setDialog({ kind: "annual", item: row })}
                 />
               )}
             />
-            <Column
-              header="Actions"
-              body={(row: Subject) => (
-                <div className="table-actions">
-                  <Button
-                    icon="pi pi-pencil"
-                    text
-                    onClick={() => setDialog({ kind: "catalog", item: row })}
-                  />
-                  <Button
-                    icon="pi pi-trash"
-                    text
-                    severity="danger"
-                    onClick={() => void deleteSubject(row.id).then(load)}
-                  />
-                </div>
-              )}
-            />
           </DataTable>
-        </TabPanel>
-      </TabView>
+        </section>
+      )}
+
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">
+              Catalogue de l’établissement
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Référentiel commun disponible pour tous les niveaux.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <TableSearch value={search} onChange={setSearch} />
+            <Button
+              label="Nouvelle matière"
+              icon="pi pi-plus"
+              size="small"
+              onClick={() => setDialog({ kind: "catalog" })}
+            />
+          </div>
+        </div>
+        <DataTable
+          value={subjects}
+          globalFilter={search}
+          globalFilterFields={["name", "code", "is_active"]}
+          dataKey="id"
+          emptyMessage="Aucune matière"
+          stripedRows
+        >
+          <Column field="name" header="Matière" />
+          <Column field="code" header="Code" />
+          <Column
+            header="Statut"
+            body={(row: Subject) => (
+              <Tag
+                value={row.is_active ? "Active" : "Inactive"}
+                severity={row.is_active ? "success" : "secondary"}
+              />
+            )}
+          />
+          <Column
+            header="Actions"
+            body={(row: Subject) => (
+              <div className="table-actions">
+                <Button
+                  icon="pi pi-pencil"
+                  size="small"
+                  text
+                  onClick={() => setDialog({ kind: "catalog", item: row })}
+                />
+                <Button
+                  icon="pi pi-trash"
+                  size="small"
+                  text
+                  severity="danger"
+                  onClick={() => void deleteSubject(row.id).then(load)}
+                />
+              </div>
+            )}
+          />
+        </DataTable>
+      </section>
+
       <SettingsEntityDialog
         header={
           dialog?.kind === "annual"
@@ -383,6 +431,6 @@ export function SubjectsSettingsPanel() {
         onHide={() => setDialog(null)}
         onSubmit={submit}
       />
-    </SettingsPanelShell>
+    </div>
   );
 }
