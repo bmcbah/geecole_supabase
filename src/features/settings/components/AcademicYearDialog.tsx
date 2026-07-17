@@ -4,15 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "primereact/button";
 import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import {
   academicYearSchema,
   type AcademicYearInput,
 } from "../schemas/settings.schema";
+import type { AcademicYear } from "../types/settings";
 
 interface Props {
   visible: boolean;
   loading: boolean;
+  years: AcademicYear[];
   onHide: () => void;
   onSubmit: (input: AcademicYearInput) => Promise<void>;
 }
@@ -20,11 +23,13 @@ const defaults = {
   name: "",
   startsOn: undefined,
   endsOn: undefined,
+  sourceYearId: undefined,
 } as unknown as AcademicYearInput;
 
 export function AcademicYearDialog({
   visible,
   loading,
+  years,
   onHide,
   onSubmit,
 }: Props) {
@@ -111,6 +116,29 @@ export function AcademicYearDialog({
           {errors.endsOn && (
             <small className="p-error">{errors.endsOn.message}</small>
           )}
+        </div>
+        <div className="field">
+          <label htmlFor="source-year">Reprendre la structure de</label>
+          <Controller
+            name="sourceYearId"
+            control={control}
+            render={({ field }) => (
+              <Dropdown
+                inputId="source-year"
+                value={field.value}
+                options={years}
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Partir d’une structure vide"
+                showClear
+                onChange={(event) => field.onChange(event.value)}
+              />
+            )}
+          />
+          <small>
+            Copie uniquement les cycles et niveaux activés. Aucun élève, note ou
+            paiement n’est copié.
+          </small>
         </div>
         <div className="dialog-actions">
           <Button

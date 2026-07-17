@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_index('public','academic_years','academic_years_one_open_per_institution_idx','one open year per institution');
+select has_column('public','academic_cycles','subjects_period_scope','cycle subject period rule');
+select has_column('public','grade_levels','next_level_id','level promotion path');
+select has_column('public','annual_subjects','period_ids','subject period selection');
+select has_column('public','financial_rules','fee_type','financial rule type');
+select has_table('public','financial_rule_levels','financial rules target levels');
+select has_function('public','set_financial_rule_levels',array['uuid','uuid[]'],'financial level RPC');
+select is(has_table_privilege('authenticated','public.financial_rule_levels','select'),true,'financial mappings readable');
+select * from finish();
+rollback;

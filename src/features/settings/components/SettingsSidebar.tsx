@@ -1,44 +1,71 @@
 import { NavLink } from "react-router-dom";
-
-const availableSections = [
-  { path: "etablissement", icon: "pi-building", label: "Établissement" },
-  { path: "annees-scolaires", icon: "pi-calendar", label: "Années scolaires" },
+const groups = [
+  {
+    label: "Général",
+    sections: [
+      { path: "etablissement", icon: "pi-building", label: "Établissement" },
+      {
+        path: "annees-scolaires",
+        icon: "pi-calendar",
+        label: "Années scolaires",
+      },
+      {
+        path: "utilisateurs-roles",
+        icon: "pi-users",
+        label: "Personnes et accès",
+      },
+    ],
+  },
+  {
+    label: "Pédagogie",
+    sections: [
+      {
+        path: "cycles",
+        icon: "pi-sitemap",
+        label: "Cycles",
+      },
+      { path: "niveaux", icon: "pi-list", label: "Niveaux" },
+      { path: "matieres", icon: "pi-book", label: "Matières" },
+    ],
+  },
+  {
+    label: "Évaluation",
+    sections: [
+      {
+        path: "evaluations-formules",
+        icon: "pi-percentage",
+        label: "Types et formules",
+      },
+    ],
+  },
+  {
+    label: "Finances",
+    sections: [
+      {
+        path: "regles-financieres",
+        icon: "pi-wallet",
+        label: "Frais et règles",
+      },
+    ],
+  },
 ] as const;
-
-const plannedSections = [
-  { icon: "pi-sitemap", label: "Cycles et niveaux" },
-  { icon: "pi-book", label: "Matières" },
-  { icon: "pi-percentage", label: "Évaluations et formules" },
-  { icon: "pi-wallet", label: "Règles financières" },
-  { icon: "pi-users", label: "Utilisateurs et rôles" },
-] as const;
-
 export function SettingsSidebar() {
   return (
     <aside className="settings-sidebar" aria-label="Rubriques de paramétrage">
       <h2>Rubriques</h2>
-      <nav>
-        {availableSections.map((section) => (
-          <NavLink key={section.path} to={`/parametrage/${section.path}`}>
-            <i className={`pi ${section.icon}`} />
-            <span>{section.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-      <div className="settings-planned">
-        <span className="settings-group-title">À configurer ensuite</span>
-        {plannedSections.map((section) => (
-          <div
-            key={section.label}
-            className="settings-disabled"
-            aria-disabled="true"
-          >
-            <i className={`pi ${section.icon}`} />
-            <span>{section.label}</span>
-            <small>À venir</small>
-          </div>
-        ))}
-      </div>
+      {groups.map((group) => (
+        <div className="settings-nav-group" key={group.label}>
+          <span className="settings-group-title">{group.label}</span>
+          <nav>
+            {group.sections.map((section) => (
+              <NavLink key={section.path} to={`/parametrage/${section.path}`}>
+                <i className={`pi ${section.icon}`} />
+                <span>{section.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      ))}
     </aside>
   );
 }

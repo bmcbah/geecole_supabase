@@ -18,6 +18,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     );
     return () => data.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    if (session)
+      void authService.acceptPendingInvitation().catch(() => undefined);
+  }, [session]);
   const value = useMemo<AuthContextValue>(
     () => ({
       session,

@@ -1,0 +1,10 @@
+begin;
+select plan(6);
+select has_table('public','cycle_catalog','cycle catalog exists');
+select has_table('public','institution_cycles','institution cycle activation exists');
+select results_eq('select code from public.cycle_catalog order by sort_order',array['PRESCOLAIRE','PRIMAIRE','COLLEGE','LYCEE'],'default Guinean cycles');
+select has_function('public','set_institution_cycle',array['uuid','uuid','boolean','uuid'],'activation RPC');
+select is(has_table_privilege('authenticated','public.cycle_catalog','select'),true,'catalog readable');
+select table_privs_are('public','cycle_catalog','anon',array[]::text[]);
+select * from finish();
+rollback;

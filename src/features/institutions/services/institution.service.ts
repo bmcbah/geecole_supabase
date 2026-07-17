@@ -26,3 +26,13 @@ export async function createInstitution(input: InstitutionInput) {
   if (updateError) throw updateError;
   return data;
 }
+export async function getMyMembership(institutionId: string, userId: string) {
+  const { data, error } = await supabase
+    .from("memberships")
+    .select("*")
+    .eq("institution_id", institutionId)
+    .eq("user_id", userId)
+    .single();
+  if (error) throw error;
+  return data;
+}
