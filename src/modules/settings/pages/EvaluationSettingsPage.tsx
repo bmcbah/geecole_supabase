@@ -4,6 +4,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
+import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deleteAssessmentType,
@@ -19,7 +20,8 @@ import {
   type EntityValue,
 } from "../../settings/components/SettingsEntityDialog";
 import type { Database } from "../../../shared/lib/supabase/database.types";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
 
@@ -45,6 +47,9 @@ const formulaFields: EntityField[] = [
   { key: "description", label: "Description", type: "textarea" },
   { key: "is_default", label: "Formule par défaut", type: "boolean" },
 ];
+
+const toolbarClassName =
+  "min-h-0 rounded-none border-0 bg-transparent p-0";
 
 export function EvaluationSettingsPage() {
   const { institutionId, year } = useAcademicSession();
@@ -169,165 +174,189 @@ export function EvaluationSettingsPage() {
 
   return (
     <section className="space-y-6">
-      <TablePanel
-        title="Types de notes"
-        description="Définissez les catégories de notes, leur poids et leur barème."
-        meta={
-          <Tag
-            value={`${assessments.length} type${assessments.length > 1 ? "s" : ""}`}
-            severity="secondary"
-          />
-        }
-        alerts={readOnlyAlert}
-        search={
-          <TableSearch
-            id="assessment-types-search"
-            value={assessmentSearch}
-            onChange={setAssessmentSearch}
-            placeholder="Rechercher un type"
-          />
-        }
-        actions={
-          <Button
-            label="Nouveau type"
-            icon="pi pi-plus"
-            size="small"
-            disabled={!editable}
-            onClick={() => setDialog({ kind: "assessment" })}
-          />
-        }
-      >
-        <DataTable
-          value={assessments}
-          globalFilter={assessmentSearch}
-          globalFilterFields={["name", "code", "weight", "scale", "is_active"]}
-          dataKey="id"
-          emptyMessage="Aucun type de note"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column field="name" header="Type" />
-          <Column field="code" header="Code" />
-          <Column field="weight" header="Poids" />
-          <Column field="scale" header="Barème" />
-          <Column
-            header="Statut"
-            body={(row: Assessment) => (
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Types de notes"
+            description="Définissez les catégories de notes, leur poids et leur barème."
+            meta={
               <Tag
-                value={row.is_active ? "Actif" : "Inactif"}
-                severity={row.is_active ? "success" : "secondary"}
+                value={`${assessments.length} type${assessments.length > 1 ? "s" : ""}`}
+                severity="secondary"
               />
-            )}
-          />
-          <Column
-            header="Actions"
-            headerClassName="text-right"
-            bodyClassName="text-right"
-            body={(row: Assessment) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  icon="pi pi-pencil"
-                  text
-                  size="small"
-                  disabled={!editable}
-                  onClick={() => setDialog({ kind: "assessment", item: row })}
-                />
-                <Button
-                  icon="pi pi-trash"
-                  text
-                  size="small"
-                  severity="danger"
-                  disabled={!editable}
-                  onClick={() => void remove("assessment", row.id)}
-                />
-              </div>
-            )}
-          />
-        </DataTable>
-      </TablePanel>
-
-      <TablePanel
-        title="Formules de calcul"
-        description="Configurez les règles utilisées pour calculer les moyennes."
-        meta={
-          <Tag
-            value={`${formulas.length} formule${formulas.length > 1 ? "s" : ""}`}
-            severity="secondary"
-          />
-        }
-        alerts={readOnlyAlert}
-        search={
-          <TableSearch
-            id="grading-formulas-search"
-            value={formulaSearch}
-            onChange={setFormulaSearch}
-            placeholder="Rechercher une formule"
-          />
-        }
-        actions={
-          <Button
-            label="Nouvelle formule"
-            icon="pi pi-plus"
-            size="small"
-            disabled={!editable}
-            onClick={() => setDialog({ kind: "formula" })}
-          />
-        }
-      >
-        <DataTable
-          value={formulas}
-          globalFilter={formulaSearch}
-          globalFilterFields={[
-            "name",
-            "code",
-            "expression",
-            "description",
-            "is_default",
-          ]}
-          dataKey="id"
-          emptyMessage="Aucune formule"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column field="name" header="Formule" />
-          <Column field="code" header="Code" />
-          <Column field="expression" header="Expression" />
-          <Column
-            header="Défaut"
-            body={(row: Formula) =>
-              row.is_default ? (
-                <Tag value="Par défaut" severity="success" />
-              ) : null
             }
+            headingAs="h2"
+            compact
           />
-          <Column
-            header="Actions"
-            headerClassName="text-right"
-            bodyClassName="text-right"
-            body={(row: Formula) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  icon="pi pi-pencil"
-                  text
-                  size="small"
-                  disabled={!editable}
-                  onClick={() => setDialog({ kind: "formula", item: row })}
-                />
-                <Button
-                  icon="pi pi-trash"
-                  text
-                  size="small"
-                  severity="danger"
-                  disabled={!editable}
-                  onClick={() => void remove("formula", row.id)}
-                />
-              </div>
-            )}
+        }
+        alert={readOnlyAlert}
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                id="assessment-types-search"
+                value={assessmentSearch}
+                onChange={setAssessmentSearch}
+                placeholder="Rechercher un type"
+              />
+            }
+            end={
+              <Button
+                label="Nouveau type"
+                icon="pi pi-plus"
+                size="small"
+                disabled={!editable}
+                onClick={() => setDialog({ kind: "assessment" })}
+              />
+            }
+            className={toolbarClassName}
           />
-        </DataTable>
-      </TablePanel>
+        }
+        dataTable={
+          <DataTable
+            value={assessments}
+            globalFilter={assessmentSearch}
+            globalFilterFields={["name", "code", "weight", "scale", "is_active"]}
+            dataKey="id"
+            emptyMessage="Aucun type de note"
+            stripedRows
+            responsiveLayout="scroll"
+            size="small"
+          >
+            <Column field="name" header="Type" />
+            <Column field="code" header="Code" />
+            <Column field="weight" header="Poids" />
+            <Column field="scale" header="Barème" />
+            <Column
+              header="Statut"
+              body={(row: Assessment) => (
+                <Tag
+                  value={row.is_active ? "Actif" : "Inactif"}
+                  severity={row.is_active ? "success" : "secondary"}
+                />
+              )}
+            />
+            <Column
+              header="Actions"
+              headerClassName="text-right"
+              bodyClassName="text-right"
+              body={(row: Assessment) => (
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    size="small"
+                    disabled={!editable}
+                    onClick={() => setDialog({ kind: "assessment", item: row })}
+                  />
+                  <Button
+                    icon="pi pi-trash"
+                    text
+                    size="small"
+                    severity="danger"
+                    disabled={!editable}
+                    onClick={() => void remove("assessment", row.id)}
+                  />
+                </div>
+              )}
+            />
+          </DataTable>
+        }
+      />
+
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Formules de calcul"
+            description="Configurez les règles utilisées pour calculer les moyennes."
+            meta={
+              <Tag
+                value={`${formulas.length} formule${formulas.length > 1 ? "s" : ""}`}
+                severity="secondary"
+              />
+            }
+            headingAs="h2"
+            compact
+          />
+        }
+        alert={readOnlyAlert}
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                id="grading-formulas-search"
+                value={formulaSearch}
+                onChange={setFormulaSearch}
+                placeholder="Rechercher une formule"
+              />
+            }
+            end={
+              <Button
+                label="Nouvelle formule"
+                icon="pi pi-plus"
+                size="small"
+                disabled={!editable}
+                onClick={() => setDialog({ kind: "formula" })}
+              />
+            }
+            className={toolbarClassName}
+          />
+        }
+        dataTable={
+          <DataTable
+            value={formulas}
+            globalFilter={formulaSearch}
+            globalFilterFields={[
+              "name",
+              "code",
+              "expression",
+              "description",
+              "is_default",
+            ]}
+            dataKey="id"
+            emptyMessage="Aucune formule"
+            stripedRows
+            responsiveLayout="scroll"
+            size="small"
+          >
+            <Column field="name" header="Formule" />
+            <Column field="code" header="Code" />
+            <Column field="expression" header="Expression" />
+            <Column
+              header="Défaut"
+              body={(row: Formula) =>
+                row.is_default ? (
+                  <Tag value="Par défaut" severity="success" />
+                ) : null
+              }
+            />
+            <Column
+              header="Actions"
+              headerClassName="text-right"
+              bodyClassName="text-right"
+              body={(row: Formula) => (
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    size="small"
+                    disabled={!editable}
+                    onClick={() => setDialog({ kind: "formula", item: row })}
+                  />
+                  <Button
+                    icon="pi pi-trash"
+                    text
+                    size="small"
+                    severity="danger"
+                    disabled={!editable}
+                    onClick={() => void remove("formula", row.id)}
+                  />
+                </div>
+              )}
+            />
+          </DataTable>
+        }
+      />
 
       <SettingsEntityDialog
         header={dialog?.kind === "formula" ? "Formule de calcul" : "Type de note"}
