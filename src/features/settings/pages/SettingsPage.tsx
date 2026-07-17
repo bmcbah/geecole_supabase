@@ -12,6 +12,7 @@ import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
 import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
 import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
 import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
+import { ReenrollmentPolicyPanel } from "../../../modules/schooling/components/ReenrollmentPolicyPanel";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -75,6 +76,7 @@ export function SettingsPage() {
                 onUpdated={() => void refresh()}
               />
               <EnrollmentPolicyPanel institutionId={selected.id} />
+              <ReenrollmentPolicyPanel institutionId={selected.id} />
             </div>
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />

@@ -538,6 +538,82 @@ input {
 .guardian-line + .guardian-line {
   border-top: 1px solid #edf1f4;
 }
+.policy-flat-panel,
+.reenrollment-decision {
+  padding: 1rem 1.25rem;
+  border: 1px solid #dfe8e5;
+  border-radius: 0.8rem;
+  background: #fff;
+}
+.policy-flat-panel > header,
+.reenrollment-decision > header {
+  margin-bottom: 0.75rem;
+}
+.policy-flat-panel h2,
+.reenrollment-decision h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.policy-flat-panel header p,
+.reenrollment-decision header p {
+  margin: 0.25rem 0 0;
+  color: #637083;
+}
+.reenrollment-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.reenrollment-side {
+  padding: 1rem 1.25rem;
+  border: 1px solid #dfe8e5;
+  border-radius: 0.8rem;
+}
+.reenrollment-side.current {
+  background: #f6f8fa;
+}
+.reenrollment-side.target {
+  background: #f2fbf8;
+  border-color: #bfe2d8;
+}
+.reenrollment-side h2 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+.step-label {
+  color: #176f63;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.reenrollment-arrow {
+  align-self: center;
+  color: #178473;
+}
+.single-column {
+  grid-template-columns: 1fr;
+}
+.reenrollment-summary {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #19a38c;
+  background: #f2fbf8;
+}
+@media (max-width: 760px) {
+  .reenrollment-comparison {
+    grid-template-columns: 1fr;
+  }
+  .reenrollment-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+}
 .guardian-line > div {
   display: flex;
   flex-direction: column;

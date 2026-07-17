@@ -70,6 +70,16 @@ export function StudentProfilePage() {
               }
             />
           )}
+          {enrollment?.status === "confirmed" && (
+            <Button
+              label="Réinscrire"
+              icon="pi pi-refresh"
+              outlined
+              onClick={() =>
+                void navigate(`/scolarite/eleves/${studentId}/reinscription`)
+              }
+            />
+          )}
           <StudentProfileActions
             student={student}
             guardian={guardians[0]}

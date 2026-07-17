@@ -47,6 +47,36 @@ export interface Database {
         >;
         Relationships: [];
       };
+      reenrollment_policies: {
+        Row: {
+          institution_id: string;
+          allow_early_preparation: boolean;
+          allow_direct_confirmation: boolean;
+          debt_mode: "information" | "warning" | "blocking";
+          require_academic_decision: boolean;
+          allow_decision_override: boolean;
+          repeat_mode: "allowed" | "exception" | "forbidden";
+          require_class_assignment: boolean;
+          auto_generate_fees: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          institution_id: string;
+          allow_early_preparation?: boolean;
+          allow_direct_confirmation?: boolean;
+          debt_mode?: "information" | "warning" | "blocking";
+          require_academic_decision?: boolean;
+          allow_decision_override?: boolean;
+          repeat_mode?: "allowed" | "exception" | "forbidden";
+          require_class_assignment?: boolean;
+          auto_generate_fees?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["reenrollment_policies"]["Insert"]
+        >;
+        Relationships: [];
+      };
       students: {
         Row: {
           id: string;
@@ -145,6 +175,10 @@ export interface Database {
           level_name_snapshot: string;
           cycle_name_snapshot: string;
           cancellation_reason: string | null;
+          source_enrollment_id: string | null;
+          academic_decision: string | null;
+          decision_reason: string | null;
+          policy_snapshot: Json;
           confirmed_at: string | null;
           created_by: string | null;
           created_at: string;
@@ -161,6 +195,10 @@ export interface Database {
           origin?: string;
           level_name_snapshot: string;
           cycle_name_snapshot: string;
+          source_enrollment_id?: string | null;
+          academic_decision?: string | null;
+          decision_reason?: string | null;
+          policy_snapshot?: Json;
         };
         Update: Partial<Database["public"]["Tables"]["enrollments"]["Insert"]>;
         Relationships: [];
@@ -791,6 +829,17 @@ export interface Database {
           guardian_phone: string;
           guardian_relationship: string;
           enrollment_kind: string;
+        };
+        Returns: string;
+      };
+      reenroll_student: {
+        Args: {
+          source_enrollment: string;
+          target_academic_year: string;
+          target_annual_level: string;
+          target_decision: string;
+          target_enrollment_status: string;
+          target_reason?: string | null;
         };
         Returns: string;
       };
