@@ -125,9 +125,7 @@ export function BatchReenrollmentPage() {
         dataKey="id"
         selectionMode="multiple"
         selection={selected}
-        onSelectionChange={(event) =>
-          setSelected(event.value as StudentListItem[])
-        }
+        onSelectionChange={(event) => setSelected(event.value)}
         paginator
         rows={15}
         emptyMessage="Aucun élève confirmé disponible."
