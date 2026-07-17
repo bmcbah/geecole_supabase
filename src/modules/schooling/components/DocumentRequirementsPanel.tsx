@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Checkbox } from "primereact/checkbox";
@@ -25,10 +25,13 @@ export function DocumentRequirementsPanel({
     pre: false,
     confirmation: true,
   });
-  const load = () => listDocumentRequirements(institutionId).then(setItems);
+  const load = useCallback(
+    () => listDocumentRequirements(institutionId).then(setItems),
+    [institutionId],
+  );
   useEffect(() => {
     void load();
-  }, [institutionId]);
+  }, [load]);
   return (
     <Card
       title="Documents exigés"
