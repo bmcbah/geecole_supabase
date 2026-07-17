@@ -10,12 +10,7 @@ import { MultiSelect } from "primereact/multiselect";
 import { generateCode } from "../../../shared/utils/generate-code";
 
 export type EntityValue =
-  | string
-  | number
-  | boolean
-  | string[]
-  | null
-  | undefined;
+  string | number | boolean | string[] | null | undefined;
 export interface EntityField {
   key: string;
   label: string;
