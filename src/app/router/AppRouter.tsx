@@ -26,10 +26,14 @@ const InvitationPage = lazy(() =>
   })),
 );
 const StudentsPage = lazy(() =>
-  import("../../modules/schooling/pages/StudentsPage").then((module) => ({ default: module.StudentsPage })),
+  import("../../modules/schooling/pages/StudentsPage").then((module) => ({
+    default: module.StudentsPage,
+  })),
 );
 const StudentProfilePage = lazy(() =>
-  import("../../modules/schooling/pages/StudentProfilePage").then((module) => ({ default: module.StudentProfilePage })),
+  import("../../modules/schooling/pages/StudentProfilePage").then((module) => ({
+    default: module.StudentProfilePage,
+  })),
 );
 
 export function AppRouter() {
@@ -56,7 +60,10 @@ export function AppRouter() {
             <Route path="/etablissement" element={<InstitutionPage />} />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
-            <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
+            <Route
+              path="/scolarite/eleves/:studentId"
+              element={<StudentProfilePage />}
+            />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

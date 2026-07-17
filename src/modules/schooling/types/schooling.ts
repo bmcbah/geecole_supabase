@@ -1,6 +1,11 @@
 export type EnrollmentStatus =
-  | "draft" | "pre_registered" | "confirmed" | "rejected"
-  | "withdrawn" | "cancelled" | "transferred";
+  | "draft"
+  | "pre_registered"
+  | "confirmed"
+  | "rejected"
+  | "withdrawn"
+  | "cancelled"
+  | "transferred";
 
 export interface StudentListItem {
   id: string;

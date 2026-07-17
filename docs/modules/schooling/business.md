@@ -84,7 +84,6 @@ Les notes utilisent les types, périodes, barèmes et formules du Paramétrage. 
 - contacts d'urgence ;
 - besoins médicaux essentiels avec accès restreint.
 
-
 ## Préinscription et inscription — atelier validé
 
 ### Définitions

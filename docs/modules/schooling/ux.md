@@ -51,7 +51,6 @@ Les actions dangereuses demandent un motif, pas seulement une confirmation oui/n
 
 Écran comparatif : année précédente à gauche, proposition pour la nouvelle année à droite. Les changements et nouveaux frais sont surlignés avant validation.
 
-
 ## Préinscription et inscription — parcours validé
 
 L'assistant utilise sept étapes courtes :
