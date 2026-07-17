@@ -5,9 +5,11 @@ import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
-import { useToast } from "../../../shared/components/toast-context";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { Toolbar } from "primereact/toolbar";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
+import { useToast } from "../../../shared/components/toast-context";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   changeAcademicYearStatus,
@@ -189,75 +191,87 @@ export function AcademicYearsPanel({ institutionId }: Props) {
   return (
     <section>
       <ConfirmDialog />
-      <TablePanel
-        title="Années scolaires"
-        description="Une seule année peut être ouverte à la fois. Préparez-la, ouvrez-la, puis clôturez-la."
-        meta={
-          <Tag
-            value={`${items.length} année${items.length > 1 ? "s" : ""}`}
-            severity="secondary"
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Années scolaires"
+            description="Une seule année peut être ouverte à la fois. Préparez-la, ouvrez-la, puis clôturez-la."
+            meta={
+              <Tag
+                value={`${items.length} année${items.length > 1 ? "s" : ""}`}
+                severity="secondary"
+              />
+            }
+            headingAs="h2"
+            compact
           />
         }
-        alerts={failure ? <Message severity="error" text={failure} /> : undefined}
-        search={
-          <TableSearch
-            value={search}
-            onChange={setSearch}
-            placeholder="Rechercher une année"
-            id="academic-years-search"
+        alert={failure ? <Message severity="error" text={failure} /> : undefined}
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                value={search}
+                onChange={setSearch}
+                placeholder="Rechercher une année"
+                id="academic-years-search"
+              />
+            }
+            end={
+              <Button
+                label="Nouvelle année"
+                icon="pi pi-plus"
+                size="small"
+                onClick={() => setDialogOpen(true)}
+              />
+            }
+            className="min-h-0 rounded-none border-0 bg-transparent p-0"
           />
         }
-        actions={
-          <Button
-            label="Nouvelle année"
-            icon="pi pi-plus"
+        dataTable={
+          <DataTable
+            value={items}
+            globalFilter={search}
+            globalFilterFields={["name", "starts_on", "ends_on", "status"]}
+            loading={loading}
+            dataKey="id"
+            emptyMessage="Aucune année scolaire"
+            stripedRows
+            responsiveLayout="scroll"
             size="small"
-            onClick={() => setDialogOpen(true)}
-          />
+            className="border-0"
+          >
+            <Column field="name" header="Année" />
+            <Column
+              field="starts_on"
+              header="Début"
+              body={(row: AcademicYear) =>
+                new Date(`${row.starts_on}T00:00:00`).toLocaleDateString("fr-GN")
+              }
+            />
+            <Column
+              field="ends_on"
+              header="Fin"
+              body={(row: AcademicYear) =>
+                new Date(`${row.ends_on}T00:00:00`).toLocaleDateString("fr-GN")
+              }
+            />
+            <Column
+              field="status"
+              header="Statut"
+              body={(row: AcademicYear) => (
+                <Tag value={labels[row.status]} severity={severities[row.status]} />
+              )}
+            />
+            <Column
+              header="Actions"
+              body={actions}
+              headerClassName="text-right"
+              bodyClassName="text-right"
+            />
+          </DataTable>
         }
-      >
-        <DataTable
-          value={items}
-          globalFilter={search}
-          globalFilterFields={["name", "starts_on", "ends_on", "status"]}
-          loading={loading}
-          dataKey="id"
-          emptyMessage="Aucune année scolaire"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-          className="border-0"
-        >
-          <Column field="name" header="Année" />
-          <Column
-            field="starts_on"
-            header="Début"
-            body={(row: AcademicYear) =>
-              new Date(`${row.starts_on}T00:00:00`).toLocaleDateString("fr-GN")
-            }
-          />
-          <Column
-            field="ends_on"
-            header="Fin"
-            body={(row: AcademicYear) =>
-              new Date(`${row.ends_on}T00:00:00`).toLocaleDateString("fr-GN")
-            }
-          />
-          <Column
-            field="status"
-            header="Statut"
-            body={(row: AcademicYear) => (
-              <Tag value={labels[row.status]} severity={severities[row.status]} />
-            )}
-          />
-          <Column
-            header="Actions"
-            body={actions}
-            headerClassName="text-right"
-            bodyClassName="text-right"
-          />
-        </DataTable>
-      </TablePanel>
+      />
 
       <AcademicYearDialog
         visible={dialogOpen}
