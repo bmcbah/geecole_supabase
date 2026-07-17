@@ -83,3 +83,71 @@ Les notes utilisent les types, périodes, barèmes et formules du Paramétrage. 
 - attestations et certificats ;
 - contacts d'urgence ;
 - besoins médicaux essentiels avec accès restreint.
+
+
+## Préinscription et inscription — atelier validé
+
+### Définitions
+
+- La préinscription enregistre un candidat sans en faire automatiquement un élève comptabilisé.
+- L'inscription confirme sa présence dans l'établissement pour une année scolaire.
+- La réinscription crée l'inscription d'une nouvelle année pour un élève déjà connu.
+- La préinscription reste facultative : selon sa politique, l'établissement peut autoriser l'inscription directe.
+
+### Parcours
+
+1. Rechercher un élève existant et afficher les doublons probables.
+2. Saisir l'identité, avec date de naissance exacte ou approximative.
+3. Rechercher ou créer les responsables et désigner le contact principal, le responsable financier et les personnes autorisées.
+4. Choisir l'année, le cycle, le niveau et éventuellement la classe.
+5. Contrôler les documents configurés par l'établissement.
+6. Calculer et présenter les frais applicables.
+7. Afficher un récapitulatif avant enregistrement ou confirmation.
+
+### États détaillés
+
+- `draft` : brouillon sans effet financier ;
+- `pre_registered` : candidat enregistré ;
+- `confirmed` : inscription officielle ;
+- `rejected` : admission refusée avec motif ;
+- `withdrawn` : démarche abandonnée par la famille ;
+- `cancelled` : inscription annulée et conservée dans l'historique ;
+- `transferred` : départ vers un autre établissement.
+
+Une inscription confirmée n'est jamais supprimée physiquement.
+
+### Politiques configurables par établissement
+
+Les décisions suivantes ne sont pas codées en dur :
+
+- autoriser ou non la préinscription ;
+- autoriser ou non l'inscription directe ;
+- exiger ou non un paiement avant confirmation ;
+- exiger ou non une classe précise à la confirmation ;
+- faire compter ou non une préinscription dans les capacités ;
+- mode de capacité : information, avertissement ou blocage ;
+- documents obligatoires pour préinscrire et pour confirmer ;
+- autoriser une confirmation avec pièces manquantes ;
+- format de génération du matricule.
+
+Valeurs par défaut recommandées pour un nouvel établissement :
+
+- préinscription autorisée ;
+- inscription directe autorisée ;
+- paiement non bloquant ;
+- niveau obligatoire et classe facultative ;
+- préinscription hors effectif confirmé, mais capacité prévisionnelle affichée ;
+- dépassement de capacité avec avertissement ;
+- confirmation possible avec pièces manquantes et suivi visible.
+
+Ces politiques sont définies au niveau de l'établissement. Une surcharge annuelle peut être préparée pour une année ouverte. Après clôture, la valeur appliquée reste historisée et ne change pas rétroactivement les inscriptions.
+
+### Règles complémentaires validées
+
+- Au moins un contact principal est normalement requis ; une dérogation motivée nécessite un droit adapté.
+- Un responsable peut être lié à plusieurs élèves et doit être recherché avant création.
+- La classe est distincte du niveau et peut être affectée ultérieurement si la politique l'autorise.
+- La confirmation génère la dette, indépendamment de son paiement.
+- Une remise exige un motif et une autorisation.
+- L'annulation n'efface ni dette ni paiement ; avoirs et remboursements sont des opérations séparées.
+- Un compte utilisateur n'est pas nécessaire pour créer le dossier élève.
