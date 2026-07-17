@@ -7,63 +7,66 @@ import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
-import { listAnnualAcademicLevels } from "../../../features/settings/services/academic-structure.service";
-import { useToast } from "../../../shared/components/toast-context";
-import { listStudents } from "../services/schooling.service";
+import {
+  listAnnualAcademicCycles,
+  listAnnualAcademicLevels,
+} from "../../../features/settings/services/academic-structure.service";
 import {
   archiveClass,
-  assignEnrollment,
+  createClass,
   listAssignments,
   listClasses,
   saveClass,
   type SchoolClass,
 } from "../services/classes.service";
-import type { StudentListItem } from "../types/schooling";
+
 export function ClassesPage() {
-  const { institutionId, yearId, year } = useAcademicSession();
-  const notify = useToast();
+  const { institutionId, institution, yearId, year } = useAcademicSession();
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [levels, setLevels] = useState<
     Awaited<ReturnType<typeof listAnnualAcademicLevels>>
   >([]);
-  const [students, setStudents] = useState<StudentListItem[]>([]);
+  const [cycles, setCycles] = useState<
+    Awaited<ReturnType<typeof listAnnualAcademicCycles>>
+  >([]);
   const [assignments, setAssignments] = useState<
     Awaited<ReturnType<typeof listAssignments>>
   >([]);
   const [editing, setEditing] = useState<SchoolClass | null | undefined>(
     undefined,
   );
-  const [assigning, setAssigning] = useState<SchoolClass | null>(null);
-  const [selectedEnrollment, setSelectedEnrollment] = useState("");
   const [form, setForm] = useState({
     name: "",
     code: "",
     levelId: "",
+    cycleId: "",
     capacity: 30,
     room: "",
   });
+  const merged = institution?.class_structure_mode === "classes_as_levels";
   const load = useCallback(async () => {
-    if (!yearId || !institutionId) return;
-    const [c, l, s, a] = await Promise.all([
-      listClasses(yearId),
-      listAnnualAcademicLevels(yearId),
-      listStudents(institutionId, yearId),
-      listAssignments(yearId),
-    ]);
-    setClasses(c);
-    setLevels(l);
-    setStudents(s);
-    setAssignments(a);
-  }, [institutionId, yearId]);
-  useEffect(() => {
-    void load();
-  }, [load]);
+    if (!yearId) return;
+    const [classData, levelData, cycleData, assignmentData] = await Promise.all(
+      [
+        listClasses(yearId),
+        listAnnualAcademicLevels(yearId),
+        listAnnualAcademicCycles(yearId),
+        listAssignments(yearId),
+      ],
+    );
+    setClasses(classData);
+    setLevels(levelData);
+    setCycles(cycleData);
+    setAssignments(assignmentData);
+  }, [yearId]);
+  useEffect(() => void load(), [load]);
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        classes.map((c) => [
-          c.id,
-          assignments.filter((a) => a.class_id === c.id).length,
+        classes.map((item) => [
+          item.id,
+          assignments.filter((assignment) => assignment.class_id === item.id)
+            .length,
         ]),
       ),
     [assignments, classes],
@@ -76,21 +79,56 @@ export function ClassesPage() {
             name: item.name,
             code: item.code,
             levelId: item.academic_year_level_id,
+            cycleId: "",
             capacity: item.capacity ?? 30,
             room: item.room ?? "",
           }
-        : { name: "", code: "", levelId: "", capacity: 30, room: "" },
+        : {
+            name: "",
+            code: "",
+            levelId: "",
+            cycleId: "",
+            capacity: 30,
+            room: "",
+          },
     );
+  };
+  const submit = async () => {
+    if (editing)
+      await saveClass(
+        {
+          institution_id: institutionId,
+          academic_year_id: yearId,
+          academic_year_level_id: editing.academic_year_level_id,
+          name: form.name,
+          code: form.code,
+          capacity: form.capacity,
+          room: form.room,
+        },
+        editing.id,
+      );
+    else
+      await createClass({
+        yearId,
+        annualLevelId: form.levelId || null,
+        annualCycleId: form.cycleId || null,
+        name: form.name,
+        code: form.code,
+        capacity: form.capacity,
+        room: form.room,
+      });
+    await load();
+    setEditing(undefined);
   };
   return (
     <section className="medium-controls">
       <header className="page-heading">
         <div>
-          <span className="eyebrow">Scolarité · {year?.name}</span>
-          <h1>Classes et affectations</h1>
+          <span className="eyebrow">Paramétrage · {year?.name}</span>
+          <h1>Classes</h1>
           <p>
-            Créez les divisions annuelles et affectez les élèves sans perdre
-            l’historique.
+            Configurez les classes annuelles. L’affectation se fait depuis la
+            fiche ou la liste des élèves.
           </p>
         </div>
         <Button
@@ -99,6 +137,15 @@ export function ClassesPage() {
           onClick={() => open()}
         />
       </header>
+      {merged && (
+        <div className="students-filter-zone">
+          <strong>Mode fusionné activé</strong>
+          <p>
+            Chaque nouvelle classe crée automatiquement le niveau pédagogique
+            portant le même nom.
+          </p>
+        </div>
+      )}
       <DataTable
         value={classes}
         dataKey="id"
@@ -107,36 +154,29 @@ export function ClassesPage() {
         <Column field="name" header="Classe" />
         <Column
           header="Niveau"
-          body={(c: SchoolClass) =>
-            levels.find((l) => l.id === c.academic_year_level_id)
+          body={(item: SchoolClass) =>
+            levels.find((level) => level.id === item.academic_year_level_id)
               ?.level_name_snapshot
           }
         />
         <Column
           header="Effectif"
-          body={(c: SchoolClass) =>
-            `${counts[c.id] ?? 0} / ${c.capacity ?? "∞"}`
+          body={(item: SchoolClass) =>
+            `${counts[item.id] ?? 0} / ${item.capacity ?? "∞"}`
           }
         />
-        <Column field="room" header="Salle" />
+        <Column header="Salle" body={(item: SchoolClass) => item.room || "—"} />
         <Column
           header="Actions"
-          body={(c: SchoolClass) => (
+          body={(item: SchoolClass) => (
             <div className="table-actions">
-              <Button
-                label="Affecter"
-                text
-                icon="pi pi-user-plus"
-                disabled={!c.is_active}
-                onClick={() => setAssigning(c)}
-              />
-              <Button icon="pi pi-pencil" text onClick={() => open(c)} />
+              <Button icon="pi pi-pencil" text onClick={() => open(item)} />
               <Button
                 icon="pi pi-archive"
                 text
                 severity="danger"
-                disabled={!c.is_active}
-                onClick={() => void archiveClass(c.id).then(load)}
+                disabled={!item.is_active}
+                onClick={() => void archiveClass(item.id).then(load)}
               />
             </div>
           )}
@@ -153,45 +193,79 @@ export function ClassesPage() {
             <span>Nom</span>
             <InputText
               value={form.name}
-              onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))}
+              onChange={(event) =>
+                setForm((value) => ({ ...value, name: event.target.value }))
+              }
             />
           </label>
           <label className="field">
             <span>Code</span>
             <InputText
               value={form.code}
-              onChange={(e) =>
-                setForm((v) => ({ ...v, code: e.target.value.toUpperCase() }))
+              onChange={(event) =>
+                setForm((value) => ({
+                  ...value,
+                  code: event.target.value.toUpperCase(),
+                }))
               }
             />
           </label>
-          <label className="field">
-            <span>Niveau</span>
-            <Dropdown
-              value={form.levelId}
-              options={levels}
-              optionLabel="level_name_snapshot"
-              optionValue="id"
-              onChange={(e) =>
-                setForm((v) => ({ ...v, levelId: String(e.value) }))
-              }
-            />
-          </label>
+          {!editing &&
+            (merged ? (
+              <label className="field">
+                <span>Cycle</span>
+                <Dropdown
+                  value={form.cycleId}
+                  options={cycles}
+                  optionLabel="name"
+                  optionValue="id"
+                  onChange={(event) =>
+                    setForm((value) => ({
+                      ...value,
+                      cycleId: String(event.value),
+                    }))
+                  }
+                />
+                <small>
+                  Le niveau sera créé automatiquement dans ce cycle.
+                </small>
+              </label>
+            ) : (
+              <label className="field">
+                <span>Niveau</span>
+                <Dropdown
+                  value={form.levelId}
+                  options={levels}
+                  optionLabel="level_name_snapshot"
+                  optionValue="id"
+                  onChange={(event) =>
+                    setForm((value) => ({
+                      ...value,
+                      levelId: String(event.value),
+                    }))
+                  }
+                />
+              </label>
+            ))}
           <label className="field">
             <span>Capacité</span>
             <InputNumber
               value={form.capacity}
               min={1}
-              onValueChange={(e) =>
-                setForm((v) => ({ ...v, capacity: e.value ?? 30 }))
+              onValueChange={(event) =>
+                setForm((value) => ({ ...value, capacity: event.value ?? 30 }))
               }
             />
           </label>
           <label className="field">
-            <span>Salle</span>
+            <span>
+              Salle <small>(facultatif)</small>
+            </span>
             <InputText
               value={form.room}
-              onChange={(e) => setForm((v) => ({ ...v, room: e.target.value }))}
+              onChange={(event) =>
+                setForm((value) => ({ ...value, room: event.target.value }))
+              }
             />
           </label>
         </div>
@@ -199,63 +273,12 @@ export function ClassesPage() {
           <Button label="Annuler" text onClick={() => setEditing(undefined)} />
           <Button
             label="Enregistrer"
-            disabled={!form.name || !form.code || !form.levelId}
-            onClick={() =>
-              void saveClass(
-                {
-                  institution_id: institutionId,
-                  academic_year_id: yearId,
-                  academic_year_level_id: form.levelId,
-                  name: form.name,
-                  code: form.code,
-                  capacity: form.capacity,
-                  room: form.room,
-                },
-                editing?.id,
-              )
-                .then(() => load())
-                .then(() => setEditing(undefined))
+            disabled={
+              !form.name ||
+              !form.code ||
+              (!editing && (merged ? !form.cycleId : !form.levelId))
             }
-          />
-        </div>
-      </Dialog>
-      <Dialog
-        header={`Affecter à ${assigning?.name ?? ""}`}
-        visible={Boolean(assigning)}
-        onHide={() => setAssigning(null)}
-        className="form-dialog"
-      >
-        <label className="field">
-          <span>Élève du niveau</span>
-          <Dropdown
-            filter
-            value={selectedEnrollment}
-            options={students
-              .filter(
-                (s) =>
-                  s.levelName ===
-                  levels.find((l) => l.id === assigning?.academic_year_level_id)
-                    ?.level_name_snapshot,
-              )
-              .map((s) => ({
-                label: `${s.lastName} ${s.firstName} · ${s.matricule}`,
-                value: s.enrollmentId,
-              }))}
-            onChange={(e) => setSelectedEnrollment(String(e.value))}
-          />
-        </label>
-        <div className="dialog-actions">
-          <Button
-            label="Affecter"
-            disabled={!selectedEnrollment}
-            onClick={() =>
-              void assignEnrollment(selectedEnrollment, assigning!.id)
-                .then(() => {
-                  notify({ severity: "success", summary: "Élève affecté" });
-                  return load();
-                })
-                .then(() => setAssigning(null))
-            }
+            onClick={() => void submit()}
           />
         </div>
       </Dialog>

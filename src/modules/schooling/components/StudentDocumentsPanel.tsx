@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
-import { InputText } from "primereact/inputtext";
+import { FileUpload, type FileUploadHandlerEvent } from "primereact/fileupload";
 import { Tag } from "primereact/tag";
 import type { Database } from "../../../shared/lib/supabase/database.types";
 import {
   listDocumentRequirements,
   listStudentDocuments,
   saveStudentDocument,
+  uploadSchoolFile,
 } from "../services/documents.service";
 
 type Requirement = Database["public"]["Tables"]["document_requirements"]["Row"];
@@ -80,24 +81,46 @@ export function StudentDocumentsPanel({
         }}
       />
       <Column
-        header="Référence fichier"
+        header="Fichier"
         body={(item: Requirement) => {
           const document = documentFor(item.id);
+          const upload = async (event: FileUploadHandlerEvent) => {
+            const file = event.files[0];
+            if (!file) return;
+            const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+            const path = await uploadSchoolFile(
+              `${institutionId}/students/${studentId}/documents/${enrollmentId}/${item.id}-${safe}`,
+              file,
+            );
+            await saveStudentDocument({
+              institution_id: institutionId,
+              student_id: studentId,
+              enrollment_id: enrollmentId,
+              requirement_id: item.id,
+              status: "provided",
+              file_path: path,
+              received_on: new Date().toISOString().slice(0, 10),
+            });
+            await load();
+          };
           return (
-            <InputText
-              placeholder="Chemin ou référence"
-              defaultValue={document?.file_path ?? ""}
-              onBlur={(event) =>
-                void saveStudentDocument({
-                  institution_id: institutionId,
-                  student_id: studentId,
-                  enrollment_id: enrollmentId,
-                  requirement_id: item.id,
-                  status: document?.status ?? "missing",
-                  file_path: event.target.value || null,
-                }).then(load)
-              }
-            />
+            <div className="document-upload-cell">
+              {document?.file_path && (
+                <small>
+                  <i className="pi pi-check-circle" /> Déposé
+                </small>
+              )}
+              <FileUpload
+                mode="basic"
+                name="document"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
+                maxFileSize={10_000_000}
+                chooseLabel={document?.file_path ? "Remplacer" : "Déposer"}
+                customUpload
+                auto
+                uploadHandler={(event) => void upload(event)}
+              />
+            </div>
           );
         }}
       />

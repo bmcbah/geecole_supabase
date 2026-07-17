@@ -14,6 +14,8 @@ import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
 import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
 import { ReenrollmentPolicyPanel } from "../../../modules/schooling/components/ReenrollmentPolicyPanel";
 import { DocumentRequirementsPanel } from "../../../modules/schooling/components/DocumentRequirementsPanel";
+import { ClassOrganizationCard } from "../../../modules/schooling/components/ClassOrganizationCard";
+import { ClassesPage } from "../../../modules/schooling/pages/ClassesPage";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -45,6 +47,7 @@ export function SettingsPage() {
       "annees-scolaires",
       "cycles",
       "niveaux",
+      "classes",
       "matieres",
       "evaluations-formules",
       "regles-financieres",
@@ -79,6 +82,7 @@ export function SettingsPage() {
               <EnrollmentPolicyPanel institutionId={selected.id} />
               <ReenrollmentPolicyPanel institutionId={selected.id} />
               <DocumentRequirementsPanel institutionId={selected.id} />
+              <ClassOrganizationCard institution={selected} onSaved={refresh} />
             </div>
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
@@ -86,6 +90,8 @@ export function SettingsPage() {
             <CyclesSettingsPanel />
           ) : section === "niveaux" ? (
             <LevelsSettingsPanel institutionId={selected.id} />
+          ) : section === "classes" ? (
+            <ClassesPage />
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
           ) : section === "evaluations-formules" ? (

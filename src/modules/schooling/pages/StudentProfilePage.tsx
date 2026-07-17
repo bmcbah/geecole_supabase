@@ -9,6 +9,8 @@ import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { StudentProfileActions } from "../components/StudentProfileActions";
 import { AddGuardianDialog } from "../components/AddGuardianDialog";
 import { StudentDocumentsPanel } from "../components/StudentDocumentsPanel";
+import { StudentClassAssignment } from "../components/StudentClassAssignment";
+import { StudentAvatarUpload } from "../components/StudentAvatarUpload";
 import { getStudent } from "../services/schooling.service";
 
 type StudentDetail = Awaited<ReturnType<typeof getStudent>>;
@@ -47,10 +49,14 @@ export function StudentProfilePage() {
       />
       <header className="student-profile-header">
         <div className="student-profile-main">
-          <span className="student-avatar student-avatar-large">
-            {student.first_name[0]}
-            {student.last_name[0]}
-          </span>
+          <StudentAvatarUpload
+            institutionId={institutionId}
+            studentId={student.id}
+            firstName={student.first_name}
+            lastName={student.last_name}
+            path={student.photo_url}
+            onSaved={reload}
+          />
           <div>
             <span className="eyebrow">{student.matricule}</span>
             <h1>
@@ -182,9 +188,16 @@ export function StudentProfilePage() {
           </div>
         </TabPanel>
         <TabPanel header="Parcours scolaire" leftIcon="pi pi-book mr-2">
+          {enrollment && (
+            <StudentClassAssignment
+              enrollmentId={enrollment.id}
+              yearId={yearId}
+              annualLevelId={enrollment.academic_year_level_id}
+            />
+          )}
           <Message
             severity="info"
-            text="L’historique annuel sera enrichi dans le lot Réinscription."
+            text="Les changements de classe et réinscriptions restent conservés dans l’historique annuel."
           />
         </TabPanel>
         <TabPanel header="Assiduité" leftIcon="pi pi-calendar mr-2">

@@ -45,3 +45,24 @@ export async function saveStudentDocument(
   if (error) throw error;
   return data;
 }
+export async function uploadSchoolFile(path: string, file: File) {
+  const { data, error } = await supabase.storage
+    .from("school-admin")
+    .upload(path, file, { upsert: true });
+  if (error) throw error;
+  return data.path;
+}
+export async function getSchoolFileUrl(path: string) {
+  const { data, error } = await supabase.storage
+    .from("school-admin")
+    .createSignedUrl(path, 3600);
+  if (error) throw error;
+  return data.signedUrl;
+}
+export async function updateStudentAvatar(studentId: string, path: string) {
+  const { error } = await supabase
+    .from("students")
+    .update({ photo_url: path })
+    .eq("id", studentId);
+  if (error) throw error;
+}

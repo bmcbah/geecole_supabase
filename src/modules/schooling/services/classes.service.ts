@@ -21,6 +21,27 @@ export async function saveClass(
   if (error) throw error;
   return data;
 }
+export async function createClass(input: {
+  yearId: string;
+  annualLevelId: string | null;
+  annualCycleId: string | null;
+  name: string;
+  code: string;
+  capacity: number | null;
+  room: string;
+}) {
+  const { data, error } = await supabase.rpc("create_school_class", {
+    target_year_id: input.yearId,
+    target_annual_level_id: input.annualLevelId,
+    target_annual_cycle_id: input.annualCycleId,
+    class_name: input.name,
+    class_code: input.code,
+    class_capacity: input.capacity,
+    class_room: input.room || null,
+  });
+  if (error) throw error;
+  return data;
+}
 export async function archiveClass(id: string) {
   const { error } = await supabase
     .from("school_classes")
@@ -46,6 +67,16 @@ export async function listAssignments(yearId: string) {
     .select("*")
     .eq("academic_year_id", yearId)
     .is("ends_on", null);
+  if (error) throw error;
+  return data;
+}
+export async function getEnrollmentAssignment(enrollmentId: string) {
+  const { data, error } = await supabase
+    .from("class_assignments")
+    .select("*")
+    .eq("enrollment_id", enrollmentId)
+    .is("ends_on", null)
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

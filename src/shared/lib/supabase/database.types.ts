@@ -232,6 +232,7 @@ export interface Database {
           birth_date?: string | null;
           birth_place?: string | null;
           address?: string | null;
+          photo_url?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["students"]["Insert"]>;
         Relationships: [];
@@ -539,6 +540,7 @@ export interface Database {
           currency: string;
           timezone: string;
           locale: string;
+          class_structure_mode: "levels_and_classes" | "classes_as_levels";
           created_at: string;
           updated_at: string;
         };
@@ -552,6 +554,7 @@ export interface Database {
           currency?: string;
           timezone?: string;
           locale?: string;
+          class_structure_mode?: "levels_and_classes" | "classes_as_levels";
         };
         Update: Partial<Database["public"]["Tables"]["institutions"]["Insert"]>;
         Relationships: [];
@@ -941,6 +944,18 @@ export interface Database {
           target_enrollment: string;
           target_class: string;
           change_reason?: string | null;
+        };
+        Returns: string;
+      };
+      create_school_class: {
+        Args: {
+          target_year_id: string;
+          target_annual_level_id: string | null;
+          target_annual_cycle_id: string | null;
+          class_name: string;
+          class_code: string;
+          class_capacity?: number | null;
+          class_room?: string | null;
         };
         Returns: string;
       };

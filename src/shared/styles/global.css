@@ -353,6 +353,44 @@ input {
   flex: 1;
   margin: 0;
 }
+.class-assignment-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #dce5e8;
+  border-radius: 0.75rem;
+  background: white;
+}
+.class-assignment-control > div:first-child {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.student-avatar-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.student-avatar-editor img {
+  object-fit: cover;
+}
+.student-avatar-editor .p-fileupload-choose {
+  min-height: auto !important;
+  padding: 0.25rem 0.4rem !important;
+  font-size: 0.72rem;
+}
+.document-upload-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.document-upload-cell small {
+  color: #187b70;
+}
 .duplicate-row {
   justify-content: space-between;
 }
