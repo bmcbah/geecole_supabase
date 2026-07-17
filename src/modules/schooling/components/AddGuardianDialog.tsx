@@ -174,14 +174,16 @@ export function AddGuardianDialog({
         />
       </label>
       <div className="guardian-permissions">
-        {[
-          ["primary", "Contact principal"],
-          ["financial", "Responsable financier"],
-          ["emergency", "Contact d’urgence"],
-        ].map(([key, label]) => (
+        {(
+          [
+            ["primary", "Contact principal"],
+            ["financial", "Responsable financier"],
+            ["emergency", "Contact d’urgence"],
+          ] as const
+        ).map(([key, label]) => (
           <label key={key}>
             <Checkbox
-              checked={Boolean(form[key as "primary"])}
+              checked={form[key]}
               onChange={(event) =>
                 setForm((value) => ({
                   ...value,

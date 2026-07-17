@@ -123,6 +123,7 @@ export function BatchReenrollmentPage() {
       <DataTable
         value={students}
         dataKey="id"
+        selectionMode="multiple"
         selection={selected}
         onSelectionChange={(event) =>
           setSelected(event.value as StudentListItem[])
