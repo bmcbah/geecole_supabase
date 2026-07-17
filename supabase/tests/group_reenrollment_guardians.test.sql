@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_column('public','reenrollment_policies','allow_batch','batch policy exists');
+select has_column('public','reenrollment_policies','batch_result_status','batch result is configurable');
+select has_function('public','batch_reenroll_students',array['uuid[]','uuid'],'batch reenrollment RPC exists');
+select has_function('public','link_student_guardian',array['uuid','uuid','text','boolean','boolean','boolean','boolean','boolean'],'existing guardian can be linked');
+select has_function('public','create_and_link_guardian',array['uuid','text','text','text','text','boolean','boolean','boolean'],'guardian creation is transactional');
+select function_privs_are('public','batch_reenroll_students',array['uuid[]','uuid'],'authenticated',array['EXECUTE']);
+select function_privs_are('public','link_student_guardian',array['uuid','uuid','text','boolean','boolean','boolean','boolean','boolean'],'authenticated',array['EXECUTE']);
+select function_privs_are('public','create_and_link_guardian',array['uuid','text','text','text','text','boolean','boolean','boolean'],'authenticated',array['EXECUTE']);
+select * from finish();
+rollback;

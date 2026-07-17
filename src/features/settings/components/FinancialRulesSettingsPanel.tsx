@@ -20,6 +20,7 @@ import {
   type EntityValue,
 } from "./SettingsEntityDialog";
 import { SettingsPanelShell } from "./SettingsPanelShell";
+import { TableSearch } from "../../../shared/components/TableSearch";
 type Rule = Database["public"]["Tables"]["financial_rules"]["Row"];
 export function FinancialRulesSettingsPanel() {
   const { institutionId, year } = useAcademicSession();
@@ -27,6 +28,7 @@ export function FinancialRulesSettingsPanel() {
   const [items, setItems] = useState<Rule[]>([]);
   const [editing, setEditing] = useState<Rule | null | undefined>(undefined);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
   const [levels, setLevels] = useState<
     Awaited<ReturnType<typeof listAnnualAcademicLevels>>
   >([]);
@@ -122,8 +124,20 @@ export function FinancialRulesSettingsPanel() {
       addLabel="Nouvelle règle"
       onAdd={() => setEditing(null)}
     >
+      <TableSearch value={search} onChange={setSearch} />
       <DataTable
         value={items}
+        globalFilter={search}
+        globalFilterFields={[
+          "name",
+          "code",
+          "amount",
+          "frequency",
+          "due_day",
+          "fee_type",
+          "is_active",
+          "is_mandatory",
+        ]}
         dataKey="id"
         emptyMessage="Aucune règle financière"
         stripedRows

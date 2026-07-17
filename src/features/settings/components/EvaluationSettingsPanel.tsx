@@ -21,6 +21,7 @@ import {
   type EntityValue,
 } from "./SettingsEntityDialog";
 import { SettingsPanelShell } from "./SettingsPanelShell";
+import { TableSearch } from "../../../shared/components/TableSearch";
 type Assessment = Database["public"]["Tables"]["assessment_types"]["Row"];
 type Formula = Database["public"]["Tables"]["grading_formulas"]["Row"];
 type DialogState =
@@ -48,6 +49,7 @@ export function EvaluationSettingsPanel() {
   const [formulas, setFormulas] = useState<Formula[]>([]);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
   );
@@ -169,6 +171,7 @@ export function EvaluationSettingsPanel() {
       description="Règles de notation propres à l’année sélectionnée"
       year={year}
     >
+      <TableSearch value={search} onChange={setSearch} />
       <TabView>
         <TabPanel header="Types d’évaluation">
           <div className="panel-toolbar panel-toolbar-end">
@@ -182,6 +185,14 @@ export function EvaluationSettingsPanel() {
           </div>
           <DataTable
             value={assessments}
+            globalFilter={search}
+            globalFilterFields={[
+              "name",
+              "code",
+              "weight",
+              "scale",
+              "is_active",
+            ]}
             dataKey="id"
             emptyMessage="Aucun type d’évaluation"
             stripedRows
@@ -217,6 +228,14 @@ export function EvaluationSettingsPanel() {
           </div>
           <DataTable
             value={formulas}
+            globalFilter={search}
+            globalFilterFields={[
+              "name",
+              "code",
+              "expression",
+              "description",
+              "is_default",
+            ]}
             dataKey="id"
             emptyMessage="Aucune formule"
             stripedRows

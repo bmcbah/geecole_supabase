@@ -25,6 +25,7 @@ const groups = [
         label: "Cycles",
       },
       { path: "niveaux", icon: "pi-list", label: "Niveaux" },
+      { path: "classes", icon: "pi-users", label: "Classes" },
       { path: "matieres", icon: "pi-book", label: "Matières" },
     ],
   },

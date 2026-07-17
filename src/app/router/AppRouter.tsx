@@ -10,11 +10,6 @@ const LoginPage = lazy(() =>
     default: module.LoginPage,
   })),
 );
-const InstitutionPage = lazy(() =>
-  import("../../features/institutions/pages/InstitutionPage").then(
-    (module) => ({ default: module.InstitutionPage }),
-  ),
-);
 const SettingsPage = lazy(() =>
   import("../../features/settings/pages/SettingsPage").then((module) => ({
     default: module.SettingsPage,
@@ -24,6 +19,31 @@ const InvitationPage = lazy(() =>
   import("../../features/auth/pages/InvitationPage").then((module) => ({
     default: module.InvitationPage,
   })),
+);
+const StudentsPage = lazy(() =>
+  import("../../modules/schooling/pages/StudentsPage").then((module) => ({
+    default: module.StudentsPage,
+  })),
+);
+const StudentProfilePage = lazy(() =>
+  import("../../modules/schooling/pages/StudentProfilePage").then((module) => ({
+    default: module.StudentProfilePage,
+  })),
+);
+const EnrollmentPage = lazy(() =>
+  import("../../modules/schooling/pages/EnrollmentPage").then((module) => ({
+    default: module.EnrollmentPage,
+  })),
+);
+const ReenrollmentPage = lazy(() =>
+  import("../../modules/schooling/pages/ReenrollmentPage").then((module) => ({
+    default: module.ReenrollmentPage,
+  })),
+);
+const BatchReenrollmentPage = lazy(() =>
+  import("../../modules/schooling/pages/BatchReenrollmentPage").then(
+    (module) => ({ default: module.BatchReenrollmentPage }),
+  ),
 );
 
 export function AppRouter() {
@@ -46,9 +66,32 @@ export function AppRouter() {
               </AcademicSessionProvider>
             }
           >
-            <Route index element={<Navigate to="/etablissement" replace />} />
-            <Route path="/etablissement" element={<InstitutionPage />} />
+            <Route
+              index
+              element={<Navigate to="/parametrage/etablissement" replace />}
+            />
+            <Route
+              path="/etablissement"
+              element={<Navigate to="/parametrage/etablissement" replace />}
+            />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
+            <Route path="/scolarite/eleves" element={<StudentsPage />} />
+            <Route
+              path="/scolarite/inscriptions/nouvelle"
+              element={<EnrollmentPage />}
+            />
+            <Route
+              path="/scolarite/eleves/:studentId"
+              element={<StudentProfilePage />}
+            />
+            <Route
+              path="/scolarite/eleves/:studentId/reinscription"
+              element={<ReenrollmentPage />}
+            />
+            <Route
+              path="/scolarite/reinscriptions"
+              element={<BatchReenrollmentPage />}
+            />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

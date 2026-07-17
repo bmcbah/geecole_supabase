@@ -61,7 +61,11 @@ export function StructureItemDialog({
   const submit = handleSubmit(onSubmit);
   return (
     <Dialog
-      header={`${initial ? "Modifier" : "Ajouter"} un ${kind}`}
+      header={
+        kind === "cycle"
+          ? "Configurer le cycle"
+          : `${initial ? "Modifier" : "Ajouter"} un niveau`
+      }
       visible={visible}
       modal
       className="form-dialog"

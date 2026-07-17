@@ -1,5 +1,4 @@
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Message } from "primereact/message";
 import type { AcademicYear } from "../types/settings";
 
@@ -22,7 +21,13 @@ export function SettingsPanelShell({
     year && !["closed", "archived"].includes(year.status),
   );
   return (
-    <Card title={title} subTitle={description}>
+    <section className="settings-panel-surface">
+      <header className="settings-panel-heading">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </header>
       {!year ? (
         <Message
           severity="warn"
@@ -50,6 +55,6 @@ export function SettingsPanelShell({
           {children}
         </>
       )}
-    </Card>
+    </section>
   );
 }

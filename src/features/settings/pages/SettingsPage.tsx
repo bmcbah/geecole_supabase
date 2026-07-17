@@ -11,6 +11,11 @@ import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { EvaluationSettingsPanel } from "../components/EvaluationSettingsPanel";
 import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
 import { UsersSettingsPanel } from "../components/UsersSettingsPanel";
+import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
+import { ReenrollmentPolicyPanel } from "../../../modules/schooling/components/ReenrollmentPolicyPanel";
+import { DocumentRequirementsPanel } from "../../../modules/schooling/components/DocumentRequirementsPanel";
+import { ClassOrganizationCard } from "../../../modules/schooling/components/ClassOrganizationCard";
+import { ClassesPage } from "../../../modules/schooling/pages/ClassesPage";
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
@@ -32,7 +37,7 @@ export function SettingsPage() {
     return (
       <Message
         severity="warn"
-        text="Créez d’abord un établissement depuis la page Établissement."
+        text="Aucun établissement n’est associé à votre compte."
       />
     );
   if (!section) return <Navigate to="/parametrage/etablissement" replace />;
@@ -42,6 +47,7 @@ export function SettingsPage() {
       "annees-scolaires",
       "cycles",
       "niveaux",
+      "classes",
       "matieres",
       "evaluations-formules",
       "regles-financieres",
@@ -68,16 +74,24 @@ export function SettingsPage() {
         <SettingsSidebar />
         <div className="settings-content">
           {section === "etablissement" ? (
-            <InstitutionDetailsForm
-              institution={selected}
-              onUpdated={() => void refresh()}
-            />
+            <div className="institution-settings-stack medium-controls">
+              <InstitutionDetailsForm
+                institution={selected}
+                onUpdated={() => void refresh()}
+              />
+              <EnrollmentPolicyPanel institutionId={selected.id} />
+              <ReenrollmentPolicyPanel institutionId={selected.id} />
+              <DocumentRequirementsPanel institutionId={selected.id} />
+              <ClassOrganizationCard institution={selected} onSaved={refresh} />
+            </div>
           ) : section === "annees-scolaires" ? (
             <AcademicYearsPanel institutionId={selected.id} />
           ) : section === "cycles" ? (
             <CyclesSettingsPanel />
           ) : section === "niveaux" ? (
             <LevelsSettingsPanel institutionId={selected.id} />
+          ) : section === "classes" ? (
+            <ClassesPage />
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
           ) : section === "evaluations-formules" ? (

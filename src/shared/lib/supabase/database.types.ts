@@ -17,6 +17,316 @@ export type AcademicYearStatus = "preparation" | "open" | "closed" | "archived";
 export interface Database {
   public: {
     Tables: {
+      enrollment_policies: {
+        Row: {
+          institution_id: string;
+          allow_pre_registration: boolean;
+          allow_direct_enrollment: boolean;
+          require_payment_before_confirmation: boolean;
+          require_class_assignment: boolean;
+          count_pre_registration_in_capacity: boolean;
+          capacity_mode: "information" | "warning" | "blocking";
+          allow_missing_documents: boolean;
+          student_number_pattern: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          institution_id: string;
+          allow_pre_registration?: boolean;
+          allow_direct_enrollment?: boolean;
+          require_payment_before_confirmation?: boolean;
+          require_class_assignment?: boolean;
+          count_pre_registration_in_capacity?: boolean;
+          capacity_mode?: "information" | "warning" | "blocking";
+          allow_missing_documents?: boolean;
+          student_number_pattern?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["enrollment_policies"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      school_classes: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_level_id: string;
+          name: string;
+          code: string;
+          capacity: number | null;
+          room: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          academic_year_level_id: string;
+          name: string;
+          code: string;
+          capacity?: number | null;
+          room?: string | null;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["school_classes"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      class_assignments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          enrollment_id: string;
+          class_id: string;
+          starts_on: string;
+          ends_on: string | null;
+          end_reason: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          enrollment_id: string;
+          class_id: string;
+          starts_on?: string;
+          ends_on?: string | null;
+          end_reason?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["class_assignments"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      document_requirements: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          required_for_pre_registration: boolean;
+          required_for_confirmation: boolean;
+          expires: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          required_for_pre_registration?: boolean;
+          required_for_confirmation?: boolean;
+          expires?: boolean;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["document_requirements"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      student_documents: {
+        Row: {
+          id: string;
+          institution_id: string;
+          student_id: string;
+          enrollment_id: string | null;
+          requirement_id: string;
+          status: "missing" | "provided" | "not_applicable" | "rejected";
+          file_path: string | null;
+          notes: string | null;
+          received_on: string | null;
+          reviewed_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          student_id: string;
+          enrollment_id?: string | null;
+          requirement_id: string;
+          status?: "missing" | "provided" | "not_applicable" | "rejected";
+          file_path?: string | null;
+          notes?: string | null;
+          received_on?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["student_documents"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      reenrollment_policies: {
+        Row: {
+          institution_id: string;
+          allow_early_preparation: boolean;
+          allow_direct_confirmation: boolean;
+          debt_mode: "information" | "warning" | "blocking";
+          require_academic_decision: boolean;
+          allow_decision_override: boolean;
+          repeat_mode: "allowed" | "exception" | "forbidden";
+          require_class_assignment: boolean;
+          auto_generate_fees: boolean;
+          allow_batch: boolean;
+          batch_result_status: "draft" | "pre_registered" | "confirmed";
+          require_active_next_cycle: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          institution_id: string;
+          allow_early_preparation?: boolean;
+          allow_direct_confirmation?: boolean;
+          debt_mode?: "information" | "warning" | "blocking";
+          require_academic_decision?: boolean;
+          allow_decision_override?: boolean;
+          repeat_mode?: "allowed" | "exception" | "forbidden";
+          require_class_assignment?: boolean;
+          auto_generate_fees?: boolean;
+          allow_batch?: boolean;
+          batch_result_status?: "draft" | "pre_registered" | "confirmed";
+          require_active_next_cycle?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["reenrollment_policies"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      students: {
+        Row: {
+          id: string;
+          institution_id: string;
+          matricule: string;
+          first_name: string;
+          last_name: string;
+          other_names: string | null;
+          gender: string;
+          birth_date: string | null;
+          birth_date_is_approximate: boolean;
+          birth_place: string | null;
+          nationality: string;
+          address: string | null;
+          photo_url: string | null;
+          birth_certificate_number: string | null;
+          previous_school: string | null;
+          previous_level: string | null;
+          status: "active" | "inactive";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          matricule: string;
+          first_name: string;
+          last_name: string;
+          gender: string;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          address?: string | null;
+          photo_url?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["students"]["Insert"]>;
+        Relationships: [];
+      };
+      guardians: {
+        Row: {
+          id: string;
+          institution_id: string;
+          first_name: string;
+          last_name: string;
+          primary_phone: string;
+          secondary_phone: string | null;
+          address: string | null;
+          occupation: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          first_name: string;
+          last_name: string;
+          primary_phone: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["guardians"]["Insert"]>;
+        Relationships: [];
+      };
+      student_guardians: {
+        Row: {
+          student_id: string;
+          guardian_id: string;
+          relationship: string;
+          is_primary_contact: boolean;
+          is_financial_responsible: boolean;
+          is_emergency_contact: boolean;
+          can_pick_up: boolean;
+          receives_communications: boolean;
+        };
+        Insert: {
+          student_id: string;
+          guardian_id: string;
+          relationship: string;
+          is_primary_contact?: boolean;
+          is_financial_responsible?: boolean;
+          is_emergency_contact?: boolean;
+          can_pick_up?: boolean;
+          receives_communications?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["student_guardians"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      enrollments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          student_id: string;
+          academic_year_level_id: string;
+          status: string;
+          admission_date: string;
+          origin: string;
+          level_name_snapshot: string;
+          cycle_name_snapshot: string;
+          cancellation_reason: string | null;
+          source_enrollment_id: string | null;
+          academic_decision: string | null;
+          decision_reason: string | null;
+          policy_snapshot: Json;
+          confirmed_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          student_id: string;
+          academic_year_level_id: string;
+          status?: string;
+          admission_date?: string;
+          origin?: string;
+          level_name_snapshot: string;
+          cycle_name_snapshot: string;
+          source_enrollment_id?: string | null;
+          academic_decision?: string | null;
+          decision_reason?: string | null;
+          policy_snapshot?: Json;
+        };
+        Update: Partial<Database["public"]["Tables"]["enrollments"]["Insert"]>;
+        Relationships: [];
+      };
       cycle_catalog: {
         Row: {
           id: string;
@@ -230,6 +540,7 @@ export interface Database {
           currency: string;
           timezone: string;
           locale: string;
+          class_structure_mode: "levels_and_classes" | "classes_as_levels";
           created_at: string;
           updated_at: string;
         };
@@ -243,6 +554,7 @@ export interface Database {
           currency?: string;
           timezone?: string;
           locale?: string;
+          class_structure_mode?: "levels_and_classes" | "classes_as_levels";
         };
         Update: Partial<Database["public"]["Tables"]["institutions"]["Insert"]>;
         Relationships: [];
@@ -619,6 +931,94 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      change_enrollment_status: {
+        Args: {
+          target_enrollment_id: string;
+          target_status: string;
+          change_reason?: string | null;
+        };
+        Returns: void;
+      };
+      assign_enrollment_to_class: {
+        Args: {
+          target_enrollment: string;
+          target_class: string;
+          change_reason?: string | null;
+        };
+        Returns: string;
+      };
+      create_school_class: {
+        Args: {
+          target_year_id: string;
+          target_annual_level_id: string | null;
+          target_annual_cycle_id: string | null;
+          class_name: string;
+          class_code: string;
+          class_capacity?: number | null;
+          class_room?: string | null;
+        };
+        Returns: string;
+      };
+      create_student_enrollment: {
+        Args: {
+          target_institution_id: string;
+          target_academic_year_id: string;
+          target_annual_level_id: string;
+          student_first_name: string;
+          student_last_name: string;
+          student_gender: string;
+          student_birth_date: string | null;
+          student_birth_place: string;
+          student_address: string;
+          guardian_first_name: string;
+          guardian_last_name: string;
+          guardian_phone: string;
+          guardian_relationship: string;
+          enrollment_kind: string;
+        };
+        Returns: string;
+      };
+      reenroll_student: {
+        Args: {
+          source_enrollment: string;
+          target_academic_year: string;
+          target_annual_level: string;
+          target_decision: string;
+          target_enrollment_status: string;
+          target_reason?: string | null;
+        };
+        Returns: string;
+      };
+      batch_reenroll_students: {
+        Args: { source_enrollments: string[]; target_academic_year: string };
+        Returns: Json;
+      };
+      link_student_guardian: {
+        Args: {
+          target_student_id: string;
+          target_guardian_id: string;
+          guardian_relationship: string;
+          primary_contact?: boolean;
+          financial_responsible?: boolean;
+          emergency_contact?: boolean;
+          pickup_allowed?: boolean;
+          communications_enabled?: boolean;
+        };
+        Returns: void;
+      };
+      create_and_link_guardian: {
+        Args: {
+          target_student_id: string;
+          guardian_first_name: string;
+          guardian_last_name: string;
+          guardian_phone: string;
+          guardian_relationship: string;
+          primary_contact?: boolean;
+          financial_responsible?: boolean;
+          emergency_contact?: boolean;
+        };
+        Returns: string;
+      };
       set_institution_cycle: {
         Args: {
           target_institution_id: string;

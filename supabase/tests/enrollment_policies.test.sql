@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_table('public', 'enrollment_policies', 'enrollment policies exist');
+select has_column('public', 'enrollment_policies', 'allow_pre_registration', 'pre-registration policy exists');
+select has_column('public', 'enrollment_policies', 'require_payment_before_confirmation', 'payment policy exists');
+select has_column('public', 'enrollment_policies', 'capacity_mode', 'capacity policy exists');
+select col_default_is('public', 'enrollment_policies', 'allow_pre_registration', 'true', 'pre-registration enabled by default');
+select col_default_is('public', 'enrollment_policies', 'require_payment_before_confirmation', 'false', 'payment not blocking by default');
+select ok((select relrowsecurity from pg_catalog.pg_class where oid = 'public.enrollment_policies'::regclass), 'RLS active on enrollment policies');
+select table_privs_are('public', 'enrollment_policies', 'anon', array[]::text[]);
+select * from finish();
+rollback;

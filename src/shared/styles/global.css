@@ -121,8 +121,8 @@ input {
   align-items: flex-end;
 }
 .app-content {
-  padding: 2rem;
-  max-width: 1440px;
+  padding: 1.5rem;
+  max-width: 1320px;
   margin: auto;
 }
 .page-heading {
@@ -130,11 +130,11 @@ input {
   justify-content: space-between;
   align-items: flex-start;
   gap: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 .page-heading h1 {
   margin: 0.25rem 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
 }
 .page-heading p {
   margin: 0;
@@ -188,6 +188,538 @@ input {
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+.dialog-spacer {
+  flex: 1;
+}
+.enrollment-dialog {
+  width: min(94vw, 820px);
+}
+.enrollment-dialog .p-steps {
+  margin-bottom: 1.5rem;
+}
+.schooling-message {
+  width: 100%;
+  margin: 1rem 0;
+}
+.schooling-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 0;
+}
+.field-wide {
+  grid-column: 1 / -1;
+}
+.schooling-form-grid .p-dropdown,
+.schooling-form-grid .p-inputtext {
+  width: 100%;
+}
+.enrollment-summary {
+  padding: 1rem 0;
+}
+.enrollment-summary dl,
+.profile-dl {
+  margin: 0;
+}
+.enrollment-summary dl div,
+.profile-dl div {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #edf0f4;
+}
+.enrollment-summary dt,
+.profile-dl dt {
+  color: #637083;
+}
+.enrollment-summary dd,
+.profile-dl dd {
+  margin: 0;
+  font-weight: 600;
+}
+.schooling-list-card .p-card-content {
+  padding-top: 0;
+}
+.students-filter-zone {
+  padding: 0.9rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid #cfe3df;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f1faf8, #f8fbfd);
+}
+.data-surface {
+  overflow: hidden;
+  border: 1px solid #dce5e8;
+  border-radius: 0.75rem;
+  background: white;
+}
+.schooling-filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.schooling-filters > .field {
+  min-width: 190px;
+}
+.advanced-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #f7fafc;
+  border: 1px solid #e3e9ef;
+  border-radius: 0.8rem;
+}
+.advanced-filters .p-dropdown {
+  width: 100%;
+}
+.filter-reset {
+  display: flex;
+  align-items: flex-end;
+}
+.enrollment-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.enrollment-page .p-steps {
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+.enrollment-step {
+  min-height: 360px;
+  padding: 0.5rem 0 1rem;
+}
+.enrollment-step h2 {
+  margin-bottom: 0.25rem;
+}
+.enrollment-step > p {
+  color: #637083;
+}
+.enrollment-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e6ebf0;
+}
+.duplicate-row,
+.document-row,
+.guardian-result {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #e0e7ec;
+  border-radius: 0.7rem;
+  margin-top: 0.5rem;
+  background: white;
+}
+.guardian-result.is-selected {
+  border-color: #187b70;
+  background: #f0faf7;
+}
+.guardian-permissions,
+.guardian-permissions label,
+.page-heading-actions,
+.batch-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.guardian-permissions {
+  padding: 0.75rem 0;
+}
+.guardian-permissions label {
+  gap: 0.4rem;
+}
+.batch-toolbar {
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #dce5e8;
+  border-radius: 0.75rem;
+  background: white;
+}
+.batch-toolbar .field {
+  min-width: 230px;
+}
+.batch-toolbar .p-message {
+  flex: 1;
+  margin: 0;
+}
+.class-assignment-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #dce5e8;
+  border-radius: 0.75rem;
+  background: white;
+}
+.class-assignment-control > div:first-child {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.student-avatar-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.student-avatar-editor img {
+  object-fit: cover;
+}
+.student-avatar-editor .p-fileupload-choose {
+  min-height: auto !important;
+  padding: 0.25rem 0.4rem !important;
+  font-size: 0.72rem;
+}
+.document-upload-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.document-upload-cell small {
+  color: #187b70;
+}
+.duplicate-row {
+  justify-content: space-between;
+}
+.duplicate-row > span {
+  display: flex;
+  flex-direction: column;
+}
+.guardian-search {
+  margin: 1rem 0;
+}
+.guardian-search .field {
+  max-width: 560px;
+}
+.guardian-result {
+  width: 100%;
+  justify-content: space-between;
+  cursor: pointer;
+  color: inherit;
+}
+.policy-card {
+  box-shadow: none;
+  border: 1px solid #dfe7e5;
+}
+.institution-settings-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.institution-settings-stack > .p-card {
+  margin: 0;
+  height: 100%;
+}
+.medium-controls .field {
+  gap: 0.45rem;
+}
+.medium-controls .field > label,
+.medium-controls .field > span:first-child {
+  color: #425267;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.medium-controls .p-inputtext,
+.medium-controls .p-dropdown,
+.medium-controls .p-multiselect,
+.medium-controls .p-calendar,
+.medium-controls .p-inputnumber-input {
+  min-height: 38px;
+}
+.medium-controls .p-dropdown-label,
+.medium-controls .p-multiselect-label {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.medium-controls .p-button:not(.p-button-icon-only) {
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+}
+.institution-settings-stack .settings-grid,
+.policy-card .schooling-form-grid {
+  grid-template-columns: repeat(2, minmax(220px, 360px));
+}
+.policy-list {
+  display: flex;
+  flex-direction: column;
+}
+.policy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #edf1f3;
+}
+.policy-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.policy-row small {
+  color: #637083;
+}
+.schooling-search {
+  flex: 1;
+  min-width: 280px;
+}
+.schooling-search .p-inputtext {
+  width: 100%;
+}
+.student-identity,
+.student-contact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.student-identity > div,
+.student-contact {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+.student-identity small,
+.student-contact small {
+  color: #6a7788;
+}
+.student-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dff5ef;
+  color: #116b61;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.student-avatar-large {
+  width: 72px;
+  height: 72px;
+  font-size: 1.25rem;
+}
+.clickable-row {
+  cursor: pointer;
+}
+.clickable-row:hover {
+  background: #f4faf8 !important;
+}
+.student-profile-header,
+.student-profile-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.student-profile-main {
+  justify-content: flex-start;
+}
+.student-profile-main h1 {
+  margin: 0.1rem 0;
+  font-size: 1.55rem;
+}
+.student-profile-main p {
+  margin: 0;
+  color: #637083;
+}
+.student-profile-tabs {
+  margin-top: 0.75rem;
+}
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+}
+.p-tabview .p-tabview-panels {
+  padding: 1rem 0;
+}
+.student-profile-header {
+  padding: 1rem 1.25rem;
+  border: 1px solid #e3e9ef;
+  border-radius: 0.8rem;
+  background: white;
+}
+.student-profile-header-actions,
+.student-profile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.student-profile-header-actions {
+  flex-direction: column;
+  align-items: flex-end;
+}
+.menu-danger .p-menuitem-text,
+.menu-danger .p-menuitem-icon {
+  color: #b42318;
+}
+.profile-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid #e3e9ef;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.profile-section {
+  padding: 1rem;
+  min-width: 0;
+}
+.profile-section + .profile-section {
+  border-left: 1px solid #e3e9ef;
+}
+.profile-section h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+.profile-dl div {
+  grid-template-columns: minmax(100px, 42%) minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+.guardian-list {
+  border: 1px solid #e3e9ef;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.guardian-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+.guardian-line + .guardian-line {
+  border-top: 1px solid #edf1f4;
+}
+.policy-flat-panel,
+.reenrollment-decision {
+  padding: 1rem 1.25rem;
+  border: 1px solid #dfe8e5;
+  border-radius: 0.8rem;
+  background: #fff;
+}
+.policy-flat-panel > header,
+.reenrollment-decision > header {
+  margin-bottom: 0.75rem;
+}
+.policy-flat-panel h2,
+.reenrollment-decision h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.policy-flat-panel header p,
+.reenrollment-decision header p {
+  margin: 0.25rem 0 0;
+  color: #637083;
+}
+.reenrollment-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.reenrollment-side {
+  padding: 1rem 1.25rem;
+  border: 1px solid #dfe8e5;
+  border-radius: 0.8rem;
+}
+.reenrollment-side.current {
+  background: #f6f8fa;
+}
+.reenrollment-side.target {
+  background: #f2fbf8;
+  border-color: #bfe2d8;
+}
+.reenrollment-side h2 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+.step-label {
+  color: #176f63;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.reenrollment-arrow {
+  align-self: center;
+  color: #178473;
+}
+.single-column {
+  grid-template-columns: 1fr;
+}
+.reenrollment-summary {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #19a38c;
+  background: #f2fbf8;
+}
+@media (max-width: 760px) {
+  .reenrollment-comparison {
+    grid-template-columns: 1fr;
+  }
+  .reenrollment-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+}
+.guardian-line > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.guardian-line small {
+  color: #637083;
+}
+@media (max-width: 760px) {
+  .schooling-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .field-wide {
+    grid-column: auto;
+  }
+  .enrollment-dialog .p-steps-title {
+    display: none;
+  }
+  .institution-settings-stack .settings-grid,
+  .policy-card .schooling-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .institution-settings-stack {
+    grid-template-columns: 1fr;
+  }
+  .profile-overview-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-section + .profile-section {
+    border-top: 1px solid #e3e9ef;
+    border-left: 0;
+  }
 }
 .institution-selector {
   display: flex;
@@ -285,6 +817,84 @@ input {
 }
 .settings-content {
   min-width: 0;
+}
+.settings-panel-surface {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.settings-panel-heading {
+  padding: 0.2rem 0 0.75rem;
+  border-bottom: 1px solid #dfe7ea;
+}
+.settings-panel-heading h2,
+.settings-panel-heading p {
+  margin: 0;
+}
+.settings-panel-heading h2 {
+  font-size: 1.1rem;
+}
+.settings-panel-heading p {
+  margin-top: 0.3rem;
+  color: #637083;
+  font-size: 0.875rem;
+}
+.table-search-bar {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 380px) auto;
+  align-items: center;
+  gap: 0.65rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #d5e5e2;
+  border-radius: 0.65rem;
+  background: #f3faf8;
+}
+.table-search-bar > label {
+  color: #315a55;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.table-search-bar .p-input-icon-left,
+.table-search-bar .p-inputtext {
+  width: 100%;
+}
+.table-search-clear {
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #637083;
+  cursor: pointer;
+}
+.p-datatable {
+  overflow: hidden;
+  border: 1px solid #dce5e8;
+  border-radius: 0.7rem;
+  background: white;
+}
+.p-datatable .p-datatable-thead > tr > th {
+  padding: 0.7rem 0.8rem;
+  border-color: #dfe7ea;
+  background: #f3f7f8;
+  color: #38505d;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.68rem 0.8rem;
+  border-color: #edf1f3;
+  font-size: 0.875rem;
+}
+.p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background: #fbfcfd;
+}
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #eef8f5;
 }
 .structure-page {
   display: flex;
@@ -411,6 +1021,14 @@ input {
 .subject-pick-item small {
   color: #718096;
   font-weight: 400;
+}
+.cycle-accordion-header strong {
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+.cycle-accordion-header span {
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 .subject-level-toolbar {
   display: flex;
