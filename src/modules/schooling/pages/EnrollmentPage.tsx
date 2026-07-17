@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Checkbox } from "primereact/checkbox";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
@@ -9,6 +8,7 @@ import { Message } from "primereact/message";
 import { Steps } from "primereact/steps";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { listAnnualAcademicLevels } from "../../settings/services/academic-structure.service";
+import { SchoolingPanel } from "../components/SchoolingPanel";
 import { enrollmentSchema } from "../schemas/enrollment.schema";
 import {
   getEnrollmentPolicy,
@@ -23,6 +23,7 @@ import type { Database } from "../../../shared/lib/supabase/database.types";
 import type { DuplicateCandidate, EnrollmentInput } from "../types/schooling";
 
 type Guardian = Database["public"]["Tables"]["guardians"]["Row"];
+
 const initial: EnrollmentInput = {
   firstName: "",
   lastName: "",
@@ -37,6 +38,7 @@ const initial: EnrollmentInput = {
   annualLevelId: "",
   kind: "pre_registered",
 };
+
 const stepItems = [
   "Recherche",
   "Identité",
@@ -46,6 +48,7 @@ const stepItems = [
   "Frais",
   "Récapitulatif",
 ].map((label) => ({ label }));
+
 const requiredDocuments = [
   "Extrait de naissance",
   "Photo d’identité",
@@ -67,6 +70,7 @@ export function EnrollmentPage() {
   const [documents, setDocuments] = useState<string[]>([]);
   const [failure, setFailure] = useState("");
   const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     if (!institutionId || !yearId) return;
     void Promise.all([
@@ -87,6 +91,7 @@ export function EnrollmentPage() {
         setFailure("Impossible de préparer le parcours d’inscription."),
       );
   }, [institutionId, yearId]);
+
   const levelOptions = useMemo(
     () =>
       levels.map((level) => ({
@@ -95,8 +100,10 @@ export function EnrollmentPage() {
       })),
     [levels],
   );
+
   const set = (key: keyof EnrollmentInput, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
+
   const findDuplicates = async () => {
     if (!form.firstName || !form.lastName) {
       setFailure("Saisissez le nom et le prénom pour rechercher l’élève.");
@@ -111,26 +118,31 @@ export function EnrollmentPage() {
     );
     return true;
   };
+
   const next = async () => {
     setFailure("");
     try {
       if (active === 0 && !(await findDuplicates())) return;
-      if (active === 1 && (!form.firstName || !form.lastName))
+      if (active === 1 && (!form.firstName || !form.lastName)) {
         throw new Error("L’identité est incomplète.");
+      }
       if (
         active === 2 &&
         (!form.guardianFirstName ||
           !form.guardianLastName ||
           form.guardianPhone.length < 8)
-      )
+      ) {
         throw new Error("Sélectionnez ou créez un responsable principal.");
-      if (active === 3 && !form.annualLevelId)
+      }
+      if (active === 3 && !form.annualLevelId) {
         throw new Error("Sélectionnez le niveau demandé.");
+      }
       setActive((value) => Math.min(6, value + 1));
     } catch (error) {
       setFailure(error instanceof Error ? error.message : "Étape incomplète.");
     }
   };
+
   const chooseGuardian = (guardian: Guardian) => {
     set("guardianFirstName", guardian.first_name);
     set("guardianLastName", guardian.last_name);
@@ -138,14 +150,16 @@ export function EnrollmentPage() {
     setGuardians([]);
     setGuardianQuery(`${guardian.first_name} ${guardian.last_name}`);
   };
+
   const confirmationBlocked =
     form.kind === "confirmed" &&
     Boolean(
       policy?.require_payment_before_confirmation ||
-      (!policy?.allow_missing_documents &&
-        documents.length < requiredDocuments.length) ||
-      policy?.require_class_assignment,
+        (!policy?.allow_missing_documents &&
+          documents.length < requiredDocuments.length) ||
+        policy?.require_class_assignment,
     );
+
   const submit = async () => {
     const parsed = enrollmentSchema.safeParse(form);
     if (!parsed.success) {
@@ -168,19 +182,18 @@ export function EnrollmentPage() {
       setSaving(false);
     }
   };
-  if (!yearId)
+
+  if (!yearId) {
     return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+  }
+
   return (
-    <section className="enrollment-page medium-controls">
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Scolarité · {year?.name}</span>
-          <h1>Inscrire un élève</h1>
-          <p>
-            Le dossier peut être enregistré progressivement sans perdre les
-            informations.
-          </p>
-        </div>
+    <SchoolingPanel
+      className="enrollment-page medium-controls"
+      path={`Scolarité · ${year?.name ?? "Année scolaire"} · Inscription`}
+      title="Inscrire un élève"
+      description="Le dossier peut être enregistré progressivement sans perdre les informations."
+      actions={
         <Button
           label="Quitter"
           icon="pi pi-times"
@@ -188,18 +201,24 @@ export function EnrollmentPage() {
           text
           onClick={() => void navigate("/scolarite/eleves")}
         />
-      </header>
-      <Card>
-        <Steps model={stepItems} activeIndex={active} readOnly />
-        {failure && (
-          <Message
-            severity="error"
-            text={failure}
-            className="schooling-message"
-          />
-        )}
-        {active === 0 && (
-          <div className="enrollment-step">
+      }
+      alert={
+        failure ? (
+          <Message severity="error" text={failure} className="schooling-message" />
+        ) : undefined
+      }
+      toolbar={
+        <Steps
+          model={stepItems}
+          activeIndex={active}
+          readOnly
+          className="w-full"
+        />
+      }
+    >
+      <div className="space-y-5">
+        {active === 0 ? (
+          <section className="enrollment-step">
             <h2>Rechercher avant de créer</h2>
             <p>Cette vérification évite de recréer un élève déjà connu.</p>
             <div className="schooling-form-grid">
@@ -207,23 +226,23 @@ export function EnrollmentPage() {
                 <span>Prénom de l’élève</span>
                 <InputText
                   value={form.firstName}
-                  onChange={(e) => set("firstName", e.target.value)}
+                  onChange={(event) => set("firstName", event.target.value)}
                 />
               </label>
               <label className="field">
                 <span>Nom de l’élève</span>
                 <InputText
                   value={form.lastName}
-                  onChange={(e) => set("lastName", e.target.value)}
+                  onChange={(event) => set("lastName", event.target.value)}
                 />
               </label>
             </div>
-            {duplicates.length > 0 && (
+            {duplicates.length > 0 ? (
               <Message
                 severity="warn"
                 text={`${duplicates.length} dossier(s) ressemblant(s) trouvé(s). Ouvrez la fiche existante avant de créer un doublon.`}
               />
-            )}
+            ) : null}
             {duplicates.map((item) => (
               <div className="duplicate-row" key={item.id}>
                 <span>
@@ -239,24 +258,25 @@ export function EnrollmentPage() {
                 />
               </div>
             ))}
-          </div>
-        )}
-        {active === 1 && (
-          <div className="enrollment-step">
+          </section>
+        ) : null}
+
+        {active === 1 ? (
+          <section className="enrollment-step">
             <h2>Identité de l’élève</h2>
             <div className="schooling-form-grid">
               <label className="field">
                 <span>Prénom *</span>
                 <InputText
                   value={form.firstName}
-                  onChange={(e) => set("firstName", e.target.value)}
+                  onChange={(event) => set("firstName", event.target.value)}
                 />
               </label>
               <label className="field">
                 <span>Nom *</span>
                 <InputText
                   value={form.lastName}
-                  onChange={(e) => set("lastName", e.target.value)}
+                  onChange={(event) => set("lastName", event.target.value)}
                 />
               </label>
               <label className="field">
@@ -268,7 +288,7 @@ export function EnrollmentPage() {
                     { label: "Féminin", value: "female" },
                     { label: "Autre", value: "other" },
                   ]}
-                  onChange={(e) => set("gender", String(e.value))}
+                  onChange={(event) => set("gender", String(event.value))}
                 />
               </label>
               <label className="field">
@@ -276,28 +296,29 @@ export function EnrollmentPage() {
                 <InputText
                   type="date"
                   value={form.birthDate}
-                  onChange={(e) => set("birthDate", e.target.value)}
+                  onChange={(event) => set("birthDate", event.target.value)}
                 />
               </label>
               <label className="field">
                 <span>Lieu de naissance</span>
                 <InputText
                   value={form.birthPlace}
-                  onChange={(e) => set("birthPlace", e.target.value)}
+                  onChange={(event) => set("birthPlace", event.target.value)}
                 />
               </label>
               <label className="field">
                 <span>Adresse</span>
                 <InputText
                   value={form.address}
-                  onChange={(e) => set("address", e.target.value)}
+                  onChange={(event) => set("address", event.target.value)}
                 />
               </label>
             </div>
-          </div>
-        )}
-        {active === 2 && (
-          <div className="enrollment-step">
+          </section>
+        ) : null}
+
+        {active === 2 ? (
+          <section className="enrollment-step">
             <h2>Responsable principal</h2>
             <div className="guardian-search">
               <label className="field">
@@ -305,7 +326,7 @@ export function EnrollmentPage() {
                 <span className="p-inputgroup">
                   <InputText
                     value={guardianQuery}
-                    onChange={(e) => setGuardianQuery(e.target.value)}
+                    onChange={(event) => setGuardianQuery(event.target.value)}
                     placeholder="Ex. 620 00 00 00"
                   />
                   <Button
@@ -342,21 +363,25 @@ export function EnrollmentPage() {
                 <span>Prénom *</span>
                 <InputText
                   value={form.guardianFirstName}
-                  onChange={(e) => set("guardianFirstName", e.target.value)}
+                  onChange={(event) =>
+                    set("guardianFirstName", event.target.value)
+                  }
                 />
               </label>
               <label className="field">
                 <span>Nom *</span>
                 <InputText
                   value={form.guardianLastName}
-                  onChange={(e) => set("guardianLastName", e.target.value)}
+                  onChange={(event) =>
+                    set("guardianLastName", event.target.value)
+                  }
                 />
               </label>
               <label className="field">
                 <span>Téléphone *</span>
                 <InputText
                   value={form.guardianPhone}
-                  onChange={(e) => set("guardianPhone", e.target.value)}
+                  onChange={(event) => set("guardianPhone", event.target.value)}
                 />
               </label>
               <label className="field">
@@ -369,14 +394,17 @@ export function EnrollmentPage() {
                     { label: "Tuteur", value: "guardian" },
                     { label: "Autre", value: "other" },
                   ]}
-                  onChange={(e) => set("guardianRelationship", String(e.value))}
+                  onChange={(event) =>
+                    set("guardianRelationship", String(event.value))
+                  }
                 />
               </label>
             </div>
-          </div>
-        )}
-        {active === 3 && (
-          <div className="enrollment-step">
+          </section>
+        ) : null}
+
+        {active === 3 ? (
+          <section className="enrollment-step">
             <h2>Scolarité demandée</h2>
             <div className="schooling-form-grid">
               <label className="field">
@@ -385,7 +413,9 @@ export function EnrollmentPage() {
                   value={form.annualLevelId}
                   options={levelOptions}
                   filter
-                  onChange={(e) => set("annualLevelId", String(e.value))}
+                  onChange={(event) =>
+                    set("annualLevelId", String(event.value))
+                  }
                 />
               </label>
               <label className="field">
@@ -397,32 +427,38 @@ export function EnrollmentPage() {
                       ? [{ label: "Préinscription", value: "pre_registered" }]
                       : []),
                     ...(policy?.allow_direct_enrollment
-                      ? [{ label: "Inscription confirmée", value: "confirmed" }]
+                      ? [
+                          {
+                            label: "Inscription confirmée",
+                            value: "confirmed",
+                          },
+                        ]
                       : []),
                   ]}
-                  onChange={(e) => set("kind", String(e.value))}
+                  onChange={(event) => set("kind", String(event.value))}
                 />
               </label>
             </div>
-            {policy?.require_class_assignment && (
+            {policy?.require_class_assignment ? (
               <Message
                 severity="warn"
                 text="Cet établissement exige une classe. La confirmation sera disponible après la mise en place des classes."
               />
-            )}
-          </div>
-        )}
-        {active === 4 && (
-          <div className="enrollment-step">
+            ) : null}
+          </section>
+        ) : null}
+
+        {active === 4 ? (
+          <section className="enrollment-step">
             <h2>Documents</h2>
             <p>Cochez uniquement les pièces réellement reçues.</p>
             {requiredDocuments.map((document) => (
               <label className="document-row" key={document}>
                 <Checkbox
                   checked={documents.includes(document)}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setDocuments((current) =>
-                      e.checked
+                      event.checked
                         ? [...current, document]
                         : current.filter((item) => item !== document),
                     )
@@ -431,31 +467,33 @@ export function EnrollmentPage() {
                 <span>{document}</span>
               </label>
             ))}
-            {!policy?.allow_missing_documents && (
+            {!policy?.allow_missing_documents ? (
               <Message
                 severity="warn"
                 text="Toutes les pièces sont obligatoires pour confirmer l’inscription."
               />
-            )}
-          </div>
-        )}
-        {active === 5 && (
-          <div className="enrollment-step">
+            ) : null}
+          </section>
+        ) : null}
+
+        {active === 5 ? (
+          <section className="enrollment-step">
             <h2>Frais applicables</h2>
             <Message
               severity="info"
               text="Les frais configurés pour le niveau seront générés au moment de la confirmation dans le prochain lot Finance scolaire."
             />
-            {policy?.require_payment_before_confirmation && (
+            {policy?.require_payment_before_confirmation ? (
               <Message
                 severity="warn"
                 text="Un paiement est obligatoire avant confirmation selon les règles de l’établissement."
               />
-            )}
-          </div>
-        )}
-        {active === 6 && (
-          <div className="enrollment-step enrollment-summary">
+            ) : null}
+          </section>
+        ) : null}
+
+        {active === 6 ? (
+          <section className="enrollment-step enrollment-summary">
             <h2>Récapitulatif</h2>
             <dl>
               <div>
@@ -496,15 +534,16 @@ export function EnrollmentPage() {
                 </dd>
               </div>
             </dl>
-            {confirmationBlocked && (
+            {confirmationBlocked ? (
               <Message
                 severity="warn"
                 text="La confirmation est bloquée par une règle de l’établissement. Enregistrez plutôt une préinscription ou complétez les exigences."
               />
-            )}
-          </div>
-        )}
-        <footer className="enrollment-actions">
+            ) : null}
+          </section>
+        ) : null}
+
+        <footer className="enrollment-actions border-t border-slate-200 pt-4">
           <Button
             label="Enregistrer le brouillon"
             severity="secondary"
@@ -512,14 +551,14 @@ export function EnrollmentPage() {
             disabled
           />
           <span className="dialog-spacer" />
-          {active > 0 && (
+          {active > 0 ? (
             <Button
               label="Précédent"
               severity="secondary"
               outlined
               onClick={() => setActive((value) => value - 1)}
             />
-          )}
+          ) : null}
           {active < 6 ? (
             <Button
               label="Continuer"
@@ -541,7 +580,7 @@ export function EnrollmentPage() {
             />
           )}
         </footer>
-      </Card>
-    </section>
+      </div>
+    </SchoolingPanel>
   );
 }
