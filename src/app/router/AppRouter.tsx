@@ -50,7 +50,7 @@ export function AppRouter() {
   return (
     <Suspense
       fallback={
-        <div className="content-state">
+        <div className="grid min-h-[50vh] place-items-center">
           <ProgressSpinner aria-label="Chargement de la page" />
         </div>
       }
