@@ -8,11 +8,12 @@ import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { SettingsSidebar } from "../components/SettingsSidebar";
 import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
-import { AcademicYearsPanel } from "../../settings/components/AcademicYearsPanel";
-import { LevelsSettingsPanel } from "../../settings/components/LevelsSettingsPanel";
-import { FinancialRulesSettingsPanel } from "../../settings/components/FinancialRulesSettingsPanel";
-import { PeopleAccessPanel } from "../../settings/components/PeopleAccessPanel";
-import { EvaluationSettingsPage } from "../../settings/pages/EvaluationSettingsPage";
+import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
+import { LevelsSettingsPanel } from "../components/LevelsSettingsPanel";
+import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
+import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
+import { AssessmentTypesSettingsPage } from "./AssessmentTypesSettingsPage";
+import { GradingFormulasSettingsPage } from "./GradingFormulasSettingsPage";
 import { EnrollmentPolicyPanel } from "../../schooling/components/EnrollmentPolicyPanel";
 import { ReenrollmentPolicyPanel } from "../../schooling/components/ReenrollmentPolicyPanel";
 import { DocumentRequirementsPanel } from "../../schooling/components/DocumentRequirementsPanel";
@@ -26,7 +27,8 @@ const sections = [
   "niveaux",
   "classes",
   "matieres",
-  "evaluations-formules",
+  "types-notes",
+  "formules-calcul",
   "regles-financieres",
   "utilisateurs-roles",
 ] as const;
@@ -142,8 +144,10 @@ export function SettingsPage() {
             <ClassesPage />
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
-          ) : section === "evaluations-formules" ? (
-            <EvaluationSettingsPage />
+          ) : section === "types-notes" ? (
+            <AssessmentTypesSettingsPage />
+          ) : section === "formules-calcul" ? (
+            <GradingFormulasSettingsPage />
           ) : section === "regles-financieres" ? (
             <FinancialRulesSettingsPanel />
           ) : (
