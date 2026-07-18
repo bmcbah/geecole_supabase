@@ -145,36 +145,37 @@ export function StudentProfilePage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-2xl border border-[#2fbf7f]/30 bg-[#3ecf8e] shadow-sm">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_-10%,rgba(255,255,255,0.34),transparent_30%),radial-gradient(circle_at_75%_120%,rgba(5,122,85,0.20),transparent_34%),linear-gradient(125deg,#34b982_0%,#3ecf8e_52%,#55d9a0_100%)]" />
-        <div className="pointer-events-none absolute -right-16 -top-24 size-56 rounded-full border border-white/15" />
-        <div className="pointer-events-none absolute right-24 top-8 size-24 rounded-full border border-white/10" />
-        <div className="pointer-events-none absolute right-[36%] -bottom-20 size-44 rounded-full border border-emerald-900/10" />
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.055] [background-image:linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="pointer-events-none absolute -right-20 -top-28 size-64 rounded-full border border-emerald-300/40" />
+        <div className="pointer-events-none absolute right-20 top-8 size-28 rounded-full border border-emerald-300/25" />
+        <div className="pointer-events-none absolute right-[34%] -bottom-24 size-48 rounded-full border border-emerald-200/30" />
+        <div className="pointer-events-none absolute right-8 top-7 text-[112px] text-emerald-500/[0.035]"><i className="pi pi-id-card" /></div>
         <div className="relative px-5 py-4 sm:px-6 lg:px-7">
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="shrink-0 rounded-2xl bg-white/12 p-1 ring-1 ring-white/25">
+              <div className="shrink-0 rounded-2xl bg-emerald-50 p-1 ring-1 ring-emerald-100">
                 <StudentAvatarUpload institutionId={institutionId} studentId={student.id} firstName={student.first_name} lastName={student.last_name} path={student.photo_url} onSaved={reload} />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/14 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white">Dossier élève</span>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 ring-1 ring-inset ring-emerald-100">Dossier élève</span>
                   <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClasses[status] ?? statusClasses.draft}`}>{statusLabels[status] ?? status}</span>
                 </div>
-                <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-white">{fullName}</h1>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/90">
-                  <span className="inline-flex items-center gap-2"><i className="pi pi-id-card text-white/75" />{student.matricule}</span>
-                  <span className="inline-flex items-center gap-2"><i className="pi pi-calendar text-white/75" />{year?.name ?? "Année non définie"}</span>
-                  {age !== null ? <span className="inline-flex items-center gap-2"><i className="pi pi-user text-white/75" />{age} ans</span> : null}
+                <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-950">{fullName}</h1>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-slate-500">
+                  <span className="inline-flex items-center gap-2"><i className="pi pi-id-card text-emerald-500" />{student.matricule}</span>
+                  <span className="inline-flex items-center gap-2"><i className="pi pi-calendar text-emerald-500" />{year?.name ?? "Année non définie"}</span>
+                  {age !== null ? <span className="inline-flex items-center gap-2"><i className="pi pi-user text-emerald-500" />{age} ans</span> : null}
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[470px] xl:self-start">
               {stats.map(([label, value, icon]) => (
-                <div key={label} className="flex min-h-[58px] flex-col justify-center rounded-xl bg-white/12 px-3 py-2 ring-1 ring-inset ring-white/20 backdrop-blur-sm">
-                  <div className="flex items-center justify-between gap-2 text-white/75"><span className="text-[10px] font-bold uppercase tracking-[0.1em]">{label}</span><i className={`pi ${icon} text-[11px]`} /></div>
-                  <strong className="mt-1 block truncate text-sm font-semibold text-white">{value}</strong>
+                <div key={label} className="flex min-h-[58px] flex-col justify-center rounded-xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-center justify-between gap-2 text-slate-400"><span className="text-[10px] font-bold uppercase tracking-[0.1em]">{label}</span><i className={`pi ${icon} text-[11px] text-emerald-500`} /></div>
+                  <strong className="mt-1 block truncate text-sm font-semibold text-slate-900">{value}</strong>
                 </div>
               ))}
             </div>
