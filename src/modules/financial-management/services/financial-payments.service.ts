@@ -9,6 +9,8 @@ const mapPayment = (row: any): FinancialPayment => ({
   receiptNumber: row.receipt_number,
   studentName: row.account?.student_name_snapshot ?? "",
   matricule: row.account?.matricule_snapshot ?? "",
+  levelName: row.account?.level_name_snapshot ?? "",
+  cycleName: row.account?.cycle_name_snapshot ?? "",
   paymentDate: row.payment_date,
   amount: Number(row.amount),
   method: row.method,
@@ -50,13 +52,18 @@ export async function listFinancialPaymentsPage(
 
   let query = db
     .from("financial_payments")
-    .select("*, account:student_financial_accounts!inner(student_name_snapshot,matricule_snapshot)", { count: "exact" })
+    .select(
+      "*, account:student_financial_accounts!inner(student_name_snapshot,matricule_snapshot,level_name_snapshot,cycle_name_snapshot)",
+      { count: "exact" },
+    )
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId);
 
   if (request.search?.trim()) {
     const value = request.search.trim().replace(/,/g, " ");
-    query = query.or(`receipt_number.ilike.%${value}%,external_reference.ilike.%${value}%,account.student_name_snapshot.ilike.%${value}%,account.matricule_snapshot.ilike.%${value}%`);
+    query = query.or(
+      `receipt_number.ilike.%${value}%,external_reference.ilike.%${value}%,account.student_name_snapshot.ilike.%${value}%,account.matricule_snapshot.ilike.%${value}%,account.level_name_snapshot.ilike.%${value}%,account.cycle_name_snapshot.ilike.%${value}%`,
+    );
   }
   if (request.status) query = query.eq("status", request.status);
 
