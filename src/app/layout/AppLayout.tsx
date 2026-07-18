@@ -176,7 +176,7 @@ export function AppLayout() {
                 <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
                   {({ isActive }) => (
                     <>
-                      <span className="grid w-5 shrink-0 place-items-center">
+                      <span className="grid mx-1 shrink-0 place-items-center">
                         <i className={`pi ${item.icon} text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
                       </span>
                       <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
