@@ -5,7 +5,6 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
-import { SettingsSidebar } from "../components/SettingsSidebar";
 import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
@@ -85,79 +84,74 @@ export function SettingsPage() {
         }
       />
 
-      <div className="settings-layout">
-        <SettingsSidebar />
-        <div className="settings-content">
-          {section === "etablissement" ? (
-            <div className="space-y-3">
-              <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-200 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Informations générales
-                  </h2>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Identité, coordonnées et préférences utilisées dans toute
-                    l’application.
-                  </p>
-                </div>
-                <div className="p-3">
-                  <InstitutionDetailsForm
-                    institution={selected}
-                    onUpdated={() => void refresh()}
-                  />
-                </div>
-              </section>
+      <div className="settings-content">
+        {section === "etablissement" ? (
+          <div className="space-y-3">
+            <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-4 py-3">
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Informations générales
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Identité, coordonnées et préférences utilisées dans toute
+                  l’application.
+                </p>
+              </div>
+              <div className="p-3">
+                <InstitutionDetailsForm
+                  institution={selected}
+                  onUpdated={() => void refresh()}
+                />
+              </div>
+            </section>
 
-              <section>
-                <div className="mb-2 px-1">
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Options avancées
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Ouvrez uniquement la rubrique que vous souhaitez modifier.
-                  </p>
-                </div>
-                <Accordion className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5">
-                  <AccordionTab header="Règles d’inscription">
-                    <EnrollmentPolicyPanel institutionId={selected.id} />
-                  </AccordionTab>
-                  <AccordionTab header="Règles de réinscription">
-                    <ReenrollmentPolicyPanel institutionId={selected.id} />
-                  </AccordionTab>
-                  <AccordionTab header="Documents requis">
-                    <DocumentRequirementsPanel institutionId={selected.id} />
-                  </AccordionTab>
-                  <AccordionTab header="Organisation des classes">
-                    <ClassOrganizationCard
-                      institution={selected}
-                      onSaved={refresh}
-                    />
-                  </AccordionTab>
-                </Accordion>
-              </section>
-            </div>
-          ) : section === "annees-scolaires" ? (
-            <AcademicYearsPanel institutionId={selected.id} />
-          ) : section === "cycles" ? (
-            <CyclesSettingsPanel />
-          ) : section === "niveaux" ? (
-            <LevelsSettingsPanel institutionId={selected.id} />
-          ) : section === "classes" ? (
-            <ClassesPage />
-          ) : section === "matieres" ? (
-            <SubjectsSettingsPanel />
-          ) : section === "types-notes" ? (
-            <AssessmentTypesSettingsPage />
-          ) : section === "formules-calcul" ? (
-            <GradingFormulasSettingsPage />
-          ) : section === "grilles-tarifaires" ? (
-            <SchoolFeesSettingsPanel />
-          ) : section === "plans-paiement" ? (
-            <PaymentPlansSettingsPanel />
-          ) : (
-            <PeopleAccessPanel />
-          )}
-        </div>
+            <section>
+              <div className="mb-2 px-1">
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Options avancées
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Ouvrez uniquement la rubrique que vous souhaitez modifier.
+                </p>
+              </div>
+              <Accordion className="[&_.p-accordion-content]:p-3 [&_.p-accordion-header-link]:px-3 [&_.p-accordion-header-link]:py-2.5 [&_.p-accordion-header-text]:text-sm [&_.p-accordion-tab]:mb-1.5">
+                <AccordionTab header="Règles d’inscription">
+                  <EnrollmentPolicyPanel institutionId={selected.id} />
+                </AccordionTab>
+                <AccordionTab header="Règles de réinscription">
+                  <ReenrollmentPolicyPanel institutionId={selected.id} />
+                </AccordionTab>
+                <AccordionTab header="Documents requis">
+                  <DocumentRequirementsPanel institutionId={selected.id} />
+                </AccordionTab>
+                <AccordionTab header="Organisation des classes">
+                  <ClassOrganizationCard
+                    institution={selected}
+                    onSaved={refresh}
+                  />
+                </AccordionTab>
+              </Accordion>
+            </section>
+          </div>
+        ) : section === "annees-scolaires" ? (
+          <AcademicYearsPanel institutionId={selected.id} />
+        ) : section === "cycles" ? (
+          <CyclesSettingsPanel />
+        ) : section === "niveaux" ? (
+          <LevelsSettingsPanel institutionId={selected.id} />
+        ) : section === "classes" ? (
+          <ClassesPage />
+        ) : section === "matieres" ? (
+          <SubjectsSettingsPanel />
+        ) : section === "types-notes" ? (
+          <AssessmentTypesSettingsPage />
+        ) : section === "formules-calcul" ? (
+          <GradingFormulasSettingsPage />
+        ) : section === "grilles-tarifaires" ? (
+          <SchoolFeesSettingsPanel />
+        ) : (
+          <PeopleAccessPanel />
+        )}
       </div>
     </section>
   );
