@@ -24,18 +24,10 @@ export type FinancialAccount = {
   generatedAt: string | null;
 };
 
-export type FinancialAccountItem = {
-  id: string;
-  accountId: string;
-  feeTypeId: string | null;
-  code: string;
-  label: string;
-  amount: number;
-};
-
 export type FinancialInstallment = {
   id: string;
   accountId: string;
+  itemId: string | null;
   sequence: number;
   label: string;
   percentage: number;
@@ -43,6 +35,18 @@ export type FinancialInstallment = {
   amount: number;
   paidAmount: number;
   balanceAmount: number;
+};
+
+export type FinancialAccountItem = {
+  id: string;
+  accountId: string;
+  feeTypeId: string | null;
+  paymentPlanId: string | null;
+  paymentPlanName: string | null;
+  code: string;
+  label: string;
+  amount: number;
+  installments?: FinancialInstallment[];
 };
 
 export type FinancialAccountDetails = FinancialAccount & {
