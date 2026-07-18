@@ -45,6 +45,11 @@ const BatchReenrollmentPage = lazy(() =>
     (module) => ({ default: module.BatchReenrollmentPage }),
   ),
 );
+const FinancialAccountsPage = lazy(() =>
+  import("../../modules/financial-management/pages/FinancialAccountsPage").then(
+    (module) => ({ default: module.FinancialAccountsPage }),
+  ),
+);
 
 export function AppRouter() {
   return (
@@ -91,6 +96,10 @@ export function AppRouter() {
             <Route
               path="/scolarite/reinscriptions"
               element={<BatchReenrollmentPage />}
+            />
+            <Route
+              path="/gestion-financiere/dossiers"
+              element={<FinancialAccountsPage />}
             />
           </Route>
         </Route>
