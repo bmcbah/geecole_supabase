@@ -46,6 +46,10 @@ export type FinancialAccountItem = {
   code: string;
   label: string;
   amount: number;
+  adjustmentAmount: number;
+  netAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
   installments?: FinancialInstallment[];
 };
 
