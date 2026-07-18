@@ -20,6 +20,8 @@ export type FinancialPayment = {
   externalReference: string | null;
   note: string | null;
   status: FinancialPaymentStatus;
+  cancellationReason: string | null;
+  cancelledAt: string | null;
   createdAt: string;
 };
 
