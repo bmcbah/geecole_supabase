@@ -5,6 +5,7 @@ import {
   updateStudentAvatar,
   uploadSchoolFile,
 } from "../services/documents.service";
+
 export function StudentAvatarUpload({
   institutionId,
   studentId,
@@ -21,10 +22,12 @@ export function StudentAvatarUpload({
   onSaved: () => Promise<void>;
 }) {
   const [url, setUrl] = useState("");
+
   useEffect(() => {
     if (path) void getSchoolFileUrl(path).then(setUrl);
     else setUrl("");
   }, [path]);
+
   const upload = async (event: FileUploadHandlerEvent) => {
     const file = event.files[0];
     if (!file) return;
@@ -36,18 +39,21 @@ export function StudentAvatarUpload({
     await updateStudentAvatar(studentId, stored);
     await onSaved();
   };
+
   return (
-    <div className="student-avatar-editor">
+    <div className="student-avatar-editor flex flex-col items-center justify-center">
       {url ? (
         <img
           src={url}
           alt={`${firstName} ${lastName}`}
-          className="student-avatar student-avatar-large"
+          className="student-avatar student-avatar-large block shrink-0 object-cover object-center"
         />
       ) : (
-        <span className="student-avatar student-avatar-large">
-          {firstName[0]}
-          {lastName[0]}
+        <span className="student-avatar student-avatar-large flex shrink-0 items-center justify-center text-center font-semibold leading-none">
+          <span className="block leading-none">
+            {firstName[0]}
+            {lastName[0]}
+          </span>
         </span>
       )}
       <FileUpload
