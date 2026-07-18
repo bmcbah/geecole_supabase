@@ -7,17 +7,20 @@ import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { MultiSelect } from "primereact/multiselect";
+import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { Toolbar } from "primereact/toolbar";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deletePerson,
   invitePerson,
   listPeople,
   listPersonInvitations,
   savePerson,
-} from "../../../features/settings/services/annual-settings.service";
+} from "../services/annual-settings.service";
 import type { AppRole } from "../../../shared/lib/supabase/database.types";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
 
@@ -170,160 +173,185 @@ export function PeopleAccessPanel() {
   }, [invitationSearch, invitations, people]);
 
   return (
-    <section className="space-y-6">
-      <TablePanel
-        title="Personnes"
-        description="Gérez les élèves, parents et membres du personnel de l’établissement."
+    <section className="space-y-3 bg-white p-4">
+      <PageHeader
+        title="Personnes et accès"
+        description="Gérez les personnes de l’établissement et suivez leurs invitations de connexion."
         meta={
-          <Tag
-            value={`${filteredPeople.length} personne${filteredPeople.length > 1 ? "s" : ""}`}
-            severity="secondary"
-          />
+          <div className="flex flex-wrap gap-2">
+            <Tag
+              value={`${filteredPeople.length} personne${filteredPeople.length > 1 ? "s" : ""}`}
+              severity="secondary"
+            />
+            <Tag
+              value={`${filteredInvitations.length} invitation${filteredInvitations.length > 1 ? "s" : ""}`}
+              severity="info"
+            />
+          </div>
         }
-        search={
-          <TableSearch
-            id="people-search"
-            value={peopleSearch}
-            onChange={setPeopleSearch}
-            placeholder="Rechercher une personne"
-          />
-        }
-        actions={
-          <Button
-            label="Nouvelle personne"
-            icon="pi pi-plus"
-            size="small"
-            onClick={() => open()}
-          />
-        }
-      >
-        <DataTable
-          value={filteredPeople}
-          dataKey="id"
-          emptyMessage="Aucune personne"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column
-            header="Nom"
-            body={(row: Person) => `${row.first_name} ${row.last_name}`}
-          />
-          <Column field="phone" header="Téléphone" />
-          <Column field="email" header="E-mail" />
-          <Column
-            header="Rôles"
-            body={(row: Person) => (
-              <div className="flex flex-wrap gap-1">
-                {row.roles.map((role) => (
-                  <Tag key={role} value={roleLabel(role)} severity="secondary" />
-                ))}
-              </div>
-            )}
-          />
-          <Column
-            header="Accès"
-            body={(row: Person) =>
-              row.auth_user_id ? (
-                <Tag value="Compte lié" severity="success" />
-              ) : (
-                <Button
-                  label="Inviter"
-                  icon="pi pi-send"
-                  size="small"
-                  text
-                  disabled={!row.email}
-                  onClick={() => void invite(row)}
-                />
-              )
-            }
-          />
-          <Column
-            header="Actions"
-            headerClassName="text-right"
-            bodyClassName="text-right"
-            body={(row: Person) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  icon="pi pi-pencil"
-                  text
-                  size="small"
-                  aria-label={`Modifier ${row.first_name} ${row.last_name}`}
-                  onClick={() => open(row)}
-                />
-                <Button
-                  icon="pi pi-trash"
-                  text
-                  size="small"
-                  severity="danger"
-                  aria-label={`Supprimer ${row.first_name} ${row.last_name}`}
-                  onClick={() => void remove(row.id)}
-                />
-              </div>
-            )}
-          />
-        </DataTable>
-      </TablePanel>
+        headingAs="h2"
+        compact
+      />
 
-      <TablePanel
-        title="Invitations"
-        description="Suivez les invitations de connexion envoyées aux personnes."
-        meta={
-          <Tag
-            value={`${filteredInvitations.length} invitation${filteredInvitations.length > 1 ? "s" : ""}`}
-            severity="secondary"
-          />
-        }
-        search={
-          <TableSearch
-            id="invitations-search"
-            value={invitationSearch}
-            onChange={setInvitationSearch}
-            placeholder="Rechercher une invitation"
-          />
-        }
-      >
-        <DataTable
-          value={filteredInvitations}
-          dataKey="id"
-          emptyMessage="Aucune invitation"
-          stripedRows
-          responsiveLayout="scroll"
-          size="small"
-        >
-          <Column field="email" header="E-mail" />
-          <Column
-            header="Personne"
-            body={(row: Invitation) => {
-              const person = people.find((item) => item.id === row.person_id);
-              return person
-                ? `${person.first_name} ${person.last_name}`
-                : "Personne supprimée";
-            }}
-          />
-          <Column
-            header="Statut"
-            body={(row: Invitation) => (
-              <Tag
-                value={row.status}
-                severity={
-                  row.status === "accepted"
-                    ? "success"
-                    : row.status === "pending"
-                      ? "info"
-                      : "secondary"
+      <TabView className="[&_.p-tabview-nav]:rounded-t-xl [&_.p-tabview-panels]:p-0">
+        <TabPanel header="Personnes" leftIcon="pi pi-users mr-2">
+          <SettingsTablePanel
+            toolbar={
+              <Toolbar
+                start={
+                  <TableSearch
+                    id="people-search"
+                    value={peopleSearch}
+                    onChange={setPeopleSearch}
+                    placeholder="Rechercher une personne"
+                  />
                 }
+                end={
+                  <Button
+                    label="Nouvelle personne"
+                    icon="pi pi-plus"
+                    size="small"
+                    onClick={() => open()}
+                  />
+                }
+                className="min-h-0 rounded-none border-0 bg-transparent p-0"
               />
-            )}
-          />
-          <Column
-            header="Expiration"
-            body={(row: Invitation) =>
-              new Date(row.expires_at).toLocaleDateString("fr-GN")
+            }
+            dataTable={
+              <DataTable
+                value={filteredPeople}
+                dataKey="id"
+                emptyMessage="Aucune personne"
+                stripedRows
+                responsiveLayout="scroll"
+                size="small"
+              >
+                <Column
+                  header="Nom"
+                  body={(row: Person) => `${row.first_name} ${row.last_name}`}
+                />
+                <Column field="phone" header="Téléphone" />
+                <Column field="email" header="E-mail" />
+                <Column
+                  header="Rôles"
+                  body={(row: Person) => (
+                    <div className="flex flex-wrap gap-1">
+                      {row.roles.map((role) => (
+                        <Tag
+                          key={role}
+                          value={roleLabel(role)}
+                          severity="secondary"
+                        />
+                      ))}
+                    </div>
+                  )}
+                />
+                <Column
+                  header="Accès"
+                  body={(row: Person) =>
+                    row.auth_user_id ? (
+                      <Tag value="Compte lié" severity="success" />
+                    ) : (
+                      <Button
+                        label="Inviter"
+                        icon="pi pi-send"
+                        size="small"
+                        text
+                        disabled={!row.email}
+                        onClick={() => void invite(row)}
+                      />
+                    )
+                  }
+                />
+                <Column
+                  header="Actions"
+                  headerClassName="text-right"
+                  bodyClassName="text-right"
+                  body={(row: Person) => (
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        icon="pi pi-pencil"
+                        text
+                        size="small"
+                        aria-label={`Modifier ${row.first_name} ${row.last_name}`}
+                        onClick={() => open(row)}
+                      />
+                      <Button
+                        icon="pi pi-trash"
+                        text
+                        size="small"
+                        severity="danger"
+                        aria-label={`Supprimer ${row.first_name} ${row.last_name}`}
+                        onClick={() => void remove(row.id)}
+                      />
+                    </div>
+                  )}
+                />
+              </DataTable>
             }
           />
-        </DataTable>
-      </TablePanel>
+        </TabPanel>
+
+        <TabPanel header="Invitations" leftIcon="pi pi-envelope mr-2">
+          <SettingsTablePanel
+            toolbar={
+              <Toolbar
+                start={
+                  <TableSearch
+                    id="invitations-search"
+                    value={invitationSearch}
+                    onChange={setInvitationSearch}
+                    placeholder="Rechercher une invitation"
+                  />
+                }
+                className="min-h-0 rounded-none border-0 bg-transparent p-0"
+              />
+            }
+            dataTable={
+              <DataTable
+                value={filteredInvitations}
+                dataKey="id"
+                emptyMessage="Aucune invitation"
+                stripedRows
+                responsiveLayout="scroll"
+                size="small"
+              >
+                <Column field="email" header="E-mail" />
+                <Column
+                  header="Personne"
+                  body={(row: Invitation) => {
+                    const person = people.find((item) => item.id === row.person_id);
+                    return person
+                      ? `${person.first_name} ${person.last_name}`
+                      : "Personne supprimée";
+                  }}
+                />
+                <Column
+                  header="Statut"
+                  body={(row: Invitation) => (
+                    <Tag
+                      value={row.status}
+                      severity={
+                        row.status === "accepted"
+                          ? "success"
+                          : row.status === "pending"
+                            ? "info"
+                            : "secondary"
+                      }
+                    />
+                  )}
+                />
+                <Column
+                  header="Expiration"
+                  body={(row: Invitation) =>
+                    new Date(row.expires_at).toLocaleDateString("fr-GN")
+                  }
+                />
+              </DataTable>
+            }
+          />
+        </TabPanel>
+      </TabView>
 
       <Dialog
         header={editing ? "Modifier la personne" : "Nouvelle personne"}

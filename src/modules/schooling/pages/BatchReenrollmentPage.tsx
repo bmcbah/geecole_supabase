@@ -5,7 +5,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
 import { Message } from "primereact/message";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useToast } from "../../../shared/components/toast-context";
 import {

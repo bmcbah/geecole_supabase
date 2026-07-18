@@ -3,20 +3,20 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { AppLayout } from "../layout/AppLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { AcademicSessionProvider } from "../../features/academic-session/components/AcademicSessionProvider";
+import { AcademicSessionProvider } from "../../modules/academic-session/components/AcademicSessionProvider";
 
 const LoginPage = lazy(() =>
-  import("../../features/auth/pages/LoginPage").then((module) => ({
+  import("../../modules/auth/pages/LoginPage").then((module) => ({
     default: module.LoginPage,
   })),
 );
 const SettingsPage = lazy(() =>
-  import("../../features/settings/pages/SettingsPage").then((module) => ({
+  import("../../modules/settings/pages/SettingsPage").then((module) => ({
     default: module.SettingsPage,
   })),
 );
 const InvitationPage = lazy(() =>
-  import("../../features/auth/pages/InvitationPage").then((module) => ({
+  import("../../modules/auth/pages/InvitationPage").then((module) => ({
     default: module.InvitationPage,
   })),
 );

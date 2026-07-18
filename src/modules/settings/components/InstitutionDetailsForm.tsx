@@ -47,10 +47,7 @@ export function InstitutionDetailsForm({ institution, onUpdated }: Props) {
     }
   });
   return (
-    <Card
-      title="Informations générales"
-      subTitle="Ces valeurs seront utilisées dans les documents et calculs de l’établissement"
-    >
+    <>
       <form
         className="settings-grid"
         onSubmit={(event) => void submit(event)}
@@ -108,7 +105,7 @@ export function InstitutionDetailsForm({ institution, onUpdated }: Props) {
           />
         </div>
       </form>
-    </Card>
+    </>
   );
 }
 

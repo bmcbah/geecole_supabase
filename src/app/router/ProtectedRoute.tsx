@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { ProgressSpinner } from "primereact/progressspinner";
-import { useAuth } from "../../features/auth/components/auth-context";
+import { useAuth } from "../../modules/auth/components/auth-context";
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();

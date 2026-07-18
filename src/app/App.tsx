@@ -1,7 +1,7 @@
 import { PrimeReactProvider } from "primereact/api";
 import { BrowserRouter } from "react-router-dom";
 import { ToastProvider } from "../shared/components/ToastProvider";
-import { AuthProvider } from "../features/auth/components/AuthProvider";
+import { AuthProvider } from "../modules/auth/components/AuthProvider";
 import { AppRouter } from "./router/AppRouter";
 
 export function App() {

@@ -56,12 +56,12 @@ export function PageHeader({
             <div
               className={joinClassNames(
                 eyebrow && "mt-1",
-                "flex flex-wrap items-center gap-2",
+                "flex flex-wrap items-center gap-2 p-0",
               )}
             >
               <Heading
                 className={joinClassNames(
-                  "min-w-0 font-bold tracking-tight text-slate-900",
+                  " font-bold tracking-tight text-slate-900 m-0",
                   compact ? "text-lg leading-6" : "text-xl sm:text-2xl",
                 )}
               >
@@ -77,7 +77,7 @@ export function PageHeader({
               <div
                 className={joinClassNames(
                   "max-w-3xl text-slate-600",
-                  compact ? "mt-0.5 text-xs leading-5" : "mt-1.5 text-sm leading-5",
+                  compact ? "mt-0 text-xs leading-5" : "mt-1 text-sm leading-5",
                 )}
               >
                 {description}

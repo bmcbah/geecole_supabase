@@ -16,12 +16,12 @@ export function TableSearch({
   return (
     <div className="relative w-full min-w-56 sm:w-72">
       <span className="p-input-icon-left block w-full">
-        <i className="pi pi-search" />
+        <i className="pi pi-search ps-2" />
         <InputText
           id={id}
           value={value}
           placeholder={placeholder}
-          className="w-full"
+          className="w-full ps-8"
           aria-label="Rechercher dans le tableau"
           onChange={(event) => onChange(event.target.value)}
         />

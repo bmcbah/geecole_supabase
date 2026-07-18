@@ -8,16 +8,17 @@ import { InstitutionDetailsForm } from "../components/InstitutionDetailsForm";
 import { SettingsSidebar } from "../components/SettingsSidebar";
 import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
-import { AcademicYearsPanel } from "../../../modules/settings/components/AcademicYearsPanel";
-import { LevelsSettingsPanel } from "../../../modules/settings/components/LevelsSettingsPanel";
-import { FinancialRulesSettingsPanel } from "../../../modules/settings/components/FinancialRulesSettingsPanel";
-import { PeopleAccessPanel } from "../../../modules/settings/components/PeopleAccessPanel";
-import { EvaluationSettingsPage } from "../../../modules/settings/pages/EvaluationSettingsPage";
-import { EnrollmentPolicyPanel } from "../../../modules/schooling/components/EnrollmentPolicyPanel";
-import { ReenrollmentPolicyPanel } from "../../../modules/schooling/components/ReenrollmentPolicyPanel";
-import { DocumentRequirementsPanel } from "../../../modules/schooling/components/DocumentRequirementsPanel";
-import { ClassOrganizationCard } from "../../../modules/schooling/components/ClassOrganizationCard";
-import { ClassesPage } from "../../../modules/schooling/pages/ClassesPage";
+import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
+import { LevelsSettingsPanel } from "../components/LevelsSettingsPanel";
+import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
+import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
+import { AssessmentTypesSettingsPage } from "../components/AssessmentTypesSettingsPage";
+import { GradingFormulasSettingsPage } from "../components/GradingFormulasSettingsPage";
+import { EnrollmentPolicyPanel } from "../../schooling/components/EnrollmentPolicyPanel";
+import { ReenrollmentPolicyPanel } from "../../schooling/components/ReenrollmentPolicyPanel";
+import { DocumentRequirementsPanel } from "../../schooling/components/DocumentRequirementsPanel";
+import { ClassOrganizationCard } from "../../schooling/components/ClassOrganizationCard";
+import { ClassesPage } from "../../schooling/pages/ClassesPage";
 
 const sections = [
   "etablissement",
@@ -26,7 +27,8 @@ const sections = [
   "niveaux",
   "classes",
   "matieres",
-  "evaluations-formules",
+  "types-notes",
+  "formules-calcul",
   "regles-financieres",
   "utilisateurs-roles",
 ] as const;
@@ -142,8 +144,10 @@ export function SettingsPage() {
             <ClassesPage />
           ) : section === "matieres" ? (
             <SubjectsSettingsPanel />
-          ) : section === "evaluations-formules" ? (
-            <EvaluationSettingsPage />
+          ) : section === "types-notes" ? (
+            <AssessmentTypesSettingsPage />
+          ) : section === "formules-calcul" ? (
+            <GradingFormulasSettingsPage />
           ) : section === "regles-financieres" ? (
             <FinancialRulesSettingsPanel />
           ) : (

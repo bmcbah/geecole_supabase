@@ -6,8 +6,8 @@ import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
-import type { StructureItemInput } from "../../../features/settings/schemas/academic-structure.schema";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import type { StructureItemInput } from "../../settings/schemas/academic-structure.schema";
 import {
   deleteLevel,
   generateAcademicPeriods,
@@ -17,12 +17,12 @@ import {
   saveAnnualAcademicCycle,
   saveLevel,
   setAnnualCycleLevels,
-} from "../../../features/settings/services/academic-structure.service";
+} from "../../settings/services/academic-structure.service";
 import type {
   AnnualAcademicCycle,
   GradeLevel,
-} from "../../../features/settings/types/academic-structure";
-import { StructureItemDialog } from "../../../features/settings/components/StructureItemDialog";
+} from "../../settings/types/academic-structure";
+import { StructureItemDialog } from "../../settings/components/StructureItemDialog";
 import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";

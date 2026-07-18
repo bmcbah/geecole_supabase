@@ -8,12 +8,14 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
-import { useAcademicSession } from "../../../features/academic-session/components/academic-session-context";
+import { Toolbar } from "primereact/toolbar";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   listAnnualAcademicCycles,
   listAnnualAcademicLevels,
-} from "../../../features/settings/services/academic-structure.service";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
+} from "../../settings/services/academic-structure.service";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import {
   archiveClass,
@@ -145,16 +147,22 @@ export function ClassesPage() {
 
   return (
     <section className="medium-controls">
-      <TablePanel
-        title="Classes"
-        description={`Configurez les classes annuelles${year?.name ? ` pour ${year.name}` : ""}. L’affectation se fait depuis la fiche ou la liste des élèves.`}
-        meta={
-          <Tag
-            value={`${filteredClasses.length} classe${filteredClasses.length > 1 ? "s" : ""}`}
-            severity="secondary"
+      <SettingsTablePanel
+        sectionHeader={
+          <PageHeader
+            title="Classes"
+            description={`Configurez les classes annuelles${year?.name ? ` pour ${year.name}` : ""}. L’affectation se fait depuis la fiche ou la liste des élèves.`}
+            meta={
+              <Tag
+                value={`${filteredClasses.length} classe${filteredClasses.length > 1 ? "s" : ""}`}
+                severity="secondary"
+              />
+            }
+            headingAs="h2"
+            compact
           />
         }
-        alerts={
+        alert={
           merged ? (
             <Message
               severity="info"
@@ -162,75 +170,81 @@ export function ClassesPage() {
             />
           ) : undefined
         }
-        search={
-          <TableSearch
-            value={search}
-            onChange={setSearch}
-            placeholder="Rechercher une classe"
-            id="classes-search"
+        toolbar={
+          <Toolbar
+            start={
+              <TableSearch
+                value={search}
+                onChange={setSearch}
+                placeholder="Rechercher une classe"
+                id="classes-search"
+              />
+            }
+            end={
+              <Button
+                label="Créer une classe"
+                icon="pi pi-plus"
+                size="small"
+                onClick={() => open()}
+              />
+            }
+            className="min-h-0 rounded-none border-0 bg-transparent p-0"
           />
         }
-        actions={
-          <Button
-            label="Créer une classe"
-            icon="pi pi-plus"
+        dataTable={
+          <DataTable
+            value={filteredClasses}
+            dataKey="id"
+            emptyMessage="Aucune classe pour cette année."
+            responsiveLayout="scroll"
+            stripedRows
             size="small"
-            onClick={() => open()}
-          />
+          >
+            <Column field="name" header="Classe" />
+            <Column
+              header="Niveau"
+              body={(item: SchoolClass) =>
+                levels.find(
+                  (level) => level.id === item.academic_year_level_id,
+                )?.level_name_snapshot
+              }
+            />
+            <Column
+              header="Effectif"
+              body={(item: SchoolClass) =>
+                `${counts[item.id] ?? 0} / ${item.capacity ?? "∞"}`
+              }
+            />
+            <Column
+              header="Salle"
+              body={(item: SchoolClass) => item.room || "—"}
+            />
+            <Column
+              header="Actions"
+              headerClassName="text-right"
+              bodyClassName="text-right"
+              body={(item: SchoolClass) => (
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    size="small"
+                    onClick={() => open(item)}
+                  />
+                  <Button
+                    icon="pi pi-archive"
+                    text
+                    size="small"
+                    severity="danger"
+                    disabled={!item.is_active}
+                    onClick={() => void archiveClass(item.id).then(load)}
+                  />
+                </div>
+              )}
+            />
+          </DataTable>
         }
-      >
-        <DataTable
-          value={filteredClasses}
-          dataKey="id"
-          emptyMessage="Aucune classe pour cette année."
-          responsiveLayout="scroll"
-          stripedRows
-          size="small"
-        >
-          <Column field="name" header="Classe" />
-          <Column
-            header="Niveau"
-            body={(item: SchoolClass) =>
-              levels.find(
-                (level) => level.id === item.academic_year_level_id,
-              )?.level_name_snapshot
-            }
-          />
-          <Column
-            header="Effectif"
-            body={(item: SchoolClass) =>
-              `${counts[item.id] ?? 0} / ${item.capacity ?? "∞"}`
-            }
-          />
-          <Column
-            header="Salle"
-            body={(item: SchoolClass) => item.room || "—"}
-          />
-          <Column
-            header="Actions"
-            headerClassName="text-right"
-            bodyClassName="text-right"
-            body={(item: SchoolClass) => (
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  icon="pi pi-pencil"
-                  text
-                  size="small"
-                  onClick={() => open(item)}
-                />
-                <Button
-                  icon="pi pi-archive"
-                  text
-                  size="small"
-                  severity="danger"
-                  disabled={!item.is_active}
-                  onClick={() => void archiveClass(item.id).then(load)}
-                />
-              </div>
-            )}
-          />
-        </DataTable>
-      </TablePanel>
+      />
 
       <Dialog
         header={editing ? "Modifier la classe" : "Nouvelle classe"}

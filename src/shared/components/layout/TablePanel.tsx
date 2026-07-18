@@ -13,7 +13,6 @@ type TablePanelProps = {
   toolbarEnd?: ReactNode;
   search?: ReactNode;
   actions?: ReactNode;
-  /** @deprecated Use toolbarStart and toolbarEnd. */
   toolbar?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -53,11 +52,7 @@ export function TablePanel({
     >
       <section aria-labelledby={titleId}>
         <PageHeader
-          title={
-            <span id={titleId}>
-              {title}
-            </span>
-          }
+          title={<span id={titleId}>{title}</span>}
           description={description}
           meta={meta}
           actions={headerActions}
