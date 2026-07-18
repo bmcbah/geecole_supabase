@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { StudentFinancePanel } from "../../financial-management/components/StudentFinancePanel";
 import { AddGuardianDialog } from "../components/AddGuardianDialog";
 import { StudentAvatarUpload } from "../components/StudentAvatarUpload";
 import { StudentClassAssignment } from "../components/StudentClassAssignment";
 import { StudentDocumentsPanel } from "../components/StudentDocumentsPanel";
 import { StudentProfileActions } from "../components/StudentProfileActions";
-import {
-  getStudent,
-  removeStudentGuardian,
-  type StudentGuardian,
-} from "../services/schooling.service";
+import { getStudent } from "../services/schooling.service";
 
 type StudentDetail = Awaited<ReturnType<typeof getStudent>>;
 type ProfileTab = "overview" | "guardians" | "schooling" | "attendance" | "results" | "documents" | "finances";
@@ -23,7 +20,7 @@ const tabs: TabDefinition[] = [
   { id: "attendance", label: "Assiduité", icon: "pi-calendar" },
   { id: "results", label: "Notes et bulletins", icon: "pi-chart-bar" },
   { id: "documents", label: "Documents", icon: "pi-file" },
-  { id: "finances", label: "Finances", icon: "pi-wallet" },
+  { id: "finances", label: "Situation financière", icon: "pi-wallet" },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -249,7 +246,7 @@ export function StudentProfilePage() {
           {activeTab === "attendance" ? <EmptyState icon="pi-calendar" title="Aucune donnée d’assiduité" description="Les absences et retards seront regroupés ici." /> : null}
           {activeTab === "results" ? <EmptyState icon="pi-chart-bar" title="Résultats indisponibles" description="Les notes et bulletins seront visibles après l’ouverture du module." /> : null}
           {activeTab === "documents" ? (enrollment ? <StudentDocumentsPanel institutionId={institutionId} studentId={student.id} enrollmentId={enrollment.id} /> : <EmptyState icon="pi-file" title="Aucun dossier documentaire" description="Une inscription active est nécessaire." />) : null}
-          {activeTab === "finances" ? <EmptyState icon="pi-wallet" title="Situation financière à venir" description="Les frais, paiements et soldes seront présentés ici." /> : null}
+          {activeTab === "finances" ? <StudentFinancePanel studentId={student.id} academicYearId={yearId} /> : null}
         </div>
       </section>
 
