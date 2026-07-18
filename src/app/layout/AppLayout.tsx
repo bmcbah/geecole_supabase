@@ -35,7 +35,7 @@ const navigation: NavigationGroup[] = [
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "group flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
+    "group flex min-h-12 items-center gap-2 rounded-lg border px-2.5 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
     isActive
       ? "border-brand-200 bg-brand-50 text-brand-700"
       : "border-transparent bg-transparent text-slate-700 hover:border-brand-100 hover:bg-brand-50/60 hover:text-brand-700",
@@ -106,7 +106,7 @@ export function AppLayout() {
             closeMobileSidebar();
           }}
         >
-          <span className="flex h-11 w-[72px] items-center justify-center rounded-xl bg-brand-700 px-2 text-center text-sm font-black tracking-tight text-brand-100 ring-1 ring-inset ring-white/25">
+          <span className="px-2 text-center text-sm font-black tracking-tight text-white">
             GeeCole
           </span>
         </button>
@@ -138,7 +138,7 @@ export function AppLayout() {
       </div>
 
       {secondaryMenuOpen ? (
-        <div className="relative flex w-[260px] min-w-0 flex-col border-r border-brand-100 bg-white lg:w-[276px] xl:w-[292px]">
+        <div className="relative flex w-[240px] min-w-0 flex-col border-r border-brand-100 bg-white lg:w-[248px] xl:w-[256px]">
           <button
             type="button"
             className="absolute -right-3.5 top-[22px] z-20 grid size-8 place-items-center rounded-full border border-brand-300 bg-white text-brand-700 shadow-md transition hover:border-brand-500 hover:text-brand-800"
@@ -149,15 +149,15 @@ export function AppLayout() {
             <i className="pi pi-angle-left text-sm" />
           </button>
 
-          <div className="flex h-[72px] shrink-0 items-center border-b border-brand-100 px-5 pr-8">
+          <div className="flex h-[72px] shrink-0 items-center border-b border-brand-100 px-4 pr-8">
             <div className="min-w-0">
               <strong className="block truncate text-sm font-semibold text-slate-950">{selectedGroup.label}</strong>
               <small className="block truncate text-xs text-slate-500">{institution?.name ?? "Gestion scolaire"}</small>
             </div>
           </div>
 
-          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-            <div className="mb-3 px-3">
+          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto px-2.5 py-4">
+            <div className="mb-3 px-2.5">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-700">Navigation</p>
             </div>
             <div className="space-y-1.5">
@@ -165,7 +165,7 @@ export function AppLayout() {
                 <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
                   {({ isActive }) => (
                     <>
-                      <span className="grid w-7 shrink-0 place-items-center">
+                      <span className="grid w-5 shrink-0 place-items-center">
                         <i className={`pi ${item.icon} text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
                       </span>
                       <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
@@ -206,10 +206,10 @@ export function AppLayout() {
   );
 
   const sidebarWidth = secondaryMenuOpen
-    ? "lg:w-[372px] xl:w-[388px]"
+    ? "lg:w-[344px] xl:w-[352px]"
     : "lg:w-[96px]";
   const contentPadding = secondaryMenuOpen
-    ? "lg:pl-[372px] xl:pl-[388px]"
+    ? "lg:pl-[344px] xl:pl-[352px]"
     : "lg:pl-[96px]";
 
   return (
@@ -219,7 +219,7 @@ export function AppLayout() {
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" aria-label="Fermer la navigation" className="absolute inset-0 bg-brand-950/60 backdrop-blur-sm" onClick={closeMobileSidebar} />
-          <aside className={`relative h-full shadow-2xl ${secondaryMenuOpen ? "w-[min(96vw,356px)]" : "w-[96px]"}`}>{sidebar}</aside>
+          <aside className={`relative h-full shadow-2xl ${secondaryMenuOpen ? "w-[min(96vw,336px)]" : "w-[96px]"}`}>{sidebar}</aside>
         </div>
       ) : null}
 
