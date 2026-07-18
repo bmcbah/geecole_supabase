@@ -32,6 +32,8 @@ const mapItem = (row: any): FinancialAccountItem => ({
   id: row.id,
   accountId: row.financial_account_id,
   feeTypeId: row.fee_type_id,
+  paymentPlanId: row.payment_plan_id,
+  paymentPlanName: row.payment_plan_name_snapshot,
   code: row.code_snapshot,
   label: row.label_snapshot,
   amount: Number(row.amount),
@@ -40,6 +42,7 @@ const mapItem = (row: any): FinancialAccountItem => ({
 const mapInstallment = (row: any): FinancialInstallment => ({
   id: row.id,
   accountId: row.financial_account_id,
+  itemId: row.financial_item_id,
   sequence: row.sequence,
   label: row.label_snapshot,
   percentage: Number(row.percentage_snapshot),
@@ -69,23 +72,31 @@ export async function getFinancialAccount(
 ): Promise<FinancialAccountDetails> {
   const { data, error } = await db
     .from("student_financial_accounts")
-    .select(
-      "*, items:student_financial_items(*), installments:student_financial_installments(*)",
-    )
+    .select("*, items:student_financial_items(*), installments:student_financial_installments(*)")
     .eq("id", accountId)
     .single();
 
   if (error) throw error;
 
+  const installments = (data.installments ?? [])
+    .map(mapInstallment)
+    .sort(
+      (left: FinancialInstallment, right: FinancialInstallment) =>
+        left.dueDate.localeCompare(right.dueDate) || left.sequence - right.sequence,
+    );
+
   return {
     ...mapAccount(data),
-    items: (data.items ?? []).map(mapItem),
-    installments: (data.installments ?? [])
-      .map(mapInstallment)
-      .sort(
-        (left: FinancialInstallment, right: FinancialInstallment) =>
-          left.sequence - right.sequence,
-      ),
+    items: (data.items ?? []).map((row: any) => {
+      const item = mapItem(row);
+      return {
+        ...item,
+        installments: installments.filter(
+          (installment: FinancialInstallment) => installment.itemId === item.id,
+        ),
+      };
+    }),
+    installments,
   };
 }
 
@@ -108,13 +119,9 @@ export async function listConfirmedEnrollmentsWithoutFinancialAccount(
   return data ?? [];
 }
 
-export async function generateFinancialAccount(
-  enrollmentId: string,
-  paymentPlanId: string,
-) {
+export async function generateFinancialAccount(enrollmentId: string) {
   const { data, error } = await db.rpc("generate_student_financial_account", {
     target_enrollment_id: enrollmentId,
-    target_payment_plan_id: paymentPlanId,
   });
 
   if (error) throw error;
