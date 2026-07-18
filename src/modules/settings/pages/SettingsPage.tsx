@@ -9,7 +9,8 @@ import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { LevelsSettingsPanel } from "../components/LevelsSettingsPanel";
-import { SchoolFeesSettingsPanel } from "../components/SchoolFeesSettingsPanel";
+import { FeeTypesSettingsPanel } from "../components/FeeTypesSettingsPanel";
+import { FeeScheduleSettingsPanel } from "../components/FeeScheduleSettingsPanel";
 import { PaymentPlansSettingsPanel } from "../components/PaymentPlansSettingsPanel";
 import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
 import { AssessmentTypesSettingsPage } from "../components/AssessmentTypesSettingsPage";
@@ -29,6 +30,7 @@ const sections = [
   "matieres",
   "types-notes",
   "formules-calcul",
+  "categories-frais",
   "grilles-tarifaires",
   "plans-paiement",
   "utilisateurs-roles",
@@ -80,7 +82,7 @@ export function SettingsPage() {
         title={isFinancialConfiguration ? "Configuration financière" : "Paramétrage"}
         description={
           isFinancialConfiguration
-            ? `Configurez les frais, les tarifs et les plans de paiement de ${selected.name}.`
+            ? `Configurez la grille tarifaire et les plans de paiement de ${selected.name}.`
             : `Configurez les règles propres à ${selected.name}.`
         }
         meta={
@@ -133,10 +135,7 @@ export function SettingsPage() {
                   <DocumentRequirementsPanel institutionId={selected.id} />
                 </AccordionTab>
                 <AccordionTab header="Organisation des classes">
-                  <ClassOrganizationCard
-                    institution={selected}
-                    onSaved={refresh}
-                  />
+                  <ClassOrganizationCard institution={selected} onSaved={refresh} />
                 </AccordionTab>
               </Accordion>
             </section>
@@ -155,8 +154,10 @@ export function SettingsPage() {
           <AssessmentTypesSettingsPage />
         ) : section === "formules-calcul" ? (
           <GradingFormulasSettingsPage />
+        ) : section === "categories-frais" ? (
+          <FeeTypesSettingsPanel />
         ) : section === "grilles-tarifaires" ? (
-          <SchoolFeesSettingsPanel />
+          <FeeScheduleSettingsPanel />
         ) : section === "plans-paiement" ? (
           <PaymentPlansSettingsPanel />
         ) : (
