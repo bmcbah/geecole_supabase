@@ -12,6 +12,7 @@ import { LevelsSettingsPanel } from "../components/LevelsSettingsPanel";
 import { FeeTypesSettingsPanel } from "../components/FeeTypesSettingsPanel";
 import { FeeScheduleSettingsPanel } from "../components/FeeScheduleSettingsPanel";
 import { PaymentPlansSettingsPanel } from "../components/PaymentPlansSettingsPanel";
+import { FinancialBenefitTemplatesPanel } from "../components/FinancialBenefitTemplatesPanel";
 import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
 import { AssessmentTypesSettingsPage } from "../components/AssessmentTypesSettingsPage";
 import { GradingFormulasSettingsPage } from "../components/GradingFormulasSettingsPage";
@@ -33,6 +34,7 @@ const sections = [
   "categories-frais",
   "grilles-tarifaires",
   "plans-paiement",
+  "modeles-avantages",
   "utilisateurs-roles",
 ] as const;
 
@@ -82,7 +84,7 @@ export function SettingsPage() {
         title={isFinancialConfiguration ? "Configuration financière" : "Paramétrage"}
         description={
           isFinancialConfiguration
-            ? `Configurez la grille tarifaire et les plans de paiement de ${selected.name}.`
+            ? `Configurez la grille tarifaire, les plans de paiement et les avantages de ${selected.name}.`
             : `Configurez les règles propres à ${selected.name}.`
         }
         meta={
@@ -160,6 +162,8 @@ export function SettingsPage() {
           <FeeScheduleSettingsPanel />
         ) : section === "plans-paiement" ? (
           <PaymentPlansSettingsPanel />
+        ) : section === "modeles-avantages" ? (
+          <FinancialBenefitTemplatesPanel />
         ) : (
           <PeopleAccessPanel />
         )}
