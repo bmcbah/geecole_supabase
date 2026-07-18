@@ -41,8 +41,10 @@ const navigation: NavigationGroup[] = [
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium no-underline transition-colors",
-    isActive ? "bg-brand-700 text-white" : "text-brand-200 hover:bg-white/10 hover:text-white",
+    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors",
+    isActive
+      ? "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200"
+      : "text-slate-700 hover:bg-slate-100 hover:text-slate-950",
   ].join(" ");
 
 export function AppLayout() {
@@ -62,9 +64,9 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(navigation.map((group) => [group.label, location.pathname.startsWith(group.match)])),
-  );
+  const routeGroup = navigation.find((group) => location.pathname.startsWith(group.match)) ?? navigation[0];
+  const [selectedGroupLabel, setSelectedGroupLabel] = useState(routeGroup.label);
+  const selectedGroup = navigation.find((group) => group.label === selectedGroupLabel) ?? routeGroup;
 
   const activePage = useMemo(() => {
     for (const group of navigation) {
@@ -75,94 +77,108 @@ export function AppLayout() {
   }, [location.pathname]);
 
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
-  const toggleGroup = (label: string) =>
-    setExpandedGroups((current) => ({ ...current, [label]: !current[label] }));
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-brand-900 text-white">
-      <div className="flex h-[72px] items-center justify-between border-b border-white/10 px-5">
+    <div className="flex h-full bg-slate-50 text-slate-900">
+      <div className="flex w-[76px] shrink-0 flex-col bg-brand-950 text-white">
         <button
           type="button"
-          className="flex min-w-0 items-center gap-3 text-left"
+          className="grid h-[72px] place-items-center border-b border-white/10"
+          aria-label="Accueil GeeCole"
           onClick={() => {
             void navigate("/scolarite/eleves");
             closeMobileSidebar();
           }}
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-500 text-lg font-extrabold text-brand-900">G</span>
-          <span className="flex min-w-0 flex-col">
-            <strong className="text-base">GeeCole</strong>
-            <small className="truncate text-xs text-brand-300">{institution?.name ?? "Gestion scolaire"}</small>
-          </span>
+          <span className="grid size-10 place-items-center rounded-xl bg-accent-500 text-lg font-extrabold text-brand-950">G</span>
         </button>
-        <button
-          type="button"
-          className="grid size-8 place-items-center rounded-lg text-brand-200 hover:bg-white/10 hover:text-white lg:hidden"
-          aria-label="Fermer la navigation"
-          onClick={closeMobileSidebar}
-        >
-          <i className="pi pi-times" />
-        </button>
-      </div>
 
-      <div className="px-4 py-4">
-        <button
-          type="button"
-          className="flex w-full items-center gap-3 rounded-xl bg-accent-500 px-4 py-3 text-left font-semibold text-brand-900 transition hover:brightness-95"
-          onClick={() => {
-            void navigate("/scolarite/inscriptions/nouvelle");
-            closeMobileSidebar();
-          }}
-        >
-          <i className="pi pi-user-plus" />
-          <span className="flex-1 text-sm">Inscrire un élève</span>
-          <i className="pi pi-arrow-right text-xs" />
-        </button>
-      </div>
-
-      <nav aria-label="Navigation principale" className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-4">
-        {navigation.map((group) => {
-          const expanded = expandedGroups[group.label] ?? false;
-          const active = location.pathname.startsWith(group.match);
-          return (
-            <section key={group.label}>
+        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col gap-2 px-2 py-4">
+          {navigation.map((group) => {
+            const active = location.pathname.startsWith(group.match);
+            const selected = selectedGroup.label === group.label;
+            return (
               <button
+                key={group.label}
                 type="button"
                 className={[
-                  "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition-colors",
-                  active ? "bg-white/10 text-white" : "text-brand-200 hover:bg-white/10 hover:text-white",
+                  "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-center transition-colors",
+                  active || selected
+                    ? "bg-white text-brand-900 shadow-sm"
+                    : "text-brand-100 hover:bg-white/10 hover:text-white",
                 ].join(" ")}
-                aria-expanded={expanded}
-                onClick={() => toggleGroup(group.label)}
+                aria-pressed={selected}
+                title={group.label}
+                onClick={() => setSelectedGroupLabel(group.label)}
               >
-                <i className={`pi ${group.icon}`} />
-                <span className="flex-1">{group.label}</span>
-                <i className={`pi pi-chevron-down text-[10px] transition-transform ${expanded ? "rotate-180" : ""}`} />
+                <i className={`pi ${group.icon} text-base`} />
+                <span className="text-[10px] font-semibold leading-tight">{group.label}</span>
               </button>
+            );
+          })}
+        </nav>
+      </div>
 
-              {expanded ? (
-                <div className="mt-1 space-y-1 pl-3">
-                  {group.items.map((item) => (
-                    <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
-                      <i className={`pi ${item.icon}`} />
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          );
-        })}
-      </nav>
+      <div className="flex min-w-0 flex-1 flex-col border-r border-slate-200 bg-white">
+        <div className="flex h-[72px] items-center justify-between border-b border-slate-200 px-4">
+          <div className="min-w-0">
+            <strong className="block truncate text-sm font-semibold text-slate-950">GeeCole</strong>
+            <small className="block truncate text-xs text-slate-500">{institution?.name ?? "Gestion scolaire"}</small>
+          </div>
+          <button
+            type="button"
+            className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+            aria-label="Fermer la navigation"
+            onClick={closeMobileSidebar}
+          >
+            <i className="pi pi-times" />
+          </button>
+        </div>
 
-      <div className="border-t border-white/10 p-4">
-        <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
-            {(user?.email?.[0] ?? "U").toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">{user?.email ?? "Utilisateur"}</p>
-            <p className="text-xs text-brand-300">Session active</p>
+        <div className="border-b border-slate-200 p-3">
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 rounded-lg bg-brand-700 px-3 py-2.5 text-left font-semibold text-white shadow-sm transition hover:bg-brand-800"
+            onClick={() => {
+              void navigate("/scolarite/inscriptions/nouvelle");
+              closeMobileSidebar();
+            }}
+          >
+            <i className="pi pi-user-plus" />
+            <span className="flex-1 text-sm">Inscrire un élève</span>
+            <i className="pi pi-arrow-right text-xs" />
+          </button>
+        </div>
+
+        <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto p-3">
+          <div className="mb-3 px-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Rubrique</p>
+            <h2 className="mt-1 text-base font-semibold text-slate-950">{selectedGroup.label}</h2>
+          </div>
+          <div className="space-y-1">
+            {selectedGroup.items.map((item) => (
+              <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
+                {({ isActive }) => (
+                  <>
+                    <i className={`pi ${item.icon} ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-slate-700"}`} />
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {isActive ? <span className="size-1.5 rounded-full bg-brand-700" aria-hidden="true" /> : null}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+
+        <div className="border-t border-slate-200 p-3">
+          <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-3 py-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
+              {(user?.email?.[0] ?? "U").toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-900">{user?.email ?? "Utilisateur"}</p>
+              <p className="text-xs text-slate-500">Session active</p>
+            </div>
           </div>
         </div>
       </div>
@@ -171,16 +187,16 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-surface-page text-text-primary">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[272px] lg:block">{sidebar}</aside>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[320px] lg:block">{sidebar}</aside>
 
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button type="button" aria-label="Fermer la navigation" className="absolute inset-0 bg-brand-900/60 backdrop-blur-sm" onClick={closeMobileSidebar} />
-          <aside className="relative h-full w-[min(86vw,272px)] shadow-2xl">{sidebar}</aside>
+          <button type="button" aria-label="Fermer la navigation" className="absolute inset-0 bg-brand-950/60 backdrop-blur-sm" onClick={closeMobileSidebar} />
+          <aside className="relative h-full w-[min(94vw,320px)] shadow-2xl">{sidebar}</aside>
         </div>
       ) : null}
 
-      <section className="min-w-0 lg:pl-[272px]">
+      <section className="min-w-0 lg:pl-[320px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex min-h-[72px] items-center gap-3 px-4 md:px-6 xl:px-8">
             <button
