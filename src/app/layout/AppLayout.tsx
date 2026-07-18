@@ -36,7 +36,7 @@ const navigation: NavigationGroup[] = [
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors",
+    "group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors",
     isActive
       ? "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200"
       : "text-slate-700 hover:bg-slate-100 hover:text-slate-950",
@@ -92,20 +92,20 @@ export function AppLayout() {
 
   const sidebar = (
     <div className="flex h-full bg-slate-50 text-slate-900">
-      <div className="flex w-[76px] shrink-0 flex-col bg-brand-950 text-white">
+      <div className="flex w-[76px] shrink-0 flex-col bg-brand-700 text-white shadow-[4px_0_18px_rgba(15,118,110,0.18)]">
         <button
           type="button"
-          className="grid h-[72px] place-items-center border-b border-white/10"
+          className="grid h-[72px] shrink-0 place-items-center border-b border-white/20 transition hover:bg-white/10"
           aria-label="Accueil GeeCole"
           onClick={() => {
             void navigate("/scolarite/eleves");
             closeMobileSidebar();
           }}
         >
-          <span className="grid size-10 place-items-center rounded-xl bg-accent-500 text-lg font-extrabold text-brand-950">G</span>
+          <span className="grid size-11 place-items-center rounded-xl border border-white/30 bg-white text-xl font-black text-brand-700 shadow-sm">G</span>
         </button>
 
-        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col gap-2 px-2 py-4">
+        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col items-stretch gap-2 px-2 py-4">
           {navigation.map((group) => {
             const active = location.pathname.startsWith(group.match);
             const selected = secondaryMenuOpen && selectedGroup.label === group.label;
@@ -114,17 +114,17 @@ export function AppLayout() {
                 key={group.label}
                 type="button"
                 className={[
-                  "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-center transition-colors",
+                  "flex min-h-[64px] w-full flex-col items-center justify-center gap-1.5 rounded-xl px-1 py-2 text-center transition-colors",
                   active || selected
-                    ? "bg-white text-brand-900 shadow-sm"
-                    : "text-brand-100 hover:bg-white/10 hover:text-white",
+                    ? "bg-white text-brand-800 shadow-sm"
+                    : "text-white/85 hover:bg-white/15 hover:text-white",
                 ].join(" ")}
                 aria-pressed={active || selected}
                 title={group.label}
                 onClick={() => handleGroupClick(group)}
               >
-                <i className={`pi ${group.icon} text-base`} />
-                <span className="text-[10px] font-semibold leading-tight">{group.label}</span>
+                <i className={`pi ${group.icon} text-lg`} />
+                <span className="max-w-[60px] text-[10px] font-semibold leading-[1.15]">{group.label}</span>
               </button>
             );
           })}
@@ -132,27 +132,28 @@ export function AppLayout() {
       </div>
 
       {secondaryMenuOpen ? (
-        <div className="flex min-w-0 w-[244px] flex-col border-r border-slate-200 bg-white">
-          <div className="flex h-[72px] items-center justify-between border-b border-slate-200 px-4">
+        <div className="relative flex w-[244px] min-w-0 flex-col border-r border-slate-200 bg-white">
+          <button
+            type="button"
+            className="absolute -right-3 top-6 z-10 grid size-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+            aria-label="Réduire le menu secondaire"
+            title="Réduire le menu"
+            onClick={() => setSecondaryMenuOpen(false)}
+          >
+            <i className="pi pi-angle-left text-xs" />
+          </button>
+
+          <div className="flex h-[72px] shrink-0 items-center border-b border-slate-200 px-4 pr-6">
             <div className="min-w-0">
               <strong className="block truncate text-sm font-semibold text-slate-950">GeeCole</strong>
               <small className="block truncate text-xs text-slate-500">{institution?.name ?? "Gestion scolaire"}</small>
             </div>
-            <button
-              type="button"
-              className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              aria-label="Réduire le menu secondaire"
-              title="Réduire le menu"
-              onClick={() => setSecondaryMenuOpen(false)}
-            >
-              <i className="pi pi-angle-left" />
-            </button>
           </div>
 
           <div className="border-b border-slate-200 p-3">
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-lg bg-brand-700 px-3 py-2.5 text-left font-semibold text-white shadow-sm transition hover:bg-brand-800"
+              className="flex min-h-11 w-full items-center gap-3 rounded-lg bg-brand-700 px-3 py-2.5 text-left font-semibold text-white shadow-sm transition hover:bg-brand-800"
               onClick={() => {
                 void navigate("/scolarite/inscriptions/nouvelle");
                 closeMobileSidebar();
@@ -174,9 +175,9 @@ export function AppLayout() {
                 <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
                   {({ isActive }) => (
                     <>
-                      <i className={`pi ${item.icon} ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-slate-700"}`} />
+                      <i className={`pi ${item.icon} w-4 shrink-0 text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-slate-700"}`} />
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                      {isActive ? <span className="size-1.5 rounded-full bg-brand-700" aria-hidden="true" /> : null}
+                      {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /> : null}
                     </>
                   )}
                 </NavLink>
@@ -185,7 +186,7 @@ export function AppLayout() {
           </nav>
 
           <div className="border-t border-slate-200 p-3">
-            <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-3 py-3">
+            <div className="flex min-h-[60px] items-center gap-3 rounded-lg bg-slate-100 px-3 py-2.5">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
                 {(user?.email?.[0] ?? "U").toUpperCase()}
               </span>
