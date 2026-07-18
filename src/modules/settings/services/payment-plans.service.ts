@@ -68,12 +68,11 @@ export async function savePaymentPlan(
     0,
   );
 
-  if (Math.abs(total - 100) > 0.001) {
-    throw new Error("Le total des échéances doit être égal à 100 %.");
-  }
-
   if (input.installments.length === 0) {
     throw new Error("Ajoutez au moins une échéance.");
+  }
+  if (Math.abs(total - 100) > 0.001) {
+    throw new Error("Le total des échéances doit être égal à 100 %.");
   }
 
   const payload = {
@@ -91,7 +90,6 @@ export async function savePaymentPlan(
   };
 
   let paymentPlanId = id;
-
   if (id) {
     const { error } = await db.from("payment_plans").update(payload).eq("id", id);
     if (error) throw error;
@@ -123,6 +121,28 @@ export async function savePaymentPlan(
     .from("payment_plan_installments")
     .insert(rows);
   if (insertError) throw insertError;
+}
+
+export async function duplicatePaymentPlan(plan: PaymentPlan) {
+  const suffix = Date.now().toString().slice(-5);
+  await savePaymentPlan({
+    institution_id: plan.institution_id,
+    academic_year_id: plan.academic_year_id,
+    name: `${plan.name} — copie`,
+    code: `${plan.code}_COPIE_${suffix}`,
+    kind: plan.kind,
+    fee_type_ids: [...plan.fee_type_ids],
+    scope: plan.scope,
+    cycle_ids: [...plan.cycle_ids],
+    level_ids: [...plan.level_ids],
+    is_active: false,
+    installments: plan.installments.map((item) => ({
+      sequence: item.sequence,
+      label: item.label,
+      percentage: Number(item.percentage),
+      due_date: item.due_date,
+    })),
+  });
 }
 
 export async function setPaymentPlanActive(id: string, isActive: boolean) {
