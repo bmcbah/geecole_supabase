@@ -37,6 +37,8 @@ const mapItem = (row: any): FinancialAccountItem => ({
   code: row.code_snapshot,
   label: row.label_snapshot,
   amount: Number(row.amount),
+  adjustmentAmount: Number(row.adjustment_amount ?? 0),
+  netAmount: Number(row.net_amount ?? row.amount),
 });
 
 const mapInstallment = (row: any): FinancialInstallment => ({
