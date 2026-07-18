@@ -8,6 +8,7 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { SchoolingPanel } from "../components/SchoolingPanel";
 import { listStudents } from "../services/schooling.service";
@@ -15,7 +16,6 @@ import type { StudentListItem } from "../types/schooling";
 
 const resetButtonClass =
   "appearance-none border-0 bg-transparent p-0 font-inherit text-inherit shadow-none outline-none";
-
 const controlClass =
   "h-11 w-full rounded-xl border border-slate-300 bg-white text-sm shadow-sm transition-colors hover:border-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100";
 
@@ -86,28 +86,23 @@ export function StudentsPage() {
     [students],
   );
 
-  const filtered = useMemo(
-    () =>
-      students.filter((student) => {
-        const searchable =
-          `${student.firstName} ${student.lastName} ${student.matricule} ${student.guardianPhone}`.toLocaleLowerCase(
-            "fr",
-          );
-        return (
-          (!query || searchable.includes(query.trim().toLocaleLowerCase("fr"))) &&
-          (!status || student.status === status) &&
-          (!level || student.levelName === level) &&
-          (!cycle || student.cycleName === cycle) &&
-          (!gender || student.gender === gender) &&
-          (!guardian || student.guardianName === guardian) &&
-          (!birthFrom || Boolean(student.birthDate && student.birthDate >= birthFrom)) &&
-          (!birthTo || Boolean(student.birthDate && student.birthDate <= birthTo)) &&
-          (!contact ||
-            (contact === "present" ? Boolean(student.guardianPhone) : !student.guardianPhone))
-        );
-      }),
-    [students, query, status, level, cycle, gender, contact, guardian, birthFrom, birthTo],
-  );
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("fr");
+    return students.filter((student) => {
+      const searchable = `${student.firstName} ${student.lastName} ${student.matricule} ${student.guardianName} ${student.guardianPhone}`.toLocaleLowerCase("fr");
+      return (
+        (!normalized || searchable.includes(normalized)) &&
+        (!status || student.status === status) &&
+        (!level || student.levelName === level) &&
+        (!cycle || student.cycleName === cycle) &&
+        (!gender || student.gender === gender) &&
+        (!guardian || student.guardianName === guardian) &&
+        (!birthFrom || Boolean(student.birthDate && student.birthDate >= birthFrom)) &&
+        (!birthTo || Boolean(student.birthDate && student.birthDate <= birthTo)) &&
+        (!contact || (contact === "present" ? Boolean(student.guardianPhone) : !student.guardianPhone))
+      );
+    });
+  }, [students, query, status, level, cycle, gender, contact, guardian, birthFrom, birthTo]);
 
   const activeFilterCount = [
     query,
@@ -143,9 +138,9 @@ export function StudentsPage() {
   }
 
   const toolbar = (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="p-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
           <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_220px]">
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
@@ -154,13 +149,13 @@ export function StudentsPage() {
                 <InputText
                   className={`${controlClass} pl-9`}
                   value={query}
-                  placeholder="Nom, matricule ou téléphone"
+                  placeholder="Nom, matricule, responsable ou téléphone"
                   onChange={(event) => setQuery(event.target.value)}
                 />
               </span>
             </label>
 
-            <label className="block min-w-[200px]">
+            <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span>
               <Dropdown
                 className={controlClass}
@@ -175,7 +170,7 @@ export function StudentsPage() {
               />
             </label>
 
-            <label className="block min-w-[200px]">
+            <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Niveau</span>
               <Dropdown
                 className={controlClass}
@@ -187,51 +182,43 @@ export function StudentsPage() {
           </div>
 
           <div className="ml-auto flex min-h-10 flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              className={`${resetButtonClass} inline-flex h-10 min-w-[124px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 ${activeFilterCount > 0 ? "visible" : "invisible pointer-events-none"}`}
-              onClick={resetFilters}
-              aria-hidden={activeFilterCount === 0}
-              tabIndex={activeFilterCount > 0 ? 0 : -1}
-            >
-              <i className="pi pi-filter-slash text-xs" />
-              Réinitialiser
-            </button>
-
-            <button
-              type="button"
-              className={`${resetButtonClass} inline-flex h-10 min-w-[150px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50`}
+            {activeFilterCount > 0 ? (
+              <Button
+                label="Réinitialiser"
+                icon="pi pi-filter-slash"
+                severity="secondary"
+                text
+                onClick={resetFilters}
+              />
+            ) : null}
+            <Button
+              label={advanced ? "Masquer" : "Plus de filtres"}
+              icon={advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
+              severity="secondary"
+              outlined
+              badge={activeFilterCount > 0 ? String(activeFilterCount) : undefined}
               onClick={() => setAdvanced((value) => !value)}
-            >
-              <i className={`pi ${advanced ? "pi-chevron-up" : "pi-sliders-h"} text-xs`} />
-              <span>{advanced ? "Masquer" : "Plus de filtres"}</span>
-              {activeFilterCount > 0 ? (
-                <span className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold leading-none text-white">
-                  {activeFilterCount}
-                </span>
-              ) : null}
-            </button>
+            />
           </div>
         </div>
       </div>
 
       {advanced ? (
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/35 p-4">
+        <div className="border-t border-emerald-100 bg-emerald-50/35 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">Filtres avancés</h3>
-              <p className="mt-0.5 text-xs text-slate-500">Affinez la liste avec des critères complémentaires.</p>
+              <h3 className="m-0 text-sm font-semibold text-slate-900">Filtres avancés</h3>
+              <p className="mt-0.5 text-xs text-slate-500">Affinez la liste sans quitter la toolbar.</p>
             </div>
-            <i className="pi pi-sliders-h text-sm text-emerald-600" />
+            <MetricIcon icon="pi-sliders-h" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <label className="block min-w-0">
+            <label>
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Cycle</span>
               <Dropdown className={controlClass} value={cycle} options={cycleOptions} onChange={(event) => setCycle(String(event.value))} />
             </label>
-
-            <label className="block min-w-0">
+            <label>
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Sexe</span>
               <Dropdown
                 className={controlClass}
@@ -245,8 +232,7 @@ export function StudentsPage() {
                 onChange={(event) => setGender(String(event.value))}
               />
             </label>
-
-            <label className="block min-w-0">
+            <label>
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Responsable joignable</span>
               <Dropdown
                 className={controlClass}
@@ -259,25 +245,22 @@ export function StudentsPage() {
                 onChange={(event) => setContact(String(event.value))}
               />
             </label>
-
-            <label className="block min-w-0">
+            <label>
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Responsable principal</span>
               <Dropdown className={controlClass} value={guardian} filter options={guardianOptions} onChange={(event) => setGuardian(String(event.value))} />
             </label>
-
-            <label className="block min-w-0">
+            <label>
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Naissance à partir du</span>
               <InputText className={controlClass} type="date" value={birthFrom} onChange={(event) => setBirthFrom(event.target.value)} />
             </label>
-
-            <label className="block min-w-0">
+            <label>
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Naissance jusqu’au</span>
               <InputText className={controlClass} type="date" value={birthTo} onChange={(event) => setBirthTo(event.target.value)} />
             </label>
           </div>
         </div>
       ) : null}
-    </div>
+    </section>
   );
 
   return (
@@ -288,9 +271,7 @@ export function StudentsPage() {
       description="Retrouvez les élèves inscrits ou préinscrits pour l’année de travail."
       meta={
         <div className="flex items-center gap-2 text-sm text-slate-500">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-            <i className="pi pi-users text-xs leading-none" />
-          </span>
+          <MetricIcon icon="pi-users" />
           <strong className="font-semibold text-slate-900">{filtered.length}</strong>
           <span>élève{filtered.length > 1 ? "s" : ""}</span>
         </div>
@@ -326,9 +307,7 @@ export function StudentsPage() {
       ) : filtered.length === 0 ? (
         <div className="grid min-h-[360px] place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-8 text-center">
           <div className="max-w-sm">
-            <span className="mx-auto flex size-11 items-center justify-center rounded-xl bg-white text-slate-400 ring-1 ring-slate-200">
-              <i className="pi pi-users leading-none" />
-            </span>
+            <MetricIcon icon="pi-users" size="md" tone="slate" className="mx-auto" />
             <h3 className="mt-4 text-sm font-semibold text-slate-900">Aucun élève trouvé</h3>
             <p className="mt-1 text-sm leading-6 text-slate-500">
               Modifiez les filtres ou créez une nouvelle inscription pour commencer.
@@ -351,26 +330,20 @@ export function StudentsPage() {
           >
             <Column
               header="Élève"
+              sortable
+              sortField="lastName"
               body={(item: StudentListItem) => (
                 <div className="flex min-w-0 items-center gap-3 py-1">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-center text-xs font-bold leading-none text-emerald-700 ring-1 ring-emerald-100">
-                    <span className="block leading-none">
-                      {item.firstName[0]}
-                      {item.lastName[0]}
-                    </span>
+                  <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold leading-none text-emerald-700 ring-1 ring-emerald-100">
+                    <span className="block leading-none">{item.firstName[0]}{item.lastName[0]}</span>
                   </span>
                   <div className="min-w-0">
-                    <strong className="block truncate text-sm font-semibold text-slate-900">
-                      {item.firstName} {item.lastName}
-                    </strong>
+                    <strong className="block truncate text-sm font-semibold text-slate-900">{item.firstName} {item.lastName}</strong>
                     <span className="mt-0.5 block truncate text-xs text-slate-400">{item.matricule}</span>
                   </div>
                 </div>
               )}
-              sortable
-              sortField="lastName"
             />
-
             <Column field="cycleName" header="Cycle" sortable body={(item: StudentListItem) => <span className="text-sm text-slate-700">{item.cycleName || "—"}</span>} />
             <Column field="levelName" header="Niveau" sortable body={(item: StudentListItem) => <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{item.levelName || "Non défini"}</span>} />
             <Column
@@ -385,6 +358,7 @@ export function StudentsPage() {
             <Column header="Statut" body={(item: StudentListItem) => <EnrollmentStatusTag status={item.status} />} />
             <Column
               header=""
+              bodyClassName="w-14"
               body={(item: StudentListItem) => (
                 <button
                   type="button"
@@ -398,7 +372,6 @@ export function StudentsPage() {
                   <i className="pi pi-chevron-right text-xs leading-none" />
                 </button>
               )}
-              bodyClassName="w-14"
             />
           </DataTable>
         </div>

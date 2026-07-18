@@ -1,40 +1,4 @@
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem 1rem;
-}
-
-.form-dialog-wide {
-  width: min(94vw, 760px);
-}
-
-.form-grid .p-inputtext,
-.form-grid .p-inputnumber,
-.form-grid .p-inputnumber-input,
-.form-grid .p-dropdown,
-.form-grid .p-multiselect,
-.form-grid .p-inputtextarea {
-  width: 100%;
-}
-
-.code-field-group {
-  display: flex;
-  width: 100%;
-}
-
-.code-field-group .p-inputtext {
-  min-width: 0;
-  flex: 1;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.code-field-group .p-button {
-  flex: 0 0 auto;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
+/* Compact KPI strip used by the financial accounts and payments pages. */
 .space-y-4 > header + section:has(> div + div > article) {
   padding: 0.75rem !important;
 }
@@ -51,7 +15,8 @@
 }
 
 .space-y-4 > header + section:has(> div + div > article) > div:first-child p {
-  display: none !important;
+  font-size: 0.65rem !important;
+  line-height: 1rem !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) > div:nth-child(2) {
@@ -85,25 +50,22 @@
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child {
-  position: relative !important;
   grid-column: 2;
   grid-row: 1 / 4;
-  display: block !important;
+  display: flex !important;
   width: 2rem !important;
   height: 2rem !important;
-  overflow: hidden;
+  align-items: center !important;
+  justify-content: center !important;
+  place-items: unset !important;
   border-radius: 0.625rem !important;
-  line-height: 0 !important;
+  line-height: 1 !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child i {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
   display: block;
   margin: 0;
   line-height: 1 !important;
-  transform: translate(-50%, -50%) !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > strong {
@@ -122,27 +84,7 @@
   line-height: 0.875rem !important;
 }
 
-/* Les tableaux financiers restent bord à bord sans modifier le padding par défaut des autres SettingsTablePanel. */
-section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
-  padding: 0 !important;
-}
-
-/* Le panneau avancé de la liste élèves reste à l'intérieur de la toolbar avec une respiration identique aux pages financières. */
-.medium-controls section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
-  margin: 0 1rem 1rem;
-  border: 1px solid rgb(209 250 229);
-  border-radius: 0.75rem;
-}
-
-@media (max-width: 680px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-grid .field-wide {
-    grid-column: auto;
-  }
-
+@media (max-width: 639px) {
   .space-y-4 > header + section:has(> div + div > article) > div:nth-child(2) {
     grid-template-columns: 1fr !important;
   }
