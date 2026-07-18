@@ -1,6 +1,7 @@
 import { supabase } from "../../../shared/lib/supabase/client";
 import type {
   FinancialPayment,
+  OpenFinancialInstallment,
   PaymentMethod,
 } from "../domain/financial-payment";
 
@@ -23,6 +24,21 @@ const mapPayment = (row: any): FinancialPayment => ({
   createdAt: row.created_at,
 });
 
+const mapOpenInstallment = (row: any): OpenFinancialInstallment => ({
+  id: row.id,
+  financialAccountId: row.financial_account_id,
+  studentName: row.account?.student_name_snapshot ?? "",
+  matricule: row.account?.matricule_snapshot ?? "",
+  levelName: row.account?.level_name_snapshot ?? "",
+  cycleName: row.account?.cycle_name_snapshot ?? "",
+  sequence: Number(row.sequence),
+  label: row.label_snapshot,
+  dueDate: row.due_date,
+  amount: Number(row.amount),
+  paidAmount: Number(row.paid_amount),
+  balanceAmount: Number(row.balance_amount),
+});
+
 export async function listFinancialPayments(
   institutionId: string,
   academicYearId: string,
@@ -39,6 +55,26 @@ export async function listFinancialPayments(
 
   if (error) throw error;
   return (data ?? []).map(mapPayment);
+}
+
+export async function listOpenFinancialInstallments(
+  institutionId: string,
+  academicYearId: string,
+): Promise<OpenFinancialInstallment[]> {
+  const { data, error } = await db
+    .from("student_financial_installments")
+    .select(
+      "*, account:student_financial_accounts!inner(institution_id,academic_year_id,student_name_snapshot,matricule_snapshot,level_name_snapshot,cycle_name_snapshot,status)",
+    )
+    .eq("account.institution_id", institutionId)
+    .eq("account.academic_year_id", academicYearId)
+    .in("account.status", ["active", "draft"])
+    .gt("balance_amount", 0)
+    .order("due_date", { ascending: true })
+    .order("sequence", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []).map(mapOpenInstallment);
 }
 
 export async function registerFinancialPayment(input: {
