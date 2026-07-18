@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { Checkbox } from "primereact/checkbox";
 import { Dialog } from "primereact/dialog";
@@ -10,7 +10,13 @@ import { MultiSelect } from "primereact/multiselect";
 import { generateCode } from "../../../shared/utils/generate-code";
 
 export type EntityValue =
-  string | number | boolean | string[] | null | undefined;
+  | string
+  | number
+  | boolean
+  | string[]
+  | null
+  | undefined;
+
 export interface EntityField {
   key: string;
   label: string;
@@ -18,7 +24,11 @@ export interface EntityField {
   required?: boolean;
   options?: { label: string; value: string }[];
   suffix?: string;
+  span?: 1 | 2;
+  visibleWhen?: (values: Record<string, EntityValue>) => boolean;
+  resetOnChange?: string[];
 }
+
 interface Props {
   header: string;
   visible: boolean;
@@ -27,6 +37,7 @@ interface Props {
   initial: Record<string, EntityValue>;
   onHide: () => void;
   onSubmit: (values: Record<string, EntityValue>) => Promise<void>;
+  columns?: 1 | 2;
 }
 
 export function SettingsEntityDialog({
@@ -37,41 +48,69 @@ export function SettingsEntityDialog({
   initial,
   onHide,
   onSubmit,
+  columns = 1,
 }: Props) {
   const [values, setValues] = useState(initial);
   const [submitted, setSubmitted] = useState(false);
+
   useEffect(() => {
     if (visible) {
       setValues(initial);
       setSubmitted(false);
     }
   }, [initial, visible]);
-  const invalid = (field: EntityField) =>
-    field.required &&
-    (values[field.key] === "" ||
-      values[field.key] === null ||
-      values[field.key] === undefined);
+
+  const visibleFields = useMemo(
+    () => fields.filter((field) => field.visibleWhen?.(values) ?? true),
+    [fields, values],
+  );
+
+  const invalid = (field: EntityField) => {
+    if (!field.required) return false;
+    const value = values[field.key];
+    return (
+      value === "" ||
+      value === null ||
+      value === undefined ||
+      (Array.isArray(value) && value.length === 0)
+    );
+  };
+
   const numberValue = (key: string) => {
     const value = values[key];
     return typeof value === "number" ? value : null;
   };
+
+  const updateValue = (field: EntityField, value: EntityValue) => {
+    setValues((current) => {
+      const next = { ...current, [field.key]: value };
+      field.resetOnChange?.forEach((key) => {
+        next[key] = [];
+      });
+      return next;
+    });
+  };
+
   const submit = () => {
     setSubmitted(true);
-    if (fields.some(invalid)) return;
+    if (visibleFields.some(invalid)) return;
     void onSubmit(values);
   };
+
   return (
     <Dialog
       header={header}
       visible={visible}
       modal
-      className="form-dialog"
+      className={columns === 2 ? "form-dialog form-dialog-wide" : "form-dialog"}
       onHide={onHide}
     >
-      <div className="form-stack">
-        {fields.map((field) => (
+      <div className={columns === 2 ? "form-grid" : "form-stack"}>
+        {visibleFields.map((field) => (
           <div
-            className={field.type === "boolean" ? "checkbox-field" : "field"}
+            className={`${field.type === "boolean" ? "checkbox-field" : "field"}${
+              columns === 2 && field.span === 2 ? " field-wide" : ""
+            }`}
             key={field.key}
           >
             {field.type === "boolean" ? (
@@ -80,10 +119,7 @@ export function SettingsEntityDialog({
                   inputId={field.key}
                   checked={Boolean(values[field.key])}
                   onChange={(event) =>
-                    setValues((current) => ({
-                      ...current,
-                      [field.key]: Boolean(event.checked),
-                    }))
+                    updateValue(field, Boolean(event.checked))
                   }
                 />
                 <label htmlFor={field.key}>{field.label}</label>
@@ -102,11 +138,9 @@ export function SettingsEntityDialog({
                     optionValue="value"
                     display="chip"
                     filter
+                    invalid={submitted && invalid(field)}
                     onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: event.value as string[],
-                      }))
+                      updateValue(field, event.value as string[])
                     }
                   />
                 ) : field.type === "select" ? (
@@ -118,10 +152,7 @@ export function SettingsEntityDialog({
                     optionValue="value"
                     invalid={submitted && invalid(field)}
                     onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: event.value as EntityValue,
-                      }))
+                      updateValue(field, event.value as EntityValue)
                     }
                   />
                 ) : field.type === "number" ? (
@@ -133,10 +164,7 @@ export function SettingsEntityDialog({
                     maxFractionDigits={2}
                     invalid={submitted && invalid(field)}
                     onValueChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: event.value ?? null,
-                      }))
+                      updateValue(field, event.value ?? null)
                     }
                   />
                 ) : field.type === "textarea" ? (
@@ -146,10 +174,7 @@ export function SettingsEntityDialog({
                     rows={4}
                     invalid={submitted && invalid(field)}
                     onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [field.key]: event.target.value,
-                      }))
+                      updateValue(field, event.target.value)
                     }
                   />
                 ) : (
@@ -159,10 +184,7 @@ export function SettingsEntityDialog({
                       value={String(values[field.key] ?? "")}
                       invalid={submitted && invalid(field)}
                       onChange={(event) =>
-                        setValues((current) => ({
-                          ...current,
-                          [field.key]: event.target.value,
-                        }))
+                        updateValue(field, event.target.value)
                       }
                     />
                     {field.key === "code" && (
@@ -188,7 +210,7 @@ export function SettingsEntityDialog({
             )}
           </div>
         ))}
-        <div className="dialog-actions">
+        <div className={`dialog-actions${columns === 2 ? " field-wide" : ""}`}>
           <Button
             label="Annuler"
             severity="secondary"
