@@ -14,6 +14,8 @@ export type FinancialPayment = {
   receiptNumber: string;
   studentName: string;
   matricule: string;
+  levelName: string;
+  cycleName: string;
   paymentDate: string;
   amount: number;
   method: PaymentMethod;
