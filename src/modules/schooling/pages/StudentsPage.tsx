@@ -186,31 +186,30 @@ export function StudentsPage() {
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {activeFilterCount > 0 ? (
-              <span className="inline-flex h-10 items-center rounded-xl bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                {activeFilterCount} filtre{activeFilterCount > 1 ? "s" : ""}
-              </span>
-            ) : null}
-
-            {activeFilterCount > 0 ? (
-              <button
-                type="button"
-                className={`${resetButtonClass} inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900`}
-                onClick={resetFilters}
-              >
-                <i className="pi pi-filter-slash text-xs" />
-                Réinitialiser
-              </button>
-            ) : null}
-
+          <div className="flex min-h-10 flex-wrap items-center justify-end gap-2">
             <button
               type="button"
-              className={`${resetButtonClass} inline-flex h-10 min-w-[154px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50`}
+              className={`${resetButtonClass} inline-flex h-10 min-w-[190px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50`}
               onClick={() => setAdvanced((value) => !value)}
             >
               <i className={`pi ${advanced ? "pi-chevron-up" : "pi-sliders-h"} text-xs`} />
-              {advanced ? "Masquer les filtres" : "Plus de filtres"}
+              <span>{advanced ? "Masquer les filtres" : "Plus de filtres"}</span>
+              {activeFilterCount > 0 ? (
+                <span className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold leading-none text-white">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
+
+            <button
+              type="button"
+              className={`${resetButtonClass} inline-flex h-10 min-w-[124px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 ${activeFilterCount > 0 ? "visible" : "invisible pointer-events-none"}`}
+              onClick={resetFilters}
+              aria-hidden={activeFilterCount === 0}
+              tabIndex={activeFilterCount > 0 ? 0 : -1}
+            >
+              <i className="pi pi-filter-slash text-xs" />
+              Réinitialiser
             </button>
           </div>
         </div>
