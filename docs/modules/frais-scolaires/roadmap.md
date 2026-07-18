@@ -15,7 +15,7 @@ Le lot suivant ne démarre qu'après validation explicite du précédent, sauf t
 | Lot | Intitulé | Statut | Dépend de |
 |---|---|---|---|
 | 0 | Fondations métier et architecture annuelle | Validé | — |
-| 1 | Catalogue des frais et grilles tarifaires annuelles | À spécifier | Lot 0 |
+| 1 | Catalogue des frais et grilles tarifaires annuelles | Spécifié | Lot 0 |
 | 2 | Plans de paiement | À cadrer | Lot 1 |
 | 3 | Dossiers financiers et facturation | À cadrer | Lots 1 et 2 |
 | 4 | Encaissements, affectations et reçus | À cadrer | Lot 3 |
@@ -25,9 +25,9 @@ Le lot suivant ne démarre qu'après validation explicite du précédent, sauf t
 
 ## Prochaine étape officielle
 
-**Lot 1 — Catalogue des frais et grilles tarifaires annuelles**
+**Lot 1 — Développement du catalogue des frais et des grilles tarifaires annuelles**
 
-Objectif de la prochaine session : compléter et valider la spécification métier, UX, données, permissions et critères d'acceptation du Lot 1 avant toute implémentation.
+Objectif de la prochaine session : ouvrir une branche/MR d'implémentation du Lot 1 en respectant la spécification métier et le parcours UX validé. Le lot passera ensuite en validation avant d'être déclaré terminé.
 
 ## Lot 0 — Fondations
 
@@ -43,13 +43,16 @@ Livrables :
 
 Livrables attendus :
 
-- types de frais ;
-- grille par année scolaire ;
+- types de frais permanents au niveau établissement ;
+- grille unique par année scolaire ;
 - lignes ciblant établissement, plusieurs cycles ou plusieurs niveaux ;
 - résolution niveau > cycle > établissement ;
 - détection des chevauchements ;
-- duplication vers une nouvelle année ;
+- duplication simple vers une nouvelle année ;
+- tableau filtrable par frais, cycle, niveau et statut ;
 - écrans et critères d'acceptation.
+
+Décisions UX validées dans `specs/lot-01-parcours-ux.md`.
 
 ## Lot 2 — Plans de paiement
 
