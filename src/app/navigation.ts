@@ -47,6 +47,7 @@ export const navigation: NavigationGroup[] = [
       { type: "title", label: "Configuration" },
       { type: "link", label: "Grille tarifaire", icon: "pi-money-bill", to: "/gestion-financiere/configuration/grilles-tarifaires" },
       { type: "link", label: "Plans de paiement", icon: "pi-calendar-clock", to: "/gestion-financiere/configuration/plans-paiement" },
+      { type: "link", label: "Modèles d’avantages", icon: "pi-percentage", to: "/gestion-financiere/configuration/modeles-avantages" },
     ],
   },
   {
