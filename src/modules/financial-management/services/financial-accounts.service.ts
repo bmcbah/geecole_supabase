@@ -61,6 +61,9 @@ export type FinancialAccountPageRequest = {
   rows: number;
   search?: string;
   status?: string;
+  level?: string;
+  cycle?: string;
+  balanceState?: "settled" | "outstanding";
   sortField?: string;
   sortOrder?: 1 | -1 | 0 | null;
 };
@@ -112,9 +115,13 @@ export async function listFinancialAccountsPage(
 
   if (request.search?.trim()) {
     const value = request.search.trim().replace(/,/g, " ");
-    query = query.or(`student_name_snapshot.ilike.%${value}%,matricule_snapshot.ilike.%${value}%,level_name_snapshot.ilike.%${value}%`);
+    query = query.or(`student_name_snapshot.ilike.%${value}%,matricule_snapshot.ilike.%${value}%,level_name_snapshot.ilike.%${value}%,cycle_name_snapshot.ilike.%${value}%`);
   }
   if (request.status) query = query.eq("status", request.status);
+  if (request.level) query = query.eq("level_name_snapshot", request.level);
+  if (request.cycle) query = query.eq("cycle_name_snapshot", request.cycle);
+  if (request.balanceState === "settled") query = query.lte("balance_amount", 0);
+  if (request.balanceState === "outstanding") query = query.gt("balance_amount", 0);
 
   const sortColumn = sortMap[request.sortField ?? "studentName"] ?? "student_name_snapshot";
   query = query.order(sortColumn, { ascending: request.sortOrder !== -1 }).range(start, end);
@@ -184,12 +191,26 @@ export async function reapplyAllFinancialAccounts(
   });
   if (error) throw error;
 
-  const result = data as Partial<FinancialGenerationResult> | null;
+  const result = data as any;
   return {
     generated: Number(result?.generated ?? 0),
     regenerated: Number(result?.regenerated ?? 0),
-    skippedPaid: Number(result?.skippedPaid ?? 0),
+    skippedPaid: Number(result?.skipped_paid ?? 0),
     failed: Number(result?.failed ?? 0),
-    errors: Array.isArray(result?.errors) ? result.errors : [],
+    errors: Array.isArray(result?.errors)
+      ? result.errors.map((item: any) => ({
+          enrollmentId: String(item.enrollment_id ?? ""),
+          studentId: String(item.student_id ?? ""),
+          studentName: String(item.student_name ?? "Élève inconnu"),
+          matricule: item.matricule ?? null,
+          levelName: item.level_name ?? null,
+          cycleName: item.cycle_name ?? null,
+          code: String(item.code ?? "UNKNOWN"),
+          message: String(item.message ?? "Erreur inconnue"),
+          detail: item.detail ?? null,
+          hint: item.hint ?? null,
+          context: item.context ?? null,
+        }))
+      : [],
   };
 }
