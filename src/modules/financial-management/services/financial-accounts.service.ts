@@ -65,6 +65,28 @@ export type FinancialAccountPageRequest = {
   sortOrder?: 1 | -1 | 0 | null;
 };
 
+export type FinancialGenerationError = {
+  enrollmentId: string;
+  studentId: string;
+  studentName: string;
+  matricule?: string | null;
+  levelName?: string | null;
+  cycleName?: string | null;
+  code: string;
+  message: string;
+  detail?: string | null;
+  hint?: string | null;
+  context?: string | null;
+};
+
+export type FinancialGenerationResult = {
+  generated: number;
+  regenerated: number;
+  skippedPaid: number;
+  failed: number;
+  errors: FinancialGenerationError[];
+};
+
 export async function listFinancialAccountsPage(
   institutionId: string,
   academicYearId: string,
@@ -152,11 +174,22 @@ export async function generateFinancialAccount(enrollmentId: string) {
   return data as string;
 }
 
-export async function reapplyAllFinancialAccounts(institutionId: string, academicYearId: string) {
+export async function reapplyAllFinancialAccounts(
+  institutionId: string,
+  academicYearId: string,
+): Promise<FinancialGenerationResult> {
   const { data, error } = await db.rpc("reapply_all_student_financial_accounts", {
     target_institution_id: institutionId,
     target_academic_year_id: academicYearId,
   });
   if (error) throw error;
-  return data as { generated: number; regenerated: number; skippedPaid: number; failed: number };
+
+  const result = data as Partial<FinancialGenerationResult> | null;
+  return {
+    generated: Number(result?.generated ?? 0),
+    regenerated: Number(result?.regenerated ?? 0),
+    skippedPaid: Number(result?.skippedPaid ?? 0),
+    failed: Number(result?.failed ?? 0),
+    errors: Array.isArray(result?.errors) ? result.errors : [],
+  };
 }
