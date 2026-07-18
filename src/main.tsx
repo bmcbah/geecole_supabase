@@ -5,6 +5,7 @@ import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 import "./shared/styles/tailwind.css";
 import "./shared/styles/global.css";
+import "./shared/styles/forms.css";
 import { App } from "./app/App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
