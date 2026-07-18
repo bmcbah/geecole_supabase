@@ -5,16 +5,8 @@ const groups = [
     label: "Administration",
     sections: [
       { path: "etablissement", icon: "pi-cog", label: "Général" },
-      {
-        path: "annees-scolaires",
-        icon: "pi-calendar",
-        label: "Années scolaires",
-      },
-      {
-        path: "utilisateurs-roles",
-        icon: "pi-users",
-        label: "Personnes et accès",
-      },
+      { path: "annees-scolaires", icon: "pi-calendar", label: "Années scolaires" },
+      { path: "utilisateurs-roles", icon: "pi-users", label: "Personnes et accès" },
     ],
   },
   {
@@ -29,31 +21,14 @@ const groups = [
   {
     label: "Évaluation",
     sections: [
-      {
-        path: "types-notes",
-        icon: "pi-tags",
-        label: "Types de notes",
-      },
-      {
-        path: "formules-calcul",
-        icon: "pi-percentage",
-        label: "Formules de calcul",
-      },
+      { path: "types-notes", icon: "pi-tags", label: "Types de notes" },
+      { path: "formules-calcul", icon: "pi-percentage", label: "Formules de calcul" },
     ],
   },
   {
-    label: "Frais scolaires",
+    label: "Référentiels financiers",
     sections: [
-      {
-        path: "grilles-tarifaires",
-        icon: "pi-wallet",
-        label: "Catalogue et tarifs",
-      },
-      {
-        path: "plans-paiement",
-        icon: "pi-calendar-clock",
-        label: "Plans de paiement",
-      },
+      { path: "categories-frais", icon: "pi-tags", label: "Catégories de frais" },
     ],
   },
 ] as const;
