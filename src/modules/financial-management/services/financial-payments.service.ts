@@ -18,6 +18,8 @@ const mapPayment = (row: any): FinancialPayment => ({
   externalReference: row.external_reference,
   note: row.note,
   status: row.status,
+  cancellationReason: row.cancellation_reason,
+  cancelledAt: row.cancelled_at,
   createdAt: row.created_at,
 });
 
@@ -54,6 +56,16 @@ export async function registerFinancialPayment(input: {
     target_payment_date: input.paymentDate,
     target_external_reference: input.externalReference || null,
     target_note: input.note || null,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+export async function cancelFinancialPayment(paymentId: string, reason: string) {
+  const { data, error } = await db.rpc("cancel_financial_payment", {
+    target_payment_id: paymentId,
+    target_reason: reason,
   });
 
   if (error) throw error;
