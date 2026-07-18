@@ -124,6 +124,12 @@ export function FinancialAccountsPage() {
     }
   };
 
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEnrollmentId(undefined);
+    setPaymentPlanId(undefined);
+  };
+
   if (!year) {
     return (
       <Message
@@ -223,15 +229,57 @@ export function FinancialAccountsPage() {
         header="Générer un dossier financier"
         visible={dialogOpen}
         modal
-        className="w-[min(94vw,36rem)]"
-        onHide={() => setDialogOpen(false)}
-        footer={
-          <div className="flex justify-end gap-2">
+        className="form-dialog form-dialog-wide"
+        contentClassName="overflow-visible"
+        onHide={closeDialog}
+      >
+        <div className="form-grid">
+          <div className="field field-wide">
+            <label htmlFor="financial-enrollment">Inscription confirmée</label>
+            <Dropdown
+              inputId="financial-enrollment"
+              className="w-full"
+              value={enrollmentId}
+              options={enrollmentOptions}
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Sélectionner un élève"
+              emptyMessage="Aucune inscription disponible"
+              emptyFilterMessage="Aucun élève trouvé"
+              filter
+              showClear
+              onChange={(event) => setEnrollmentId(event.value)}
+            />
+            <small className="text-slate-500">
+              Seules les inscriptions confirmées sans dossier financier sont proposées.
+            </small>
+          </div>
+
+          <div className="field field-wide">
+            <label htmlFor="financial-payment-plan">Plan de paiement</label>
+            <Dropdown
+              inputId="financial-payment-plan"
+              className="w-full"
+              value={paymentPlanId}
+              options={plans}
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Sélectionner un plan"
+              emptyMessage="Aucun plan actif disponible"
+              showClear
+              onChange={(event) => setPaymentPlanId(event.value)}
+            />
+            <small className="text-slate-500">
+              Le tarif et l’échéancier seront figés lors de la génération.
+            </small>
+          </div>
+
+          <div className="dialog-actions field-wide">
             <Button
               label="Annuler"
               severity="secondary"
-              text
-              onClick={() => setDialogOpen(false)}
+              outlined
+              onClick={closeDialog}
             />
             <Button
               label="Générer"
@@ -241,32 +289,6 @@ export function FinancialAccountsPage() {
               onClick={() => void handleGenerate()}
             />
           </div>
-        }
-      >
-        <div className="grid gap-4 pt-2">
-          <label className="grid gap-2 text-sm font-medium">
-            Inscription confirmée
-            <Dropdown
-              value={enrollmentId}
-              options={enrollmentOptions}
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Sélectionner un élève"
-              filter
-              onChange={(event) => setEnrollmentId(event.value)}
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Plan de paiement
-            <Dropdown
-              value={paymentPlanId}
-              options={plans}
-              optionLabel="name"
-              optionValue="id"
-              placeholder="Sélectionner un plan"
-              onChange={(event) => setPaymentPlanId(event.value)}
-            />
-          </label>
         </div>
       </Dialog>
     </div>
