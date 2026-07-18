@@ -49,6 +49,11 @@ const groups = [
         icon: "pi-wallet",
         label: "Catalogue et tarifs",
       },
+      {
+        path: "plans-paiement",
+        icon: "pi-calendar-clock",
+        label: "Plans de paiement",
+      },
     ],
   },
 ] as const;

@@ -10,6 +10,7 @@ import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { LevelsSettingsPanel } from "../components/LevelsSettingsPanel";
 import { SchoolFeesSettingsPanel } from "../components/SchoolFeesSettingsPanel";
+import { PaymentPlansSettingsPanel } from "../components/PaymentPlansSettingsPanel";
 import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
 import { AssessmentTypesSettingsPage } from "../components/AssessmentTypesSettingsPage";
 import { GradingFormulasSettingsPage } from "../components/GradingFormulasSettingsPage";
@@ -29,6 +30,7 @@ const sections = [
   "types-notes",
   "formules-calcul",
   "grilles-tarifaires",
+  "plans-paiement",
   "utilisateurs-roles",
 ] as const;
 
