@@ -1,4 +1,4 @@
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import { Accordion, AccordionTab } from "primereact/accordion";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
@@ -36,6 +36,10 @@ const sections = [
 
 export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
+  const location = useLocation();
+  const isFinancialConfiguration = location.pathname.startsWith(
+    "/gestion-financiere/configuration",
+  );
   const {
     institution: selected,
     year,
@@ -72,9 +76,13 @@ export function SettingsPage() {
   return (
     <section className="space-y-3">
       <PageHeader
-        eyebrow="Administration"
-        title="Paramétrage"
-        description={`Configurez les règles propres à ${selected.name}.`}
+        eyebrow={isFinancialConfiguration ? "Gestion financière" : "Administration"}
+        title={isFinancialConfiguration ? "Configuration financière" : "Paramétrage"}
+        description={
+          isFinancialConfiguration
+            ? `Configurez les frais, les tarifs et les plans de paiement de ${selected.name}.`
+            : `Configurez les règles propres à ${selected.name}.`
+        }
         meta={
           year ? (
             <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
@@ -149,6 +157,8 @@ export function SettingsPage() {
           <GradingFormulasSettingsPage />
         ) : section === "grilles-tarifaires" ? (
           <SchoolFeesSettingsPanel />
+        ) : section === "plans-paiement" ? (
+          <PaymentPlansSettingsPanel />
         ) : (
           <PeopleAccessPanel />
         )}
