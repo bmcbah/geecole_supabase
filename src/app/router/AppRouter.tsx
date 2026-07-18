@@ -50,6 +50,11 @@ const FinancialAccountsPage = lazy(() =>
     (module) => ({ default: module.FinancialAccountsPage }),
   ),
 );
+const FinancialPaymentsPage = lazy(() =>
+  import("../../modules/financial-management/pages/FinancialPaymentsPage").then(
+    (module) => ({ default: module.FinancialPaymentsPage }),
+  ),
+);
 
 export function AppRouter() {
   return (
@@ -71,40 +76,17 @@ export function AppRouter() {
               </AcademicSessionProvider>
             }
           >
-            <Route
-              index
-              element={<Navigate to="/parametrage/etablissement" replace />}
-            />
-            <Route
-              path="/etablissement"
-              element={<Navigate to="/parametrage/etablissement" replace />}
-            />
+            <Route index element={<Navigate to="/parametrage/etablissement" replace />} />
+            <Route path="/etablissement" element={<Navigate to="/parametrage/etablissement" replace />} />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
-            <Route
-              path="/gestion-financiere/configuration/:section"
-              element={<SettingsPage />}
-            />
+            <Route path="/gestion-financiere/configuration/:section" element={<SettingsPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
-            <Route
-              path="/scolarite/inscriptions/nouvelle"
-              element={<EnrollmentPage />}
-            />
-            <Route
-              path="/scolarite/eleves/:studentId"
-              element={<StudentProfilePage />}
-            />
-            <Route
-              path="/scolarite/eleves/:studentId/reinscription"
-              element={<ReenrollmentPage />}
-            />
-            <Route
-              path="/scolarite/reinscriptions"
-              element={<BatchReenrollmentPage />}
-            />
-            <Route
-              path="/gestion-financiere/dossiers"
-              element={<FinancialAccountsPage />}
-            />
+            <Route path="/scolarite/inscriptions/nouvelle" element={<EnrollmentPage />} />
+            <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
+            <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
+            <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
+            <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
+            <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
