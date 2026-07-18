@@ -25,7 +25,7 @@ export function SettingsTablePanel({
   return (
     <section
       className={joinClassNames(
-        activeCard ? "overflow-hidden rounded-xl bg-white shadow-sm " : "",
+        activeCard ? "overflow-hidden rounded-xl bg-white shadow-sm" : "",
         className,
       )}
     >
@@ -48,7 +48,6 @@ export function SettingsTablePanel({
       <div
         className={joinClassNames(
           "overflow-hidden",
-          "px-4 pb-3",
           "[&_.p-datatable]:border-0 [&_.p-datatable-wrapper]:border-0",
           "[&_.p-datatable-thead>tr>th]:px-3 [&_.p-datatable-thead>tr>th]:py-2",
           "[&_.p-datatable-thead>tr>th]:text-xs [&_.p-datatable-thead>tr>th]:font-semibold",
