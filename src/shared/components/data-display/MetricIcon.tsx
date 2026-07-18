@@ -23,10 +23,12 @@ export function MetricIcon({
 }: MetricIconProps) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden leading-none shadow-sm ring-1 ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
+      className={`relative inline-block shrink-0 overflow-hidden leading-none shadow-sm ring-1 ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
       aria-hidden="true"
     >
-      <i className={`pi ${icon} block translate-y-0 leading-none`} />
+      <i
+        className={`pi ${icon} absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 leading-none`}
+      />
     </span>
   );
 }
