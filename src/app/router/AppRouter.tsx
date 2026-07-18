@@ -18,7 +18,7 @@ const StudentsPage = lazy(() =>
   import("../../modules/schooling/pages/StudentsPage").then((module) => ({ default: module.StudentsPage })),
 );
 const StudentProfilePage = lazy(() =>
-  import("../../modules/schooling/pages/StudentProfileWithFinancePage").then((module) => ({ default: module.StudentProfileWithFinancePage })),
+  import("../../modules/schooling/pages/StudentProfilePage").then((module) => ({ default: module.StudentProfilePage })),
 );
 const EnrollmentPage = lazy(() =>
   import("../../modules/schooling/pages/EnrollmentPage").then((module) => ({ default: module.EnrollmentPage })),
