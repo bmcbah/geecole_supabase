@@ -1,4 +1,8 @@
-export type FinancialAccountStatus = "draft" | "active" | "settled" | "cancelled";
+export type FinancialAccountStatus =
+  | "draft"
+  | "active"
+  | "settled"
+  | "cancelled";
 
 export type FinancialAccount = {
   id: string;
@@ -46,7 +50,10 @@ export type FinancialAccountDetails = FinancialAccount & {
   installments: FinancialInstallment[];
 };
 
-export const financialAccountStatusLabels: Record<FinancialAccountStatus, string> = {
+export const financialAccountStatusLabels: Record<
+  FinancialAccountStatus,
+  string
+> = {
   draft: "Brouillon",
   active: "Actif",
   settled: "Soldé",
