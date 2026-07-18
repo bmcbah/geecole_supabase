@@ -35,10 +35,10 @@ const navigation: NavigationGroup[] = [
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "group flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
+    "group flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
     isActive
-      ? "text-brand-700 ring-1 ring-inset ring-brand-300"
-      : "text-slate-700 hover:text-brand-700",
+      ? "border-brand-200 bg-brand-50 text-brand-700"
+      : "border-transparent bg-transparent text-slate-700 hover:border-brand-100 hover:bg-brand-50/60 hover:text-brand-700",
   ].join(" ");
 
 export function AppLayout() {
@@ -99,14 +99,14 @@ export function AppLayout() {
       <div className="flex w-[96px] shrink-0 flex-col bg-brand-700 text-white shadow-[4px_0_20px_rgba(15,118,110,0.2)]">
         <button
           type="button"
-          className="flex h-[72px] w-full shrink-0 items-center justify-center border-b border-white/20 transition hover:bg-white/10"
+          className="flex h-[72px] w-full shrink-0 items-center justify-center border-b border-white/20 transition-colors hover:bg-white/5"
           aria-label="Accueil GeeCole"
           onClick={() => {
             void navigate("/scolarite/eleves");
             closeMobileSidebar();
           }}
         >
-          <span className="flex h-11 w-[72px] items-center justify-center rounded-xl bg-brand-600 px-2 text-center text-sm font-black tracking-tight text-white shadow-sm ring-1 ring-inset ring-white/25">
+          <span className="flex h-11 w-[72px] items-center justify-center rounded-xl bg-brand-700 px-2 text-center text-sm font-black tracking-tight text-brand-100 ring-1 ring-inset ring-white/25">
             GeeCole
           </span>
         </button>
@@ -120,10 +120,10 @@ export function AppLayout() {
                 key={group.label}
                 type="button"
                 className={[
-                  "flex min-h-[72px] w-full flex-col items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-center transition-colors",
+                  "flex min-h-[72px] w-full flex-col items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-center transition-colors",
                   active || selected
-                    ? "bg-white text-brand-700 shadow-sm ring-1 ring-inset ring-white"
-                    : "text-white/90 hover:bg-white/10 hover:text-white",
+                    ? "border-white/30 bg-brand-600 text-white"
+                    : "border-transparent bg-transparent text-white/80 hover:bg-white/10 hover:text-white",
                 ].join(" ")}
                 aria-pressed={active || selected}
                 title={group.label}
@@ -165,7 +165,9 @@ export function AppLayout() {
                 <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
                   {({ isActive }) => (
                     <>
-                      <i className={`pi ${item.icon} w-5 shrink-0 text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
+                      <span className="grid w-7 shrink-0 place-items-center">
+                        <i className={`pi ${item.icon} text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
+                      </span>
                       <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
                     </>
                   )}
