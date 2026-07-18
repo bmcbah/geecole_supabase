@@ -42,12 +42,12 @@ const groups = [
     ],
   },
   {
-    label: "Finances",
+    label: "Frais scolaires",
     sections: [
       {
-        path: "regles-financieres",
+        path: "grilles-tarifaires",
         icon: "pi-wallet",
-        label: "Frais et règles",
+        label: "Catalogue et tarifs",
       },
     ],
   },
