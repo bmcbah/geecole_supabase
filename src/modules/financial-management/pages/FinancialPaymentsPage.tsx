@@ -87,9 +87,10 @@ export function FinancialPaymentsPage() {
     [payments],
   );
 
+  const selectedAccount = accounts.find((account) => account.id === accountId);
   const accountOptions = accounts.map((account) => ({
     value: account.id,
-    label: `${account.studentName} — reste ${formatAmount(account.balanceAmount)}`,
+    label: `${account.studentName} — ${account.matricule} — reste ${formatAmount(account.balanceAmount)}`,
   }));
   const methodOptions = Object.entries(paymentMethodLabels).map(
     ([value, label]) => ({ value, label }),
@@ -104,6 +105,16 @@ export function FinancialPaymentsPage() {
     setNote("");
   };
 
+  const closePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+    resetPaymentForm();
+  };
+
+  const closeCancellationDialog = () => {
+    setPaymentToCancel(undefined);
+    setCancellationReason("");
+  };
+
   const handleSave = async () => {
     if (!accountId || !amount || amount <= 0) return;
     setSaving(true);
@@ -116,8 +127,7 @@ export function FinancialPaymentsPage() {
         externalReference: reference,
         note,
       });
-      setPaymentDialogOpen(false);
-      resetPaymentForm();
+      closePaymentDialog();
       await load();
       notify({ severity: "success", summary: "Encaissement enregistré" });
     } catch (cause) {
@@ -136,8 +146,7 @@ export function FinancialPaymentsPage() {
     setSaving(true);
     try {
       await cancelFinancialPayment(paymentToCancel.id, cancellationReason);
-      setPaymentToCancel(undefined);
-      setCancellationReason("");
+      closeCancellationDialog();
       await load();
       notify({ severity: "success", summary: "Encaissement annulé" });
     } catch (cause) {
@@ -264,85 +273,125 @@ export function FinancialPaymentsPage() {
         header="Nouvel encaissement"
         visible={paymentDialogOpen}
         modal
-        className="w-[min(94vw,38rem)]"
-        onHide={() => setPaymentDialogOpen(false)}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button
-              label="Annuler"
-              severity="secondary"
-              text
-              onClick={() => setPaymentDialogOpen(false)}
-            />
-            <Button
-              label="Enregistrer"
-              icon="pi pi-check"
-              loading={saving}
-              disabled={!accountId || !amount || amount <= 0}
-              onClick={() => void handleSave()}
-            />
-          </div>
-        }
+        className="form-dialog form-dialog-wide"
+        contentClassName="overflow-visible"
+        onHide={closePaymentDialog}
       >
-        <div className="grid gap-4 pt-2">
-          <label className="grid gap-2 text-sm font-medium">
-            Dossier financier
+        <div className="form-grid">
+          <div className="field field-wide">
+            <label htmlFor="payment-account">Dossier financier</label>
             <Dropdown
+              inputId="payment-account"
+              className="w-full"
               value={accountId}
               options={accountOptions}
               optionLabel="label"
               optionValue="value"
               placeholder="Sélectionner un élève"
+              emptyMessage="Aucun dossier avec un solde ouvert"
+              emptyFilterMessage="Aucun élève trouvé"
               filter
+              showClear
               onChange={(event) => setAccountId(event.value)}
             />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Montant
+            <small className="text-slate-500">
+              Le paiement sera ventilé sur les échéances les plus anciennes.
+            </small>
+          </div>
+
+          <div className="field">
+            <label htmlFor="payment-amount">Montant</label>
             <InputNumber
+              inputId="payment-amount"
+              className="w-full"
+              inputClassName="w-full"
               value={amount}
               min={0}
+              max={selectedAccount?.balanceAmount}
               mode="decimal"
               useGrouping
               locale="fr-FR"
               suffix=" GNF"
+              placeholder="0 GNF"
               onValueChange={(event) => setAmount(event.value ?? null)}
             />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Mode de paiement
+            <small className="text-slate-500">
+              {selectedAccount
+                ? `Solde disponible : ${formatAmount(selectedAccount.balanceAmount)}`
+                : "Sélectionnez d’abord un dossier."}
+            </small>
+          </div>
+
+          <div className="field">
+            <label htmlFor="payment-method">Mode de paiement</label>
             <Dropdown
+              inputId="payment-method"
+              className="w-full"
               value={method}
               options={methodOptions}
               optionLabel="label"
               optionValue="value"
               onChange={(event) => setMethod(event.value)}
             />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Date d’encaissement
+          </div>
+
+          <div className="field">
+            <label htmlFor="payment-date">Date d’encaissement</label>
             <Calendar
+              inputId="payment-date"
+              className="w-full"
+              inputClassName="w-full"
               value={paymentDate}
               dateFormat="dd/mm/yy"
               showIcon
               onChange={(event) => event.value && setPaymentDate(event.value)}
             />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Référence externe
+          </div>
+
+          <div className="field">
+            <label htmlFor="payment-reference">Référence externe</label>
             <InputText
+              id="payment-reference"
+              className="w-full"
               value={reference}
               placeholder="Transaction, virement, chèque…"
               onChange={(event) => setReference(event.target.value)}
             />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">
-            Note
-            <InputText
+          </div>
+
+          <div className="field field-wide">
+            <label htmlFor="payment-note">Note</label>
+            <InputTextarea
+              id="payment-note"
+              className="w-full"
               value={note}
+              rows={3}
+              autoResize
+              placeholder="Information complémentaire facultative"
               onChange={(event) => setNote(event.target.value)}
             />
-          </label>
+          </div>
+
+          <div className="dialog-actions field-wide">
+            <Button
+              label="Annuler"
+              severity="secondary"
+              outlined
+              onClick={closePaymentDialog}
+            />
+            <Button
+              label="Enregistrer"
+              icon="pi pi-check"
+              loading={saving}
+              disabled={
+                !accountId ||
+                !amount ||
+                amount <= 0 ||
+                Boolean(selectedAccount && amount > selectedAccount.balanceAmount)
+              }
+              onClick={() => void handleSave()}
+            />
+          </div>
         </div>
       </Dialog>
 
@@ -350,22 +399,36 @@ export function FinancialPaymentsPage() {
         header="Reçu d’encaissement"
         visible={Boolean(receiptPayment)}
         modal
-        className="w-[min(94vw,34rem)]"
+        className="form-dialog"
         onHide={() => setReceiptPayment(undefined)}
       >
         {receiptPayment ? (
           <div className="space-y-4 text-sm">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Numéro de reçu</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">{receiptPayment.receiptNumber}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Numéro de reçu
+              </p>
+              <p className="mt-1 break-all text-lg font-semibold text-slate-950">
+                {receiptPayment.receiptNumber}
+              </p>
             </div>
-            <dl className="grid grid-cols-2 gap-3">
-              <dt className="text-slate-500">Élève</dt><dd className="font-medium">{receiptPayment.studentName}</dd>
-              <dt className="text-slate-500">Matricule</dt><dd>{receiptPayment.matricule}</dd>
-              <dt className="text-slate-500">Date</dt><dd>{formatDate(receiptPayment.paymentDate)}</dd>
-              <dt className="text-slate-500">Montant</dt><dd className="font-semibold">{formatAmount(receiptPayment.amount)}</dd>
-              <dt className="text-slate-500">Mode</dt><dd>{paymentMethodLabels[receiptPayment.method]}</dd>
-              <dt className="text-slate-500">Référence</dt><dd>{receiptPayment.externalReference || "—"}</dd>
+            <dl className="grid grid-cols-[minmax(7rem,auto)_minmax(0,1fr)] gap-x-4 gap-y-3">
+              <dt className="text-slate-500">Élève</dt>
+              <dd className="min-w-0 break-words font-medium">
+                {receiptPayment.studentName}
+              </dd>
+              <dt className="text-slate-500">Matricule</dt>
+              <dd className="break-words">{receiptPayment.matricule}</dd>
+              <dt className="text-slate-500">Date</dt>
+              <dd>{formatDate(receiptPayment.paymentDate)}</dd>
+              <dt className="text-slate-500">Montant</dt>
+              <dd className="font-semibold">{formatAmount(receiptPayment.amount)}</dd>
+              <dt className="text-slate-500">Mode</dt>
+              <dd>{paymentMethodLabels[receiptPayment.method]}</dd>
+              <dt className="text-slate-500">Référence</dt>
+              <dd className="break-words">
+                {receiptPayment.externalReference || "—"}
+              </dd>
             </dl>
             {receiptPayment.status === "cancelled" ? (
               <Message
@@ -373,6 +436,14 @@ export function FinancialPaymentsPage() {
                 text={`Reçu annulé : ${receiptPayment.cancellationReason ?? "motif non renseigné"}`}
               />
             ) : null}
+            <div className="dialog-actions">
+              <Button
+                label="Fermer"
+                severity="secondary"
+                outlined
+                onClick={() => setReceiptPayment(undefined)}
+              />
+            </div>
           </div>
         ) : null}
       </Dialog>
@@ -381,43 +452,45 @@ export function FinancialPaymentsPage() {
         header="Annuler l’encaissement"
         visible={Boolean(paymentToCancel)}
         modal
-        className="w-[min(94vw,34rem)]"
-        onHide={() => {
-          setPaymentToCancel(undefined);
-          setCancellationReason("");
-        }}
-        footer={
-          <div className="flex justify-end gap-2">
+        className="form-dialog"
+        onHide={closeCancellationDialog}
+      >
+        <div className="form-stack">
+          <Message
+            severity="warn"
+            text="Cette opération restaure le solde du dossier et les échéances concernées."
+          />
+          <div className="field">
+            <label htmlFor="payment-cancellation-reason">
+              Motif de l’annulation
+            </label>
+            <InputTextarea
+              id="payment-cancellation-reason"
+              className="w-full"
+              value={cancellationReason}
+              rows={4}
+              autoResize
+              placeholder="Décrivez précisément la raison de l’annulation"
+              onChange={(event) => setCancellationReason(event.target.value)}
+            />
+            <small className="text-slate-500">Ce motif est obligatoire et sera conservé dans l’historique.</small>
+          </div>
+          <div className="dialog-actions">
             <Button
               label="Fermer"
               severity="secondary"
-              text
-              onClick={() => setPaymentToCancel(undefined)}
+              outlined
+              onClick={closeCancellationDialog}
             />
             <Button
               label="Confirmer l’annulation"
               severity="danger"
+              icon="pi pi-ban"
               loading={saving}
               disabled={!cancellationReason.trim()}
               onClick={() => void handleCancel()}
             />
           </div>
-        }
-      >
-        <div className="grid gap-3 pt-2">
-          <Message
-            severity="warn"
-            text="Cette opération restaure le solde du dossier et les échéances concernées."
-          />
-          <label className="grid gap-2 text-sm font-medium">
-            Motif obligatoire
-            <InputTextarea
-              value={cancellationReason}
-              rows={4}
-              autoResize
-              onChange={(event) => setCancellationReason(event.target.value)}
-            />
-          </label>
         </div>
       </Dialog>
     </div>
