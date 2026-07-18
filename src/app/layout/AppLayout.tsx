@@ -4,49 +4,11 @@ import { Dropdown } from "primereact/dropdown";
 import { Tag } from "primereact/tag";
 import { useAuth } from "../../modules/auth/components/auth-context";
 import { useAcademicSession } from "../../modules/academic-session/components/academic-session-context";
-
-type NavigationItem = { label: string; icon: string; to: string };
-type NavigationGroup = {
-  label: string;
-  icon: string;
-  match: string;
-  to?: string;
-  items?: NavigationItem[];
-};
-
-const navigation: NavigationGroup[] = [
-  {
-    label: "Scolarité",
-    icon: "pi-graduation-cap",
-    match: "/scolarite",
-    items: [
-      { label: "Élèves", icon: "pi-users", to: "/scolarite/eleves" },
-      { label: "Nouvelle inscription", icon: "pi-user-plus", to: "/scolarite/inscriptions/nouvelle" },
-      { label: "Réinscriptions groupées", icon: "pi-refresh", to: "/scolarite/reinscriptions" },
-    ],
-  },
-  {
-    label: "Paramétrage",
-    icon: "pi-cog",
-    match: "/parametrage",
-    items: [
-      { label: "Général", icon: "pi-cog", to: "/parametrage/etablissement" },
-      { label: "Années scolaires", icon: "pi-calendar", to: "/parametrage/annees-scolaires" },
-      { label: "Personnes et accès", icon: "pi-users", to: "/parametrage/utilisateurs-roles" },
-      { label: "Cycles", icon: "pi-sitemap", to: "/parametrage/cycles" },
-      { label: "Niveaux", icon: "pi-list", to: "/parametrage/niveaux" },
-      { label: "Classes", icon: "pi-users", to: "/parametrage/classes" },
-      { label: "Matières", icon: "pi-book", to: "/parametrage/matieres" },
-      { label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
-      { label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
-      { label: "Frais et règles", icon: "pi-wallet", to: "/parametrage/regles-financieres" },
-    ],
-  },
-];
+import { getNavigationLinks, navigation, type NavigationGroup } from "../navigation";
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "group flex min-h-12 items-center gap-2 rounded-lg border px-2.5 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
+    "group flex min-h-12 items-center gap-1.5 rounded-lg border px-2.5 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
     isActive
       ? "border-brand-200 bg-brand-50 text-brand-700"
       : "border-transparent bg-transparent text-slate-700 hover:border-brand-100 hover:bg-brand-50/60 hover:text-brand-700",
@@ -70,14 +32,18 @@ export function AppLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const routeGroup = navigation.find((group) => location.pathname.startsWith(group.match)) ?? navigation[0];
-  const initialGroup = routeGroup.items?.length ? routeGroup : navigation.find((group) => group.items?.length) ?? navigation[0];
+  const initialGroup = getNavigationLinks(routeGroup).length
+    ? routeGroup
+    : navigation.find((group) => getNavigationLinks(group).length) ?? navigation[0];
   const [selectedGroupLabel, setSelectedGroupLabel] = useState(initialGroup.label);
-  const [secondaryMenuOpen, setSecondaryMenuOpen] = useState(Boolean(routeGroup.items?.length));
-  const selectedGroup = navigation.find((group) => group.label === selectedGroupLabel && group.items?.length) ?? initialGroup;
+  const [secondaryMenuOpen, setSecondaryMenuOpen] = useState(getNavigationLinks(routeGroup).length > 0);
+  const selectedGroup = navigation.find(
+    (group) => group.label === selectedGroupLabel && getNavigationLinks(group).length > 0,
+  ) ?? initialGroup;
 
   const activePage = useMemo(() => {
     for (const group of navigation) {
-      const item = group.items?.find((entry) => location.pathname.startsWith(entry.to));
+      const item = getNavigationLinks(group).find((entry) => location.pathname.startsWith(entry.to));
       if (item) return { group: group.label, page: item.label };
       if (group.to && location.pathname.startsWith(group.match)) {
         return { group: group.label, page: "Administration" };
@@ -89,40 +55,42 @@ export function AppLayout() {
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
   const handleGroupClick = (group: NavigationGroup) => {
-    const firstDestination = group.items?.[0]?.to ?? group.to;
+    const firstDestination = getNavigationLinks(group)[0]?.to ?? group.to;
 
-    if (group.items?.length) {
+    if (getNavigationLinks(group).length) {
       setSelectedGroupLabel(group.label);
       setSecondaryMenuOpen(true);
     } else {
       setSecondaryMenuOpen(false);
     }
 
-    if (firstDestination) {
-      void navigate(firstDestination);
-    }
-
+    if (firstDestination) void navigate(firstDestination);
     closeMobileSidebar();
   };
 
   const sidebar = (
     <div className="relative flex h-full bg-white text-slate-900">
       <div className="flex w-[96px] shrink-0 flex-col bg-brand-700 text-white shadow-[4px_0_20px_rgba(15,118,110,0.2)]">
-        <button
-          type="button"
-          className="flex h-[72px] w-full shrink-0 items-center justify-center border-b border-white/20 transition-colors hover:bg-white/5"
-          aria-label="Accueil GeeCole"
-          onClick={() => {
-            void navigate("/scolarite/eleves");
-            closeMobileSidebar();
-          }}
-        >
-          <span className="text-2xl font-black leading-none tracking-[-0.08em] text-white" aria-hidden="true">
-            G
-          </span>
-        </button>
+        <div className="shrink-0 px-2.5 pt-4">
+          <button
+            type="button"
+            className="flex min-h-[68px] w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-transparent bg-brand-700 px-2 py-2.5 text-center text-white"
+            aria-label="Accueil GeeCole"
+            title="GeeCole"
+            onClick={() => {
+              void navigate("/scolarite/eleves");
+              closeMobileSidebar();
+            }}
+          >
+            <span className="relative block text-[28px] font-black leading-none tracking-[-0.12em] text-white" aria-hidden="true">
+              G
+              <span className="absolute -right-1 bottom-0 size-1 rounded-full bg-white" />
+            </span>
+            <span className="text-[10px] font-semibold leading-none text-white">GeeCole</span>
+          </button>
+        </div>
 
-        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col items-stretch gap-2 px-2.5 py-4">
+        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col items-stretch gap-2 px-2.5 py-3">
           {navigation.map((group) => {
             const active = location.pathname.startsWith(group.match);
             const selected = secondaryMenuOpen && selectedGroup.label === group.label;
@@ -131,7 +99,7 @@ export function AppLayout() {
                 key={group.label}
                 type="button"
                 className={[
-                  "flex min-h-[68px] w-full flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 text-center transition-colors",
+                  "flex min-h-[68px] w-full flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2.5 text-center transition-colors",
                   active || selected
                     ? "border-white/30 bg-brand-600 text-white"
                     : "border-transparent bg-transparent text-white/80 hover:bg-white/10 hover:text-white",
@@ -167,23 +135,34 @@ export function AppLayout() {
             </div>
           </div>
 
-          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto px-2.5 py-4">
-            <div className="mb-3 px-2.5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-700">Navigation</p>
-            </div>
+          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
             <div className="space-y-1.5">
-              {selectedGroup.items?.map((item) => (
-                <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
-                  {({ isActive }) => (
-                    <>
-                      <span className="grid mx-1 shrink-0 place-items-center">
-                        <i className={`pi ${item.icon} text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
-                      </span>
-                      <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
+              {selectedGroup.items?.map((item, index) => {
+                if (item.type === "divider") {
+                  return <div key={`divider-${index}`} className="my-3 border-t border-slate-200" aria-hidden="true" />;
+                }
+
+                if (item.type === "title") {
+                  return (
+                    <p key={`title-${item.label}`} className="px-2.5 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                      {item.label}
+                    </p>
+                  );
+                }
+
+                return (
+                  <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
+                    {({ isActive }) => (
+                      <>
+                        <span className="grid w-5 shrink-0 place-items-center">
+                          <i className={`pi ${item.icon} text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
+                        </span>
+                        <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
           </nav>
 
@@ -216,12 +195,8 @@ export function AppLayout() {
     </div>
   );
 
-  const sidebarWidth = secondaryMenuOpen
-    ? "lg:w-[344px] xl:w-[352px]"
-    : "lg:w-[96px]";
-  const contentPadding = secondaryMenuOpen
-    ? "lg:pl-[344px] xl:pl-[352px]"
-    : "lg:pl-[96px]";
+  const sidebarWidth = secondaryMenuOpen ? "lg:w-[344px] xl:w-[352px]" : "lg:w-[96px]";
+  const contentPadding = secondaryMenuOpen ? "lg:pl-[344px] xl:pl-[352px]" : "lg:pl-[96px]";
 
   return (
     <div className="min-h-screen bg-surface-page text-text-primary">
@@ -237,12 +212,7 @@ export function AppLayout() {
       <section className={`min-w-0 transition-[padding] duration-200 ${contentPadding}`}>
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex min-h-[72px] items-center gap-3 px-4 md:px-6 xl:px-8">
-            <button
-              type="button"
-              className="grid size-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 lg:hidden"
-              aria-label="Ouvrir la navigation"
-              onClick={() => setMobileSidebarOpen(true)}
-            >
+            <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 lg:hidden" aria-label="Ouvrir la navigation" onClick={() => setMobileSidebarOpen(true)}>
               <i className="pi pi-bars" />
             </button>
 
@@ -259,43 +229,14 @@ export function AppLayout() {
 
             <div className="hidden items-center gap-2 md:flex">
               {institutions.length > 1 ? (
-                <Dropdown
-                  className="w-52"
-                  value={institutionId}
-                  options={institutions}
-                  optionLabel="name"
-                  optionValue="id"
-                  aria-label="Établissement de la session"
-                  onChange={(event) => {
-                    const value = event.value as unknown;
-                    if (typeof value === "string") setInstitutionId(value);
-                  }}
-                />
+                <Dropdown className="w-52" value={institutionId} options={institutions} optionLabel="name" optionValue="id" aria-label="Établissement de la session" onChange={(event) => { const value = event.value as unknown; if (typeof value === "string") setInstitutionId(value); }} />
               ) : null}
-              <Dropdown
-                className="w-44"
-                value={yearId}
-                options={years}
-                optionLabel="name"
-                optionValue="id"
-                placeholder="Aucune année"
-                aria-label="Année scolaire de la session"
-                disabled={!canChangeYear}
-                onChange={(event) => {
-                  const value = event.value as unknown;
-                  if (typeof value === "string") setYearId(value);
-                }}
-              />
+              <Dropdown className="w-44" value={yearId} options={years} optionLabel="name" optionValue="id" placeholder="Aucune année" aria-label="Année scolaire de la session" disabled={!canChangeYear} onChange={(event) => { const value = event.value as unknown; if (typeof value === "string") setYearId(value); }} />
               {year ? <Tag value={year.status === "open" ? "En cours" : year.status} severity={year.status === "open" ? "success" : "secondary"} /> : null}
             </div>
 
             <div className="relative">
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 pr-2 text-left shadow-sm hover:bg-slate-50"
-                aria-expanded={profileOpen}
-                onClick={() => setProfileOpen((value) => !value)}
-              >
+              <button type="button" className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 pr-2 text-left shadow-sm hover:bg-slate-50" aria-expanded={profileOpen} onClick={() => setProfileOpen((value) => !value)}>
                 <span className="grid size-8 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
                 <i className="pi pi-chevron-down hidden text-[9px] text-slate-400 sm:block" />
               </button>
