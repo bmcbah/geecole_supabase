@@ -69,12 +69,14 @@ export function FinancialPaymentsPage() {
   const filteredPayments = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase("fr");
     return payments.filter((payment) => {
-      const matchesSearch = !normalized || `${payment.studentName} ${payment.matricule} ${payment.receiptNumber} ${payment.externalReference ?? ""}`.toLocaleLowerCase("fr").includes(normalized);
-      const matchesStatus = !status || payment.status === status;
-      const matchesMethod = !method || payment.method === method;
-      const matchesFrom = !dateFrom || payment.paymentDate >= dateFrom;
-      const matchesTo = !dateTo || payment.paymentDate <= dateTo;
-      return matchesSearch && matchesStatus && matchesMethod && matchesFrom && matchesTo;
+      const searchable = `${payment.studentName} ${payment.matricule} ${payment.levelName} ${payment.cycleName} ${payment.receiptNumber} ${payment.externalReference ?? ""}`.toLocaleLowerCase("fr");
+      return (
+        (!normalized || searchable.includes(normalized)) &&
+        (!status || payment.status === status) &&
+        (!method || payment.method === method) &&
+        (!dateFrom || payment.paymentDate >= dateFrom) &&
+        (!dateTo || payment.paymentDate <= dateTo)
+      );
     });
   }, [payments, search, status, method, dateFrom, dateTo]);
 
@@ -111,15 +113,23 @@ export function FinancialPaymentsPage() {
     }
 
     const statusLabel = financialPaymentStatusLabels[receiptPayment.status];
-    const methodLabel = paymentMethodLabels[receiptPayment.method];
-    const reference = receiptPayment.externalReference || "Non renseignée";
+    const rows = [
+      ["Élève", receiptPayment.studentName],
+      ["Matricule", receiptPayment.matricule],
+      ["Cycle", receiptPayment.cycleName || "Non renseigné"],
+      ["Niveau", receiptPayment.levelName || "Non renseigné"],
+      ["Date de paiement", formatDate(receiptPayment.paymentDate)],
+      ["Mode de paiement", paymentMethodLabels[receiptPayment.method]],
+      ["Référence externe", receiptPayment.externalReference || "Non renseignée"],
+    ];
+    const tableRows = rows.map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`).join("");
     const cancellation = receiptPayment.cancellationReason
       ? `<div class="warning"><strong>Encaissement annulé</strong><span>${escapeHtml(receiptPayment.cancellationReason)}</span></div>`
       : "";
 
     printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${escapeHtml(receiptPayment.receiptNumber)}</title><style>
-      *{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172033;font-family:Inter,Arial,sans-serif}.page{width:720px;margin:24px auto;background:#fff;border:1px solid #dfe4ea;border-radius:16px;overflow:hidden}.header{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 32px;border-bottom:1px solid #e5e9ee}.brand{font-size:22px;font-weight:800;letter-spacing:-.02em}.subtitle{margin-top:4px;color:#667085;font-size:12px}.receipt-id{text-align:right}.receipt-id span{display:block;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.receipt-id strong{display:block;margin-top:5px;font-family:monospace;font-size:16px}.status{display:inline-block;margin-top:9px;padding:5px 9px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:11px;font-weight:700}.content{padding:28px 32px}.amount{padding:22px;border-radius:14px;background:#f0fdf8;border:1px solid #b7ead8}.amount span{display:block;color:#47645c;font-size:12px}.amount strong{display:block;margin-top:6px;color:#065f46;font-size:30px;letter-spacing:-.03em}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}.item{padding:14px;border:1px solid #e5e9ee;border-radius:12px}.item span{display:block;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.06em}.item strong{display:block;margin-top:6px;font-size:14px}.wide{grid-column:1/-1}.warning{display:flex;flex-direction:column;gap:5px;margin-top:18px;padding:14px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px}.footer{display:flex;justify-content:space-between;gap:24px;padding:20px 32px;border-top:1px solid #e5e9ee;color:#667085;font-size:11px;line-height:1.6}@media print{body{background:#fff}.page{width:100%;margin:0;border:0;border-radius:0}.no-print{display:none!important}}
-    </style></head><body><main class="page"><header class="header"><div><div class="brand">GeeCole</div><div class="subtitle">Reçu officiel d’encaissement · ${escapeHtml(year.name)}</div></div><div class="receipt-id"><span>Numéro du reçu</span><strong>${escapeHtml(receiptPayment.receiptNumber)}</strong><div class="status">${escapeHtml(statusLabel)}</div></div></header><section class="content"><div class="amount"><span>Montant reçu</span><strong>${escapeHtml(formatAmount(receiptPayment.amount))}</strong></div><div class="grid"><div class="item wide"><span>Élève</span><strong>${escapeHtml(receiptPayment.studentName)}</strong></div><div class="item"><span>Matricule</span><strong>${escapeHtml(receiptPayment.matricule)}</strong></div><div class="item"><span>Date de paiement</span><strong>${escapeHtml(formatDate(receiptPayment.paymentDate))}</strong></div><div class="item"><span>Mode de paiement</span><strong>${escapeHtml(methodLabel)}</strong></div><div class="item"><span>Référence externe</span><strong>${escapeHtml(reference)}</strong></div></div>${cancellation}</section><footer class="footer"><span>Ce reçu atteste de l’enregistrement de l’encaissement dans GeeCole.</span><span>Imprimé le ${escapeHtml(new Date().toLocaleString("fr-FR"))}</span></footer></main><script>window.addEventListener('load',()=>{window.print();window.onafterprint=()=>window.close();});</script></body></html>`);
+      *{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172033;font-family:Inter,Arial,sans-serif}.page{width:720px;margin:24px auto;background:#fff;border:1px solid #dfe4ea;border-radius:16px;overflow:hidden}.header{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 32px;border-bottom:1px solid #e5e9ee}.brand{font-size:22px;font-weight:800}.subtitle{margin-top:4px;color:#667085;font-size:12px}.receipt-id{text-align:right}.receipt-id span{display:block;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.receipt-id strong{display:block;margin-top:5px;font-family:monospace;font-size:16px}.status{display:inline-block;margin-top:9px;padding:5px 9px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:11px;font-weight:700}.content{padding:28px 32px}.amount{padding:22px;border-radius:14px;background:#f0fdf8;border:1px solid #b7ead8}.amount span{display:block;color:#47645c;font-size:12px}.amount strong{display:block;margin-top:6px;color:#065f46;font-size:30px}.details{width:100%;margin-top:20px;border-collapse:collapse;border:1px solid #e5e9ee}.details th,.details td{padding:12px 14px;border-bottom:1px solid #e5e9ee;text-align:left;font-size:13px}.details tr:last-child th,.details tr:last-child td{border-bottom:0}.details th{width:38%;background:#f8fafc;color:#667085;font-weight:600}.details td{color:#172033;font-weight:600}.warning{display:flex;flex-direction:column;gap:5px;margin-top:18px;padding:14px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px}.footer{display:flex;justify-content:space-between;gap:24px;padding:20px 32px;border-top:1px solid #e5e9ee;color:#667085;font-size:11px;line-height:1.6}@media print{body{background:#fff}.page{width:100%;margin:0;border:0;border-radius:0}}
+    </style></head><body><main class="page"><header class="header"><div><div class="brand">GeeCole</div><div class="subtitle">Reçu officiel d’encaissement · ${escapeHtml(year.name)}</div></div><div class="receipt-id"><span>Numéro du reçu</span><strong>${escapeHtml(receiptPayment.receiptNumber)}</strong><div class="status">${escapeHtml(statusLabel)}</div></div></header><section class="content"><div class="amount"><span>Montant reçu</span><strong>${escapeHtml(formatAmount(receiptPayment.amount))}</strong></div><table class="details"><tbody>${tableRows}</tbody></table>${cancellation}</section><footer class="footer"><span>Ce reçu atteste de l’enregistrement de l’encaissement dans GeeCole.</span><span>Imprimé le ${escapeHtml(new Date().toLocaleString("fr-FR"))}</span></footer></main><script>window.addEventListener('load',()=>{window.print();window.onafterprint=()=>window.close();});</script></body></html>`);
     printWindow.document.close();
   };
 
@@ -148,6 +158,16 @@ export function FinancialPaymentsPage() {
     { label: "Montant annulé", value: formatAmount(stats.cancelledAmount), hint: "Conservé dans l’historique", icon: "pi-ban" },
   ];
 
+  const receiptRows = receiptPayment ? [
+    ["Élève", receiptPayment.studentName],
+    ["Matricule", receiptPayment.matricule],
+    ["Cycle", receiptPayment.cycleName || "Non renseigné"],
+    ["Niveau", receiptPayment.levelName || "Non renseigné"],
+    ["Date de paiement", formatDate(receiptPayment.paymentDate)],
+    ["Mode de paiement", paymentMethodLabels[receiptPayment.method]],
+    ["Référence externe", receiptPayment.externalReference || "Non renseignée"],
+  ] : [];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -158,7 +178,7 @@ export function FinancialPaymentsPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-600">Vue financière</p><h2 className="mt-1 text-base font-semibold text-slate-950">Statistiques des encaissements</h2></div>
+          <h2 className="text-base font-semibold text-slate-950">Statistiques des encaissements</h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{year.name}</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -177,7 +197,7 @@ export function FinancialPaymentsPage() {
       <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
           <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_220px]">
-            <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span><span className="p-input-icon-left block w-full"><i className="pi pi-search left-3 text-sm text-slate-400" /><InputText value={search} className={`${controlClass} pl-9`} placeholder="Élève, matricule, reçu ou référence" onChange={(event) => setSearch(event.target.value)} /></span></label>
+            <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span><span className="p-input-icon-left block w-full"><i className="pi pi-search left-3 text-sm text-slate-400" /><InputText value={search} className={`${controlClass} pl-9`} placeholder="Élève, matricule, cycle, niveau, reçu ou référence" onChange={(event) => setSearch(event.target.value)} /></span></label>
             <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span><Dropdown value={status} className={controlClass} showClear placeholder="Tous les statuts" options={Object.entries(financialPaymentStatusLabels).map(([value, label]) => ({ value, label }))} onChange={(event) => setStatus(event.value)} /></label>
             <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">Mode de paiement</span><Dropdown value={method} className={controlClass} showClear placeholder="Tous les modes" options={Object.entries(paymentMethodLabels).map(([value, label]) => ({ value, label }))} onChange={(event) => setMethod(event.value)} /></label>
           </div>
@@ -226,13 +246,18 @@ export function FinancialPaymentsPage() {
                   <strong className="mt-1 block text-3xl font-bold tracking-tight text-emerald-950">{formatAmount(receiptPayment.amount)}</strong>
                 </div>
 
-                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200 p-3 sm:col-span-2"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Élève</dt><dd className="mt-1 text-sm font-semibold text-slate-900">{receiptPayment.studentName}</dd></div>
-                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Matricule</dt><dd className="mt-1 text-sm font-medium text-slate-800">{receiptPayment.matricule}</dd></div>
-                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Date</dt><dd className="mt-1 text-sm font-medium text-slate-800">{formatDate(receiptPayment.paymentDate)}</dd></div>
-                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Mode de paiement</dt><dd className="mt-1 text-sm font-medium text-slate-800">{paymentMethodLabels[receiptPayment.method]}</dd></div>
-                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Référence</dt><dd className="mt-1 truncate text-sm font-medium text-slate-800">{receiptPayment.externalReference || "Non renseignée"}</dd></div>
-                </dl>
+                <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                  <table className="w-full border-collapse text-sm">
+                    <tbody>
+                      {receiptRows.map(([label, value]) => (
+                        <tr key={label} className="border-b border-slate-200 last:border-b-0">
+                          <th className="w-[38%] bg-slate-50 px-4 py-3 text-left font-semibold text-slate-500">{label}</th>
+                          <td className="px-4 py-3 font-semibold text-slate-900">{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {receiptPayment.cancellationReason ? <Message className="mt-4 w-full" severity="warn" text={`Motif d’annulation : ${receiptPayment.cancellationReason}`} /> : null}
               </div>
