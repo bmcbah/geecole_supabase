@@ -29,7 +29,18 @@ const navigation: NavigationGroup[] = [
     label: "Paramétrage",
     icon: "pi-cog",
     match: "/parametrage",
-    to: "/parametrage/etablissement",
+    items: [
+      { label: "Général", icon: "pi-cog", to: "/parametrage/etablissement" },
+      { label: "Années scolaires", icon: "pi-calendar", to: "/parametrage/annees-scolaires" },
+      { label: "Personnes et accès", icon: "pi-users", to: "/parametrage/utilisateurs-roles" },
+      { label: "Cycles", icon: "pi-sitemap", to: "/parametrage/cycles" },
+      { label: "Niveaux", icon: "pi-list", to: "/parametrage/niveaux" },
+      { label: "Classes", icon: "pi-users", to: "/parametrage/classes" },
+      { label: "Matières", icon: "pi-book", to: "/parametrage/matieres" },
+      { label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
+      { label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
+      { label: "Frais et règles", icon: "pi-wallet", to: "/parametrage/regles-financieres" },
+    ],
   },
 ];
 
@@ -106,8 +117,8 @@ export function AppLayout() {
             closeMobileSidebar();
           }}
         >
-          <span className="px-2 text-center text-sm font-black tracking-tight text-white">
-            GeeCole
+          <span className="text-2xl font-black leading-none tracking-[-0.08em] text-white" aria-hidden="true">
+            G
           </span>
         </button>
 
@@ -120,7 +131,7 @@ export function AppLayout() {
                 key={group.label}
                 type="button"
                 className={[
-                  "flex min-h-[72px] w-full flex-col items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-center transition-colors",
+                  "flex min-h-[68px] w-full flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 text-center transition-colors",
                   active || selected
                     ? "border-white/30 bg-brand-600 text-white"
                     : "border-transparent bg-transparent text-white/80 hover:bg-white/10 hover:text-white",
