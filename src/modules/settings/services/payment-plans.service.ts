@@ -103,24 +103,66 @@ export async function savePaymentPlan(
     paymentPlanId = data.id as string;
   }
 
-  const { error: deleteError } = await db
-    .from("payment_plan_installments")
-    .delete()
-    .eq("payment_plan_id", paymentPlanId);
-  if (deleteError) throw deleteError;
+  const persistedRows = input.installments
+    .map((installment, index) => ({
+      id: installment.id,
+      payment_plan_id: paymentPlanId,
+      sequence: index + 1,
+      label: installment.label.trim(),
+      percentage: installment.percentage,
+      due_date: installment.due_date,
+    }))
+    .filter((installment) => Boolean(installment.id));
 
-  const rows = input.installments.map((installment, index) => ({
-    payment_plan_id: paymentPlanId,
-    sequence: index + 1,
-    label: installment.label.trim(),
-    percentage: installment.percentage,
-    due_date: installment.due_date,
-  }));
+  for (const installment of persistedRows) {
+    const { id: installmentId, ...installmentPayload } = installment;
+    const { error } = await db
+      .from("payment_plan_installments")
+      .update(installmentPayload)
+      .eq("id", installmentId)
+      .eq("payment_plan_id", paymentPlanId);
+    if (error) throw error;
+  }
 
-  const { error: insertError } = await db
-    .from("payment_plan_installments")
-    .insert(rows);
-  if (insertError) throw insertError;
+  const newRows = input.installments
+    .map((installment, index) => ({
+      payment_plan_id: paymentPlanId,
+      sequence: index + 1,
+      label: installment.label.trim(),
+      percentage: installment.percentage,
+      due_date: installment.due_date,
+    }))
+    .filter((_, index) => !input.installments[index].id);
+
+  if (newRows.length > 0) {
+    const { error } = await db.from("payment_plan_installments").insert(newRows);
+    if (error) throw error;
+  }
+
+  if (id) {
+    const retainedIds = input.installments
+      .map((installment) => installment.id)
+      .filter((installmentId): installmentId is string => Boolean(installmentId));
+
+    let deleteQuery = db
+      .from("payment_plan_installments")
+      .delete()
+      .eq("payment_plan_id", paymentPlanId);
+
+    if (retainedIds.length > 0) {
+      deleteQuery = deleteQuery.not("id", "in", `(${retainedIds.join(",")})`);
+    }
+
+    const { error: deleteError } = await deleteQuery;
+    if (deleteError) {
+      if (deleteError.code === "23503") {
+        throw new Error(
+          "Une échéance déjà utilisée par un dossier financier ne peut pas être supprimée. Vous pouvez la modifier ou la conserver, puis ajouter de nouvelles échéances.",
+        );
+      }
+      throw deleteError;
+    }
+  }
 }
 
 export async function duplicatePaymentPlan(plan: PaymentPlan) {
