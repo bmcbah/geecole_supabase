@@ -98,6 +98,30 @@ export async function registerFinancialPayment(input: {
   return data as string;
 }
 
+export async function registerTargetedFinancialPayment(input: {
+  financialAccountId: string;
+  allocations: Array<{ installmentId: string; amount: number }>;
+  method: PaymentMethod;
+  paymentDate: string;
+  externalReference?: string;
+  note?: string;
+}) {
+  const { data, error } = await db.rpc("register_targeted_financial_payment", {
+    target_financial_account_id: input.financialAccountId,
+    target_allocations: input.allocations.map((allocation) => ({
+      installment_id: allocation.installmentId,
+      amount: allocation.amount,
+    })),
+    target_method: input.method,
+    target_payment_date: input.paymentDate,
+    target_external_reference: input.externalReference || null,
+    target_note: input.note || null,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
 export async function cancelFinancialPayment(paymentId: string, reason: string) {
   const { data, error } = await db.rpc("cancel_financial_payment", {
     target_payment_id: paymentId,
