@@ -64,10 +64,14 @@ export async function listFinancialAccounts(
   return (data ?? []).map(mapAccount);
 }
 
-export async function getFinancialAccount(accountId: string): Promise<FinancialAccountDetails> {
+export async function getFinancialAccount(
+  accountId: string,
+): Promise<FinancialAccountDetails> {
   const { data, error } = await db
     .from("student_financial_accounts")
-    .select("*, items:student_financial_items(*), installments:student_financial_installments(*)")
+    .select(
+      "*, items:student_financial_items(*), installments:student_financial_installments(*)",
+    )
     .eq("id", accountId)
     .single();
 
@@ -78,7 +82,10 @@ export async function getFinancialAccount(accountId: string): Promise<FinancialA
     items: (data.items ?? []).map(mapItem),
     installments: (data.installments ?? [])
       .map(mapInstallment)
-      .sort((left: FinancialInstallment, right: FinancialInstallment) => left.sequence - right.sequence),
+      .sort(
+        (left: FinancialInstallment, right: FinancialInstallment) =>
+          left.sequence - right.sequence,
+      ),
   };
 }
 
@@ -88,7 +95,9 @@ export async function listConfirmedEnrollmentsWithoutFinancialAccount(
 ) {
   const { data, error } = await db
     .from("enrollments")
-    .select("id, student_id, level_name_snapshot, cycle_name_snapshot, student:students(first_name,last_name,matricule), financial_account:student_financial_accounts(id)")
+    .select(
+      "id, student_id, level_name_snapshot, cycle_name_snapshot, student:students(first_name,last_name,matricule), financial_account:student_financial_accounts(id)",
+    )
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
     .eq("status", "confirmed")
@@ -99,7 +108,10 @@ export async function listConfirmedEnrollmentsWithoutFinancialAccount(
   return data ?? [];
 }
 
-export async function generateFinancialAccount(enrollmentId: string, paymentPlanId: string) {
+export async function generateFinancialAccount(
+  enrollmentId: string,
+  paymentPlanId: string,
+) {
   const { data, error } = await db.rpc("generate_student_financial_account", {
     target_enrollment_id: enrollmentId,
     target_payment_plan_id: paymentPlanId,
