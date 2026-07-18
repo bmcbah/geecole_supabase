@@ -88,7 +88,7 @@ export function FinancialItemBenefitDialog({
       selectedTemplate.calculationType === "percentage"
         ? Math.round((item.amount * value) / 100)
         : value;
-    return Math.min(calculated, item.amount);
+    return Math.min(calculated, item.netAmount);
   }, [item, selectedTemplate, value]);
 
   const netPreview = item ? Math.max(item.netAmount - previewAmount, 0) : 0;
@@ -104,6 +104,16 @@ export function FinancialItemBenefitDialog({
   const close = () => {
     reset();
     onHide();
+  };
+
+  const translateError = (message: string) => {
+    if (message.includes("adjustment_below_paid_amount")) return "Cet avantage ferait passer le montant net sous le montant déjà encaissé.";
+    if (message.includes("financial_benefit_not_stackable")) return "Cet avantage ne peut pas être cumulé avec un avantage déjà actif sur ce frais.";
+    if (message.includes("financial_benefit_template_already_applied")) return "Ce modèle est déjà actif sur ce frais.";
+    if (message.includes("financial_benefit_not_applicable_to_cycle")) return "Ce modèle ne s'applique pas au cycle de l'élève.";
+    if (message.includes("financial_benefit_not_applicable_to_level")) return "Ce modèle ne s'applique pas au niveau de l'élève.";
+    if (message.includes("financial_benefit_not_applicable_to_fee")) return "Ce modèle ne s'applique pas à cette catégorie de frais.";
+    return message;
   };
 
   const submit = async () => {
@@ -122,26 +132,14 @@ export function FinancialItemBenefitDialog({
       close();
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Attribution impossible.";
-      setError(
-        message.includes("adjustment_below_paid_amount")
-          ? "Cet avantage ferait passer le montant net sous le montant déjà encaissé."
-          : message.includes("non_stackable_benefit_already_applied")
-            ? "Un avantage non cumulable est déjà actif sur ce frais."
-            : message,
-      );
+      setError(translateError(message));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Dialog
-      header="Accorder un avantage"
-      visible={visible}
-      modal
-      className="form-dialog form-dialog-wide"
-      onHide={close}
-    >
+    <Dialog header="Accorder un avantage" visible={visible} modal className="form-dialog form-dialog-wide" onHide={close}>
       <div className="form-grid">
         {item ? (
           <div className="field-wide rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -158,53 +156,22 @@ export function FinancialItemBenefitDialog({
 
         <div className="field field-wide">
           <label htmlFor="benefit-template">Modèle d’avantage</label>
-          <Dropdown
-            inputId="benefit-template"
-            value={templateId}
-            options={options}
-            optionLabel="label"
-            optionValue="value"
-            loading={loading}
-            placeholder="Sélectionner un modèle"
-            className="w-full"
-            onChange={(event) => setTemplateId(event.value)}
-          />
+          <Dropdown inputId="benefit-template" value={templateId} options={options} optionLabel="label" optionValue="value" loading={loading} placeholder="Sélectionner un modèle" className="w-full" onChange={(event) => setTemplateId(event.value)} />
         </div>
 
         {selectedTemplate ? (
           <>
             <div className="field">
               <label htmlFor="benefit-value">{financialBenefitCalculationLabels[selectedTemplate.calculationType]}</label>
-              <InputNumber
-                inputId="benefit-value"
-                value={value}
-                min={0}
-                max={selectedTemplate.calculationType === "percentage" ? 100 : undefined}
-                suffix={selectedTemplate.calculationType === "percentage" ? " %" : undefined}
-                useGrouping
-                className="w-full"
-                onValueChange={(event) => setValue(event.value ?? null)}
-              />
+              <InputNumber inputId="benefit-value" value={value} min={0} max={selectedTemplate.calculationType === "percentage" ? 100 : undefined} suffix={selectedTemplate.calculationType === "percentage" ? " %" : undefined} useGrouping className="w-full" onValueChange={(event) => setValue(event.value ?? null)} />
             </div>
             <div className="field">
               <label htmlFor="benefit-reference">Référence</label>
-              <InputText
-                id="benefit-reference"
-                value={reference}
-                className="w-full"
-                onChange={(event) => setReference(event.target.value)}
-              />
+              <InputText id="benefit-reference" value={reference} className="w-full" onChange={(event) => setReference(event.target.value)} />
             </div>
             <div className="field field-wide">
               <label htmlFor="benefit-reason">Motif</label>
-              <InputTextarea
-                id="benefit-reason"
-                value={reason}
-                rows={3}
-                className="w-full"
-                placeholder="Décision, contexte ou commentaire administratif"
-                onChange={(event) => setReason(event.target.value)}
-              />
+              <InputTextarea id="benefit-reason" value={reason} rows={3} className="w-full" placeholder="Décision, contexte ou commentaire administratif" onChange={(event) => setReason(event.target.value)} />
             </div>
             <div className="field-wide rounded-lg border border-emerald-200 bg-emerald-50 p-3">
               <div className="text-sm text-emerald-700">Prévisualisation</div>
@@ -219,13 +186,7 @@ export function FinancialItemBenefitDialog({
 
         <div className="dialog-actions field-wide">
           <Button label="Annuler" severity="secondary" outlined onClick={close} />
-          <Button
-            label="Accorder l’avantage"
-            icon="pi pi-check"
-            loading={saving}
-            disabled={!item || !templateId || !value || value <= 0}
-            onClick={() => void submit()}
-          />
+          <Button label="Accorder l’avantage" icon="pi pi-check" loading={saving} disabled={!item || !templateId || !value || value <= 0} onClick={() => void submit()} />
         </div>
       </div>
     </Dialog>
