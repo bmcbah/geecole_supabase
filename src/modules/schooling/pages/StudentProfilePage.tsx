@@ -138,34 +138,34 @@ export function StudentProfilePage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-sm">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_0%,rgba(148,163,184,0.12),transparent_28%),linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.025)_48%,transparent_70%)]" />
-        <div className="pointer-events-none absolute -right-16 -top-24 size-56 rounded-full border border-white/[0.04]" />
-        <div className="pointer-events-none absolute right-24 top-10 size-24 rounded-full border border-white/[0.035]" />
+      <section className="relative overflow-hidden rounded-2xl border border-emerald-600/20 bg-emerald-600 shadow-sm">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_0%,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_72%_115%,rgba(255,255,255,0.10),transparent_30%),linear-gradient(125deg,rgba(5,150,105,0.98),rgba(16,185,129,0.88))]" />
+        <div className="pointer-events-none absolute -right-14 -top-20 size-52 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute right-28 top-8 size-20 rounded-full border border-white/[0.08]" />
         <div className="relative px-5 py-4 sm:px-6 lg:px-7">
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="shrink-0 rounded-2xl bg-white/[0.06] p-1 ring-1 ring-white/10">
+              <div className="shrink-0 rounded-2xl bg-white/10 p-1 ring-1 ring-white/20">
                 <StudentAvatarUpload institutionId={institutionId} studentId={student.id} firstName={student.first_name} lastName={student.last_name} path={student.photo_url} onSaved={reload} />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-200">Dossier élève</span>
+                  <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white">Dossier élève</span>
                   <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClasses[status] ?? statusClasses.draft}`}>{statusLabels[status] ?? status}</span>
                 </div>
                 <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-white">{fullName}</h1>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-slate-300">
-                  <span className="inline-flex items-center gap-2"><i className="pi pi-id-card text-slate-400" />{student.matricule}</span>
-                  <span className="inline-flex items-center gap-2"><i className="pi pi-calendar text-slate-400" />{year?.name ?? "Année non définie"}</span>
-                  {age !== null ? <span className="inline-flex items-center gap-2"><i className="pi pi-user text-slate-400" />{age} ans</span> : null}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-white/85">
+                  <span className="inline-flex items-center gap-2"><i className="pi pi-id-card text-white/70" />{student.matricule}</span>
+                  <span className="inline-flex items-center gap-2"><i className="pi pi-calendar text-white/70" />{year?.name ?? "Année non définie"}</span>
+                  {age !== null ? <span className="inline-flex items-center gap-2"><i className="pi pi-user text-white/70" />{age} ans</span> : null}
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[470px] xl:self-start">
               {stats.map(([label, value, icon]) => (
-                <div key={label} className="flex min-h-[58px] flex-col justify-center rounded-xl bg-white/[0.055] px-3 py-2 ring-1 ring-inset ring-white/[0.08]">
-                  <div className="flex items-center justify-between gap-2 text-slate-400"><span className="text-[10px] font-bold uppercase tracking-[0.1em]">{label}</span><i className={`pi ${icon} text-[11px]`} /></div>
+                <div key={label} className="flex min-h-[58px] flex-col justify-center rounded-xl bg-white/10 px-3 py-2 ring-1 ring-inset ring-white/15 backdrop-blur-sm">
+                  <div className="flex items-center justify-between gap-2 text-white/70"><span className="text-[10px] font-bold uppercase tracking-[0.1em]">{label}</span><i className={`pi ${icon} text-[11px]`} /></div>
                   <strong className="mt-1 block truncate text-sm font-semibold text-white">{value}</strong>
                 </div>
               ))}
@@ -191,27 +191,45 @@ export function StudentProfilePage() {
 
         <div className="p-4 sm:p-5">
           {activeTab === "overview" ? (
-            <div className="grid items-stretch gap-4 xl:grid-cols-2">
-              <section className="flex h-full flex-col rounded-2xl border border-slate-200 p-5">
-                <h2 className="text-base font-semibold text-slate-950">Identité de l’élève</h2>
-                <dl className="mt-4 grid flex-1 auto-rows-fr gap-x-6 gap-y-4 sm:grid-cols-2">
-                  {[["Date de naissance", formatDate(student.birth_date)], ["Lieu de naissance", student.birth_place || "Non renseigné"], ["Nationalité", student.nationality || "Non renseignée"], ["Adresse", student.address || "Non renseignée"]].map(([label, value]) => (
-                    <div key={label} className="flex min-h-[62px] flex-col justify-center border-b border-slate-100 pb-3"><dt className="text-xs text-slate-400">{label}</dt><dd className="mt-1 text-sm font-semibold text-slate-900">{value}</dd></div>
-                  ))}
-                </dl>
-              </section>
-              <section className="flex h-full flex-col rounded-2xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-950">Responsable principal</h2>
-                  <button type="button" className={`${resetButtonClass} grid size-9 cursor-pointer place-items-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700`} onClick={() => setGuardianDialog(true)} aria-label="Ajouter un responsable"><i className="pi pi-user-plus text-sm" /></button>
+            <div className="overflow-hidden rounded-2xl border border-slate-200">
+              <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
+                <section className="border-b border-slate-200 p-5 lg:border-b-0 lg:border-r">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><i className="pi pi-id-card text-sm" /></span>
+                    <div><p className="text-xs font-medium text-slate-400">Informations personnelles</p><h2 className="text-base font-semibold text-slate-950">Identité de l’élève</h2></div>
+                  </div>
+                  <dl className="mt-5 grid gap-x-6 sm:grid-cols-2">
+                    {[['Date de naissance', formatDate(student.birth_date)], ['Lieu de naissance', student.birth_place || 'Non renseigné'], ['Nationalité', student.nationality || 'Non renseignée'], ['Adresse', student.address || 'Non renseignée']].map(([label, value]) => (
+                      <div key={label} className="min-h-[68px] border-t border-slate-100 py-3 first:border-t-0 sm:[&:nth-child(-n+2)]:border-t-0"><dt className="text-xs text-slate-400">{label}</dt><dd className="mt-1 text-sm font-semibold leading-5 text-slate-900">{value}</dd></div>
+                    ))}
+                  </dl>
+                </section>
+
+                <section className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><i className="pi pi-users text-sm" /></span>
+                      <div><p className="text-xs font-medium text-slate-400">Contact prioritaire</p><h2 className="text-base font-semibold text-slate-950">Responsable principal</h2></div>
+                    </div>
+                    <button type="button" className={`${resetButtonClass} grid size-9 cursor-pointer place-items-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700`} onClick={() => setGuardianDialog(true)} aria-label="Ajouter un responsable"><i className="pi pi-user-plus text-sm" /></button>
+                  </div>
+                  {primaryGuardian ? (
+                    <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">{primaryGuardian.first_name[0]}{primaryGuardian.last_name[0]}</span><div><strong className="block text-sm text-slate-900">{primaryGuardian.first_name} {primaryGuardian.last_name}</strong><span className="text-xs text-slate-400">Responsable principal</span></div></div>
+                      <div className="mt-4 border-t border-slate-200 pt-3 text-sm text-slate-600"><i className="pi pi-phone mr-2 text-emerald-500" />{primaryGuardian.primary_phone || "Téléphone non renseigné"}</div>
+                    </div>
+                  ) : <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">Aucun responsable principal n’est renseigné.</div>}
+                </section>
+              </div>
+
+              <section className="border-t border-slate-200 bg-slate-50/40 p-5">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><i className="pi pi-graduation-cap text-sm" /></span>
+                  <div><p className="text-xs font-medium text-slate-400">Situation scolaire</p><h2 className="text-base font-semibold text-slate-950">Inscription de l’année</h2></div>
                 </div>
-                {primaryGuardian ? <div className="mt-4 flex flex-1 flex-col justify-center rounded-2xl bg-slate-950 p-4 text-white"><strong className="block text-sm">{primaryGuardian.first_name} {primaryGuardian.last_name}</strong><div className="mt-3 text-sm text-slate-300"><i className="pi pi-phone mr-2 text-emerald-300" />{primaryGuardian.primary_phone || "Téléphone non renseigné"}</div></div> : <div className="mt-4 flex flex-1 items-center rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">Aucun responsable principal n’est renseigné.</div>}
-              </section>
-              <section className="flex h-full flex-col rounded-2xl border border-slate-200 p-5 xl:col-span-2">
-                <h2 className="text-base font-semibold text-slate-950">Inscription de l’année</h2>
-                <div className="mt-4 grid flex-1 gap-3 sm:grid-cols-3">
-                  {[["Cycle", enrollment?.cycle_name_snapshot || "—"], ["Niveau", enrollment?.level_name_snapshot || "—"], ["Classe", enrollment?.class_name_snapshot || "Non affectée"]].map(([label, value]) => (
-                    <div key={label} className="flex min-h-[84px] flex-col justify-center rounded-xl bg-slate-50 p-4"><span className="text-xs text-slate-400">{label}</span><strong className="mt-1 block truncate text-sm text-slate-900">{value}</strong></div>
+                <div className="mt-4 grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3">
+                  {[['Cycle', enrollment?.cycle_name_snapshot || '—'], ['Niveau', enrollment?.level_name_snapshot || '—'], ['Classe', enrollment?.class_name_snapshot || 'Non affectée']].map(([label, value], index) => (
+                    <div key={label} className={`flex min-h-[82px] flex-col justify-center px-4 py-3 ${index > 0 ? 'border-t border-slate-200 sm:border-l sm:border-t-0' : ''}`}><span className="text-xs text-slate-400">{label}</span><strong className="mt-1 truncate text-sm text-slate-900">{value}</strong></div>
                   ))}
                 </div>
               </section>
