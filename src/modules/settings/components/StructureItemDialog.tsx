@@ -4,14 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "primereact/button";
 import { Checkbox } from "primereact/checkbox";
 import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
-import { Dropdown } from "primereact/dropdown";
+import { CodeField } from "../../../shared/components/forms/CodeField";
 import {
   structureItemSchema,
   type StructureItemInput,
 } from "../schemas/academic-structure.schema";
-import { generateCode } from "../../../shared/utils/generate-code";
 
 interface Props {
   kind: "cycle" | "niveau";
@@ -21,6 +21,7 @@ interface Props {
   onHide: () => void;
   onSubmit: (input: StructureItemInput) => Promise<void>;
 }
+
 const defaults: StructureItemInput = {
   name: "",
   code: "",
@@ -36,6 +37,7 @@ const defaults: StructureItemInput = {
   capacity: null,
   repeatAllowed: true,
 };
+
 export function StructureItemDialog({
   kind,
   visible,
@@ -48,17 +50,20 @@ export function StructureItemDialog({
     control,
     handleSubmit,
     reset,
-    setValue,
-    getValues,
+    watch,
     formState: { errors },
   } = useForm<StructureItemInput>({
     resolver: zodResolver(structureItemSchema),
     defaultValues: defaults,
   });
+
   useEffect(() => {
     if (visible) reset(initial ?? defaults);
   }, [initial, reset, visible]);
+
   const submit = handleSubmit(onSubmit);
+  const name = watch("name");
+
   return (
     <Dialog
       header={
@@ -89,6 +94,7 @@ export function StructureItemDialog({
             <small className="p-error">{errors.name.message}</small>
           )}
         </div>
+
         {kind === "cycle" && (
           <div className="settings-grid compact-grid">
             <div className="field">
@@ -162,6 +168,7 @@ export function StructureItemDialog({
             />
           </div>
         )}
+
         {kind === "niveau" && (
           <NumberField
             name="capacity"
@@ -169,39 +176,27 @@ export function StructureItemDialog({
             control={control}
           />
         )}
+
         <div className="field">
           <label htmlFor="structure-code">Code</label>
-          <div className="input-with-action">
-            <Controller
-              name="code"
-              control={control}
-              render={({ field }) => (
-                <InputText
-                  {...field}
-                  id="structure-code"
-                  onChange={(event) =>
-                    field.onChange(event.target.value.toUpperCase())
-                  }
-                  invalid={Boolean(errors.code)}
-                />
-              )}
-            />
-            <Button
-              type="button"
-              label="Générer"
-              icon="pi pi-bolt"
-              outlined
-              onClick={() =>
-                setValue("code", generateCode(getValues("name")), {
-                  shouldValidate: true,
-                })
-              }
-            />
-          </div>
+          <Controller
+            name="code"
+            control={control}
+            render={({ field }) => (
+              <CodeField
+                id="structure-code"
+                value={field.value}
+                source={name}
+                invalid={Boolean(errors.code)}
+                onChange={field.onChange}
+              />
+            )}
+          />
           {errors.code && (
             <small className="p-error">{errors.code.message}</small>
           )}
         </div>
+
         <div className="field">
           <label htmlFor="structure-order">Ordre d’affichage</label>
           <Controller
@@ -218,6 +213,7 @@ export function StructureItemDialog({
             )}
           />
         </div>
+
         <div className="checkbox-field">
           <Controller
             name="isActive"
@@ -232,6 +228,7 @@ export function StructureItemDialog({
           />
           <label htmlFor="structure-active">Actif</label>
         </div>
+
         {kind === "cycle" && (
           <>
             <BooleanField
@@ -246,6 +243,7 @@ export function StructureItemDialog({
             />
           </>
         )}
+
         {kind === "niveau" && (
           <BooleanField
             name="repeatAllowed"
@@ -253,6 +251,7 @@ export function StructureItemDialog({
             control={control}
           />
         )}
+
         <div className="dialog-actions">
           <Button
             type="button"
@@ -300,6 +299,7 @@ function NumberField({
     </div>
   );
 }
+
 function BooleanField({
   name,
   label,
