@@ -67,3 +67,43 @@ La vue famille agrège les dossiers des enfants sans les remplacer ni fusionner 
 ## DEC-016 — Traçabilité
 
 **Décision :** un paiement validé n'est pas supprimé. Toute annulation ou correction conserve l'auteur, la date, le motif et la relation avec l'opération d'origine.
+
+## DEC-017 — Types de frais permanents
+
+**Décision :** les types de frais sont permanents au niveau de l'établissement et sont réutilisables d'une année scolaire à l'autre.
+
+Leur gestion peut être enrichie ultérieurement sans remettre en cause les grilles annuelles.
+
+## DEC-018 — Applicabilité des tarifs en V1
+
+**Décision :** le Lot 1 ne gère pas de distinction obligatoire/facultatif.
+
+Tout tarif configuré s'applique au périmètre établissement, cycles ou niveaux qu'il cible. Une gestion plus fine de l'applicabilité est reportée.
+
+## DEC-019 — Grille unique annuelle
+
+**Décision :** un établissement possède une seule grille tarifaire principale par année scolaire dans la V1.
+
+## DEC-020 — Modification d'un tarif utilisé
+
+**Décision :** une ligne tarifaire déjà utilisée peut être modifiée, mais la modification ne concerne que les futurs dossiers financiers.
+
+Les montants déjà appliqués restent figés.
+
+## DEC-021 — Absence de recalcul automatique
+
+**Décision :** aucun dossier financier existant n'est recalculé automatiquement après une modification de grille.
+
+## DEC-022 — Validité sur toute l'année
+
+**Décision :** une ligne tarifaire ne possède pas de date de début ou de fin dans le Lot 1. Elle appartient à l'année scolaire complète.
+
+## DEC-023 — Contrôle par filtres
+
+**Décision :** aucune vue matricielle de couverture n'est ajoutée dans le Lot 1.
+
+Le contrôle et la recherche se font depuis le tableau de la grille avec des filtres par frais, cycle, niveau et statut.
+
+## DEC-024 — Duplication simple
+
+**Décision :** la duplication annuelle copie les tarifs sans augmentation globale, pourcentage ni modification en masse dans le Lot 1.
