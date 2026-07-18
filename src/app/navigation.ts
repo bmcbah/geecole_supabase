@@ -14,10 +14,7 @@ export type NavigationDivider = {
   type: "divider";
 };
 
-export type NavigationEntry =
-  | NavigationLink
-  | NavigationTitle
-  | NavigationDivider;
+export type NavigationEntry = NavigationLink | NavigationTitle | NavigationDivider;
 
 export type NavigationGroup = {
   label: string;
@@ -45,7 +42,7 @@ export const navigation: NavigationGroup[] = [
     items: [
       { type: "title", label: "Opérations" },
       { type: "link", label: "Dossiers financiers", icon: "pi-folder", to: "/gestion-financiere/dossiers" },
-      { type: "link", label: "Encaissements", icon: "pi-credit-card", to: "/gestion-financiere/encaissements" },
+      { type: "link", label: "Historique des encaissements", icon: "pi-history", to: "/gestion-financiere/encaissements" },
       { type: "divider" },
       { type: "title", label: "Configuration" },
       { type: "link", label: "Types de frais et tarifs", icon: "pi-money-bill", to: "/gestion-financiere/configuration/grilles-tarifaires" },
