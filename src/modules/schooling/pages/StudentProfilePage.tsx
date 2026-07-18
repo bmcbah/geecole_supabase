@@ -6,7 +6,11 @@ import { StudentAvatarUpload } from "../components/StudentAvatarUpload";
 import { StudentClassAssignment } from "../components/StudentClassAssignment";
 import { StudentDocumentsPanel } from "../components/StudentDocumentsPanel";
 import { StudentProfileActions } from "../components/StudentProfileActions";
-import { getStudent } from "../services/schooling.service";
+import {
+  getStudent,
+  removeStudentGuardian,
+  type StudentGuardian,
+} from "../services/schooling.service";
 
 type StudentDetail = Awaited<ReturnType<typeof getStudent>>;
 type ProfileTab = "overview" | "guardians" | "schooling" | "attendance" | "results" | "documents" | "finances";
