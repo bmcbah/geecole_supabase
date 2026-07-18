@@ -104,9 +104,9 @@ with check (exists (
     and public.has_institution_role(account.institution_id, array['owner','admin','secretary']::public.app_role[])
 ));
 
- grant select, insert, update on public.student_financial_accounts to authenticated;
- grant select, insert on public.student_financial_items, public.student_financial_installments to authenticated;
- revoke all on public.student_financial_accounts, public.student_financial_items, public.student_financial_installments from anon;
+grant select, insert, update on public.student_financial_accounts to authenticated;
+grant select, insert on public.student_financial_items, public.student_financial_installments to authenticated;
+revoke all on public.student_financial_accounts, public.student_financial_items, public.student_financial_installments from anon;
 
 comment on table public.student_financial_accounts is 'Dossier financier annuel et figé d’un élève, créé depuis une inscription.';
 comment on table public.student_financial_items is 'Frais figés composant un dossier financier annuel.';
