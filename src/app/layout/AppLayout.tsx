@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
 import { Tag } from "primereact/tag";
 import { useAuth } from "../../modules/auth/components/auth-context";
@@ -36,10 +35,10 @@ const navigation: NavigationGroup[] = [
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors",
+    "group flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
     isActive
-      ? "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200"
-      : "text-slate-700 hover:bg-slate-100 hover:text-slate-950",
+      ? "bg-brand-50 text-brand-900 ring-1 ring-inset ring-brand-200"
+      : "text-slate-700 hover:bg-brand-50/70 hover:text-brand-900",
   ].join(" ");
 
 export function AppLayout() {
@@ -91,21 +90,23 @@ export function AppLayout() {
   };
 
   const sidebar = (
-    <div className="flex h-full bg-slate-50 text-slate-900">
-      <div className="flex w-[76px] shrink-0 flex-col bg-brand-700 text-white shadow-[4px_0_18px_rgba(15,118,110,0.18)]">
+    <div className="relative flex h-full bg-white text-slate-900">
+      <div className="flex w-[96px] shrink-0 flex-col bg-brand-800 text-white shadow-[4px_0_20px_rgba(5,90,70,0.2)]">
         <button
           type="button"
-          className="grid h-[72px] shrink-0 place-items-center border-b border-white/20 transition hover:bg-white/10"
+          className="flex h-[72px] w-full shrink-0 items-center justify-center border-b border-white/20 transition hover:bg-white/10"
           aria-label="Accueil GeeCole"
           onClick={() => {
             void navigate("/scolarite/eleves");
             closeMobileSidebar();
           }}
         >
-          <span className="grid size-11 place-items-center rounded-xl border border-white/30 bg-white text-xl font-black text-brand-700 shadow-sm">G</span>
+          <span className="flex h-11 w-[72px] items-center justify-center rounded-xl border border-white/30 bg-white px-2 text-center text-sm font-black tracking-tight text-brand-800 shadow-sm">
+            GeeCole
+          </span>
         </button>
 
-        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col items-stretch gap-2 px-2 py-4">
+        <nav aria-label="Rubriques principales" className="flex flex-1 flex-col items-stretch gap-2 px-2.5 py-4">
           {navigation.map((group) => {
             const active = location.pathname.startsWith(group.match);
             const selected = secondaryMenuOpen && selectedGroup.label === group.label;
@@ -114,17 +115,17 @@ export function AppLayout() {
                 key={group.label}
                 type="button"
                 className={[
-                  "flex min-h-[64px] w-full flex-col items-center justify-center gap-1.5 rounded-xl px-1 py-2 text-center transition-colors",
+                  "flex min-h-[72px] w-full flex-col items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-center transition-colors",
                   active || selected
-                    ? "bg-white text-brand-800 shadow-sm"
-                    : "text-white/85 hover:bg-white/15 hover:text-white",
+                    ? "bg-white text-brand-900 shadow-sm"
+                    : "text-white hover:bg-brand-700 hover:text-white",
                 ].join(" ")}
                 aria-pressed={active || selected}
                 title={group.label}
                 onClick={() => handleGroupClick(group)}
               >
                 <i className={`pi ${group.icon} text-lg`} />
-                <span className="max-w-[60px] text-[10px] font-semibold leading-[1.15]">{group.label}</span>
+                <span className="w-full break-words text-[11px] font-semibold leading-tight">{group.label}</span>
               </button>
             );
           })}
@@ -132,51 +133,35 @@ export function AppLayout() {
       </div>
 
       {secondaryMenuOpen ? (
-        <div className="relative flex w-[244px] min-w-0 flex-col border-r border-slate-200 bg-white">
+        <div className="relative flex w-[260px] min-w-0 flex-col border-r border-brand-100 bg-white lg:w-[276px] xl:w-[292px]">
           <button
             type="button"
-            className="absolute -right-3 top-6 z-10 grid size-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+            className="absolute -right-3.5 top-[22px] z-20 grid size-8 place-items-center rounded-full border border-brand-200 bg-white text-brand-800 shadow-md transition hover:bg-brand-50"
             aria-label="Réduire le menu secondaire"
             title="Réduire le menu"
             onClick={() => setSecondaryMenuOpen(false)}
           >
-            <i className="pi pi-angle-left text-xs" />
+            <i className="pi pi-angle-left text-sm" />
           </button>
 
-          <div className="flex h-[72px] shrink-0 items-center border-b border-slate-200 px-4 pr-6">
+          <div className="flex h-[72px] shrink-0 items-center border-b border-brand-100 px-5 pr-8">
             <div className="min-w-0">
-              <strong className="block truncate text-sm font-semibold text-slate-950">GeeCole</strong>
+              <strong className="block truncate text-sm font-semibold text-slate-950">{selectedGroup.label}</strong>
               <small className="block truncate text-xs text-slate-500">{institution?.name ?? "Gestion scolaire"}</small>
             </div>
           </div>
 
-          <div className="border-b border-slate-200 p-3">
-            <button
-              type="button"
-              className="flex min-h-11 w-full items-center gap-3 rounded-lg bg-brand-700 px-3 py-2.5 text-left font-semibold text-white shadow-sm transition hover:bg-brand-800"
-              onClick={() => {
-                void navigate("/scolarite/inscriptions/nouvelle");
-                closeMobileSidebar();
-              }}
-            >
-              <i className="pi pi-user-plus" />
-              <span className="flex-1 text-sm">Inscrire un élève</span>
-              <i className="pi pi-arrow-right text-xs" />
-            </button>
-          </div>
-
-          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto p-3">
-            <div className="mb-3 px-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Module</p>
-              <h2 className="mt-1 text-base font-semibold text-slate-950">{selectedGroup.label}</h2>
+          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+            <div className="mb-3 px-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-700">Navigation</p>
             </div>
             <div className="space-y-1">
               {selectedGroup.items?.map((item) => (
                 <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
                   {({ isActive }) => (
                     <>
-                      <i className={`pi ${item.icon} w-4 shrink-0 text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-slate-700"}`} />
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      <i className={`pi ${item.icon} w-5 shrink-0 text-center ${isActive ? "text-brand-700" : "text-brand-600 group-hover:text-brand-800"}`} />
+                      <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
                       {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /> : null}
                     </>
                   )}
@@ -185,34 +170,51 @@ export function AppLayout() {
             </div>
           </nav>
 
-          <div className="border-t border-slate-200 p-3">
-            <div className="flex min-h-[60px] items-center gap-3 rounded-lg bg-slate-100 px-3 py-2.5">
+          <div className="border-t border-brand-100 p-3">
+            <div className="flex min-h-[60px] items-center gap-3 rounded-lg bg-brand-50 px-3 py-2.5">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
                 {(user?.email?.[0] ?? "U").toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-slate-900">{user?.email ?? "Utilisateur"}</p>
-                <p className="text-xs text-slate-500">Session active</p>
+                <p className="text-xs text-brand-700">Session active</p>
               </div>
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <button
+          type="button"
+          className="absolute left-[82px] top-[22px] z-20 grid size-8 place-items-center rounded-full border border-brand-200 bg-white text-brand-800 shadow-md transition hover:bg-brand-50"
+          aria-label="Ouvrir le menu secondaire"
+          title="Ouvrir le menu"
+          onClick={() => setSecondaryMenuOpen(true)}
+        >
+          <i className="pi pi-angle-right text-sm" />
+        </button>
+      )}
     </div>
   );
 
+  const sidebarWidth = secondaryMenuOpen
+    ? "lg:w-[372px] xl:w-[388px]"
+    : "lg:w-[96px]";
+  const contentPadding = secondaryMenuOpen
+    ? "lg:pl-[372px] xl:pl-[388px]"
+    : "lg:pl-[96px]";
+
   return (
     <div className="min-h-screen bg-surface-page text-text-primary">
-      <aside className={`fixed inset-y-0 left-0 z-40 hidden lg:block ${secondaryMenuOpen ? "w-[320px]" : "w-[76px]"}`}>{sidebar}</aside>
+      <aside className={`fixed inset-y-0 left-0 z-40 hidden lg:block ${sidebarWidth}`}>{sidebar}</aside>
 
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" aria-label="Fermer la navigation" className="absolute inset-0 bg-brand-950/60 backdrop-blur-sm" onClick={closeMobileSidebar} />
-          <aside className={`relative h-full shadow-2xl ${secondaryMenuOpen ? "w-[min(94vw,320px)]" : "w-[76px]"}`}>{sidebar}</aside>
+          <aside className={`relative h-full shadow-2xl ${secondaryMenuOpen ? "w-[min(96vw,356px)]" : "w-[96px]"}`}>{sidebar}</aside>
         </div>
       ) : null}
 
-      <section className={`min-w-0 transition-[padding] duration-200 ${secondaryMenuOpen ? "lg:pl-[320px]" : "lg:pl-[76px]"}`}>
+      <section className={`min-w-0 transition-[padding] duration-200 ${contentPadding}`}>
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex min-h-[72px] items-center gap-3 px-4 md:px-6 xl:px-8">
             <button
@@ -231,11 +233,6 @@ export function AppLayout() {
                 <span className="truncate text-brand-700">{activePage.page}</span>
               </div>
               <p className="mt-0.5 truncate text-sm font-semibold text-slate-900">{institution?.name ?? "Espace de gestion"}</p>
-            </div>
-
-            <div className="hidden items-center gap-2 xl:flex">
-              <Button label="Nouvelle inscription" icon="pi pi-user-plus" size="small" onClick={() => void navigate("/scolarite/inscriptions/nouvelle")} />
-              <Button label="Réinscriptions" icon="pi pi-refresh" severity="secondary" outlined size="small" onClick={() => void navigate("/scolarite/reinscriptions")} />
             </div>
 
             <div className="hidden h-8 w-px bg-slate-200 md:block" />
