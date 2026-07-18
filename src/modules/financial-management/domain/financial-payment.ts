@@ -25,6 +25,21 @@ export type FinancialPayment = {
   createdAt: string;
 };
 
+export type OpenFinancialInstallment = {
+  id: string;
+  financialAccountId: string;
+  studentName: string;
+  matricule: string;
+  levelName: string;
+  cycleName: string;
+  sequence: number;
+  label: string;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  balanceAmount: number;
+};
+
 export const paymentMethodLabels: Record<PaymentMethod, string> = {
   cash: "Espèces",
   card: "Carte",
