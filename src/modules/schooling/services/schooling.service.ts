@@ -5,6 +5,28 @@ import type {
   StudentListItem,
 } from "../types/schooling";
 
+export type GuardianLinkInput = {
+  guardianId?: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  relationship: string;
+  primary: boolean;
+  financial: boolean;
+  emergency: boolean;
+};
+
+export type StudentGuardian = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  primary_phone: string;
+  relationship: string;
+  is_primary_contact: boolean;
+  is_financial_responsible: boolean;
+  is_emergency_contact: boolean;
+};
+
 export async function listStudents(
   institutionId: string,
   yearId: string,
@@ -129,7 +151,7 @@ export async function createAndLinkGuardian(input: {
   financial: boolean;
   emergency: boolean;
 }) {
-  const { error } = await supabase.rpc("create_and_link_guardian", {
+  const { data, error } = await supabase.rpc("create_and_link_guardian", {
     target_student_id: input.studentId,
     guardian_first_name: input.firstName,
     guardian_last_name: input.lastName,
@@ -140,31 +162,64 @@ export async function createAndLinkGuardian(input: {
     emergency_contact: input.emergency,
   });
   if (error) throw error;
+  return data;
+}
+
+async function attachGuardian(studentId: string, guardian: GuardianLinkInput) {
+  if (guardian.guardianId) {
+    await linkGuardian({
+      studentId,
+      guardianId: guardian.guardianId,
+      relationship: guardian.relationship,
+      primary: guardian.primary,
+      financial: guardian.financial,
+      emergency: guardian.emergency,
+    });
+    return;
+  }
+  await createAndLinkGuardian({ studentId, ...guardian });
 }
 
 export async function createEnrollment(
   institutionId: string,
   yearId: string,
   input: EnrollmentInput,
+  additionalGuardians: GuardianLinkInput[] = [],
 ) {
-  const { data, error } = await supabase.rpc("create_student_enrollment", {
-    target_institution_id: institutionId,
-    target_academic_year_id: yearId,
-    target_annual_level_id: input.annualLevelId,
-    student_first_name: input.firstName,
-    student_last_name: input.lastName,
-    student_gender: input.gender,
-    student_birth_date: input.birthDate || null,
-    student_birth_place: input.birthPlace,
-    student_address: input.address,
-    guardian_first_name: input.guardianFirstName,
-    guardian_last_name: input.guardianLastName,
-    guardian_phone: input.guardianPhone,
-    guardian_relationship: input.guardianRelationship,
-    enrollment_kind: input.kind,
-  });
+  const { data: enrollmentId, error } = await supabase.rpc(
+    "create_student_enrollment",
+    {
+      target_institution_id: institutionId,
+      target_academic_year_id: yearId,
+      target_annual_level_id: input.annualLevelId,
+      student_first_name: input.firstName,
+      student_last_name: input.lastName,
+      student_gender: input.gender,
+      student_birth_date: input.birthDate || null,
+      student_birth_place: input.birthPlace,
+      student_address: input.address,
+      guardian_first_name: input.guardianFirstName,
+      guardian_last_name: input.guardianLastName,
+      guardian_phone: input.guardianPhone,
+      guardian_relationship: input.guardianRelationship,
+      enrollment_kind: input.kind,
+    },
+  );
   if (error) throw error;
-  return data;
+
+  if (additionalGuardians.length) {
+    const { data: enrollment, error: enrollmentError } = await supabase
+      .from("enrollments")
+      .select("student_id")
+      .eq("id", enrollmentId)
+      .single();
+    if (enrollmentError) throw enrollmentError;
+    for (const guardian of additionalGuardians) {
+      await attachGuardian(enrollment.student_id, guardian);
+    }
+  }
+
+  return enrollmentId;
 }
 
 export async function getStudent(studentId: string, yearId: string) {
@@ -186,10 +241,32 @@ export async function getStudent(studentId: string, yearId: string) {
     ? await supabase.from("guardians").select("*").in("id", guardianIds)
     : { data: [], error: null };
   if (guardianResult.error) throw guardianResult.error;
+
+  const guardians: StudentGuardian[] = linksResult.data
+    .map((link) => {
+      const guardian = guardianResult.data.find(
+        (item) => item.id === link.guardian_id,
+      );
+      return guardian
+        ? {
+            ...guardian,
+            relationship: link.relationship,
+            is_primary_contact: link.is_primary_contact,
+            is_financial_responsible: link.is_financial_responsible,
+            is_emergency_contact: link.is_emergency_contact,
+          }
+        : null;
+    })
+    .filter((guardian): guardian is StudentGuardian => Boolean(guardian))
+    .sort(
+      (left, right) =>
+        Number(right.is_primary_contact) - Number(left.is_primary_contact),
+    );
+
   return {
     student: studentResult.data,
     enrollment: enrollmentResult.data,
-    guardians: guardianResult.data,
+    guardians,
   };
 }
 
@@ -218,6 +295,64 @@ export async function updateGuardian(
     .from("guardians")
     .update(input)
     .eq("id", guardianId);
+  if (error) throw error;
+}
+
+export async function updateStudentGuardian(
+  studentId: string,
+  guardianId: string,
+  input: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    relationship: string;
+    primary: boolean;
+    financial: boolean;
+    emergency: boolean;
+  },
+) {
+  await updateGuardian(guardianId, {
+    first_name: input.firstName,
+    last_name: input.lastName,
+    primary_phone: input.phone,
+  });
+  if (input.primary) {
+    const { error: resetError } = await supabase
+      .from("student_guardians")
+      .update({ is_primary_contact: false })
+      .eq("student_id", studentId);
+    if (resetError) throw resetError;
+  }
+  const { error } = await supabase
+    .from("student_guardians")
+    .update({
+      relationship: input.relationship,
+      is_primary_contact: input.primary,
+      is_financial_responsible: input.financial,
+      is_emergency_contact: input.emergency,
+    })
+    .eq("student_id", studentId)
+    .eq("guardian_id", guardianId);
+  if (error) throw error;
+}
+
+export async function removeStudentGuardian(
+  studentId: string,
+  guardianId: string,
+) {
+  const { count, error: countError } = await supabase
+    .from("student_guardians")
+    .select("guardian_id", { count: "exact", head: true })
+    .eq("student_id", studentId);
+  if (countError) throw countError;
+  if ((count ?? 0) <= 1) {
+    throw new Error("Un élève doit conserver au moins un responsable.");
+  }
+  const { error } = await supabase
+    .from("student_guardians")
+    .delete()
+    .eq("student_id", studentId)
+    .eq("guardian_id", guardianId);
   if (error) throw error;
 }
 
