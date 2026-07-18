@@ -7,7 +7,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { MultiSelect } from "primereact/multiselect";
-import { generateCode } from "../../../shared/utils/generate-code";
+import { CodeField } from "../../../shared/components/forms/CodeField";
 
 export type EntityValue =
   | string
@@ -177,31 +177,23 @@ export function SettingsEntityDialog({
                       updateValue(field, event.target.value)
                     }
                   />
+                ) : field.key === "code" ? (
+                  <CodeField
+                    id={field.key}
+                    value={String(values[field.key] ?? "")}
+                    source={String(values.name ?? "")}
+                    invalid={submitted && invalid(field)}
+                    onChange={(value) => updateValue(field, value)}
+                  />
                 ) : (
-                  <div className="input-with-action">
-                    <InputText
-                      id={field.key}
-                      value={String(values[field.key] ?? "")}
-                      invalid={submitted && invalid(field)}
-                      onChange={(event) =>
-                        updateValue(field, event.target.value)
-                      }
-                    />
-                    {field.key === "code" && (
-                      <Button
-                        type="button"
-                        label="Générer"
-                        icon="pi pi-bolt"
-                        outlined
-                        onClick={() =>
-                          setValues((current) => ({
-                            ...current,
-                            code: generateCode(String(current.name ?? "")),
-                          }))
-                        }
-                      />
-                    )}
-                  </div>
+                  <InputText
+                    id={field.key}
+                    value={String(values[field.key] ?? "")}
+                    invalid={submitted && invalid(field)}
+                    onChange={(event) =>
+                      updateValue(field, event.target.value)
+                    }
+                  />
                 )}
                 {submitted && invalid(field) && (
                   <small className="p-error">Ce champ est obligatoire.</small>
