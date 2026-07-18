@@ -10,7 +10,7 @@ import { CyclesSettingsPanel } from "../components/CyclesSettingsPanel";
 import { SubjectsSettingsPanel } from "../components/SubjectsSettingsPanel";
 import { AcademicYearsPanel } from "../components/AcademicYearsPanel";
 import { LevelsSettingsPanel } from "../components/LevelsSettingsPanel";
-import { FinancialRulesSettingsPanel } from "../components/FinancialRulesSettingsPanel";
+import { SchoolFeesSettingsPanel } from "../components/SchoolFeesSettingsPanel";
 import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
 import { AssessmentTypesSettingsPage } from "../components/AssessmentTypesSettingsPage";
 import { GradingFormulasSettingsPage } from "../components/GradingFormulasSettingsPage";
@@ -29,7 +29,7 @@ const sections = [
   "matieres",
   "types-notes",
   "formules-calcul",
-  "regles-financieres",
+  "grilles-tarifaires",
   "utilisateurs-roles",
 ] as const;
 
@@ -148,8 +148,8 @@ export function SettingsPage() {
             <AssessmentTypesSettingsPage />
           ) : section === "formules-calcul" ? (
             <GradingFormulasSettingsPage />
-          ) : section === "regles-financieres" ? (
-            <FinancialRulesSettingsPanel />
+          ) : section === "grilles-tarifaires" ? (
+            <SchoolFeesSettingsPanel />
           ) : (
             <PeopleAccessPanel />
           )}
