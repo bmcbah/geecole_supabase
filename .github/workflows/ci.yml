@@ -13,15 +13,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Collect Prettier differences
-        run: npm exec prettier -- --list-different . > prettier-files.txt || true
-      - name: Upload Prettier differences
-        uses: actions/upload-artifact@v4
-        with:
-          name: prettier-files
-          path: prettier-files.txt
-      - name: Check Prettier differences
-        run: test ! -s prettier-files.txt
+      - run: npm run format:check
       - run: npm run lint
       - run: npm test
       - run: npm run build
