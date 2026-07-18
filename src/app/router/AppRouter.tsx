@@ -80,6 +80,10 @@ export function AppRouter() {
               element={<Navigate to="/parametrage/etablissement" replace />}
             />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
+            <Route
+              path="/gestion-financiere/configuration/:section"
+              element={<SettingsPage />}
+            />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
             <Route
               path="/scolarite/inscriptions/nouvelle"
