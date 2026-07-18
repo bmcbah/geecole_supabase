@@ -39,6 +39,8 @@ const mapItem = (row: any): FinancialAccountItem => ({
   amount: Number(row.amount),
   adjustmentAmount: Number(row.adjustment_amount ?? 0),
   netAmount: Number(row.net_amount ?? row.amount),
+  paidAmount: Number(row.paid_amount ?? 0),
+  balanceAmount: Number(row.balance_amount ?? 0),
 });
 
 const mapInstallment = (row: any): FinancialInstallment => ({
@@ -54,78 +56,107 @@ const mapInstallment = (row: any): FinancialInstallment => ({
   balanceAmount: Number(row.balance_amount),
 });
 
+export type FinancialAccountPageRequest = {
+  first: number;
+  rows: number;
+  search?: string;
+  status?: string;
+  sortField?: string;
+  sortOrder?: 1 | -1 | 0 | null;
+};
+
+export async function listFinancialAccountsPage(
+  institutionId: string,
+  academicYearId: string,
+  request: FinancialAccountPageRequest,
+): Promise<{ rows: FinancialAccount[]; total: number }> {
+  const start = request.first;
+  const end = start + request.rows - 1;
+  const sortMap: Record<string, string> = {
+    studentName: "student_name_snapshot",
+    matricule: "matricule_snapshot",
+    levelName: "level_name_snapshot",
+    totalAmount: "total_amount",
+    paidAmount: "paid_amount",
+    balanceAmount: "balance_amount",
+    status: "status",
+  };
+
+  let query = db
+    .from("student_financial_accounts")
+    .select("*", { count: "exact" })
+    .eq("institution_id", institutionId)
+    .eq("academic_year_id", academicYearId);
+
+  if (request.search?.trim()) {
+    const value = request.search.trim().replace(/,/g, " ");
+    query = query.or(`student_name_snapshot.ilike.%${value}%,matricule_snapshot.ilike.%${value}%,level_name_snapshot.ilike.%${value}%`);
+  }
+  if (request.status) query = query.eq("status", request.status);
+
+  const sortColumn = sortMap[request.sortField ?? "studentName"] ?? "student_name_snapshot";
+  query = query.order(sortColumn, { ascending: request.sortOrder !== -1 }).range(start, end);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+  return { rows: (data ?? []).map(mapAccount), total: count ?? 0 };
+}
+
 export async function listFinancialAccounts(
   institutionId: string,
   academicYearId: string,
 ): Promise<FinancialAccount[]> {
-  const { data, error } = await db
-    .from("student_financial_accounts")
-    .select("*")
-    .eq("institution_id", institutionId)
-    .eq("academic_year_id", academicYearId)
-    .order("student_name_snapshot");
-
-  if (error) throw error;
-  return (data ?? []).map(mapAccount);
+  const result = await listFinancialAccountsPage(institutionId, academicYearId, { first: 0, rows: 1000 });
+  return result.rows;
 }
 
-export async function getFinancialAccount(
-  accountId: string,
-): Promise<FinancialAccountDetails> {
+export async function getFinancialAccount(accountId: string): Promise<FinancialAccountDetails> {
   const { data, error } = await db
     .from("student_financial_accounts")
     .select("*, items:student_financial_items(*), installments:student_financial_installments(*)")
     .eq("id", accountId)
     .single();
-
   if (error) throw error;
 
-  const installments = (data.installments ?? [])
-    .map(mapInstallment)
-    .sort(
-      (left: FinancialInstallment, right: FinancialInstallment) =>
-        left.dueDate.localeCompare(right.dueDate) || left.sequence - right.sequence,
-    );
+  const installments = (data.installments ?? []).map(mapInstallment).sort(
+    (left: FinancialInstallment, right: FinancialInstallment) =>
+      left.dueDate.localeCompare(right.dueDate) || left.sequence - right.sequence,
+  );
 
   return {
     ...mapAccount(data),
     items: (data.items ?? []).map((row: any) => {
       const item = mapItem(row);
-      return {
-        ...item,
-        installments: installments.filter(
-          (installment: FinancialInstallment) => installment.itemId === item.id,
-        ),
-      };
+      return { ...item, installments: installments.filter((installment: FinancialInstallment) => installment.itemId === item.id) };
     }),
     installments,
   };
 }
 
-export async function listConfirmedEnrollmentsWithoutFinancialAccount(
-  institutionId: string,
-  academicYearId: string,
-) {
+export async function listConfirmedEnrollmentsWithoutFinancialAccount(institutionId: string, academicYearId: string) {
   const { data, error } = await db
     .from("enrollments")
-    .select(
-      "id, student_id, level_name_snapshot, cycle_name_snapshot, student:students(first_name,last_name,matricule), financial_account:student_financial_accounts(id)",
-    )
+    .select("id, student_id, level_name_snapshot, cycle_name_snapshot, student:students(first_name,last_name,matricule), financial_account:student_financial_accounts(id)")
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
     .eq("status", "confirmed")
     .is("financial_account.id", null)
     .order("created_at", { ascending: false });
-
   if (error) throw error;
   return data ?? [];
 }
 
 export async function generateFinancialAccount(enrollmentId: string) {
-  const { data, error } = await db.rpc("generate_student_financial_account", {
-    target_enrollment_id: enrollmentId,
-  });
-
+  const { data, error } = await db.rpc("generate_student_financial_account", { target_enrollment_id: enrollmentId });
   if (error) throw error;
   return data as string;
+}
+
+export async function reapplyAllFinancialAccounts(institutionId: string, academicYearId: string) {
+  const { data, error } = await db.rpc("reapply_all_student_financial_accounts", {
+    target_institution_id: institutionId,
+    target_academic_year_id: academicYearId,
+  });
+  if (error) throw error;
+  return data as { generated: number; regenerated: number; skippedPaid: number; failed: number };
 }
