@@ -13,6 +13,8 @@ const mapPayment = (row: any): FinancialPayment => ({
   receiptNumber: row.receipt_number,
   studentName: row.account?.student_name_snapshot ?? "",
   matricule: row.account?.matricule_snapshot ?? "",
+  levelName: row.account?.level_name_snapshot ?? "",
+  cycleName: row.account?.cycle_name_snapshot ?? "",
   paymentDate: row.payment_date,
   amount: Number(row.amount),
   method: row.method,
@@ -46,7 +48,7 @@ export async function listFinancialPayments(
   const { data, error } = await db
     .from("financial_payments")
     .select(
-      "*, account:student_financial_accounts(student_name_snapshot,matricule_snapshot)",
+      "*, account:student_financial_accounts(student_name_snapshot,matricule_snapshot,level_name_snapshot,cycle_name_snapshot)",
     )
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
