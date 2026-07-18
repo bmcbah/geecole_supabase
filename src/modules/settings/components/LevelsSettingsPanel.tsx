@@ -243,7 +243,7 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
   return (
     <section>
       <ConfirmDialog />
-      <TabView className=""> >
+      <TabView className=""> 
         {cycles.map((cycle) => {
           const cycleLevels = levelsByCycle.get(cycle.cycle_id) ?? [];
           return (
