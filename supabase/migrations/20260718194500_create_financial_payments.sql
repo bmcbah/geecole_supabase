@@ -116,7 +116,11 @@ begin
 
   update public.student_financial_accounts
   set paid_amount = paid_amount + target_amount,
-      status = case when paid_amount + target_amount = total_amount then 'settled' else 'active' end
+      status = case
+        when paid_amount + target_amount = total_amount
+          then 'settled'::public.financial_account_status
+        else 'active'::public.financial_account_status
+      end
   where id = selected_account.id;
 
   return payment_id;
