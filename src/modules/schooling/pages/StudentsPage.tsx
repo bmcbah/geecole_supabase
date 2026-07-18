@@ -144,8 +144,8 @@ export function StudentsPage() {
 
   const toolbar = (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
           <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_220px]">
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
@@ -186,21 +186,7 @@ export function StudentsPage() {
             </label>
           </div>
 
-          <div className="flex min-h-10 flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              className={`${resetButtonClass} inline-flex h-10 min-w-[190px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50`}
-              onClick={() => setAdvanced((value) => !value)}
-            >
-              <i className={`pi ${advanced ? "pi-chevron-up" : "pi-sliders-h"} text-xs`} />
-              <span>{advanced ? "Masquer les filtres" : "Plus de filtres"}</span>
-              {activeFilterCount > 0 ? (
-                <span className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold leading-none text-white">
-                  {activeFilterCount}
-                </span>
-              ) : null}
-            </button>
-
+          <div className="ml-auto flex min-h-10 flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               className={`${resetButtonClass} inline-flex h-10 min-w-[124px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 ${activeFilterCount > 0 ? "visible" : "invisible pointer-events-none"}`}
@@ -210,6 +196,20 @@ export function StudentsPage() {
             >
               <i className="pi pi-filter-slash text-xs" />
               Réinitialiser
+            </button>
+
+            <button
+              type="button"
+              className={`${resetButtonClass} inline-flex h-10 min-w-[150px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50`}
+              onClick={() => setAdvanced((value) => !value)}
+            >
+              <i className={`pi ${advanced ? "pi-chevron-up" : "pi-sliders-h"} text-xs`} />
+              <span>{advanced ? "Masquer" : "Plus de filtres"}</span>
+              {activeFilterCount > 0 ? (
+                <span className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold leading-none text-white">
+                  {activeFilterCount}
+                </span>
+              ) : null}
             </button>
           </div>
         </div>
