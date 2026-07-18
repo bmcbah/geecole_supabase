@@ -7,7 +7,13 @@ import { useAuth } from "../../modules/auth/components/auth-context";
 import { useAcademicSession } from "../../modules/academic-session/components/academic-session-context";
 
 type NavigationItem = { label: string; icon: string; to: string };
-type NavigationGroup = { label: string; icon: string; match: string; items: NavigationItem[] };
+type NavigationGroup = {
+  label: string;
+  icon: string;
+  match: string;
+  to?: string;
+  items?: NavigationItem[];
+};
 
 const navigation: NavigationGroup[] = [
   {
@@ -24,18 +30,7 @@ const navigation: NavigationGroup[] = [
     label: "Paramétrage",
     icon: "pi-cog",
     match: "/parametrage",
-    items: [
-      { label: "Général", icon: "pi-cog", to: "/parametrage/etablissement" },
-      { label: "Années scolaires", icon: "pi-calendar", to: "/parametrage/annees-scolaires" },
-      { label: "Personnes et accès", icon: "pi-users", to: "/parametrage/utilisateurs-roles" },
-      { label: "Cycles", icon: "pi-sitemap", to: "/parametrage/cycles" },
-      { label: "Niveaux", icon: "pi-list", to: "/parametrage/niveaux" },
-      { label: "Classes", icon: "pi-users", to: "/parametrage/classes" },
-      { label: "Matières", icon: "pi-book", to: "/parametrage/matieres" },
-      { label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
-      { label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
-      { label: "Frais et règles", icon: "pi-wallet", to: "/parametrage/regles-financieres" },
-    ],
+    to: "/parametrage/etablissement",
   },
 ];
 
@@ -65,18 +60,35 @@ export function AppLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const routeGroup = navigation.find((group) => location.pathname.startsWith(group.match)) ?? navigation[0];
-  const [selectedGroupLabel, setSelectedGroupLabel] = useState(routeGroup.label);
-  const selectedGroup = navigation.find((group) => group.label === selectedGroupLabel) ?? routeGroup;
+  const initialGroup = routeGroup.items?.length ? routeGroup : navigation.find((group) => group.items?.length) ?? navigation[0];
+  const [selectedGroupLabel, setSelectedGroupLabel] = useState(initialGroup.label);
+  const [secondaryMenuOpen, setSecondaryMenuOpen] = useState(Boolean(routeGroup.items?.length));
+  const selectedGroup = navigation.find((group) => group.label === selectedGroupLabel && group.items?.length) ?? initialGroup;
 
   const activePage = useMemo(() => {
     for (const group of navigation) {
-      const item = group.items.find((entry) => location.pathname.startsWith(entry.to));
+      const item = group.items?.find((entry) => location.pathname.startsWith(entry.to));
       if (item) return { group: group.label, page: item.label };
+      if (group.to && location.pathname.startsWith(group.match)) {
+        return { group: group.label, page: "Administration" };
+      }
     }
     return { group: "GeeCole", page: "Tableau de bord" };
   }, [location.pathname]);
 
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
+
+  const handleGroupClick = (group: NavigationGroup) => {
+    if (group.to) {
+      setSecondaryMenuOpen(false);
+      void navigate(group.to);
+      closeMobileSidebar();
+      return;
+    }
+
+    setSelectedGroupLabel(group.label);
+    setSecondaryMenuOpen(true);
+  };
 
   const sidebar = (
     <div className="flex h-full bg-slate-50 text-slate-900">
@@ -96,7 +108,7 @@ export function AppLayout() {
         <nav aria-label="Rubriques principales" className="flex flex-1 flex-col gap-2 px-2 py-4">
           {navigation.map((group) => {
             const active = location.pathname.startsWith(group.match);
-            const selected = selectedGroup.label === group.label;
+            const selected = secondaryMenuOpen && selectedGroup.label === group.label;
             return (
               <button
                 key={group.label}
@@ -107,9 +119,9 @@ export function AppLayout() {
                     ? "bg-white text-brand-900 shadow-sm"
                     : "text-brand-100 hover:bg-white/10 hover:text-white",
                 ].join(" ")}
-                aria-pressed={selected}
+                aria-pressed={active || selected}
                 title={group.label}
-                onClick={() => setSelectedGroupLabel(group.label)}
+                onClick={() => handleGroupClick(group)}
               >
                 <i className={`pi ${group.icon} text-base`} />
                 <span className="text-[10px] font-semibold leading-tight">{group.label}</span>
@@ -119,84 +131,87 @@ export function AppLayout() {
         </nav>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col border-r border-slate-200 bg-white">
-        <div className="flex h-[72px] items-center justify-between border-b border-slate-200 px-4">
-          <div className="min-w-0">
-            <strong className="block truncate text-sm font-semibold text-slate-950">GeeCole</strong>
-            <small className="block truncate text-xs text-slate-500">{institution?.name ?? "Gestion scolaire"}</small>
+      {secondaryMenuOpen ? (
+        <div className="flex min-w-0 w-[244px] flex-col border-r border-slate-200 bg-white">
+          <div className="flex h-[72px] items-center justify-between border-b border-slate-200 px-4">
+            <div className="min-w-0">
+              <strong className="block truncate text-sm font-semibold text-slate-950">GeeCole</strong>
+              <small className="block truncate text-xs text-slate-500">{institution?.name ?? "Gestion scolaire"}</small>
+            </div>
+            <button
+              type="button"
+              className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              aria-label="Réduire le menu secondaire"
+              title="Réduire le menu"
+              onClick={() => setSecondaryMenuOpen(false)}
+            >
+              <i className="pi pi-angle-left" />
+            </button>
           </div>
-          <button
-            type="button"
-            className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
-            aria-label="Fermer la navigation"
-            onClick={closeMobileSidebar}
-          >
-            <i className="pi pi-times" />
-          </button>
-        </div>
 
-        <div className="border-b border-slate-200 p-3">
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 rounded-lg bg-brand-700 px-3 py-2.5 text-left font-semibold text-white shadow-sm transition hover:bg-brand-800"
-            onClick={() => {
-              void navigate("/scolarite/inscriptions/nouvelle");
-              closeMobileSidebar();
-            }}
-          >
-            <i className="pi pi-user-plus" />
-            <span className="flex-1 text-sm">Inscrire un élève</span>
-            <i className="pi pi-arrow-right text-xs" />
-          </button>
-        </div>
-
-        <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto p-3">
-          <div className="mb-3 px-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Rubrique</p>
-            <h2 className="mt-1 text-base font-semibold text-slate-950">{selectedGroup.label}</h2>
+          <div className="border-b border-slate-200 p-3">
+            <button
+              type="button"
+              className="flex w-full items-center gap-3 rounded-lg bg-brand-700 px-3 py-2.5 text-left font-semibold text-white shadow-sm transition hover:bg-brand-800"
+              onClick={() => {
+                void navigate("/scolarite/inscriptions/nouvelle");
+                closeMobileSidebar();
+              }}
+            >
+              <i className="pi pi-user-plus" />
+              <span className="flex-1 text-sm">Inscrire un élève</span>
+              <i className="pi pi-arrow-right text-xs" />
+            </button>
           </div>
-          <div className="space-y-1">
-            {selectedGroup.items.map((item) => (
-              <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
-                {({ isActive }) => (
-                  <>
-                    <i className={`pi ${item.icon} ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-slate-700"}`} />
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {isActive ? <span className="size-1.5 rounded-full bg-brand-700" aria-hidden="true" /> : null}
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
 
-        <div className="border-t border-slate-200 p-3">
-          <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-3 py-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
-              {(user?.email?.[0] ?? "U").toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">{user?.email ?? "Utilisateur"}</p>
-              <p className="text-xs text-slate-500">Session active</p>
+          <nav aria-label={`Menu ${selectedGroup.label}`} className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className="mb-3 px-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Module</p>
+              <h2 className="mt-1 text-base font-semibold text-slate-950">{selectedGroup.label}</h2>
+            </div>
+            <div className="space-y-1">
+              {selectedGroup.items?.map((item) => (
+                <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
+                  {({ isActive }) => (
+                    <>
+                      <i className={`pi ${item.icon} ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-slate-700"}`} />
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      {isActive ? <span className="size-1.5 rounded-full bg-brand-700" aria-hidden="true" /> : null}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </nav>
+
+          <div className="border-t border-slate-200 p-3">
+            <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-3 py-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
+                {(user?.email?.[0] ?? "U").toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-slate-900">{user?.email ?? "Utilisateur"}</p>
+                <p className="text-xs text-slate-500">Session active</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 
   return (
     <div className="min-h-screen bg-surface-page text-text-primary">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[320px] lg:block">{sidebar}</aside>
+      <aside className={`fixed inset-y-0 left-0 z-40 hidden lg:block ${secondaryMenuOpen ? "w-[320px]" : "w-[76px]"}`}>{sidebar}</aside>
 
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" aria-label="Fermer la navigation" className="absolute inset-0 bg-brand-950/60 backdrop-blur-sm" onClick={closeMobileSidebar} />
-          <aside className="relative h-full w-[min(94vw,320px)] shadow-2xl">{sidebar}</aside>
+          <aside className={`relative h-full shadow-2xl ${secondaryMenuOpen ? "w-[min(94vw,320px)]" : "w-[76px]"}`}>{sidebar}</aside>
         </div>
       ) : null}
 
-      <section className="min-w-0 lg:pl-[320px]">
+      <section className={`min-w-0 transition-[padding] duration-200 ${secondaryMenuOpen ? "lg:pl-[320px]" : "lg:pl-[76px]"}`}>
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex min-h-[72px] items-center gap-3 px-4 md:px-6 xl:px-8">
             <button
