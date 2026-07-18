@@ -15,8 +15,8 @@ Le lot suivant ne démarre qu'après validation explicite du précédent, sauf t
 | Lot | Intitulé | Statut | Dépend de |
 |---|---|---|---|
 | 0 | Fondations métier et architecture annuelle | Validé | — |
-| 1 | Catalogue des frais et grilles tarifaires annuelles | En développement | Lot 0 |
-| 2 | Plans de paiement | À cadrer | Lot 1 |
+| 1 | Catalogue des frais et grilles tarifaires annuelles | Validé | Lot 0 |
+| 2 | Plans de paiement | En développement | Lot 1 |
 | 3 | Dossiers financiers et facturation | À cadrer | Lots 1 et 2 |
 | 4 | Encaissements, affectations et reçus | À cadrer | Lot 3 |
 | 5 | Familles et avantages tarifaires | À cadrer | Lots 3 et 4 |
@@ -25,11 +25,11 @@ Le lot suivant ne démarre qu'après validation explicite du précédent, sauf t
 
 ## Prochaine étape officielle
 
-**Lot 1 — Implémentation du catalogue des frais et des grilles tarifaires annuelles**
+**Lot 2 — Implémentation des plans de paiement**
 
-Branche de travail : `feature/lot-01-grilles-tarifaires`.
+Branche de travail : `feature/lot-02-plans-paiement`.
 
-Objectif : implémenter le schéma Supabase, les politiques RLS, les services applicatifs, les écrans de configuration, les filtres et les tests correspondant à la spécification et au parcours UX validés.
+Objectif : configurer des modèles annuels de paiement, leurs échéances en pourcentage, leurs dates, les frais concernés et leur portée avant la génération des dossiers financiers du Lot 3.
 
 ## Lot 0 — Fondations
 
@@ -43,7 +43,7 @@ Livrables :
 
 ## Lot 1 — Catalogue des frais et grilles tarifaires annuelles
 
-Livrables attendus :
+Livrables :
 
 - types de frais permanents au niveau établissement ;
 - grille unique par année scolaire ;
@@ -59,6 +59,8 @@ Décisions UX validées dans `specs/lot-01-parcours-ux.md`.
 ## Lot 2 — Plans de paiement
 
 Livrables attendus : comptant, tranches, mensualités, échéancier personnalisé, prévisualisation et association aux frais/périmètres.
+
+Spécification de travail : `specs/lot-02-plans-paiement.md`.
 
 ## Lot 3 — Dossiers financiers
 
