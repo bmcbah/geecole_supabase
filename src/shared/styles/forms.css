@@ -88,20 +88,22 @@
 .space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child {
   grid-column: 2;
   grid-row: 1 / 4;
-  display: flex !important;
+  display: inline-flex !important;
   width: 2rem !important;
   height: 2rem !important;
   align-items: center !important;
   justify-content: center !important;
   place-items: unset !important;
+  overflow: hidden;
   border-radius: 0.625rem !important;
-  line-height: 1 !important;
+  line-height: 0 !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child i {
   display: block;
   margin: 0;
   line-height: 1 !important;
+  transform: translateY(0.5px);
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > strong {
@@ -118,6 +120,11 @@
   margin-top: 0 !important;
   font-size: 0.65rem !important;
   line-height: 0.875rem !important;
+}
+
+/* Les tableaux financiers restent bord à bord sans modifier le padding par défaut des autres SettingsTablePanel. */
+section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
+  padding: 0 !important;
 }
 
 @media (max-width: 680px) {
