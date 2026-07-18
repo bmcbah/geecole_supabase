@@ -45,7 +45,7 @@ export const navigation: NavigationGroup[] = [
       { type: "link", label: "Historique des encaissements", icon: "pi-history", to: "/gestion-financiere/encaissements" },
       { type: "divider" },
       { type: "title", label: "Configuration" },
-      { type: "link", label: "Types de frais et tarifs", icon: "pi-money-bill", to: "/gestion-financiere/configuration/grilles-tarifaires" },
+      { type: "link", label: "Grille tarifaire", icon: "pi-money-bill", to: "/gestion-financiere/configuration/grilles-tarifaires" },
       { type: "link", label: "Plans de paiement", icon: "pi-calendar-clock", to: "/gestion-financiere/configuration/plans-paiement" },
     ],
   },
@@ -68,6 +68,9 @@ export const navigation: NavigationGroup[] = [
       { type: "title", label: "Évaluation" },
       { type: "link", label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
       { type: "link", label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
+      { type: "divider" },
+      { type: "title", label: "Référentiels financiers" },
+      { type: "link", label: "Catégories de frais", icon: "pi-tags", to: "/parametrage/categories-frais" },
     ],
   },
 ];
