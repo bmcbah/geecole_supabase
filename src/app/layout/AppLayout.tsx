@@ -8,7 +8,7 @@ import { getNavigationLinks, navigation, type NavigationGroup } from "../navigat
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   [
-    "group flex min-h-12 items-center gap-1.5 rounded-lg border px-2.5 py-2.5 text-sm font-medium leading-snug no-underline transition-colors",
+    "group flex min-h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium leading-snug no-underline transition-colors",
     isActive
       ? "border-brand-200 bg-brand-50 text-brand-700"
       : "border-transparent bg-transparent text-slate-700 hover:border-brand-100 hover:bg-brand-50/60 hover:text-brand-700",
@@ -144,7 +144,7 @@ export function AppLayout() {
 
                 if (item.type === "title") {
                   return (
-                    <p key={`title-${item.label}`} className="px-2.5 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                    <p key={`title-${item.label}`} className="px-2.5  text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
                       {item.label}
                     </p>
                   );
@@ -154,7 +154,7 @@ export function AppLayout() {
                   <NavLink key={item.to} to={item.to} className={navLinkClassName} onClick={closeMobileSidebar}>
                     {({ isActive }) => (
                       <>
-                        <span className="grid w-5 shrink-0 place-items-center">
+                        <span className="grid pt-2 mx-1 shrink-0 place-items-center">
                           <i className={`pi ${item.icon} text-center ${isActive ? "text-brand-700" : "text-slate-400 group-hover:text-brand-700"}`} />
                         </span>
                         <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
@@ -168,7 +168,7 @@ export function AppLayout() {
 
           <div className="border-t border-brand-100 p-3">
             <div className="flex min-h-[60px] items-center gap-3 rounded-lg bg-brand-50 px-3 py-2.5">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
+              <span className="grid size-9 ps-2 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
                 {(user?.email?.[0] ?? "U").toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
@@ -237,7 +237,7 @@ export function AppLayout() {
 
             <div className="relative">
               <button type="button" className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 pr-2 text-left shadow-sm hover:bg-slate-50" aria-expanded={profileOpen} onClick={() => setProfileOpen((value) => !value)}>
-                <span className="grid size-8 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
+                <span className="grid size-9 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
                 <i className="pi pi-chevron-down hidden text-[9px] text-slate-400 sm:block" />
               </button>
 
