@@ -35,29 +35,58 @@
   border-bottom-left-radius: 0;
 }
 
-/* Les cartes de statistiques financières gardent une grille régulière et des espacements constants. */
+/* Cartes financières compactes et strictement alignées. */
+.space-y-4 > header + section:has(article) {
+  padding: 0.875rem !important;
+}
+
+.space-y-4 > header + section:has(article) > div:first-child {
+  margin-bottom: 0.75rem !important;
+}
+
 .space-y-4 > header + section:has(article) > div:nth-child(2) {
   align-items: stretch;
-  gap: 1rem !important;
+  gap: 0.75rem !important;
 }
 
 .space-y-4 > header + section:has(article) article {
-  height: 100%;
+  display: grid !important;
+  grid-template-rows: 2rem auto auto !important;
+  min-height: 104px !important;
+  height: 104px !important;
+  padding: 0.75rem !important;
+  border-radius: 0.75rem !important;
 }
 
 .space-y-4 > header + section:has(article) article > div:first-child {
-  min-height: 2.5rem;
-  align-items: center !important;
+  min-height: 2rem !important;
+  height: 2rem !important;
+  align-items: start !important;
+}
+
+.space-y-4 > header + section:has(article) article > div:first-child > span:first-child {
+  padding-top: 0 !important;
+  line-height: 1rem !important;
+}
+
+.space-y-4 > header + section:has(article) article > div:first-child > span:last-child {
+  width: 2rem !important;
+  height: 2rem !important;
+  justify-self: end !important;
+  align-self: start !important;
 }
 
 .space-y-4 > header + section:has(article) article > strong {
-  margin-top: 1rem;
-  line-height: 1.35;
+  align-self: end !important;
+  margin-top: 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.2rem !important;
 }
 
 .space-y-4 > header + section:has(article) article > span:last-child {
-  margin-top: 0.35rem;
-  line-height: 1.25;
+  margin-top: 0.125rem !important;
+  font-size: 0.7rem !important;
+  line-height: 0.9rem !important;
 }
 
 /* Les panneaux de filtres avancés des pages financières restent dans la toolbar avec une marge homogène. */
@@ -99,6 +128,11 @@ section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
 
   .space-y-4 > header + section:has(article) > div:nth-child(2) {
     grid-template-columns: 1fr !important;
+  }
+
+  .space-y-4 > header + section:has(article) article {
+    height: auto !important;
+    min-height: 100px !important;
   }
 
   .space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
