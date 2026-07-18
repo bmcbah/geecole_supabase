@@ -1,9 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase/client";
-import type {
-  FinancialPayment,
-  OpenFinancialInstallment,
-  PaymentMethod,
-} from "../domain/financial-payment";
+import type { FinancialPayment, OpenFinancialInstallment, PaymentMethod } from "../domain/financial-payment";
 
 const db = supabase as any;
 
@@ -39,52 +35,62 @@ const mapOpenInstallment = (row: any): OpenFinancialInstallment => ({
   balanceAmount: Number(row.balance_amount),
 });
 
-export async function listFinancialPayments(
+export async function listFinancialPaymentsPage(
   institutionId: string,
   academicYearId: string,
-): Promise<FinancialPayment[]> {
-  const { data, error } = await db
-    .from("financial_payments")
-    .select(
-      "*, account:student_financial_accounts(student_name_snapshot,matricule_snapshot)",
-    )
-    .eq("institution_id", institutionId)
-    .eq("academic_year_id", academicYearId)
-    .order("payment_date", { ascending: false })
-    .order("created_at", { ascending: false });
+  request: { first: number; rows: number; search?: string; status?: string; sortField?: string; sortOrder?: 1 | -1 | 0 | null },
+): Promise<{ rows: FinancialPayment[]; total: number }> {
+  const sortMap: Record<string, string> = {
+    receiptNumber: "receipt_number",
+    paymentDate: "payment_date",
+    amount: "amount",
+    method: "method",
+    status: "status",
+  };
 
+  let query = db
+    .from("financial_payments")
+    .select("*, account:student_financial_accounts!inner(student_name_snapshot,matricule_snapshot)", { count: "exact" })
+    .eq("institution_id", institutionId)
+    .eq("academic_year_id", academicYearId);
+
+  if (request.search?.trim()) {
+    const value = request.search.trim().replace(/,/g, " ");
+    query = query.or(`receipt_number.ilike.%${value}%,external_reference.ilike.%${value}%,account.student_name_snapshot.ilike.%${value}%,account.matricule_snapshot.ilike.%${value}%`);
+  }
+  if (request.status) query = query.eq("status", request.status);
+
+  const sortColumn = sortMap[request.sortField ?? "paymentDate"] ?? "payment_date";
+  query = query
+    .order(sortColumn, { ascending: request.sortOrder === 1 })
+    .order("created_at", { ascending: false })
+    .range(request.first, request.first + request.rows - 1);
+
+  const { data, error, count } = await query;
   if (error) throw error;
-  return (data ?? []).map(mapPayment);
+  return { rows: (data ?? []).map(mapPayment), total: count ?? 0 };
 }
 
-export async function listOpenFinancialInstallments(
-  institutionId: string,
-  academicYearId: string,
-): Promise<OpenFinancialInstallment[]> {
+export async function listFinancialPayments(institutionId: string, academicYearId: string): Promise<FinancialPayment[]> {
+  const result = await listFinancialPaymentsPage(institutionId, academicYearId, { first: 0, rows: 1000 });
+  return result.rows;
+}
+
+export async function listOpenFinancialInstallments(institutionId: string, academicYearId: string): Promise<OpenFinancialInstallment[]> {
   const { data, error } = await db
     .from("student_financial_installments")
-    .select(
-      "*, account:student_financial_accounts!inner(institution_id,academic_year_id,student_name_snapshot,matricule_snapshot,level_name_snapshot,cycle_name_snapshot,status)",
-    )
+    .select("*, account:student_financial_accounts!inner(institution_id,academic_year_id,student_name_snapshot,matricule_snapshot,level_name_snapshot,cycle_name_snapshot,status)")
     .eq("account.institution_id", institutionId)
     .eq("account.academic_year_id", academicYearId)
     .in("account.status", ["active", "draft"])
     .gt("balance_amount", 0)
     .order("due_date", { ascending: true })
     .order("sequence", { ascending: true });
-
   if (error) throw error;
   return (data ?? []).map(mapOpenInstallment);
 }
 
-export async function registerFinancialPayment(input: {
-  financialAccountId: string;
-  amount: number;
-  method: PaymentMethod;
-  paymentDate: string;
-  externalReference?: string;
-  note?: string;
-}) {
+export async function registerFinancialPayment(input: { financialAccountId: string; amount: number; method: PaymentMethod; paymentDate: string; externalReference?: string; note?: string }) {
   const { data, error } = await db.rpc("register_financial_payment", {
     target_financial_account_id: input.financialAccountId,
     target_amount: input.amount,
@@ -93,41 +99,25 @@ export async function registerFinancialPayment(input: {
     target_external_reference: input.externalReference || null,
     target_note: input.note || null,
   });
-
   if (error) throw error;
   return data as string;
 }
 
-export async function registerTargetedFinancialPayment(input: {
-  financialAccountId: string;
-  allocations: Array<{ installmentId: string; amount: number }>;
-  method: PaymentMethod;
-  paymentDate: string;
-  externalReference?: string;
-  note?: string;
-}) {
+export async function registerTargetedFinancialPayment(input: { financialAccountId: string; allocations: Array<{ installmentId: string; amount: number }>; method: PaymentMethod; paymentDate: string; externalReference?: string; note?: string }) {
   const { data, error } = await db.rpc("register_targeted_financial_payment", {
     target_financial_account_id: input.financialAccountId,
-    target_allocations: input.allocations.map((allocation) => ({
-      installment_id: allocation.installmentId,
-      amount: allocation.amount,
-    })),
+    target_allocations: input.allocations.map((allocation) => ({ installment_id: allocation.installmentId, amount: allocation.amount })),
     target_method: input.method,
     target_payment_date: input.paymentDate,
     target_external_reference: input.externalReference || null,
     target_note: input.note || null,
   });
-
   if (error) throw error;
   return data as string;
 }
 
 export async function cancelFinancialPayment(paymentId: string, reason: string) {
-  const { data, error } = await db.rpc("cancel_financial_payment", {
-    target_payment_id: paymentId,
-    target_reason: reason,
-  });
-
+  const { data, error } = await db.rpc("cancel_financial_payment", { target_payment_id: paymentId, target_reason: reason });
   if (error) throw error;
   return data as string;
 }
