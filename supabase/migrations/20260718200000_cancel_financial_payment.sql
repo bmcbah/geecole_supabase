@@ -45,11 +45,7 @@ begin
 
   update public.student_financial_accounts
   set paid_amount = paid_amount - selected_payment.amount,
-      status = case
-        when paid_amount - selected_payment.amount <= 0 then 'active'
-        when paid_amount - selected_payment.amount < total_amount then 'active'
-        else status
-      end
+      status = 'active'::public.financial_account_status
   where id = selected_payment.financial_account_id
     and paid_amount >= selected_payment.amount;
 
