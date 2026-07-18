@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
+import { Toolbar } from "primereact/toolbar";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
@@ -26,6 +27,7 @@ import { StructureItemDialog } from "../../settings/components/StructureItemDial
 import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
+import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 
 interface Props {
   institutionId: string;
@@ -241,98 +243,99 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
   return (
     <section>
       <ConfirmDialog />
-      <TabView>
+      <TabView className=""> >
         {cycles.map((cycle) => {
           const cycleLevels = levelsByCycle.get(cycle.cycle_id) ?? [];
           return (
             <TabPanel key={cycle.id} header={cycle.name}>
-              <TablePanel
-                title={`Niveaux — ${cycle.name}`}
-                description={`${cycle.code} · ${periodLabel(cycle)} · ${year.name}`}
-                meta={
-                  <Tag
-                    value={`${cycleLevels.length} niveau${cycleLevels.length > 1 ? "x" : ""}`}
-                    severity="secondary"
-                  />
+              <SettingsTablePanel
+                alert={
+                  (failure ? <Message severity="error" text={failure} /> : undefined)
+                  // (readOnlyAlert)
                 }
-                alerts={readOnlyAlert}
-                search={
-                  <TableSearch
-                    id={`levels-search-${cycle.id}`}
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Rechercher un niveau"
-                  />
-                }
-                actions={
-                  <div className="flex items-center gap-2">
-                    <Button
-                      label="Configurer le cycle"
-                      icon="pi pi-cog"
-                      severity="secondary"
-                      outlined
-                      size="small"
-                      disabled={!editable}
-                      onClick={() => setDialog({ kind: "cycle", item: cycle })}
-                    />
-                    <Button
-                      label="Ajouter un niveau"
-                      icon="pi pi-plus"
-                      size="small"
-                      disabled={!editable}
-                      onClick={() => setDialog({ kind: "niveau", cycle })}
-                    />
-                  </div>
-                }
-              >
-                <DataTable
-                  value={cycleLevels}
-                  globalFilter={search}
-                  globalFilterFields={[
-                    "name",
-                    "code",
-                    "sort_order",
-                    "capacity",
-                    "is_active",
-                    "repeat_allowed",
-                  ]}
-                  dataKey="id"
-                  emptyMessage="Aucun niveau"
-                  stripedRows
-                  responsiveLayout="scroll"
-                  size="small"
-                >
-                  <Column field="sort_order" header="Ordre" />
-                  <Column field="name" header="Niveau" />
-                  <Column field="code" header="Code" />
-                  <Column
-                    header="Actions"
-                    headerClassName="text-right"
-                    bodyClassName="text-right"
-                    body={(level: GradeLevel) => (
-                      <div className="flex items-center justify-end gap-1">
+                toolbar={
+                  <Toolbar
+                    start={
+                      <TableSearch
+                        id={`levels-search-${cycle.id}`}
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Rechercher un niveau"
+                      />
+                    }
+                    end={
+                      <div className="flex items-center gap-2">
                         <Button
-                          icon="pi pi-pencil"
-                          text
+                          label="Configurer le cycle"
+                          icon="pi pi-cog"
+                          severity="secondary"
+                          outlined
                           size="small"
                           disabled={!editable}
-                          onClick={() =>
-                            setDialog({ kind: "niveau", cycle, item: level })
-                          }
+                          onClick={() => setDialog({ kind: "cycle", item: cycle })}
                         />
                         <Button
-                          icon="pi pi-trash"
-                          text
+                          label="Ajouter un niveau"
+                          icon="pi pi-plus"
                           size="small"
-                          severity="danger"
                           disabled={!editable}
-                          onClick={() => removeLevel(cycle, level)}
+                          onClick={() => setDialog({ kind: "niveau", cycle })}
                         />
                       </div>
-                    )}
+                    }
+                    className="min-h-0 rounded-none border-0 bg-transparent p-0"
                   />
-                </DataTable>
-              </TablePanel>
+                }
+                dataTable={
+                  <DataTable
+                    value={cycleLevels}
+                    globalFilter={search}
+                    globalFilterFields={[
+                      "name",
+                      "code",
+                      "sort_order",
+                      "capacity",
+                      "is_active",
+                      "repeat_allowed",
+                    ]}
+                    dataKey="id"
+                    emptyMessage="Aucun niveau"
+                    stripedRows
+                    responsiveLayout="scroll"
+                    size="small"
+                  >
+                    <Column field="sort_order" header="Ordre" />
+                    <Column field="name" header="Niveau" />
+                    <Column field="code" header="Code" />
+                    <Column
+                      header="Actions"
+                      headerClassName="text-right"
+                      bodyClassName="text-right"
+                      body={(level: GradeLevel) => (
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            icon="pi pi-pencil"
+                            text
+                            size="small"
+                            disabled={!editable}
+                            onClick={() =>
+                              setDialog({ kind: "niveau", cycle, item: level })
+                            }
+                          />
+                          <Button
+                            icon="pi pi-trash"
+                            text
+                            size="small"
+                            severity="danger"
+                            disabled={!editable}
+                            onClick={() => removeLevel(cycle, level)}
+                          />
+                        </div>
+                      )}
+                    />
+                  </DataTable>
+                }
+              />
             </TabPanel>
           );
         })}
