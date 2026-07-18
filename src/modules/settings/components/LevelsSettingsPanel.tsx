@@ -28,6 +28,7 @@ import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
 
 interface Props {
   institutionId: string;
@@ -241,14 +242,21 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
   ) : undefined;
 
   return (
-    <section>
+    <section className="flex flex-col gap-4 bg-white p-4 shadow-sm sm:rounded-md">
       <ConfirmDialog />
+      <PageHeader
+        title="Niveaux"
+        description="Configurez les niveaux d’enseignement et leur cycle associé. Les niveaux sont utilisés pour organiser les classes et les matières."
+        headingAs="h2"
+        compact
+      />
       <TabView className=""> 
         {cycles.map((cycle) => {
           const cycleLevels = levelsByCycle.get(cycle.cycle_id) ?? [];
           return (
             <TabPanel key={cycle.id} header={cycle.name}>
               <SettingsTablePanel
+                activeCard={false}
                 alert={
                   (failure ? <Message severity="error" text={failure} /> : undefined)
                   // (readOnlyAlert)

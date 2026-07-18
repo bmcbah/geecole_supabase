@@ -7,6 +7,7 @@ type SettingsTablePanelProps = {
   dataTable: ReactNode;
   className?: string;
   contentClassName?: string;
+  activeCard?: boolean;
 };
 
 const joinClassNames = (...classNames: Array<string | undefined>) =>
@@ -19,11 +20,12 @@ export function SettingsTablePanel({
   dataTable,
   className,
   contentClassName,
+  activeCard = true,
 }: SettingsTablePanelProps) {
   return (
     <section
       className={joinClassNames(
-        "overflow-hidden rounded-xl bg-white shadow-sm",
+        activeCard ? "overflow-hidden rounded-xl bg-white shadow-sm " : "",
         className,
       )}
     >
