@@ -51,8 +51,7 @@
 }
 
 .space-y-4 > header + section:has(> div + div > article) > div:first-child p {
-  font-size: 0.65rem !important;
-  line-height: 1rem !important;
+  display: none !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) > div:nth-child(2) {
@@ -86,24 +85,25 @@
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child {
+  position: relative !important;
   grid-column: 2;
   grid-row: 1 / 4;
-  display: inline-flex !important;
+  display: block !important;
   width: 2rem !important;
   height: 2rem !important;
-  align-items: center !important;
-  justify-content: center !important;
-  place-items: unset !important;
   overflow: hidden;
   border-radius: 0.625rem !important;
   line-height: 0 !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child i {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
   display: block;
   margin: 0;
   line-height: 1 !important;
-  transform: translateY(0.5px);
+  transform: translate(-50%, -50%) !important;
 }
 
 .space-y-4 > header + section:has(> div + div > article) article > strong {
@@ -125,6 +125,13 @@
 /* Les tableaux financiers restent bord à bord sans modifier le padding par défaut des autres SettingsTablePanel. */
 section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
   padding: 0 !important;
+}
+
+/* Le panneau avancé de la liste élèves reste à l'intérieur de la toolbar avec une respiration identique aux pages financières. */
+.medium-controls section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+  margin: 0 1rem 1rem;
+  border: 1px solid rgb(209 250 229);
+  border-radius: 0.75rem;
 }
 
 @media (max-width: 680px) {
