@@ -35,6 +35,91 @@
   border-bottom-left-radius: 0;
 }
 
+.space-y-4 > header + section:has(> div + div > article) {
+  padding: 0.75rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) > div:first-child {
+  margin-bottom: 0.5rem !important;
+  gap: 0.5rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) > div:first-child h2 {
+  margin-top: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) > div:first-child p {
+  font-size: 0.65rem !important;
+  line-height: 1rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) > div:nth-child(2) {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 0.5rem !important;
+  width: 100%;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 2rem;
+  grid-template-rows: auto auto auto;
+  column-gap: 0.625rem;
+  row-gap: 0;
+  align-items: center;
+  min-height: 76px;
+  max-height: 92px;
+  padding: 0.625rem 0.75rem !important;
+  border-radius: 0.75rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article > div:first-child {
+  display: contents !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 0.65rem !important;
+  line-height: 0.875rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  display: flex !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  align-items: center !important;
+  justify-content: center !important;
+  place-items: unset !important;
+  border-radius: 0.625rem !important;
+  line-height: 1 !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article > div:first-child > span:last-child i {
+  display: block;
+  margin: 0;
+  line-height: 1 !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article > strong {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.25rem !important;
+}
+
+.space-y-4 > header + section:has(> div + div > article) article > span:last-child {
+  grid-column: 1;
+  grid-row: 3;
+  margin-top: 0 !important;
+  font-size: 0.65rem !important;
+  line-height: 0.875rem !important;
+}
+
 @media (max-width: 680px) {
   .form-grid {
     grid-template-columns: 1fr;
@@ -42,5 +127,9 @@
 
   .form-grid .field-wide {
     grid-column: auto;
+  }
+
+  .space-y-4 > header + section:has(> div + div > article) > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
   }
 }
