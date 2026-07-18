@@ -18,6 +18,7 @@ import {
   financialAccountStatusLabels,
   type FinancialAccount,
   type FinancialAccountDetails,
+  type FinancialAccountItem,
   type FinancialAccountStatus,
 } from "../domain/financial-account";
 import { paymentMethodLabels, type PaymentMethod } from "../domain/financial-payment";
@@ -27,7 +28,7 @@ import {
   listConfirmedEnrollmentsWithoutFinancialAccount,
   listFinancialAccounts,
 } from "../services/financial-accounts.service";
-import { registerFinancialPayment } from "../services/financial-payments.service";
+import { registerTargetedFinancialPayment } from "../services/financial-payments.service";
 
 const statusSeverity: Record<
   FinancialAccountStatus,
@@ -56,7 +57,8 @@ export function FinancialAccountsPage() {
   const [generationDialogOpen, setGenerationDialogOpen] = useState(false);
   const [enrollmentId, setEnrollmentId] = useState<string>();
   const [paymentAccount, setPaymentAccount] = useState<FinancialAccountDetails>();
-  const [amount, setAmount] = useState<number | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string>();
+  const [installmentAmounts, setInstallmentAmounts] = useState<Record<string, number>>({});
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [paymentDate, setPaymentDate] = useState(new Date());
   const [reference, setReference] = useState("");
@@ -112,6 +114,48 @@ export function FinancialAccountsPage() {
     };
   });
 
+  const selectedItem = useMemo(
+    () => paymentAccount?.items.find((item) => item.id === selectedItemId),
+    [paymentAccount, selectedItemId],
+  );
+
+  const payableItems = useMemo(
+    () =>
+      (paymentAccount?.items ?? []).filter((item) =>
+        (item.installments ?? []).some((installment) => installment.balanceAmount > 0),
+      ),
+    [paymentAccount],
+  );
+
+  const itemOptions = useMemo(
+    () =>
+      payableItems.map((item) => {
+        const remaining = (item.installments ?? []).reduce(
+          (sum, installment) => sum + installment.balanceAmount,
+          0,
+        );
+        return {
+          value: item.id,
+          label: `${item.label} — ${formatAmount(remaining, paymentAccount?.currencyCode)}`,
+        };
+      }),
+    [payableItems, paymentAccount?.currencyCode],
+  );
+
+  const selectedInstallments = useMemo(
+    () => (selectedItem?.installments ?? []).filter((item) => item.balanceAmount > 0),
+    [selectedItem],
+  );
+
+  const paymentTotal = useMemo(
+    () =>
+      selectedInstallments.reduce(
+        (sum, installment) => sum + (installmentAmounts[installment.id] ?? 0),
+        0,
+      ),
+    [installmentAmounts, selectedInstallments],
+  );
+
   const handleGenerate = async () => {
     if (!enrollmentId) return;
     setGenerating(true);
@@ -122,23 +166,29 @@ export function FinancialAccountsPage() {
       await load();
       notify({ severity: "success", summary: "Dossier financier généré" });
     } catch (cause) {
-      const detail = cause instanceof Error ? cause.message : undefined;
       notify({
         severity: "error",
         summary: "Génération impossible",
-        detail,
+        detail: cause instanceof Error ? cause.message : undefined,
       });
     } finally {
       setGenerating(false);
     }
   };
 
+  const initializeSelectedItem = (item?: FinancialAccountItem) => {
+    setSelectedItemId(item?.id);
+    setInstallmentAmounts({});
+  };
+
   const openPayment = async (account: FinancialAccount) => {
     try {
       const details = await getFinancialAccount(account.id);
       setPaymentAccount(details);
-      const firstOpen = details.installments.find((item) => item.balanceAmount > 0);
-      setAmount(firstOpen?.balanceAmount ?? details.balanceAmount);
+      const firstPayable = details.items.find((item) =>
+        (item.installments ?? []).some((installment) => installment.balanceAmount > 0),
+      );
+      initializeSelectedItem(firstPayable);
       setMethod("cash");
       setPaymentDate(new Date());
       setReference("");
@@ -154,39 +204,51 @@ export function FinancialAccountsPage() {
 
   const closePayment = () => {
     setPaymentAccount(undefined);
-    setAmount(null);
+    setSelectedItemId(undefined);
+    setInstallmentAmounts({});
     setReference("");
     setNote("");
   };
 
-  const allocationPreview = useMemo(() => {
-    if (!paymentAccount) return [];
-    let remaining = amount ?? 0;
-    return paymentAccount.installments
-      .filter((item) => item.balanceAmount > 0)
-      .map((item) => {
-        const allocated = Math.min(remaining, item.balanceAmount);
-        remaining -= allocated;
-        return { ...item, allocated };
-      })
-      .filter((item) => item.allocated > 0);
-  }, [amount, paymentAccount]);
+  const setInstallmentAmount = (installmentId: string, value: number | null) => {
+    setInstallmentAmounts((current) => ({
+      ...current,
+      [installmentId]: value ?? 0,
+    }));
+  };
+
+  const settleSelectedItem = () => {
+    const nextAmounts = selectedInstallments.reduce<Record<string, number>>(
+      (result, installment) => {
+        result[installment.id] = installment.balanceAmount;
+        return result;
+      },
+      {},
+    );
+    setInstallmentAmounts(nextAmounts);
+  };
 
   const handlePayment = async () => {
-    if (
-      !paymentAccount ||
-      !amount ||
-      amount <= 0 ||
-      amount > paymentAccount.balanceAmount
-    ) {
-      return;
-    }
+    if (!paymentAccount || !selectedItem || paymentTotal <= 0) return;
+
+    const allocations = selectedInstallments
+      .map((installment) => ({
+        installmentId: installment.id,
+        amount: installmentAmounts[installment.id] ?? 0,
+      }))
+      .filter((allocation) => allocation.amount > 0);
+
+    const hasInvalidAmount = selectedInstallments.some(
+      (installment) =>
+        (installmentAmounts[installment.id] ?? 0) > installment.balanceAmount,
+    );
+    if (hasInvalidAmount) return;
 
     setSaving(true);
     try {
-      await registerFinancialPayment({
+      await registerTargetedFinancialPayment({
         financialAccountId: paymentAccount.id,
-        amount,
+        allocations,
         method,
         paymentDate: toDateInput(paymentDate),
         externalReference: reference,
@@ -302,7 +364,7 @@ export function FinancialAccountsPage() {
         header="Encaisser un élève"
         visible={Boolean(paymentAccount)}
         modal
-        className="w-[min(96vw,54rem)]"
+        className="w-[min(96vw,46rem)]"
         onHide={closePayment}
       >
         {paymentAccount ? (
@@ -318,76 +380,148 @@ export function FinancialAccountsPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              {paymentAccount.items.map((item) => (
-                <div key={item.id} className="rounded-lg border border-slate-200 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">{item.label}</div>
-                      <div className="text-sm text-slate-500">Plan : {item.paymentPlanName ?? "Non renseigné"}</div>
+            <div className="field">
+              <label htmlFor="payment-fee">Type d’encaissement</label>
+              <Dropdown
+                inputId="payment-fee"
+                className="w-full"
+                value={selectedItemId}
+                options={itemOptions}
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Choisir un frais"
+                onChange={(event) =>
+                  initializeSelectedItem(
+                    payableItems.find((item) => item.id === event.value),
+                  )
+                }
+              />
+            </div>
+
+            {selectedItem ? (
+              <div className="rounded-lg border border-slate-200">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                  <div>
+                    <div className="font-semibold">{selectedItem.label}</div>
+                    <div className="text-sm text-slate-500">
+                      Plan : {selectedItem.paymentPlanName ?? "Paiement unique"}
                     </div>
-                    <strong>{formatAmount(item.amount, paymentAccount.currencyCode)}</strong>
                   </div>
-                  <div className="mt-3 grid gap-2 md:grid-cols-2">
-                    {(item.installments ?? []).map((installment) => (
-                      <div key={installment.id} className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm">
-                        <div>
-                          <div>{installment.label}</div>
-                          <div className="text-slate-500">{formatDate(installment.dueDate)}</div>
-                        </div>
-                        <div className="text-right">
-                          <div>{formatAmount(installment.amount, paymentAccount.currencyCode)}</div>
-                          <div className={installment.balanceAmount <= 0 ? "text-green-600" : installment.paidAmount > 0 ? "text-orange-600" : "text-slate-500"}>
-                            {installment.balanceAmount <= 0 ? "Payé" : `Reste ${formatAmount(installment.balanceAmount, paymentAccount.currencyCode)}`}
-                          </div>
+                  <Button
+                    label="Solder ce frais"
+                    size="small"
+                    severity="secondary"
+                    outlined
+                    onClick={settleSelectedItem}
+                  />
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {selectedInstallments.map((installment) => (
+                    <div
+                      key={installment.id}
+                      className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_10rem_10rem] md:items-center"
+                    >
+                      <div>
+                        <div className="font-medium">{installment.label}</div>
+                        <div className="text-sm text-slate-500">
+                          Échéance du {formatDate(installment.dueDate)}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="field">
-                <label htmlFor="payment-amount">Montant reçu</label>
-                <InputNumber inputId="payment-amount" value={amount} min={0} max={paymentAccount.balanceAmount} mode="decimal" useGrouping className="w-full" onValueChange={(event) => setAmount(event.value ?? null)} />
-              </div>
-              <div className="field">
-                <label htmlFor="payment-method">Mode de paiement</label>
-                <Dropdown inputId="payment-method" value={method} options={Object.entries(paymentMethodLabels).map(([value, label]) => ({ value, label }))} className="w-full" onChange={(event) => setMethod(event.value)} />
-              </div>
-              <div className="field">
-                <label htmlFor="payment-date">Date</label>
-                <Calendar inputId="payment-date" value={paymentDate} dateFormat="dd/mm/yy" className="w-full" onChange={(event) => event.value && setPaymentDate(event.value as Date)} />
-              </div>
-              <div className="field">
-                <label htmlFor="payment-reference">Référence</label>
-                <InputText id="payment-reference" value={reference} className="w-full" onChange={(event) => setReference(event.target.value)} />
-              </div>
-              <div className="field md:col-span-2">
-                <label htmlFor="payment-note">Note</label>
-                <InputTextarea id="payment-note" value={note} rows={2} className="w-full" onChange={(event) => setNote(event.target.value)} />
-              </div>
-            </div>
-
-            {allocationPreview.length ? (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <div className="mb-2 font-semibold">Ventilation prévue</div>
-                <div className="space-y-1 text-sm">
-                  {allocationPreview.map((item) => (
-                    <div key={item.id} className="flex justify-between gap-3">
-                      <span>{item.label}</span>
-                      <strong>{formatAmount(item.allocated, paymentAccount.currencyCode)}</strong>
+                      <div className="text-sm">
+                        <div className="text-slate-500">Demandé</div>
+                        <div className="font-medium">
+                          {formatAmount(installment.amount, paymentAccount.currencyCode)}
+                        </div>
+                        {installment.paidAmount > 0 ? (
+                          <div className="text-xs text-orange-600">
+                            Déjà payé {formatAmount(installment.paidAmount, paymentAccount.currencyCode)}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="field m-0">
+                        <label htmlFor={`installment-${installment.id}`}>Montant payé</label>
+                        <InputNumber
+                          inputId={`installment-${installment.id}`}
+                          value={installmentAmounts[installment.id] ?? 0}
+                          min={0}
+                          max={installment.balanceAmount}
+                          mode="decimal"
+                          useGrouping
+                          className="w-full"
+                          onValueChange={(event) =>
+                            setInstallmentAmount(installment.id, event.value ?? 0)
+                          }
+                        />
+                        <small className="text-slate-500">
+                          Reste {formatAmount(installment.balanceAmount, paymentAccount.currencyCode)}
+                        </small>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             ) : null}
 
-            <div className="flex justify-end gap-2">
-              <Button label="Annuler" severity="secondary" outlined onClick={closePayment} />
-              <Button label="Enregistrer l’encaissement" icon="pi pi-check" loading={saving} disabled={!amount || amount <= 0 || amount > paymentAccount.balanceAmount} onClick={() => void handlePayment()} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="field">
+                <label htmlFor="payment-method">Mode de paiement</label>
+                <Dropdown
+                  inputId="payment-method"
+                  value={method}
+                  options={Object.entries(paymentMethodLabels).map(([value, label]) => ({ value, label }))}
+                  className="w-full"
+                  onChange={(event) => setMethod(event.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="payment-date">Date</label>
+                <Calendar
+                  inputId="payment-date"
+                  value={paymentDate}
+                  dateFormat="dd/mm/yy"
+                  className="w-full"
+                  onChange={(event) => event.value && setPaymentDate(event.value as Date)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="payment-reference">Référence</label>
+                <InputText
+                  id="payment-reference"
+                  value={reference}
+                  className="w-full"
+                  onChange={(event) => setReference(event.target.value)}
+                />
+              </div>
+              <div className="field md:col-span-2">
+                <label htmlFor="payment-note">Note</label>
+                <InputTextarea
+                  id="payment-note"
+                  value={note}
+                  rows={2}
+                  className="w-full"
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div>
+                <div className="text-sm text-blue-700">Total reçu</div>
+                <div className="text-xl font-semibold text-blue-950">
+                  {formatAmount(paymentTotal, paymentAccount.currencyCode)}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button label="Annuler" severity="secondary" outlined onClick={closePayment} />
+                <Button
+                  label="Enregistrer l’encaissement"
+                  icon="pi pi-check"
+                  loading={saving}
+                  disabled={!selectedItem || paymentTotal <= 0}
+                  onClick={() => void handlePayment()}
+                />
+              </div>
             </div>
           </div>
         ) : null}
