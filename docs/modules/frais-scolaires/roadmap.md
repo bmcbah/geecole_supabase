@@ -15,7 +15,7 @@ Le lot suivant ne démarre qu'après validation explicite du précédent, sauf t
 | Lot | Intitulé | Statut | Dépend de |
 |---|---|---|---|
 | 0 | Fondations métier et architecture annuelle | Validé | — |
-| 1 | Catalogue des frais et grilles tarifaires annuelles | Spécifié | Lot 0 |
+| 1 | Catalogue des frais et grilles tarifaires annuelles | En développement | Lot 0 |
 | 2 | Plans de paiement | À cadrer | Lot 1 |
 | 3 | Dossiers financiers et facturation | À cadrer | Lots 1 et 2 |
 | 4 | Encaissements, affectations et reçus | À cadrer | Lot 3 |
@@ -25,9 +25,11 @@ Le lot suivant ne démarre qu'après validation explicite du précédent, sauf t
 
 ## Prochaine étape officielle
 
-**Lot 1 — Développement du catalogue des frais et des grilles tarifaires annuelles**
+**Lot 1 — Implémentation du catalogue des frais et des grilles tarifaires annuelles**
 
-Objectif de la prochaine session : ouvrir une branche/MR d'implémentation du Lot 1 en respectant la spécification métier et le parcours UX validé. Le lot passera ensuite en validation avant d'être déclaré terminé.
+Branche de travail : `feature/lot-01-grilles-tarifaires`.
+
+Objectif : implémenter le schéma Supabase, les politiques RLS, les services applicatifs, les écrans de configuration, les filtres et les tests correspondant à la spécification et au parcours UX validés.
 
 ## Lot 0 — Fondations
 
