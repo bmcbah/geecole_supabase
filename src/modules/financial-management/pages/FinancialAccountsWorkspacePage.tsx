@@ -4,6 +4,7 @@ import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable, type DataTablePageEvent, type DataTableSortEvent } from "primereact/datatable";
 import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
@@ -45,6 +46,11 @@ export function FinancialAccountsWorkspacePage() {
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState("");
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [level, setLevel] = useState("");
+  const [cycle, setCycle] = useState("");
+  const [balanceState, setBalanceState] = useState<"" | "settled" | "outstanding">("");
+  const [advanced, setAdvanced] = useState(false);
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(10);
   const [sortField, setSortField] = useState("studentName");
@@ -58,7 +64,17 @@ export function FinancialAccountsWorkspacePage() {
     setLoading(true);
     setFailure("");
     try {
-      const result = await listFinancialAccountsPage(institutionId, year.id, { first, rows, search, sortField, sortOrder });
+      const result = await listFinancialAccountsPage(institutionId, year.id, {
+        first,
+        rows,
+        search,
+        status,
+        level,
+        cycle,
+        balanceState: balanceState || undefined,
+        sortField,
+        sortOrder,
+      });
       setAccounts(result.rows);
       setTotalRecords(result.total);
     } catch (cause) {
@@ -67,7 +83,7 @@ export function FinancialAccountsWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [first, institutionId, rows, search, sortField, sortOrder, year]);
+  }, [balanceState, cycle, first, institutionId, level, rows, search, sortField, sortOrder, status, year]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -78,6 +94,26 @@ export function FinancialAccountsWorkspacePage() {
     const settled = accounts.filter((account) => account.balanceAmount <= 0).length;
     return { total, paid, balance, settled };
   }, [accounts]);
+
+  const levelOptions = useMemo(() => [
+    { label: "Tous les niveaux", value: "" },
+    ...Array.from(new Set(accounts.map((account) => account.levelName))).filter(Boolean).sort((a, b) => a.localeCompare(b, "fr")).map((value) => ({ label: value, value })),
+  ], [accounts]);
+
+  const cycleOptions = useMemo(() => [
+    { label: "Tous les cycles", value: "" },
+    ...Array.from(new Set(accounts.map((account) => account.cycleName))).filter(Boolean).sort((a, b) => a.localeCompare(b, "fr")).map((value) => ({ label: value, value })),
+  ], [accounts]);
+
+  const activeFilterCount = [search, status, level, cycle, balanceState].filter(Boolean).length;
+  const resetFilters = () => {
+    setSearch("");
+    setStatus("");
+    setLevel("");
+    setCycle("");
+    setBalanceState("");
+    setFirst(0);
+  };
 
   const onPage = (event: DataTablePageEvent) => { setFirst(event.first); setRows(event.rows); };
   const onSort = (event: DataTableSortEvent) => { setFirst(0); setSortField(String(event.sortField ?? "studentName")); setSortOrder(event.sortOrder === -1 ? -1 : 1); };
@@ -124,11 +160,14 @@ export function FinancialAccountsWorkspacePage() {
           <div><h2 className="text-base font-semibold text-slate-950">Vue financière</h2><p className="mt-1 text-sm text-slate-500">Synthèse des dossiers actuellement affichés.</p></div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{year.name}</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map((card) => (
-            <article key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{card.label}</span><MetricIcon icon={card.icon} /></div>
-              <strong className="mt-4 block text-xl font-bold tracking-tight text-slate-950">{card.value}</strong>
+            <article key={card.label} className="grid min-h-[148px] grid-rows-[40px_1fr_auto] rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="grid grid-cols-[1fr_40px] items-start gap-3">
+                <span className="pt-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{card.label}</span>
+                <MetricIcon icon={card.icon} className="size-10 shrink-0 self-start justify-self-end" />
+              </div>
+              <strong className="self-end text-xl font-bold tracking-tight text-slate-950">{card.value}</strong>
               <span className="mt-1 block text-xs text-slate-500">{card.hint}</span>
             </article>
           ))}
@@ -139,18 +178,43 @@ export function FinancialAccountsWorkspacePage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="p-4">
-          <label className="block max-w-2xl">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher un dossier</span>
-            <span className="p-input-icon-left block w-full"><i className="pi pi-search left-3 text-sm text-slate-400" /><InputText value={search} className={`${controlClass} pl-9`} placeholder="Élève, matricule ou niveau" onChange={(event) => { setFirst(0); setSearch(event.target.value); }} /></span>
-          </label>
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
+            <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_220px]">
+              <label className="block min-w-0">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
+                <span className="p-input-icon-left block w-full"><i className="pi pi-search left-3 text-sm text-slate-400" /><InputText value={search} className={`${controlClass} pl-9`} placeholder="Élève, matricule, niveau ou cycle" onChange={(event) => { setFirst(0); setSearch(event.target.value); }} /></span>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span>
+                <Dropdown className={controlClass} value={status} options={[{ label: "Tous les statuts", value: "" }, ...Object.entries(financialAccountStatusLabels).map(([value, label]) => ({ value, label }))]} onChange={(event) => { setFirst(0); setStatus(String(event.value)); }} />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Niveau</span>
+                <Dropdown className={controlClass} value={level} options={levelOptions} onChange={(event) => { setFirst(0); setLevel(String(event.value)); }} />
+              </label>
+            </div>
+            <div className="ml-auto flex min-h-10 flex-wrap items-center justify-end gap-2">
+              {activeFilterCount > 0 ? <Button label="Réinitialiser" icon="pi pi-filter-slash" severity="secondary" text onClick={resetFilters} /> : null}
+              <Button label={advanced ? "Masquer" : "Plus de filtres"} icon={advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"} severity="secondary" outlined badge={activeFilterCount > 0 ? String(activeFilterCount) : undefined} onClick={() => setAdvanced((value) => !value)} />
+            </div>
+          </div>
         </div>
+        {advanced ? (
+          <div className="border-t border-emerald-100 bg-emerald-50/35 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="m-0 text-sm font-semibold text-slate-900">Filtres avancés</h3><p className="mt-0.5 text-xs text-slate-500">Affinez les dossiers sans quitter la liste.</p></div><MetricIcon icon="pi-sliders-h" /></div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">Cycle</span><Dropdown className={controlClass} value={cycle} options={cycleOptions} onChange={(event) => { setFirst(0); setCycle(String(event.value)); }} /></label>
+              <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">Situation du solde</span><Dropdown className={controlClass} value={balanceState} options={[{ label: "Tous les soldes", value: "" }, { label: "Soldés", value: "settled" }, { label: "Reste à payer", value: "outstanding" }]} onChange={(event) => { setFirst(0); setBalanceState(event.value); }} /></label>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="grid min-h-[360px] place-items-center"><div className="text-center"><ProgressSpinner className="size-10" strokeWidth="4" /><p className="mt-3 text-sm font-medium text-slate-500">Chargement des dossiers…</p></div></div>
         ) : accounts.length === 0 ? (
-          <div className="grid min-h-[360px] place-items-center p-8 text-center"><div className="max-w-sm"><MetricIcon icon="pi-wallet" size="md" tone="slate" className="mx-auto" /><h3 className="mt-4 text-sm font-semibold text-slate-900">Aucun dossier financier</h3><p className="mt-1 text-sm leading-6 text-slate-500">Modifiez la recherche ou générez les frais de l’année scolaire.</p></div></div>
+          <div className="grid min-h-[360px] place-items-center p-8 text-center"><div className="max-w-sm"><MetricIcon icon="pi-wallet" size="md" tone="slate" className="mx-auto" /><h3 className="mt-4 text-sm font-semibold text-slate-900">Aucun dossier financier</h3><p className="mt-1 text-sm leading-6 text-slate-500">Modifiez les filtres ou générez les frais de l’année scolaire.</p></div></div>
         ) : (
           <DataTable value={accounts} lazy paginator first={first} rows={rows} totalRecords={totalRecords} rowsPerPageOptions={[10, 25, 50]} sortField={sortField} sortOrder={sortOrder} onPage={onPage} onSort={onSort} dataKey="id" stripedRows selectionMode="single" onRowClick={(event) => navigate(`/gestion-financiere/dossiers/${event.data.id}`)} rowClassName={() => "cursor-pointer"} className="text-sm" tableStyle={{ minWidth: "1100px" }}>
             <Column field="studentName" header="Élève" sortable body={(row: FinancialAccount) => <div><strong className="block text-sm text-slate-900">{row.studentName}</strong><span className="text-xs text-slate-400">{row.matricule}</span></div>} />
