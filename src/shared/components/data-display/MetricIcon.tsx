@@ -15,20 +15,10 @@ const toneClasses = {
   slate: "bg-slate-50 text-slate-500 ring-slate-200",
 };
 
-export function MetricIcon({
-  icon,
-  size = "sm",
-  tone = "emerald",
-  className = "",
-}: MetricIconProps) {
+export function MetricIcon({ icon, size = "sm", tone = "emerald", className = "" }: MetricIconProps) {
   return (
-    <span
-      className={`relative inline-block shrink-0 overflow-hidden leading-none shadow-sm ring-1 ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
-      aria-hidden="true"
-    >
-      <i
-        className={`pi ${icon} absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 leading-none`}
-      />
+    <span className={`inline-grid shrink-0 place-items-center leading-none shadow-sm ring-1 ${sizeClasses[size]} ${toneClasses[tone]} ${className}`} aria-hidden="true">
+      <i className={`pi ${icon} block leading-none`} />
     </span>
   );
 }
