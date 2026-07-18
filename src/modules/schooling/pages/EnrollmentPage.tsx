@@ -59,9 +59,13 @@ const relationshipOptions = [
   { label: "Autre", value: "other" },
 ];
 
-const stepItems = ["Élève", "Responsables", "Scolarité", "Récapitulatif"].map(
-  (label) => ({ label }),
-);
+const stepItems = [
+  "Vérification",
+  "Identité",
+  "Responsables",
+  "Scolarité",
+  "Récapitulatif",
+].map((label) => ({ label }));
 
 export function EnrollmentPage() {
   const navigate = useNavigate();
@@ -73,6 +77,7 @@ export function EnrollmentPage() {
   >([]);
   const [policy, setPolicy] = useState<EnrollmentPolicy | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
+  const [verificationDone, setVerificationDone] = useState(false);
   const [additionalGuardians, setAdditionalGuardians] = useState<GuardianLinkInput[]>([]);
   const [guardianDraft, setGuardianDraft] = useState<GuardianLinkInput>(
     emptyAdditionalGuardian,
@@ -110,8 +115,33 @@ export function EnrollmentPage() {
     [levels],
   );
 
-  const set = (key: keyof EnrollmentInput, value: string) =>
+  const set = (key: keyof EnrollmentInput, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+    if (key === "firstName" || key === "lastName") {
+      setVerificationDone(false);
+      setDuplicates([]);
+    }
+  };
+
+  const verifyStudent = async () => {
+    setFailure("");
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setFailure("Saisissez le nom et le prénom pour vérifier les dossiers existants.");
+      return;
+    }
+    try {
+      setDuplicates(
+        await findDuplicateCandidates(
+          institutionId,
+          form.firstName,
+          form.lastName,
+        ),
+      );
+      setVerificationDone(true);
+    } catch {
+      setFailure("Impossible d’effectuer la vérification des doublons.");
+    }
+  };
 
   const searchExistingGuardians = async () => {
     try {
@@ -157,33 +187,27 @@ export function EnrollmentPage() {
     setFailure("");
   };
 
-  const next = async () => {
+  const next = () => {
     setFailure("");
     try {
-      if (active === 0) {
-        if (!form.firstName.trim() || !form.lastName.trim()) {
-          throw new Error("Le nom et le prénom de l’élève sont obligatoires.");
-        }
-        setDuplicates(
-          await findDuplicateCandidates(
-            institutionId,
-            form.firstName,
-            form.lastName,
-          ),
-        );
+      if (active === 0 && !verificationDone) {
+        throw new Error("Lancez la vérification avant de continuer.");
+      }
+      if (active === 1 && (!form.firstName.trim() || !form.lastName.trim())) {
+        throw new Error("Le nom et le prénom de l’élève sont obligatoires.");
       }
       if (
-        active === 1 &&
+        active === 2 &&
         (!form.guardianFirstName.trim() ||
           !form.guardianLastName.trim() ||
           form.guardianPhone.trim().length < 8)
       ) {
         throw new Error("Renseignez au moins un responsable principal.");
       }
-      if (active === 2 && !form.annualLevelId) {
+      if (active === 3 && !form.annualLevelId) {
         throw new Error("Sélectionnez le niveau demandé.");
       }
-      setActive((value) => Math.min(3, value + 1));
+      setActive((value) => Math.min(4, value + 1));
     } catch (error) {
       setFailure(error instanceof Error ? error.message : "Étape incomplète.");
     }
@@ -249,7 +273,7 @@ export function EnrollmentPage() {
       className="enrollment-page medium-controls"
       path={`Scolarité · ${year?.name ?? "Année scolaire"} · Inscription`}
       title="Inscrire un élève"
-      description="Créez l’élève, rattachez plusieurs responsables et choisissez sa scolarité."
+      description="Vérifiez les dossiers existants, créez l’élève et rattachez ses responsables."
       actions={
         <Button
           label="Quitter"
@@ -266,6 +290,43 @@ export function EnrollmentPage() {
           {failure ? <Message severity="error" text={failure} /> : null}
 
           {active === 0 ? (
+            <div className="enrollment-step space-y-4">
+              <div>
+                <h2>Vérifier les dossiers existants</h2>
+                <p>Recherchez l’élève avant de créer un nouveau dossier afin d’éviter les doublons.</p>
+              </div>
+              <div className="schooling-form-grid">
+                <label className="field">
+                  <span>Prénom de l’élève *</span>
+                  <InputText value={form.firstName} onChange={(event) => set("firstName", event.target.value)} />
+                </label>
+                <label className="field">
+                  <span>Nom de l’élève *</span>
+                  <InputText value={form.lastName} onChange={(event) => set("lastName", event.target.value)} />
+                </label>
+              </div>
+              <div className="flex justify-end">
+                <Button label="Vérifier" icon="pi pi-search" onClick={() => void verifyStudent()} />
+              </div>
+              {verificationDone && duplicates.length === 0 ? (
+                <Message severity="success" text="Aucun dossier similaire trouvé. Vous pouvez poursuivre l’inscription." />
+              ) : null}
+              {verificationDone && duplicates.length > 0 ? (
+                <Message severity="warn" text={`${duplicates.length} dossier(s) similaire(s) trouvé(s). Vérifiez-les avant de poursuivre.`} />
+              ) : null}
+              {duplicates.map((item) => (
+                <div className="duplicate-row" key={item.id}>
+                  <span>
+                    <strong>{item.fullName}</strong>
+                    <small>{item.matricule} · {item.birthDate || "Date inconnue"}</small>
+                  </span>
+                  <Button label="Ouvrir la fiche" text onClick={() => void navigate(`/scolarite/eleves/${item.id}`)} />
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {active === 1 ? (
             <div className="enrollment-step">
               <h2>Identité de l’élève</h2>
               <div className="schooling-form-grid">
@@ -276,16 +337,10 @@ export function EnrollmentPage() {
                 <label className="field"><span>Lieu de naissance</span><InputText value={form.birthPlace} onChange={(event) => set("birthPlace", event.target.value)} /></label>
                 <label className="field"><span>Adresse</span><InputText value={form.address} onChange={(event) => set("address", event.target.value)} /></label>
               </div>
-              {duplicates.map((item) => (
-                <div className="duplicate-row" key={item.id}>
-                  <span><strong>{item.fullName}</strong><small>{item.matricule} · {item.birthDate || "Date inconnue"}</small></span>
-                  <Button label="Ouvrir la fiche" text onClick={() => void navigate(`/scolarite/eleves/${item.id}`)} />
-                </div>
-              ))}
             </div>
           ) : null}
 
-          {active === 1 ? (
+          {active === 2 ? (
             <div className="enrollment-step space-y-5">
               <div>
                 <h2>Responsable principal</h2>
@@ -324,7 +379,7 @@ export function EnrollmentPage() {
             </div>
           ) : null}
 
-          {active === 2 ? (
+          {active === 3 ? (
             <div className="enrollment-step">
               <h2>Scolarité demandée</h2>
               <div className="schooling-form-grid">
@@ -335,7 +390,7 @@ export function EnrollmentPage() {
             </div>
           ) : null}
 
-          {active === 3 ? (
+          {active === 4 ? (
             <div className="enrollment-step enrollment-summary">
               <h2>Récapitulatif</h2>
               <dl>
@@ -351,7 +406,7 @@ export function EnrollmentPage() {
           <footer className="enrollment-actions">
             <span className="dialog-spacer" />
             {active > 0 ? <Button label="Précédent" severity="secondary" outlined onClick={() => setActive((value) => value - 1)} /> : null}
-            {active < 3 ? <Button label="Continuer" icon="pi pi-arrow-right" iconPos="right" onClick={() => void next()} /> : <Button label={form.kind === "confirmed" ? "Confirmer l’inscription" : "Enregistrer la préinscription"} icon="pi pi-check" loading={saving} disabled={confirmationBlocked} onClick={() => void submit()} />}
+            {active < 4 ? <Button label="Continuer" icon="pi pi-arrow-right" iconPos="right" onClick={next} /> : <Button label={form.kind === "confirmed" ? "Confirmer l’inscription" : "Enregistrer la préinscription"} icon="pi pi-check" loading={saving} disabled={confirmationBlocked} onClick={() => void submit()} />}
           </footer>
         </div>
       </Card>
