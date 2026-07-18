@@ -26,6 +26,13 @@ import {
 const formatAmount = (value: number) => `${Number(value).toLocaleString("fr-GN")} GNF`;
 const formatDate = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString("fr-FR");
 const controlClass = "h-11 w-full rounded-xl border border-slate-300 bg-white text-sm shadow-sm transition-colors hover:border-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100";
+const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  "'": "&#39;",
+  '"': "&quot;",
+})[character] ?? character);
 
 export function FinancialPaymentsPage() {
   const { institutionId, year } = useAcademicSession();
@@ -93,6 +100,27 @@ export function FinancialPaymentsPage() {
     setMethod(undefined);
     setDateFrom("");
     setDateTo("");
+  };
+
+  const printReceipt = () => {
+    if (!receiptPayment || !year) return;
+    const printWindow = window.open("", "_blank", "width=760,height=900");
+    if (!printWindow) {
+      notify({ severity: "warn", summary: "Impression bloquée", detail: "Autorisez les fenêtres contextuelles pour imprimer le reçu." });
+      return;
+    }
+
+    const statusLabel = financialPaymentStatusLabels[receiptPayment.status];
+    const methodLabel = paymentMethodLabels[receiptPayment.method];
+    const reference = receiptPayment.externalReference || "Non renseignée";
+    const cancellation = receiptPayment.cancellationReason
+      ? `<div class="warning"><strong>Encaissement annulé</strong><span>${escapeHtml(receiptPayment.cancellationReason)}</span></div>`
+      : "";
+
+    printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${escapeHtml(receiptPayment.receiptNumber)}</title><style>
+      *{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#172033;font-family:Inter,Arial,sans-serif}.page{width:720px;margin:24px auto;background:#fff;border:1px solid #dfe4ea;border-radius:16px;overflow:hidden}.header{display:flex;justify-content:space-between;align-items:flex-start;padding:28px 32px;border-bottom:1px solid #e5e9ee}.brand{font-size:22px;font-weight:800;letter-spacing:-.02em}.subtitle{margin-top:4px;color:#667085;font-size:12px}.receipt-id{text-align:right}.receipt-id span{display:block;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.receipt-id strong{display:block;margin-top:5px;font-family:monospace;font-size:16px}.status{display:inline-block;margin-top:9px;padding:5px 9px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:11px;font-weight:700}.content{padding:28px 32px}.amount{padding:22px;border-radius:14px;background:#f0fdf8;border:1px solid #b7ead8}.amount span{display:block;color:#47645c;font-size:12px}.amount strong{display:block;margin-top:6px;color:#065f46;font-size:30px;letter-spacing:-.03em}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}.item{padding:14px;border:1px solid #e5e9ee;border-radius:12px}.item span{display:block;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.06em}.item strong{display:block;margin-top:6px;font-size:14px}.wide{grid-column:1/-1}.warning{display:flex;flex-direction:column;gap:5px;margin-top:18px;padding:14px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;color:#9a3412;font-size:12px}.footer{display:flex;justify-content:space-between;gap:24px;padding:20px 32px;border-top:1px solid #e5e9ee;color:#667085;font-size:11px;line-height:1.6}@media print{body{background:#fff}.page{width:100%;margin:0;border:0;border-radius:0}.no-print{display:none!important}}
+    </style></head><body><main class="page"><header class="header"><div><div class="brand">GeeCole</div><div class="subtitle">Reçu officiel d’encaissement · ${escapeHtml(year.name)}</div></div><div class="receipt-id"><span>Numéro du reçu</span><strong>${escapeHtml(receiptPayment.receiptNumber)}</strong><div class="status">${escapeHtml(statusLabel)}</div></div></header><section class="content"><div class="amount"><span>Montant reçu</span><strong>${escapeHtml(formatAmount(receiptPayment.amount))}</strong></div><div class="grid"><div class="item wide"><span>Élève</span><strong>${escapeHtml(receiptPayment.studentName)}</strong></div><div class="item"><span>Matricule</span><strong>${escapeHtml(receiptPayment.matricule)}</strong></div><div class="item"><span>Date de paiement</span><strong>${escapeHtml(formatDate(receiptPayment.paymentDate))}</strong></div><div class="item"><span>Mode de paiement</span><strong>${escapeHtml(methodLabel)}</strong></div><div class="item"><span>Référence externe</span><strong>${escapeHtml(reference)}</strong></div></div>${cancellation}</section><footer class="footer"><span>Ce reçu atteste de l’enregistrement de l’encaissement dans GeeCole.</span><span>Imprimé le ${escapeHtml(new Date().toLocaleString("fr-FR"))}</span></footer></main><script>window.addEventListener('load',()=>{window.print();window.onafterprint=()=>window.close();});</script></body></html>`);
+    printWindow.document.close();
   };
 
   const handleCancel = async () => {
@@ -176,8 +204,48 @@ export function FinancialPaymentsPage() {
         </DataTable></div>
       )} />
 
-      <Dialog header="Reçu d’encaissement" visible={Boolean(receiptPayment)} modal className="w-[min(94vw,34rem)]" onHide={() => setReceiptPayment(undefined)}>
-        {receiptPayment ? <div className="space-y-4"><div className="rounded-lg border border-slate-200 p-4"><div className="mb-4 flex items-start justify-between gap-4"><div><div className="text-sm text-slate-500">Reçu</div><div className="text-lg font-semibold">{receiptPayment.receiptNumber}</div></div><Tag value={financialPaymentStatusLabels[receiptPayment.status]} severity={receiptPayment.status === "posted" ? "success" : "danger"} /></div><dl className="grid grid-cols-2 gap-3 text-sm"><div><dt className="text-slate-500">Élève</dt><dd className="font-medium">{receiptPayment.studentName}</dd></div><div><dt className="text-slate-500">Matricule</dt><dd className="font-medium">{receiptPayment.matricule}</dd></div><div><dt className="text-slate-500">Date</dt><dd className="font-medium">{formatDate(receiptPayment.paymentDate)}</dd></div><div><dt className="text-slate-500">Mode</dt><dd className="font-medium">{paymentMethodLabels[receiptPayment.method]}</dd></div><div className="col-span-2"><dt className="text-slate-500">Montant</dt><dd className="text-xl font-semibold">{formatAmount(receiptPayment.amount)}</dd></div></dl></div>{receiptPayment.cancellationReason ? <Message severity="warn" text={`Motif d’annulation : ${receiptPayment.cancellationReason}`} /> : null}</div> : null}
+      <Dialog header="Reçu d’encaissement" visible={Boolean(receiptPayment)} modal className="w-[min(96vw,42rem)]" onHide={() => setReceiptPayment(undefined)}>
+        {receiptPayment ? (
+          <div className="space-y-4">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <div>
+                  <div className="flex items-center gap-2 text-lg font-bold text-slate-950"><span className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><i className="pi pi-receipt text-sm" /></span>GeeCole</div>
+                  <p className="mt-1 text-xs text-slate-500">Reçu officiel d’encaissement · {year.name}</p>
+                </div>
+                <div className="text-right">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Numéro du reçu</span>
+                  <strong className="mt-1 block font-mono text-sm text-slate-900">{receiptPayment.receiptNumber}</strong>
+                  <Tag className="mt-2" value={financialPaymentStatusLabels[receiptPayment.status]} severity={receiptPayment.status === "posted" ? "success" : "danger"} />
+                </div>
+              </header>
+
+              <div className="p-5">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
+                  <span className="text-xs font-medium text-emerald-700">Montant reçu</span>
+                  <strong className="mt-1 block text-3xl font-bold tracking-tight text-emerald-950">{formatAmount(receiptPayment.amount)}</strong>
+                </div>
+
+                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 p-3 sm:col-span-2"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Élève</dt><dd className="mt-1 text-sm font-semibold text-slate-900">{receiptPayment.studentName}</dd></div>
+                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Matricule</dt><dd className="mt-1 text-sm font-medium text-slate-800">{receiptPayment.matricule}</dd></div>
+                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Date</dt><dd className="mt-1 text-sm font-medium text-slate-800">{formatDate(receiptPayment.paymentDate)}</dd></div>
+                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Mode de paiement</dt><dd className="mt-1 text-sm font-medium text-slate-800">{paymentMethodLabels[receiptPayment.method]}</dd></div>
+                  <div className="rounded-xl border border-slate-200 p-3"><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Référence</dt><dd className="mt-1 truncate text-sm font-medium text-slate-800">{receiptPayment.externalReference || "Non renseignée"}</dd></div>
+                </dl>
+
+                {receiptPayment.cancellationReason ? <Message className="mt-4 w-full" severity="warn" text={`Motif d’annulation : ${receiptPayment.cancellationReason}`} /> : null}
+              </div>
+
+              <footer className="border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500">Ce reçu atteste de l’enregistrement de l’encaissement dans GeeCole.</footer>
+            </section>
+
+            <div className="flex justify-end gap-2">
+              <Button label="Fermer" severity="secondary" outlined onClick={() => setReceiptPayment(undefined)} />
+              <Button label="Imprimer" icon="pi pi-print" onClick={printReceipt} />
+            </div>
+          </div>
+        ) : null}
       </Dialog>
 
       <Dialog header="Annuler l’encaissement" visible={Boolean(paymentToCancel)} modal className="w-[min(94vw,32rem)]" onHide={() => { setPaymentToCancel(undefined); setCancellationReason(""); }}>
