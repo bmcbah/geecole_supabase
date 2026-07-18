@@ -1,11 +1,13 @@
 import { z } from "zod";
+import type { StructureItemInput } from "../domain/academic-structure";
 
 const code = z
   .string()
   .trim()
   .toUpperCase()
   .regex(/^[A-Z0-9_-]+$/, "Majuscules, chiffres, tirets ou underscore");
-export const structureItemSchema = z.object({
+
+export const structureItemSchema: z.ZodType<StructureItemInput> = z.object({
   name: z.string().trim().min(1, "Le nom est obligatoire").max(80),
   code: code.min(1).max(20),
   sortOrder: z.number().int().min(0).max(999),
@@ -20,4 +22,5 @@ export const structureItemSchema = z.object({
   capacity: z.number().int().positive().nullable().optional(),
   repeatAllowed: z.boolean().optional(),
 });
-export type StructureItemInput = z.infer<typeof structureItemSchema>;
+
+export type { StructureItemInput } from "../domain/academic-structure";
