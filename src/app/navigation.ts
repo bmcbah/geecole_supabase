@@ -36,6 +36,18 @@ export const navigation: NavigationGroup[] = [
     ],
   },
   {
+    label: "Gestion financière",
+    icon: "pi-wallet",
+    match: "/gestion-financiere",
+    items: [
+      { type: "title", label: "Opérations" },
+      { type: "link", label: "Dossiers financiers", icon: "pi-folder", to: "/gestion-financiere/dossiers" },
+      { type: "divider" },
+      { type: "title", label: "Configuration" },
+      { type: "link", label: "Frais de scolarité", icon: "pi-money-bill", to: "/parametrage/regles-financieres" },
+    ],
+  },
+  {
     label: "Paramétrage",
     icon: "pi-cog",
     match: "/parametrage",
