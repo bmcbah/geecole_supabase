@@ -1,6 +1,6 @@
 # Lot 01 — Catalogue des frais et grilles tarifaires annuelles
 
-**Statut :** à spécifier
+**Statut :** spécifié
 
 ## Objectif
 
@@ -15,33 +15,39 @@ Permettre à un établissement de définir simplement ce qu'il facture pendant u
 
 ## Périmètre
 
-- types de frais ;
-- grille tarifaire annuelle ;
+- types de frais permanents au niveau établissement ;
+- grille tarifaire annuelle unique en V1 ;
 - lignes tarifaires ;
 - ciblage établissement, cycles ou niveaux ;
 - résolution du tarif applicable ;
 - détection des conflits ;
-- duplication vers une nouvelle année ;
-- archivage et consultation historique.
+- duplication simple vers une nouvelle année ;
+- archivage et consultation historique ;
+- tableau filtrable par frais, cycle, niveau et statut.
 
 ## Hors périmètre
 
 - plans de paiement ;
 - remises ;
 - création des dossiers financiers ;
-- encaissements.
+- encaissements ;
+- caractère obligatoire/facultatif ;
+- dates de début ou de fin d'une ligne dans l'année ;
+- recalcul automatique des dossiers existants ;
+- vue matricielle de couverture ;
+- augmentation globale ou modification en masse pendant la duplication.
 
 ## Modèle métier
 
 ### Type de frais
 
-Identité réutilisable : nom, code, description, catégorie, caractère obligatoire/facultatif et statut.
+Identité permanente et réutilisable au niveau de l'établissement : nom, code, description, catégorie et statut actif/archivé.
 
-Questions à valider : le caractère obligatoire est-il annuel ou porté par la ligne tarifaire ? Les types génériques sont-ils permanents ou dupliqués comme configuration annuelle ?
+La gestion des types pourra être enrichie ultérieurement. Dans le Lot 1, un tarif configuré s'applique à tout le périmètre qu'il cible, sans distinction obligatoire/facultatif.
 
 ### Grille tarifaire
 
-Une grille appartient à un établissement et une année scolaire. Une seule grille principale active est recommandée par année dans la V1.
+Une grille appartient à un établissement et une année scolaire. Une seule grille principale est autorisée par établissement et année scolaire dans la V1.
 
 ### Ligne tarifaire
 
@@ -56,6 +62,8 @@ Champs fonctionnels :
 - note interne facultative.
 
 Une ligne peut cibler plusieurs cycles ou plusieurs niveaux, mais jamais les deux simultanément.
+
+Une ligne appartient à l'année scolaire complète. Elle ne possède pas de date de début ou de fin dans le Lot 1.
 
 ## Résolution
 
@@ -82,7 +90,7 @@ L'interface doit expliquer le conflit et proposer de modifier la ligne existante
 
 ## Parcours principal
 
-1. L'utilisateur ouvre Frais scolaires > Configuration > Grilles tarifaires.
+1. L'utilisateur ouvre Frais scolaires > Configuration > Grille tarifaire.
 2. La grille de l'année sélectionnée est affichée.
 3. Il choisit « Ajouter un tarif ».
 4. Il sélectionne le type de frais.
@@ -91,18 +99,28 @@ L'interface doit expliquer le conflit et proposer de modifier la ligne existante
 7. Il saisit le montant.
 8. GeeCole prévisualise le résumé et contrôle les chevauchements.
 9. L'utilisateur enregistre.
+10. Il retrouve et vérifie la ligne avec les filtres du tableau.
 
 Le formulaire doit rester guidé et ne montrer les sélecteurs que lorsque leur portée est choisie.
 
+Le parcours UX détaillé est défini dans `lot-01-parcours-ux.md`.
+
 ## Affichage recommandé
 
-Tableau par année avec :
+Tableau de l'année sélectionnée avec :
 
 - frais ;
 - périmètre résumé ;
 - montant ;
 - statut ;
 - actions.
+
+Filtres :
+
+- type de frais ;
+- cycle ;
+- niveau ;
+- statut.
 
 Exemples de libellés :
 
@@ -111,6 +129,14 @@ Exemples de libellés :
 - `Scolarité — 7e, 8e et 9e année — 2 000 000 GNF`.
 
 Le résumé visuel ne doit jamais remplacer la liste exacte enregistrée.
+
+## Modification d'une ligne utilisée
+
+Une ligne déjà utilisée par un dossier financier reste modifiable.
+
+La modification s'applique uniquement aux futurs dossiers financiers. Les frais déjà appliqués sont figés et aucun recalcul automatique n'est effectué.
+
+L'interface doit avertir l'utilisateur avant validation.
 
 ## Duplication annuelle
 
@@ -121,7 +147,7 @@ Depuis une année en préparation, l'utilisateur peut :
 
 La duplication copie les lignes, périmètres et montants dans la nouvelle année sans modifier la source. Chaque copie conserve son origine.
 
-Question ouverte : proposer ou non une augmentation globale en pourcentage pendant la duplication. Recommandation initiale : reporter cette option après validation du parcours simple.
+Aucune augmentation globale, aucun pourcentage et aucune modification en masse ne sont prévus dans le Lot 1.
 
 ## Données proposées
 
@@ -131,11 +157,13 @@ Question ouverte : proposer ou non une augmentation globale en pourcentage penda
 - `fee_schedule_item_cycles` ;
 - `fee_schedule_item_levels`.
 
+Les types de frais portent `school_id` mais ne sont pas liés à une année scolaire.
+
 Toutes les tables annuelles portent au minimum `school_id` et `academic_year_id`. Les contraintes doivent garantir la cohérence du mode de portée et empêcher les doublons de même précision.
 
 ## Permissions
 
-À confirmer avec la matrice globale :
+À confirmer avec la matrice globale des rôles :
 
 - consulter la grille ;
 - créer/modifier une grille en préparation ou active ;
@@ -152,26 +180,30 @@ Toute modification est auditée.
 - écriture interdite sur année archivée ;
 - écriture sur année clôturée réservée à une permission exceptionnelle.
 
-## Critères d'acceptation initiaux
+## Critères d'acceptation
 
-- créer un type de frais ;
+- créer et archiver un type de frais permanent ;
+- réutiliser un type de frais sur plusieurs années ;
+- garantir une seule grille principale par année ;
 - définir un tarif pour tout l'établissement ;
 - sélectionner plusieurs cycles ;
 - sélectionner plusieurs niveaux ;
+- filtrer les lignes par frais, cycle, niveau et statut ;
 - afficher le tarif applicable à un niveau ;
 - appliquer correctement la priorité niveau > cycle > établissement ;
 - bloquer un chevauchement de même précision ;
 - autoriser une exception de niveau dans un cycle ;
-- dupliquer une grille vers une nouvelle année ;
+- modifier une ligne utilisée sans changer les dossiers existants ;
+- ne déclencher aucun recalcul automatique ;
+- dupliquer une grille vers une nouvelle année sans traitement en masse ;
 - garantir que la modification d'une nouvelle grille ne change pas l'ancienne ;
 - archiver une ligne sans perdre son historique.
 
-## Questions ouvertes à traiter avant développement
+## Points restant à préciser pendant la conception technique
 
-1. Le type de frais est-il permanent avec activation annuelle, ou entièrement annuel ?
-2. Une seule grille active par année suffit-elle en V1 ?
-3. Le caractère obligatoire/facultatif appartient-il au type ou à la ligne annuelle ?
-4. Une ligne tarifaire possède-t-elle une date de début/fin dans l'année, ou toute variation en cours d'année passe-t-elle par une version explicite ?
-5. Peut-on modifier une ligne déjà utilisée par un dossier financier, sachant que les frais appliqués sont figés ?
-6. Quels rôles peuvent modifier ou dupliquer une grille ?
-7. Faut-il une prévisualisation matricielle par cycle/niveau avant validation ?
+Ces points ne remettent pas en cause le parcours métier validé :
+
+1. noms définitifs des permissions et rôles autorisés ;
+2. détail des contraintes SQL et de la stratégie de détection préventive des conflits ;
+3. comportement précis lorsqu'un type de frais archivé est encore référencé par une ancienne grille ;
+4. contenu exact de l'audit et des messages d'erreur techniques.
