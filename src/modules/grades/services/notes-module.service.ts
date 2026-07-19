@@ -1,5 +1,5 @@
 import { supabase } from "../../../shared/lib/supabase/client";
-import { listPeople } from "../../settings/services/annual-settings.service";
+import { listTeacherProfiles } from "./teachers.service";
 
 export interface TeachingAssignment {
   id: string;
@@ -28,17 +28,13 @@ export interface PeriodSubjectResultInput {
   teacher_comment: string | null;
 }
 
-export async function listTeachers(institutionId: string) {
-  const people = await listPeople(institutionId);
-  return people.filter((person) => person.roles.includes("teacher") && person.auth_user_id);
+export async function listTeachers(institutionId: string, yearId: string) {
+  const profiles = await listTeacherProfiles(institutionId, yearId);
+  return profiles.filter((profile) => profile.is_active && profile.employment_status !== "inactive");
 }
 
 export async function listTeachingAssignments(yearId: string) {
-  const { data, error } = await supabase
-    .from("teaching_assignments")
-    .select("*")
-    .eq("academic_year_id", yearId)
-    .order("created_at");
+  const { data, error } = await supabase.from("teaching_assignments").select("*").eq("academic_year_id", yearId).order("created_at");
   if (error) throw error;
   return (data ?? []) as TeachingAssignment[];
 }
@@ -50,9 +46,7 @@ export async function saveTeachingAssignment(
   id?: string,
 ) {
   const payload = { institution_id: institutionId, academic_year_id: yearId, ...input };
-  const query = id
-    ? supabase.from("teaching_assignments").update(payload).eq("id", id)
-    : supabase.from("teaching_assignments").insert(payload);
+  const query = id ? supabase.from("teaching_assignments").update(payload).eq("id", id) : supabase.from("teaching_assignments").insert(payload);
   const { error } = await query;
   if (error) throw error;
 }
@@ -66,50 +60,31 @@ export async function listMyTeachingAssignments(yearId: string) {
   const { data: userResult } = await supabase.auth.getUser();
   const userId = userResult.user?.id;
   if (!userId) return [] as TeachingAssignment[];
-  const { data, error } = await supabase
-    .from("teaching_assignments")
-    .select("*")
-    .eq("academic_year_id", yearId)
-    .eq("teacher_user_id", userId)
-    .eq("is_active", true);
+  const { data, error } = await supabase.from("teaching_assignments").select("*").eq("academic_year_id", yearId).eq("teacher_user_id", userId).eq("is_active", true);
   if (error) throw error;
   return (data ?? []) as TeachingAssignment[];
 }
 
 export async function upsertPeriodSubjectResults(rows: PeriodSubjectResultInput[]) {
   if (!rows.length) return;
-  const { error } = await supabase
-    .from("period_subject_results")
-    .upsert(rows, { onConflict: "academic_period_id,annual_subject_id,enrollment_id" });
+  const { error } = await supabase.from("period_subject_results").upsert(rows, { onConflict: "academic_period_id,annual_subject_id,enrollment_id" });
   if (error) throw error;
 }
 
 export async function listDeliberations(periodId: string, classId: string) {
-  const { data, error } = await supabase
-    .from("deliberations")
-    .select("*")
-    .eq("academic_period_id", periodId)
-    .eq("class_id", classId)
-    .order("rank");
+  const { data, error } = await supabase.from("deliberations").select("*").eq("academic_period_id", periodId).eq("class_id", classId).order("rank");
   if (error) throw error;
   return data ?? [];
 }
 
 export async function saveDeliberations(rows: Record<string, unknown>[]) {
   if (!rows.length) return;
-  const { error } = await supabase
-    .from("deliberations")
-    .upsert(rows, { onConflict: "academic_period_id,enrollment_id" });
+  const { error } = await supabase.from("deliberations").upsert(rows, { onConflict: "academic_period_id,enrollment_id" });
   if (error) throw error;
 }
 
 export async function listReportCards(periodId: string, classId: string) {
-  const { data, error } = await supabase
-    .from("report_cards")
-    .select("*")
-    .eq("academic_period_id", periodId)
-    .eq("class_id", classId)
-    .order("generated_at", { ascending: false });
+  const { data, error } = await supabase.from("report_cards").select("*").eq("academic_period_id", periodId).eq("class_id", classId).order("generated_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
