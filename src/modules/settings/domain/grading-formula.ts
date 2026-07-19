@@ -1,12 +1,21 @@
 export type MissingGradePolicy = "ignore" | "block";
+export type FormulaTemporalScope = "year" | "period";
 
 export interface GradingFormulaDefinition {
-  language: "geecole-expression-v1";
+  language_version: 1;
   missing_grade_policy: MissingGradePolicy;
   variables: string[];
 }
 
-export interface GradingFormula {
+export interface GradingFormulaScope {
+  academic_year_cycle_id: string | null;
+  academic_year_level_id: string | null;
+  annual_subject_id: string | null;
+  temporal_scope: FormulaTemporalScope;
+  period_id: string | null;
+}
+
+export interface GradingFormula extends GradingFormulaScope {
   id: string;
   institution_id: string;
   academic_year_id: string;
@@ -22,7 +31,7 @@ export interface GradingFormula {
   updated_at: string;
 }
 
-export interface GradingFormulaInput {
+export interface GradingFormulaInput extends GradingFormulaScope {
   name: string;
   code: string;
   expression: string;
