@@ -4,118 +4,114 @@
 
 Permettre aux établissements de définir leurs propres règles de calcul sans imposer de pondérations ou de modèle pédagogique GeeCole.
 
-## Décisions fonctionnelles validées
-
-### Contexte annuel
+## Contexte annuel
 
 - L’année scolaire vient du contexte global de l’application.
 - Elle n’est jamais redemandée dans les écrans du module.
 - Une année clôturée ou archivée reste consultable en lecture seule.
 
-### Types d’évaluation
+## Types d’évaluation
 
 - Un type d’évaluation est descriptif.
 - Il contient un nom, un code, une description, une icône, une couleur, un barème par défaut, un ordre et un statut.
-- Son code devient une variable utilisable dans les formules, par exemple `EVAL`, `COMP`, `ORAL`.
+- Son code devient une variable de formule, par exemple `EVAL`, `COMP` ou `ORAL`.
 - Il ne porte aucune pondération métier.
-- L’ancienne colonne `weight` est conservée temporairement à `1` uniquement pour compatibilité.
+- L’ancienne colonne `weight` reste temporairement neutralisée à `1` pour compatibilité.
 
-### Propriété des règles de calcul
+## Formules
 
-- Les formules appartiennent aux écoles.
-- GeeCole valide, exécute et explique la formule, mais ne choisit pas la règle.
-- L’expression écrite par l’établissement est la source de vérité fonctionnelle.
-- Exemple :
+Les formules appartiennent aux établissements. GeeCole les valide, les résout et les exécute sans choisir la règle pédagogique.
 
 ```text
 (EVAL + COMP * 2) / 3
 ```
 
-- `EVAL` représente la moyenne normalisée des évaluations dont le type porte le code `EVAL`.
-- `COMP` représente la moyenne normalisée des évaluations dont le type porte le code `COMP`.
+`grading_formulas.expression` est la source de vérité. `grading_formulas.definition` contient uniquement les métadonnées compilées : version du langage, variables utilisées et politique de valeurs manquantes.
 
-### Langage de formule V1
+### Langage V1
 
-La V1 accepte uniquement :
+La V1 accepte :
 
 - les codes des types d’évaluation actifs ;
 - les nombres entiers ou décimaux ;
-- les opérateurs `+`, `-`, `*`, `/` ;
+- `+`, `-`, `*`, `/` ;
 - les parenthèses ;
 - le signe moins unaire.
 
-Les fonctions avancées (`AVG`, `SUM`, `MIN`, `MAX`, `IF`) sont hors périmètre de la V1.
+Les fonctions `AVG`, `SUM`, `MIN`, `MAX` et `IF` restent hors périmètre.
 
-### Validation
+### Valeurs manquantes
 
-L’enregistrement est refusé si :
+- `block` : le calcul est bloqué lorsqu’une variable utilisée ne possède aucune note exploitable ;
+- `ignore` : une variable absente est remplacée par `0`.
 
-- la formule est vide ;
-- un caractère non autorisé est utilisé ;
-- une parenthèse manque ;
-- un code ne correspond à aucun type d’évaluation actif ;
-- l’expression est incomplète ;
-- une division par zéro est détectée lors de la validation ou de la simulation ;
-- le nom ou le code de la formule est vide ;
-- le code de formule est déjà utilisé dans la même année ;
-- une deuxième formule active est définie comme formule par défaut.
+Les évaluations `absent`, `dispensé` ou `non noté` ne sont pas intégrées à la moyenne du type.
 
-### Notes manquantes
+## Périmètre de la formule
 
-Chaque formule choisit une règle :
+La formule et son affectation sont un seul objet configuré dans un formulaire unique.
 
-- `block` : le calcul est impossible tant qu’une variable utilisée n’a pas de valeur ;
-- `ignore` en V1 : une variable sans valeur est remplacée par `0`.
+Une formule peut cibler :
 
-Cette règle sera affinée avec les statuts `absent`, `dispensé` et `non noté` dans le lot Notes.
+- un cycle annuel ;
+- un niveau annuel ;
+- une matière annuelle ;
+- toute l’année ;
+- ou une période réelle de `academic_periods`.
 
-### Simulation et explication
+Une formule de période stocke `period_id`. Une formule annuelle possède `period_id = null`.
 
-- L’éditeur comporte les tabs `Configuration` et `Tester la formule`.
-- Le test utilise des valeurs fictives par variable.
-- La simulation affiche l’expression résolue et le résultat.
-- Elle ne crée aucune note élève.
-- Les erreurs sont affichées avant l’enregistrement.
+Les contraintes SQL vérifient que le cycle, le niveau, la matière et la période appartiennent au même établissement et à la même année scolaire.
 
-### Stockage et versionnement
+## Résolution
 
-- `grading_formulas.expression` contient la formule métier et pilote le moteur.
-- `grading_formulas.definition` contient uniquement les métadonnées compilées : version du langage, variables détectées et politique de valeurs manquantes.
-- Une modification de l’expression ou de sa définition incrémente la version.
-- Les futurs bulletins conserveront l’identifiant et la version réellement utilisés.
-- Un bulletin historique ne doit jamais être recalculé silencieusement avec une nouvelle version.
-
-## Affectation des formules
-
-Une formule peut être affectée à un ou plusieurs périmètres :
-
-- cycle ;
-- niveau annuel ;
-- matière annuelle ;
-- période.
-
-Au moins un périmètre doit être renseigné.
-
-### Représentation des périodes
-
-- Le schéma actuel ne possède pas de table autonome `academic_periods`.
-- Une période est donc stockée dans une affectation par un code stable, par exemple `T1`, `T2`, `S1` ou `P1`.
-- Le code est issu de la configuration du cycle annuel et n’est pas une clé étrangère.
-- Cette décision évite de créer une dépendance vers une table inexistante et reste compatible avec les cycles en trimestres, semestres ou périodes personnalisées.
-
-### Règle de résolution
-
-GeeCole retient l’affectation active la plus spécifique compatible avec le contexte courant.
-
-Ordre de spécialisation :
+GeeCole sélectionne la formule active compatible la plus spécifique :
 
 1. période + matière + niveau + cycle ;
 2. matière + niveau + cycle ;
 3. niveau + cycle ;
 4. cycle ;
-5. formule active par défaut de l’année si aucune affectation ne correspond.
+5. formule annuelle générale.
 
-Une affectation plus spécifique remplace une affectation plus générale. Deux affectations actives ne peuvent pas avoir exactement le même périmètre.
+À spécificité égale, une formule marquée par défaut est prioritaire, puis la version la plus récente.
+
+L’implémentation se trouve dans :
+
+```text
+src/modules/settings/domain/grading-formula-resolution.ts
+```
+
+## Agrégation des évaluations
+
+Pour chaque variable utilisée par la formule :
+
+1. GeeCole sélectionne les évaluations du type correspondant ;
+2. seules les notes au statut `graded` sont retenues ;
+3. chaque note est normalisée vers le barème cible ;
+4. la moyenne arithmétique des notes normalisées devient la valeur de la variable ;
+5. l’expression est ensuite exécutée.
+
+Exemple :
+
+```text
+EVAL : 8/10 et 16/20
+Valeurs normalisées sur 20 : 16 et 16
+EVAL = 16
+```
+
+## Versionnement
+
+La version augmente lorsque changent :
+
+- l’expression ;
+- la définition compilée ;
+- le cycle ;
+- le niveau ;
+- la matière ;
+- la portée annuelle/période ;
+- la période.
+
+Les futurs bulletins devront conserver l’identifiant et la version réellement utilisés.
 
 ## Parcours UI
 
@@ -123,22 +119,41 @@ Une affectation plus spécifique remplace une affectation plus générale. Deux 
 Paramétrage
   → Types d’évaluation
   → Formules de calcul
-      → Formules
-      → Affectations
+      → Formule et périmètre
+      → Tester la formule
 ```
 
-L’écran affiche désormais les formules puis le panneau d’affectation avec cycle, niveau, matière et code période.
+## Migration
 
-## Décision technique sur les migrations
+La configuration est portée par :
 
-- Chaque fichier de migration Supabase doit posséder une version unique dans son nom.
-- Les migrations `structure_grading_formulas` et `create_grading_formula_assignments` utilisaient initialement la même version `20260719190000`.
-- La migration des affectations a été renommée `20260719191000` afin d’éviter un conflit dans `supabase_migrations.schema_migrations`.
+```text
+supabase/migrations/20260719193000_rebuild_grading_configuration.sql
+```
 
-## Hors périmètre restant
+Cette migration :
 
-- agrégation réelle des évaluations d’un élève par code de type ;
-- création des évaluations et saisie des notes ;
+- transforme les anciennes définitions pondérées avant de poser les nouvelles contraintes ;
+- utilise la table réelle `academic_periods` ;
+- supprime l’ancien modèle d’affectation séparé ;
+- installe les clés étrangères, contrôles de cohérence et index de résolution.
+
+## Implémenté
+
+- catalogue des types d’évaluation ;
+- parseur d’expression sans `eval` JavaScript ;
+- validation et simulation ;
+- périmètre directement intégré à la formule ;
+- résolution de la formule la plus spécifique ;
+- normalisation des barèmes ;
+- agrégation des notes par code de type ;
+- calcul expliqué ;
+- tests unitaires du parseur, de la résolution et de l’agrégation.
+
+## Suite
+
+- tables d’évaluations et de notes ;
+- services de saisie ;
+- cahier de notes enseignant ;
 - coefficients des matières dans la moyenne générale ;
-- génération et verrouillage des bulletins ;
-- fonctions avancées du langage de formule.
+- snapshots et verrouillage des bulletins.
