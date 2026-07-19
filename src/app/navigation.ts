@@ -29,6 +29,7 @@ export const navigation: NavigationGroup[] = [
       { type: "title", label: "Enseignement" },
       { type: "link", label: "Mes classes", icon: "pi-th-large", to: "/notes/mes-classes" },
       { type: "link", label: "Cahier de notes", icon: "pi-pencil", to: "/notes/cahier" },
+      { type: "link", label: "Résultats de période", icon: "pi-calculator", to: "/notes/resultats" },
       { type: "divider" },
       { type: "title", label: "Organisation" },
       { type: "link", label: "Affectations pédagogiques", icon: "pi-sitemap", to: "/notes/affectations" },
