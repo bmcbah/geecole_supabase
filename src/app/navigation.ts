@@ -36,6 +36,14 @@ export const navigation: NavigationGroup[] = [
     ],
   },
   {
+    label: "Notes",
+    icon: "pi-pencil",
+    match: "/notes",
+    items: [
+      { type: "link", label: "Cahier de notes", icon: "pi-table", to: "/notes/cahier" },
+    ],
+  },
+  {
     label: "Gestion financière",
     icon: "pi-wallet",
     match: "/gestion-financiere",
