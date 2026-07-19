@@ -1,10 +1,4 @@
-export type NavigationLink = {
-  type: "link";
-  label: string;
-  icon: string;
-  to: string;
-};
-
+export type NavigationLink = { type: "link"; label: string; icon: string; to: string };
 export type NavigationTitle = { type: "title"; label: string };
 export type NavigationDivider = { type: "divider" };
 export type NavigationEntry = NavigationLink | NavigationTitle | NavigationDivider;
@@ -31,8 +25,10 @@ export const navigation: NavigationGroup[] = [
       { type: "link", label: "Cahier de notes", icon: "pi-pencil", to: "/notes/cahier" },
       { type: "link", label: "Résultats de période", icon: "pi-calculator", to: "/notes/resultats" },
       { type: "divider" },
-      { type: "title", label: "Organisation" },
+      { type: "title", label: "Organisation pédagogique" },
+      { type: "link", label: "Enseignants", icon: "pi-id-card", to: "/notes/enseignants" },
       { type: "link", label: "Affectations pédagogiques", icon: "pi-sitemap", to: "/notes/affectations" },
+      { type: "link", label: "Paramétrage du module", icon: "pi-cog", to: "/notes/parametrage" },
       { type: "divider" },
       { type: "title", label: "Conseil et publication" },
       { type: "link", label: "Délibérations", icon: "pi-verified", to: "/notes/deliberations" },
