@@ -67,7 +67,7 @@ export const navigation: NavigationGroup[] = [
       { type: "link", label: "Matières", icon: "pi-book", to: "/parametrage/matieres" },
       { type: "divider" },
       { type: "title", label: "Évaluation" },
-      { type: "link", label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
+      { type: "link", label: "Types d’évaluation", icon: "pi-tags", to: "/parametrage/types-notes" },
       { type: "link", label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
       { type: "divider" },
       { type: "title", label: "Référentiels financiers" },
