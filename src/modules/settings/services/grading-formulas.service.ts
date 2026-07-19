@@ -4,16 +4,23 @@ import type {
   GradingFormulaInput,
 } from "../domain/grading-formula";
 
+const gradingFormulasTable = () =>
+  supabase.from("grading_formulas") as unknown as {
+    select: (columns: string) => any;
+    insert: (values: Record<string, unknown>) => any;
+    update: (values: Record<string, unknown>) => any;
+    delete: () => any;
+  };
+
 export async function listGradingFormulas(yearId: string) {
-  const { data, error } = await supabase
-    .from("grading_formulas")
+  const { data, error } = await gradingFormulasTable()
     .select("*")
     .eq("academic_year_id", yearId)
     .order("is_default", { ascending: false })
     .order("name");
 
   if (error) throw error;
-  return (data ?? []) as unknown as GradingFormula[];
+  return (data ?? []) as GradingFormula[];
 }
 
 export async function saveGradingFormula(
@@ -36,18 +43,19 @@ export async function saveGradingFormula(
     expression,
   };
 
-  const { error } = id
-    ? await supabase.from("grading_formulas").update(payload).eq("id", id)
-    : await supabase.from("grading_formulas").insert({
+  const query = id
+    ? gradingFormulasTable().update(payload).eq("id", id)
+    : gradingFormulasTable().insert({
         institution_id: institutionId,
         academic_year_id: yearId,
         ...payload,
       });
 
+  const { error } = await query;
   if (error) throw error;
 }
 
 export async function deleteGradingFormula(id: string) {
-  const { error } = await supabase.from("grading_formulas").delete().eq("id", id);
+  const { error } = await gradingFormulasTable().delete().eq("id", id);
   if (error) throw error;
 }
