@@ -2,74 +2,113 @@
 
 ## Objectif
 
-Fournir aux établissements les référentiels nécessaires à la saisie des notes et au calcul des moyennes, sans imposer de règle pédagogique propre à GeeCole.
+Permettre aux établissements de définir leurs propres règles de calcul sans imposer de pondérations ou de modèle pédagogique GeeCole.
 
 ## Décisions fonctionnelles validées
 
 ### Contexte annuel
 
-- L’année scolaire est toujours fournie par le contexte global de l’application.
-- Elle n’est pas redemandée dans les écrans des types d’évaluation, formules, affectations, notes ou bulletins.
+- L’année scolaire vient du contexte global de l’application.
+- Elle n’est jamais redemandée dans les écrans du module.
 - Une année clôturée ou archivée reste consultable en lecture seule.
 
 ### Types d’évaluation
 
-- Un type d’évaluation est un élément descriptif du catalogue de l’établissement.
+- Un type d’évaluation est descriptif.
 - Il contient un nom, un code, une description, une icône, une couleur, un barème par défaut, un ordre et un statut.
-- Le type d’évaluation ne porte aucune pondération métier.
-- L’ancienne colonne `weight` est conservée temporairement avec la valeur neutre `1` uniquement pour la compatibilité technique.
+- Son code devient une variable utilisable dans les formules, par exemple `EVAL`, `COMP`, `ORAL`.
+- Il ne porte aucune pondération métier.
+- L’ancienne colonne `weight` est conservée temporairement à `1` uniquement pour compatibilité.
 
 ### Propriété des règles de calcul
 
-- Les formules sont créées et administrées par les écoles.
-- GeeCole exécute et explique les formules, mais ne choisit pas les pondérations.
-- Les poids des types d’évaluation sont définis uniquement dans une formule de calcul.
-- Une école peut créer plusieurs formules pour une même année scolaire.
-- Une seule formule active peut être marquée comme formule par défaut pour une année.
-
-### Formule V1
-
-La première version prend en charge une moyenne pondérée structurée.
-
-Pour chaque type d’évaluation inclus, l’école définit un poids positif. Un poids nul signifie que le type ne participe pas à la formule.
-
-Exemple :
-
-| Type | Poids |
-|---|---:|
-| Devoir | 1 |
-| Interrogation | 1 |
-| Composition | 2 |
-
-Les notes sont normalisées sur 20 avant application des poids lorsqu’elles utilisent des barèmes différents.
+- Les formules appartiennent aux écoles.
+- GeeCole valide, exécute et explique la formule, mais ne choisit pas la règle.
+- L’expression écrite par l’établissement est la source de vérité fonctionnelle.
+- Exemple :
 
 ```text
-moyenne = somme(note_normalisée × poids) / somme(poids)
+(EVAL + COMP * 2) / 3
 ```
+
+- `EVAL` représente la moyenne normalisée des évaluations dont le type porte le code `EVAL`.
+- `COMP` représente la moyenne normalisée des évaluations dont le type porte le code `COMP`.
+
+### Langage de formule V1
+
+La V1 accepte uniquement :
+
+- les codes des types d’évaluation actifs ;
+- les nombres entiers ou décimaux ;
+- les opérateurs `+`, `-`, `*`, `/` ;
+- les parenthèses ;
+- le signe moins unaire.
+
+Les fonctions avancées (`AVG`, `SUM`, `MIN`, `MAX`, `IF`) sont hors périmètre de la V1.
+
+### Validation
+
+L’enregistrement est refusé si :
+
+- la formule est vide ;
+- un caractère non autorisé est utilisé ;
+- une parenthèse manque ;
+- un code ne correspond à aucun type d’évaluation actif ;
+- l’expression est incomplète ;
+- une division par zéro est détectée lors de la validation ou de la simulation ;
+- le nom ou le code de la formule est vide ;
+- le code de formule est déjà utilisé dans la même année ;
+- une deuxième formule active est définie comme formule par défaut.
 
 ### Notes manquantes
 
-Chaque formule définit l’un des comportements suivants :
+Chaque formule choisit une règle :
 
-- `ignore` : les notes manquantes sont exclues du numérateur et du dénominateur ;
-- `block` : le calcul est impossible tant qu’une note attendue manque.
+- `block` : le calcul est impossible tant qu’une variable utilisée n’a pas de valeur ;
+- `ignore` en V1 : une variable sans valeur est remplacée par `0`.
 
-Une absence, une dispense et une note non saisie resteront des statuts distincts dans le futur carnet de notes. Leur traduction dans le moteur de calcul sera définie dans le lot Notes.
+Cette règle sera affinée avec les statuts `absent`, `dispensé` et `non noté` dans le lot Notes.
 
-### Prévisualisation
+### Simulation et explication
 
-- L’éditeur propose un onglet de test avec des notes fictives.
-- La simulation n’enregistre aucune note élève.
-- Elle montre le résultat normalisé sur 20 et indique les types sans note.
-- Elle applique exactement la définition structurée qui sera enregistrée.
+- L’éditeur comporte les tabs `Configuration` et `Tester la formule`.
+- Le test utilise des valeurs fictives par variable.
+- La simulation affiche l’expression résolue et le résultat.
+- Elle ne crée aucune note élève.
+- Les erreurs sont affichées avant l’enregistrement.
 
-### Versionnement
+### Stockage et versionnement
 
-- La définition structurée est la source de vérité du calcul.
-- Une modification de la définition incrémente automatiquement la version de la formule.
-- Les futurs bulletins devront conserver la version de formule utilisée lors de leur génération.
-- Une modification ultérieure ne devra jamais recalculer silencieusement un bulletin historique.
-- La colonne historique `expression` est conservée comme représentation lisible et pour la compatibilité, mais ne pilote plus le moteur.
+- `grading_formulas.expression` contient la formule métier et pilote le moteur.
+- `grading_formulas.definition` contient uniquement les métadonnées compilées : version du langage, variables détectées et politique de valeurs manquantes.
+- Une modification de l’expression ou de sa définition incrémente la version.
+- Les futurs bulletins conserveront l’identifiant et la version réellement utilisés.
+- Un bulletin historique ne doit jamais être recalculé silencieusement avec une nouvelle version.
+
+## Affectation des formules
+
+Une formule peut être affectée à un ou plusieurs périmètres :
+
+- cycle ;
+- niveau annuel ;
+- matière annuelle ;
+- période.
+
+Au moins un périmètre doit être renseigné.
+
+### Règle de résolution
+
+GeeCole retient l’affectation active la plus spécifique compatible avec le contexte courant.
+
+Ordre de spécialisation :
+
+1. période + matière + niveau + cycle ;
+2. matière + niveau + cycle ;
+3. niveau + cycle ;
+4. cycle ;
+5. formule active par défaut de l’année si aucune affectation ne correspond.
+
+Une affectation plus spécifique remplace une affectation plus générale. Deux affectations actives ne peuvent pas avoir exactement le même périmètre.
 
 ## Parcours UI
 
@@ -77,32 +116,16 @@ Une absence, une dispense et une note non saisie resteront des statuts distincts
 Paramétrage
   → Types d’évaluation
   → Formules de calcul
+      → Formules
+      → Affectations
 ```
 
-L’écran Formules de calcul contient :
+Le tab Affectations doit permettre de lire le périmètre de gauche à droite et de comprendre immédiatement quelle formule s’applique.
 
-- une liste avec nom, code, composition, version et statut ;
-- un dialog de création ou modification ;
-- un tab `Configuration` ;
-- un tab `Tester la formule`.
+## Hors périmètre restant
 
-## Contrôles V1
-
-L’enregistrement est refusé si :
-
-- le nom est vide ;
-- le code est vide ou déjà utilisé dans la même année ;
-- aucun type d’évaluation n’a un poids supérieur à zéro ;
-- une deuxième formule active est définie comme formule par défaut.
-
-La suppression peut être refusée lorsqu’une formule est déjà référencée par une association pédagogique ou un bulletin.
-
-## Hors périmètre de ce sprint
-
-- association d’une formule à un cycle, niveau, matière ou période ;
-- moteur de résolution de la formule applicable ;
-- coefficients des matières dans la moyenne générale ;
+- agrégation réelle des évaluations d’un élève par code de type ;
 - création des évaluations et saisie des notes ;
-- génération et verrouillage des bulletins.
-
-Ces éléments seront développés dans les sprints suivants du module Notes et bulletins.
+- coefficients des matières dans la moyenne générale ;
+- génération et verrouillage des bulletins ;
+- fonctions avancées du langage de formule.
