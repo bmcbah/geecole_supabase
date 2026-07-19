@@ -12,13 +12,7 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useToast } from "../../../shared/components/toast-context";
 import { supabase } from "../../../shared/lib/supabase/client";
-import {
-  deleteTeachingAssignment,
-  listTeachers,
-  listTeachingAssignments,
-  saveTeachingAssignment,
-  type TeachingAssignment,
-} from "../services/notes-module.service";
+import { deleteTeachingAssignment, listTeachers, listTeachingAssignments, saveTeachingAssignment, type TeachingAssignment } from "../services/notes-module.service";
 
 type Option = { label: string; value: string; levelId?: string };
 
@@ -41,12 +35,12 @@ export function TeachingAssignmentsPage() {
     if (!year) return;
     const [assignments, teacherRows, classesResult, subjectsResult] = await Promise.all([
       listTeachingAssignments(year.id),
-      listTeachers(institutionId),
+      listTeachers(institutionId, year.id),
       supabase.from("school_classes").select("id,name,academic_year_level_id").eq("academic_year_id", year.id).eq("is_active", true).order("name"),
       supabase.from("annual_subjects").select("id,subject_name_snapshot,academic_year_level_id").eq("academic_year_id", year.id).order("subject_name_snapshot"),
     ]);
     setItems(assignments);
-    setTeachers(teacherRows.map((person) => ({ label: `${person.first_name} ${person.last_name}`, value: person.auth_user_id! })));
+    setTeachers(teacherRows.map((teacher) => ({ label: `${teacher.first_name} ${teacher.last_name}${teacher.specialty ? ` · ${teacher.specialty}` : ""}`, value: teacher.teacher_user_id })));
     setClasses((classesResult.data ?? []).map((item) => ({ label: item.name, value: item.id, levelId: item.academic_year_level_id })));
     setSubjects((subjectsResult.data ?? []).map((item) => ({ label: item.subject_name_snapshot, value: item.id, levelId: item.academic_year_level_id })));
   }, [institutionId, year]);
@@ -62,10 +56,7 @@ export function TeachingAssignmentsPage() {
   }, [editing]);
 
   const selectedClass = classes.find((item) => item.value === classId);
-  const filteredSubjects = useMemo(
-    () => subjects.filter((item) => !selectedClass || item.levelId === selectedClass.levelId),
-    [selectedClass, subjects],
-  );
+  const filteredSubjects = useMemo(() => subjects.filter((item) => !selectedClass || item.levelId === selectedClass.levelId), [selectedClass, subjects]);
   const labelOf = (options: Option[], value: string) => options.find((item) => item.value === value)?.label ?? value;
 
   const submit = async () => {
@@ -94,9 +85,10 @@ export function TeachingAssignmentsPage() {
   if (!year) return <Message severity="warn" text="Sélectionnez une année scolaire." />;
 
   return <div className="space-y-4">
-    <PageHeader title="Affectations pédagogiques" description="Définissez précisément les classes et matières accessibles à chaque enseignant." meta={<Tag value={year.name} severity="info" />} />
+    <PageHeader title="Affectations pédagogiques" description="Affectez uniquement les enseignants disposant d’un profil annuel actif." meta={<Tag value={year.name} severity="info" />} />
+    {teachers.length === 0 ? <Message severity="warn" text="Créez d’abord au moins un profil dans Notes et bulletins → Enseignants." /> : null}
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <Toolbar className="rounded-none border-0 border-b border-slate-200" start={<strong>{items.length} affectation(s)</strong>} end={<Button label="Nouvelle affectation" icon="pi pi-plus" onClick={() => setEditing(null)} />} />
+      <Toolbar className="rounded-none border-0 border-b border-slate-200" start={<strong>{items.length} affectation(s)</strong>} end={<Button label="Nouvelle affectation" icon="pi pi-plus" disabled={teachers.length === 0} onClick={() => setEditing(null)} />} />
       <DataTable value={items} dataKey="id" size="small" stripedRows emptyMessage="Aucune affectation pédagogique">
         <Column header="Enseignant" body={(row: TeachingAssignment) => labelOf(teachers, row.teacher_user_id)} />
         <Column header="Classe" body={(row: TeachingAssignment) => labelOf(classes, row.class_id)} />
