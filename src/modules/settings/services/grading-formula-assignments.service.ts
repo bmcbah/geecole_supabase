@@ -27,20 +27,24 @@ export async function saveGradingFormulaAssignment(
   input: GradingFormulaAssignmentInput,
   id?: string,
 ) {
+  const payload = {
+    ...input,
+    period_code: input.period_code?.trim().toUpperCase() || null,
+  };
   const hasScope = Boolean(
-    input.academic_cycle_id ||
-      input.academic_year_level_id ||
-      input.annual_subject_id ||
-      input.period_id,
+    payload.academic_cycle_id ||
+      payload.academic_year_level_id ||
+      payload.annual_subject_id ||
+      payload.period_code,
   );
   if (!hasScope) throw new Error("Sélectionnez au moins un périmètre d’affectation.");
 
   const query = id
-    ? assignmentsTable().update(input).eq("id", id)
+    ? assignmentsTable().update(payload).eq("id", id)
     : assignmentsTable().insert({
         institution_id: institutionId,
         academic_year_id: yearId,
-        ...input,
+        ...payload,
       });
   const { error } = await query;
   if (error) throw error;
