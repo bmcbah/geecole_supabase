@@ -96,6 +96,13 @@ Une formule peut être affectée à un ou plusieurs périmètres :
 
 Au moins un périmètre doit être renseigné.
 
+### Représentation des périodes
+
+- Le schéma actuel ne possède pas de table autonome `academic_periods`.
+- Une période est donc stockée dans une affectation par un code stable, par exemple `T1`, `T2`, `S1` ou `P1`.
+- Le code est issu de la configuration du cycle annuel et n’est pas une clé étrangère.
+- Cette décision évite de créer une dépendance vers une table inexistante et reste compatible avec les cycles en trimestres, semestres ou périodes personnalisées.
+
 ### Règle de résolution
 
 GeeCole retient l’affectation active la plus spécifique compatible avec le contexte courant.
@@ -120,7 +127,13 @@ Paramétrage
       → Affectations
 ```
 
-Le tab Affectations doit permettre de lire le périmètre de gauche à droite et de comprendre immédiatement quelle formule s’applique.
+L’écran affiche désormais les formules puis le panneau d’affectation avec cycle, niveau, matière et code période.
+
+## Décision technique sur les migrations
+
+- Chaque fichier de migration Supabase doit posséder une version unique dans son nom.
+- Les migrations `structure_grading_formulas` et `create_grading_formula_assignments` utilisaient initialement la même version `20260719190000`.
+- La migration des affectations a été renommée `20260719191000` afin d’éviter un conflit dans `supabase_migrations.schema_migrations`.
 
 ## Hors périmètre restant
 
