@@ -160,6 +160,136 @@ La navigation de cet espace distingue au minimum :
 
 Les documents administratifs regroupent notamment les pièces demandées lors de l'inscription. Les documents pédagogiques générés par GeeCole sont conservés dans le même espace documentaire de l'élève.
 
+## V1-015 — Périodes configurées par cycle
+
+Les périodes scolaires sont configurées dans le cycle pour une année scolaire donnée.
+
+Exemples :
+
+- le cycle primaire peut utiliser trois trimestres ;
+- le collège peut utiliser trois trimestres avec d'autres dates ;
+- un autre cycle peut utiliser deux semestres.
+
+Les niveaux rattachés au cycle héritent automatiquement de ses périodes. L'enseignant ne configure jamais les périodes.
+
+## V1-016 — Matières héritées du cycle
+
+Les matières sont configurées au niveau de l'établissement et de l'année scolaire, puis associées aux cycles.
+
+Les niveaux rattachés au cycle héritent de ces matières. Une configuration spécifique à un niveau ne doit être ajoutée que lorsqu'un besoin métier réel l'exige.
+
+L'enseignant sélectionne un cours existant ; il ne crée ni la matière ni son rattachement pédagogique lors de la saisie d'une évaluation.
+
+## V1-017 — Cours évalué
+
+Pour créer une évaluation, l'enseignant choisit d'abord un cours auquel il est affecté.
+
+Le cours détermine automatiquement :
+
+- l'année scolaire ;
+- le cycle et le niveau ;
+- la classe, lorsqu'elle existe ;
+- la matière ;
+- l'enseignant.
+
+Tous les champs corrélés utilisent des listes déroulantes filtrées. Aucun champ libre ne doit permettre de contourner la configuration scolaire.
+
+## V1-018 — Types d'évaluation
+
+Les types d'évaluation sont configurés par l'établissement et proposés dans une liste déroulante.
+
+Exemples possibles :
+
+- interrogation ;
+- devoir ;
+- composition ;
+- examen ;
+- participation.
+
+Un enseignant ne peut pas inventer librement un nouveau type pendant la saisie d'une note. L'établissement peut activer, désactiver, renommer et configurer ses types d'évaluation.
+
+Cette décision permet d'utiliser les types d'évaluation comme variables fiables dans les formules de calcul.
+
+## V1-019 — Saisie groupée et saisie individuelle des notes
+
+GeeCole permet deux parcours complémentaires :
+
+- saisir les résultats d'une évaluation pour toute une classe ;
+- ajouter ou modifier une note pour un seul élève.
+
+La saisie individuelle ne crée pas une note sans contexte : elle reste liée à un cours, une période, un type d'évaluation et une évaluation identifiable.
+
+## V1-020 — Assiduité fondée sur les absences
+
+GeeCole n'enregistre pas systématiquement la présence de chaque élève.
+
+Le principe est :
+
+> un élève est considéré présent tant qu'aucune absence ou aucun retard n'est déclaré.
+
+L'utilisateur enregistre seulement les exceptions :
+
+- absence ;
+- retard ;
+- absence ou retard justifié ;
+- éventuellement départ anticipé si ce besoin est confirmé.
+
+Une absence peut être rattachée à un cours précis ou enregistrée sans cours pour représenter une absence générale à la journée.
+
+## V1-021 — Formules simples basées sur les types d'évaluation
+
+Les calculs de notes utilisent des formules configurables mais volontairement simples.
+
+Les variables disponibles correspondent aux types d'évaluation configurés par l'établissement.
+
+Exemple conceptuel :
+
+`(DEVOIR + COMPOSITION × 2) / 3`
+
+GeeCole doit :
+
+- proposer uniquement les variables existantes ;
+- vérifier la validité de la formule avant son activation ;
+- empêcher les fonctions ou expressions complexes non prévues ;
+- afficher un aperçu compréhensible du calcul ;
+- conserver la formule utilisée pour chaque période afin de préserver l'historique.
+
+## V1-022 — Publication des bulletins
+
+Les bulletins sont d'abord calculés et contrôlés, puis publiés par lot.
+
+Lors de la publication, GeeCole analyse tous les élèves concernés et produit un résultat détaillé :
+
+- bulletin publié ;
+- bulletin non publiable ;
+- motif précis du blocage.
+
+Exemples de blocage :
+
+- note obligatoire manquante ;
+- formule impossible à évaluer ;
+- matière ou coefficient mal configuré ;
+- élève sans inscription valide ;
+- période incomplète.
+
+Un échec sur un élève ne bloque pas la publication des bulletins valides des autres élèves. Les bulletins publiés sont archivés dans l'espace documentaire de chaque élève.
+
+---
+
+## Points encore à valider
+
+### Types d'évaluation
+
+La direction retenue pour la V1 est une liste paramétrable par l'établissement plutôt qu'une saisie libre. Il reste à définir les paramètres exacts d'un type : coefficient par défaut, barème par défaut, utilisation dans les formules et caractère obligatoire ou non.
+
+### Assiduité
+
+Il reste à préciser si une absence non rattachée à un cours couvre automatiquement toute la journée et comment elle interagit avec des absences déjà enregistrées pour certains cours.
+
+### Formules
+
+Il reste à définir la syntaxe exacte autorisée et le comportement lorsqu'un élève n'a aucune note pour l'un des types utilisés dans la formule.
+
 ---
 
 ## Workflow V1 de référence
@@ -167,12 +297,17 @@ Les documents administratifs regroupent notamment les pièces demandées lors de
 Configuration de l'établissement
 → activation annuelle des cycles et niveaux
 → configuration des cycles et niveaux actifs
+→ configuration des périodes et matières par cycle
 → création ou sélection des classes
+→ création des cours et affectation des enseignants
 → création de l'élève
 → recherche ou création de ses parents
 → détection automatique de la fratrie
 → inscription et affectation
 → suivi des documents administratifs
+→ déclaration des absences et retards
+→ création des évaluations et saisie des notes
+→ calcul et publication des bulletins
 → préinscription ou réinscription pour l'année suivante
 
 ---
