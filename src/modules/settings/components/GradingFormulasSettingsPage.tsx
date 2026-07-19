@@ -23,6 +23,7 @@ import type { GradingFormula, MissingGradePolicy } from "../domain/grading-formu
 import { calculateFormulaPreview, validateFormulaExpression } from "../domain/grading-formula";
 import { listAssessmentTypes } from "../services/assessment-types.service";
 import { deleteGradingFormula, listGradingFormulas, saveGradingFormula } from "../services/grading-formulas.service";
+import { GradingFormulaAssignmentsPanel } from "./GradingFormulaAssignmentsPanel";
 
 export function GradingFormulasSettingsPage() {
   const { institutionId, year } = useAcademicSession();
@@ -126,6 +127,8 @@ export function GradingFormulasSettingsPage() {
           <Column header="Actions" headerClassName="text-right" bodyClassName="text-right" body={(row: GradingFormula) => <div className="flex items-center justify-end gap-1"><Button icon="pi pi-pencil" text size="small" disabled={!editable} onClick={() => setEditing(row)} /><Button icon="pi pi-trash" text size="small" severity="danger" disabled={!editable} onClick={() => void remove(row.id)} /></div>} />
         </DataTable>}
       />
+
+      <GradingFormulaAssignmentsPanel formulas={items} />
 
       <Dialog header={editing?.id ? "Modifier la formule" : "Nouvelle formule"} visible={editing !== undefined} modal className="form-dialog form-dialog-wide" onHide={() => setEditing(undefined)}>
         <TabView>
