@@ -4,23 +4,16 @@ import type {
   AssessmentTypeInput,
 } from "../domain/assessment-type";
 
-const assessmentTypesTable = () =>
-  supabase.from("assessment_types") as unknown as {
-    select: (columns: string) => any;
-    insert: (values: Record<string, unknown>) => any;
-    update: (values: Record<string, unknown>) => any;
-    delete: () => any;
-  };
-
 export async function listAssessmentTypes(yearId: string) {
-  const { data, error } = await assessmentTypesTable()
+  const { data, error } = await supabase
+    .from("assessment_types")
     .select("*")
     .eq("academic_year_id", yearId)
     .order("sort_order")
     .order("name");
 
   if (error) throw error;
-  return (data ?? []) as AssessmentType[];
+  return (data ?? []) as unknown as AssessmentType[];
 }
 
 export async function saveAssessmentType(
@@ -40,8 +33,8 @@ export async function saveAssessmentType(
   };
 
   const query = id
-    ? assessmentTypesTable().update(payload).eq("id", id)
-    : assessmentTypesTable().insert({
+    ? supabase.from("assessment_types").update(payload).eq("id", id)
+    : supabase.from("assessment_types").insert({
         institution_id: institutionId,
         academic_year_id: yearId,
         ...payload,
@@ -52,6 +45,9 @@ export async function saveAssessmentType(
 }
 
 export async function deleteAssessmentType(id: string) {
-  const { error } = await assessmentTypesTable().delete().eq("id", id);
+  const { error } = await supabase
+    .from("assessment_types")
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
