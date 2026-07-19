@@ -274,6 +274,143 @@ Exemples de blocage :
 
 Un échec sur un élève ne bloque pas la publication des bulletins valides des autres élèves. Les bulletins publiés sont archivés dans l'espace documentaire de chaque élève.
 
+## V1-023 — Agrégation des notes par type d'évaluation
+
+Lorsqu'un type d'évaluation est utilisé comme variable dans une formule, sa valeur correspond à la moyenne des notes de ce type pour l'élève, la matière et la période concernée.
+
+Exemple :
+
+- évaluations : 12, 15 et 18 ;
+- composition : 14.
+
+GeeCole calcule d'abord `EVALUATION = 15`, puis évalue la formule configurée. Les notes ne sont pas additionnées directement, car leur poids ne doit pas dépendre du nombre d'évaluations organisées par un enseignant.
+
+## V1-024 — Un moteur unique d'affectation pédagogique
+
+GeeCole utilise le même moteur pour le primaire, le collège et le lycée. Il ne crée pas de modèle métier séparé par cycle.
+
+Une affectation pédagogique relie, pour une durée donnée :
+
+- une année scolaire ;
+- une classe ou un niveau utilisé comme classe ;
+- une matière ;
+- un enseignant ;
+- une date ou une période de début ;
+- une date ou une période de fin facultative.
+
+Cette affectation représente le droit et la responsabilité d'enseigner cette matière à ce groupe pendant l'intervalle indiqué.
+
+## V1-025 — Enseignant principal de classe au primaire
+
+Une classe peut recevoir un **enseignant principal** pour l'année scolaire ou pour une partie de celle-ci.
+
+Au primaire, l'établissement peut affecter un enseignant principal à la classe, puis appliquer automatiquement cet enseignant à toutes les matières héritées du cycle.
+
+Parcours simplifié :
+
+`Classe → Affecter l'enseignant principal → Appliquer à toutes les matières`
+
+L'utilisateur ne doit pas créer manuellement une affectation identique pour chaque matière.
+
+## V1-026 — Exceptions par matière
+
+Une matière peut être confiée à un autre enseignant que l'enseignant principal.
+
+Exemple :
+
+- enseignant principal : toutes les matières de la classe ;
+- anglais : Mme Bah ;
+- informatique : M. Camara.
+
+L'affectation spécifique d'une matière remplace l'affectation principale uniquement pour cette matière et pendant sa durée de validité.
+
+Le moteur applique donc la priorité suivante :
+
+1. affectation spécifique à la matière et à la période ;
+2. affectation principale de la classe et de la période ;
+3. aucune affectation, signalée comme configuration incomplète.
+
+## V1-027 — Affectations matière par matière au collège et au lycée
+
+Au collège et au lycée, le parcours principal consiste à affecter un enseignant à chaque matière d'une classe.
+
+L'écran d'affectation doit fonctionner comme une grille :
+
+| Matière | Enseignant | Validité |
+| --- | --- | --- |
+| Mathématiques | M. Diallo | Toute l'année |
+| Français | Mme Bah | Toute l'année |
+| Physique | M. Camara | Trimestre 1 |
+
+GeeCole peut préremplir ou recopier les affectations entre classes, mais chaque ligne reste une affectation pédagogique normale du moteur unique.
+
+## V1-028 — Changement d'enseignant sans perte d'historique
+
+Une affectation existante n'est pas remplacée rétroactivement lorsqu'un enseignant change en cours d'année.
+
+L'établissement clôt l'affectation précédente à une date ou à la fin d'une période, puis crée la nouvelle affectation.
+
+Exemple :
+
+- M. Diallo enseigne les mathématiques du 1er septembre au 31 décembre ;
+- Mme Camara enseigne les mathématiques à partir du 1er janvier.
+
+Les évaluations, notes, absences liées au cours et bulletins conservent l'enseignant effectif au moment où les données ont été créées.
+
+## V1-029 — Génération des cours depuis les affectations
+
+L'utilisateur ne doit pas créer séparément un cours vide après avoir configuré les matières et les enseignants.
+
+GeeCole génère ou met à disposition le cours à partir de la combinaison :
+
+`année scolaire + classe + matière + affectation enseignante active`
+
+Le cours sert ensuite de point d'entrée pour :
+
+- créer une évaluation ;
+- saisir des notes ;
+- rattacher une absence ;
+- consulter les élèves ;
+- préparer l'emploi du temps.
+
+Un changement d'enseignant crée une nouvelle tranche d'affectation du même enseignement, sans casser l'historique du cours.
+
+## V1-030 — Contrôles du moteur d'affectation
+
+Avant d'activer ou de modifier une affectation, GeeCole vérifie :
+
+- que la matière est active pour le cycle ou le niveau ;
+- que la classe appartient à l'année scolaire concernée ;
+- que l'enseignant est actif dans l'établissement ;
+- qu'il n'existe pas deux enseignants spécifiques actifs pour la même classe, la même matière et le même intervalle ;
+- que les dates appartiennent à l'année scolaire ;
+- que la modification ne réécrit pas un historique déjà utilisé par des notes ou des bulletins publiés.
+
+Les trous d'affectation sont autorisés pendant la préparation, mais ils sont clairement signalés avant la saisie des évaluations ou la publication des bulletins.
+
+## V1-031 — Affectation groupée et recopie
+
+Pour éviter les saisies répétitives, GeeCole permet :
+
+- d'appliquer un enseignant principal à toutes les matières d'une classe ;
+- de sélectionner plusieurs matières et leur affecter le même enseignant ;
+- de recopier la grille d'affectation d'une classe vers une autre classe du même niveau ;
+- de recopier les affectations de l'année précédente vers la nouvelle année avant validation.
+
+Toute recopie crée de nouvelles affectations pour l'année cible et ne modifie jamais l'historique source.
+
+---
+
+## Moteur de résolution de l'enseignant effectif
+
+Pour une date, une classe et une matière données, GeeCole détermine l'enseignant effectif ainsi :
+
+1. rechercher une affectation spécifique active pour la matière ;
+2. sinon, rechercher l'affectation principale active de la classe ;
+3. sinon, retourner « enseignant non affecté ».
+
+Le même calcul est utilisé dans les écrans de cours, d'évaluation, de notes, d'assiduité et d'emploi du temps.
+
 ---
 
 ## Points encore à valider
@@ -290,16 +427,21 @@ Il reste à préciser si une absence non rattachée à un cours couvre automatiq
 
 Il reste à définir la syntaxe exacte autorisée et le comportement lorsqu'un élève n'a aucune note pour l'un des types utilisés dans la formule.
 
+### Affectations et périodes
+
+La V1 doit encore fixer si les changements d'enseignant sont saisis avec des dates exactes, avec les périodes scolaires, ou avec les deux possibilités. La recommandation actuelle est d'utiliser des dates exactes tout en proposant les bornes des périodes comme raccourcis.
+
 ---
 
 ## Workflow V1 de référence
 
 Configuration de l'établissement
 → activation annuelle des cycles et niveaux
-→ configuration des cycles et niveaux actifs
 → configuration des périodes et matières par cycle
 → création ou sélection des classes
-→ création des cours et affectation des enseignants
+→ affectation principale des enseignants de classe lorsque nécessaire
+→ affectations spécifiques des enseignants par matière
+→ génération des cours disponibles
 → création de l'élève
 → recherche ou création de ses parents
 → détection automatique de la fratrie
