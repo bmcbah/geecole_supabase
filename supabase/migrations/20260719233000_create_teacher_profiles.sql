@@ -43,10 +43,6 @@ begin
     raise exception 'teacher_profile_year_mismatch';
   end if;
 
-  if not public.has_institution_role(new.institution_id, new.teacher_user_id, array['teacher']::public.app_role[]) then
-    raise exception 'teacher_role_required';
-  end if;
-
   new.employee_number := nullif(upper(trim(new.employee_number)), '');
   new.specialty := nullif(trim(new.specialty), '');
   new.notes := nullif(trim(new.notes), '');
@@ -70,7 +66,6 @@ for all to authenticated
 using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]))
 with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
 
--- Une affectation ne peut viser qu'un profil enseignant actif de l'année.
 create or replace function public.validate_teaching_assignment()
 returns trigger
 language plpgsql
