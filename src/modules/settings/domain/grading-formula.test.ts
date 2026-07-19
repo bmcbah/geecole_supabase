@@ -1,46 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { calculateFormulaPreview, type GradingFormulaDefinition } from "./grading-formula";
+import {
+  calculateFormulaPreview,
+  validateFormulaExpression,
+} from "./grading-formula";
 
-const formula: GradingFormulaDefinition = {
-  method: "weighted_average",
-  missing_grade_policy: "ignore",
-  components: [
-    { assessment_type_id: "devoir", weight: 1 },
-    { assessment_type_id: "composition", weight: 2 },
-  ],
-};
-
-describe("calculateFormulaPreview", () => {
-  it("normalise les barèmes et applique les poids de l’école", () => {
-    const result = calculateFormulaPreview(formula, [
-      { assessment_type_id: "devoir", score: 8, scale: 10 },
-      { assessment_type_id: "composition", score: 14, scale: 20 },
-    ]);
-
-    expect(result.blocked).toBe(false);
-    expect(result.result).toBeCloseTo(14.6667, 3);
+describe("grading formula expression", () => {
+  it("valide une expression avec les codes autorisés", () => {
+    expect(validateFormulaExpression("(EVAL + COMP * 2) / 3", ["EVAL", "COMP"])).toEqual({
+      valid: true,
+      variables: ["EVAL", "COMP"],
+      error: null,
+    });
   });
 
-  it("ignore une note manquante selon la règle configurée", () => {
-    const result = calculateFormulaPreview(formula, [
-      { assessment_type_id: "devoir", score: 12, scale: 20 },
-      { assessment_type_id: "composition", score: null, scale: 20 },
-    ]);
-
-    expect(result.result).toBe(12);
-    expect(result.missing).toEqual(["composition"]);
+  it("refuse un code inconnu", () => {
+    const result = validateFormulaExpression("EVAL + TEST", ["EVAL"]);
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("TEST");
   });
 
-  it("bloque le calcul lorsque l’école le demande", () => {
+  it("respecte les priorités opératoires", () => {
     const result = calculateFormulaPreview(
-      { ...formula, missing_grade_policy: "block" },
-      [
-        { assessment_type_id: "devoir", score: 12, scale: 20 },
-        { assessment_type_id: "composition", score: null, scale: 20 },
-      ],
+      "(EVAL + COMP * 2) / 3",
+      { EVAL: 14, COMP: 17 },
+      "block",
     );
+    expect(result.result).toBe(16);
+    expect(result.resolvedExpression).toBe("(14 + 17 * 2) / 3");
+  });
 
+  it("bloque quand une variable manque", () => {
+    const result = calculateFormulaPreview(
+      "(EVAL + COMP * 2) / 3",
+      { EVAL: 14, COMP: null },
+      "block",
+    );
     expect(result.blocked).toBe(true);
-    expect(result.result).toBeNull();
+    expect(result.missing).toEqual(["COMP"]);
   });
 });
