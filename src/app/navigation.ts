@@ -5,24 +5,10 @@ export type NavigationLink = {
   to: string;
 };
 
-export type NavigationTitle = {
-  type: "title";
-  label: string;
-};
-
-export type NavigationDivider = {
-  type: "divider";
-};
-
+export type NavigationTitle = { type: "title"; label: string };
+export type NavigationDivider = { type: "divider" };
 export type NavigationEntry = NavigationLink | NavigationTitle | NavigationDivider;
-
-export type NavigationGroup = {
-  label: string;
-  icon: string;
-  match: string;
-  to?: string;
-  items?: NavigationEntry[];
-};
+export type NavigationGroup = { label: string; icon: string; match: string; to?: string; items?: NavigationEntry[] };
 
 export const navigation: NavigationGroup[] = [
   {
@@ -36,11 +22,20 @@ export const navigation: NavigationGroup[] = [
     ],
   },
   {
-    label: "Notes",
-    icon: "pi-pencil",
+    label: "Notes et bulletins",
+    icon: "pi-book",
     match: "/notes",
     items: [
-      { type: "link", label: "Cahier de notes", icon: "pi-table", to: "/notes/cahier" },
+      { type: "title", label: "Enseignement" },
+      { type: "link", label: "Mes classes", icon: "pi-th-large", to: "/notes/mes-classes" },
+      { type: "link", label: "Cahier de notes", icon: "pi-pencil", to: "/notes/cahier" },
+      { type: "divider" },
+      { type: "title", label: "Organisation" },
+      { type: "link", label: "Affectations pédagogiques", icon: "pi-sitemap", to: "/notes/affectations" },
+      { type: "divider" },
+      { type: "title", label: "Conseil et publication" },
+      { type: "link", label: "Délibérations", icon: "pi-verified", to: "/notes/deliberations" },
+      { type: "link", label: "Bulletins", icon: "pi-file-pdf", to: "/notes/bulletins" },
     ],
   },
   {
