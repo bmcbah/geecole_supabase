@@ -12,7 +12,7 @@ create table if not exists public.grading_formula_assignments (
   academic_cycle_id uuid references public.academic_cycles(id) on delete cascade,
   academic_year_level_id uuid references public.academic_year_levels(id) on delete cascade,
   annual_subject_id uuid references public.annual_subjects(id) on delete cascade,
-  period_id uuid references public.academic_periods(id) on delete cascade,
+  period_code text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -20,7 +20,7 @@ create table if not exists public.grading_formula_assignments (
     academic_cycle_id is not null
     or academic_year_level_id is not null
     or annual_subject_id is not null
-    or period_id is not null
+    or period_code is not null
   )
 );
 
@@ -31,7 +31,7 @@ create unique index if not exists grading_formula_assignment_scope_unique
     coalesce(academic_cycle_id, '00000000-0000-0000-0000-000000000000'::uuid),
     coalesce(academic_year_level_id, '00000000-0000-0000-0000-000000000000'::uuid),
     coalesce(annual_subject_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    coalesce(period_id, '00000000-0000-0000-0000-000000000000'::uuid)
+    coalesce(period_code, '')
   )
   where is_active;
 
@@ -41,7 +41,7 @@ create index if not exists grading_formula_assignments_resolution_idx
     annual_subject_id,
     academic_year_level_id,
     academic_cycle_id,
-    period_id
+    period_code
   )
   where is_active;
 
