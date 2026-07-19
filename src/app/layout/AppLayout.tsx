@@ -168,8 +168,8 @@ export function AppLayout() {
 
           <div className="border-t border-brand-100 p-3">
             <div className="flex min-h-[60px] items-center gap-3 rounded-lg bg-brand-50 px-3 py-2.5">
-              <span className="grid size-9 ps-2 shrink-0 place-items-center rounded-full bg-brand-700 text-sm font-semibold text-white">
-                {(user?.email?.[0] ?? "U").toUpperCase()}
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold leading-none text-white ring-1 ring-emerald-100">
+                <span className="block leading-none">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-slate-900">{user?.email ?? "Utilisateur"}</p>
@@ -237,7 +237,9 @@ export function AppLayout() {
 
             <div className="relative">
               <button type="button" className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 pr-2 text-left shadow-sm hover:bg-slate-50" aria-expanded={profileOpen} onClick={() => setProfileOpen((value) => !value)}>
-                <span className="grid size-9 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
+                <span className="inline-flex size-9 p-2 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold leading-none text-emerald-700 ring-1 ring-emerald-100">
+                  <span className="block leading-none">{(user?.email?.[0] ?? "U").toUpperCase()}</span>
+                </span>
                 <i className="pi pi-chevron-down hidden text-[9px] text-slate-400 sm:block" />
               </button>
 
