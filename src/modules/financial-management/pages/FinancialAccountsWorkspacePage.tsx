@@ -347,7 +347,7 @@ export function FinancialAccountsWorkspacePage() {
             <Column header="Statut" body={(row: FinancialAccount) => <Tag value={financialAccountStatusLabels[row.status]} severity={row.balanceAmount > 0 ? "warning" : "success"} />} sortable sortField="status" />
             
             <Column header="Actions" body={(row: FinancialAccount) => (
-              <Button icon="pi pi-dollar" size="small" rounded text severity="success" tooltip="Enregistrer un encaissement" onClick={(e) => { e.stopPropagation(); void openPayment(row); }} />
+              <Button size="small" rounded outlined severity="success" onClick={(e) => { e.stopPropagation(); void openPayment(row); }}>Encaisser</Button>
             )} />
             
             <Column header="" body={() => <i className="pi pi-chevron-right text-slate-400" />} />
