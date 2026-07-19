@@ -70,6 +70,8 @@ begin
 end;
 $$;
 
+drop trigger if exists grading_formula_assignments_touch_updated_at
+  on public.grading_formula_assignments;
 create trigger grading_formula_assignments_touch_updated_at
 before update on public.grading_formula_assignments
 for each row execute function public.touch_grading_formula_assignment_updated_at();
