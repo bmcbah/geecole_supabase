@@ -19,6 +19,7 @@ const FinancialPaymentsPage = lazy(() => import("../../modules/financial-managem
 const TeacherWorkspacePage = lazy(() => import("../../modules/grades/pages/TeacherWorkspacePage").then((module) => ({ default: module.TeacherWorkspacePage })));
 const TeachingAssignmentsPage = lazy(() => import("../../modules/grades/pages/TeachingAssignmentsPage").then((module) => ({ default: module.TeachingAssignmentsPage })));
 const GradebookPage = lazy(() => import("../../modules/grades/pages/GradebookPage").then((module) => ({ default: module.GradebookPage })));
+const PeriodResultsPage = lazy(() => import("../../modules/grades/pages/PeriodResultsPage").then((module) => ({ default: module.PeriodResultsPage })));
 const DeliberationsPage = lazy(() => import("../../modules/grades/pages/DeliberationsPage").then((module) => ({ default: module.DeliberationsPage })));
 const ReportCardsPage = lazy(() => import("../../modules/grades/pages/ReportCardsPage").then((module) => ({ default: module.ReportCardsPage })));
 
@@ -46,6 +47,7 @@ export function AppRouter() {
             <Route path="/notes/mes-classes" element={<TeacherWorkspacePage />} />
             <Route path="/notes/affectations" element={<TeachingAssignmentsPage />} />
             <Route path="/notes/cahier" element={<GradebookPage />} />
+            <Route path="/notes/resultats" element={<PeriodResultsPage />} />
             <Route path="/notes/deliberations" element={<DeliberationsPage />} />
             <Route path="/notes/bulletins" element={<ReportCardsPage />} />
           </Route>
