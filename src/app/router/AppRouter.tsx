@@ -16,7 +16,11 @@ const BatchReenrollmentPage = lazy(() => import("../../modules/schooling/pages/B
 const FinancialAccountsPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountsWorkspacePage").then((module) => ({ default: module.FinancialAccountsWorkspacePage })));
 const FinancialAccountDetailPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountDetailPage").then((module) => ({ default: module.FinancialAccountDetailPage })));
 const FinancialPaymentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })));
+const TeacherWorkspacePage = lazy(() => import("../../modules/grades/pages/TeacherWorkspacePage").then((module) => ({ default: module.TeacherWorkspacePage })));
+const TeachingAssignmentsPage = lazy(() => import("../../modules/grades/pages/TeachingAssignmentsPage").then((module) => ({ default: module.TeachingAssignmentsPage })));
 const GradebookPage = lazy(() => import("../../modules/grades/pages/GradebookPage").then((module) => ({ default: module.GradebookPage })));
+const DeliberationsPage = lazy(() => import("../../modules/grades/pages/DeliberationsPage").then((module) => ({ default: module.DeliberationsPage })));
+const ReportCardsPage = lazy(() => import("../../modules/grades/pages/ReportCardsPage").then((module) => ({ default: module.ReportCardsPage })));
 
 export function AppRouter() {
   return (
@@ -35,10 +39,15 @@ export function AppRouter() {
             <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
             <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
             <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
-            <Route path="/notes/cahier" element={<GradebookPage />} />
             <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
             <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
             <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
+            <Route path="/notes" element={<Navigate to="/notes/mes-classes" replace />} />
+            <Route path="/notes/mes-classes" element={<TeacherWorkspacePage />} />
+            <Route path="/notes/affectations" element={<TeachingAssignmentsPage />} />
+            <Route path="/notes/cahier" element={<GradebookPage />} />
+            <Route path="/notes/deliberations" element={<DeliberationsPage />} />
+            <Route path="/notes/bulletins" element={<ReportCardsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
