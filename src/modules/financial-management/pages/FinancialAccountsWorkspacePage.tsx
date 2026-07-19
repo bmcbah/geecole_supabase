@@ -156,22 +156,8 @@ export function FinancialAccountsWorkspacePage() {
       />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div><h2 className="text-base font-semibold text-slate-950">Vue financière</h2><p className="mt-1 text-sm text-slate-500">Synthèse des dossiers actuellement affichés.</p></div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{year.name}</span>
-        </div>
-        <div className="grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((card) => (
-            <article key={card.label} className="grid min-h-[148px] grid-rows-[40px_1fr_auto] rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <div className="grid grid-cols-[1fr_40px] items-start gap-3">
-                <span className="pt-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{card.label}</span>
-                <MetricIcon icon={card.icon} className="size-10 shrink-0 self-start justify-self-end" />
-              </div>
-              <strong className="self-end text-xl font-bold tracking-tight text-slate-950">{card.value}</strong>
-              <span className="mt-1 block text-xs text-slate-500">{card.hint}</span>
-            </article>
-          ))}
-        </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-slate-950">Vue financière</h2></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{year.name}</span></div>
+        <div className="grid ps-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">{statCards.map((card) => <article key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{card.label}</span><MetricIcon icon={card.icon} /></div><strong className="mt-4 block text-xl font-bold tracking-tight text-slate-950">{card.value}</strong><span className="mt-1 block text-xs text-slate-500">{card.hint}</span></article>)}</div>
       </section>
 
       {failure ? <Message severity="error" text={failure} /> : null}
