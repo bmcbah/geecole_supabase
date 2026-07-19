@@ -2,9 +2,35 @@
 -- Migration additive : ne modifie aucune migration déjà partagée.
 
 -- V1-006 — Une seule année scolaire ouverte à la fois par établissement.
-create unique index if not exists academic_years_one_open_per_institution_idx
-  on public.academic_years (institution_id)
-  where status = 'open';
+-- Un trigger bloque les nouvelles incohérences sans rendre la migration
+-- impossible si des données historiques doivent d'abord être régularisées.
+create or replace function public.ensure_single_open_academic_year()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if new.status = 'open' and exists (
+    select 1
+    from public.academic_years ay
+    where ay.institution_id = new.institution_id
+      and ay.status = 'open'
+      and ay.id <> new.id
+  ) then
+    raise exception 'Une seule année scolaire peut être ouverte à la fois.';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists academic_years_single_open on public.academic_years;
+create trigger academic_years_single_open
+before insert or update of status, institution_id
+on public.academic_years
+for each row
+execute function public.ensure_single_open_academic_year();
 
 -- V1-007 / V1-014 — Les exigences documentaires sont configurables et
 -- l'espace documentaire couvre aussi les documents scolaires générés.
@@ -59,8 +85,8 @@ alter table public.student_documents
 alter table public.guardians
   add column if not exists email text;
 
-create unique index if not exists guardians_institution_phone_unique_idx
-  on public.guardians (institution_id, regexp_replace(primary_phone, '\\s+', '', 'g'));
+create index if not exists guardians_institution_phone_lookup_idx
+  on public.guardians (institution_id, regexp_replace(primary_phone, '\s+', '', 'g'));
 
 create index if not exists guardians_institution_email_idx
   on public.guardians (institution_id, lower(email))
@@ -81,7 +107,7 @@ as $$
   from public.guardians g
   where g.institution_id = p_institution_id
     and (
-      regexp_replace(g.primary_phone, '\\s+', '', 'g') = regexp_replace(p_phone, '\\s+', '', 'g')
+      regexp_replace(g.primary_phone, '\s+', '', 'g') = regexp_replace(p_phone, '\s+', '', 'g')
       or (
         p_email is not null
         and g.email is not null
@@ -90,7 +116,7 @@ as $$
     )
   order by
     case
-      when regexp_replace(g.primary_phone, '\\s+', '', 'g') = regexp_replace(p_phone, '\\s+', '', 'g') then 0
+      when regexp_replace(g.primary_phone, '\s+', '', 'g') = regexp_replace(p_phone, '\s+', '', 'g') then 0
       else 1
     end,
     g.updated_at desc;
@@ -177,11 +203,15 @@ set search_path = public
 as $$
 declare
   target_year_id uuid;
-  target_status public.academic_year_status;
+  target_status text;
 begin
-  target_year_id := coalesce(new.academic_year_id, old.academic_year_id);
+  if tg_op = 'DELETE' then
+    target_year_id := old.academic_year_id;
+  else
+    target_year_id := new.academic_year_id;
+  end if;
 
-  select ay.status
+  select ay.status::text
   into target_status
   from public.academic_years ay
   where ay.id = target_year_id;
@@ -190,23 +220,27 @@ begin
     raise exception 'La structure pédagogique d’une année clôturée ou archivée ne peut plus être modifiée.';
   end if;
 
-  return coalesce(new, old);
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+
+  return new;
 end;
 $$;
 
-do $$
-begin
-  if to_regclass('public.academic_year_levels') is not null then
-    execute 'drop trigger if exists academic_year_levels_lock_closed_year on public.academic_year_levels';
-    execute 'create trigger academic_year_levels_lock_closed_year before insert or update or delete on public.academic_year_levels for each row execute function public.prevent_closed_year_structure_changes()';
-  end if;
+drop trigger if exists academic_year_levels_lock_closed_year on public.academic_year_levels;
+create trigger academic_year_levels_lock_closed_year
+before insert or update or delete
+on public.academic_year_levels
+for each row
+execute function public.prevent_closed_year_structure_changes();
 
-  if to_regclass('public.school_classes') is not null then
-    execute 'drop trigger if exists school_classes_lock_closed_year on public.school_classes';
-    execute 'create trigger school_classes_lock_closed_year before insert or update or delete on public.school_classes for each row execute function public.prevent_closed_year_structure_changes()';
-  end if;
-end
-$$;
+drop trigger if exists school_classes_lock_closed_year on public.school_classes;
+create trigger school_classes_lock_closed_year
+before insert or update or delete
+on public.school_classes
+for each row
+execute function public.prevent_closed_year_structure_changes();
 
 -- V1-011 / V1-012 — Les inscriptions préparées ou réinscrites conservent leur
 -- origine et leur inscription source. Ces colonnes existent déjà ; on renforce
