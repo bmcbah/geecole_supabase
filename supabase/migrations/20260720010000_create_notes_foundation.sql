@@ -114,6 +114,21 @@ create table public.notes_audit_log (
   created_at timestamptz not null default now()
 );
 
+create table public.pedagogical_settings (
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  academic_year_id uuid not null references public.academic_years(id) on delete cascade,
+  appreciations_required boolean not null default false,
+  ranking_displayed boolean not null default true,
+  coefficients_displayed boolean not null default true,
+  average_decimal_places smallint not null default 2 check (average_decimal_places between 0 and 4),
+  notifications_enabled boolean not null default true,
+  multiple_teachers_enabled boolean not null default false,
+  validation_roles public.app_role[] not null default array['owner','admin']::public.app_role[],
+  publication_roles public.app_role[] not null default array['owner','admin']::public.app_role[],
+  updated_at timestamptz not null default now(),
+  primary key (institution_id, academic_year_id)
+);
+
 create index pedagogical_assignments_context_idx on public.pedagogical_assignments(academic_year_id, class_id, subject_id);
 create index gradebook_notes_course_idx on public.gradebook_notes(academic_year_id, period_id, class_id, subject_id);
 create index note_results_note_idx on public.note_results(note_id);
@@ -127,6 +142,14 @@ begin
   where id = new.note_type_id and institution_id = new.institution_id
     and academic_year_id = new.academic_year_id and is_active;
   if selected_type.id is null then raise exception 'inactive_or_invalid_note_type'; end if;
+  if not exists (
+    select 1 from public.school_classes class
+    join public.academic_year_levels level on level.id = class.academic_year_level_id
+    join public.academic_periods period on period.id = new.period_id
+      and period.academic_year_id = class.academic_year_id
+      and period.cycle_id = level.cycle_id
+    where class.id = new.class_id and class.academic_year_id = new.academic_year_id
+  ) then raise exception 'period_does_not_belong_to_class_cycle'; end if;
   if not exists (
     select 1 from public.pedagogical_assignments assignment
     where assignment.institution_id = new.institution_id
@@ -145,6 +168,22 @@ begin
       where person.id = new.teacher_id and person.auth_user_id = auth.uid()
     ) then raise exception 'teacher_course_access_denied'; end if;
   new.scale_snapshot := selected_type.scale;
+  return new;
+end;
+$$;
+
+create or replace function public.validate_assignment_period_cycle()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if not exists (
+    select 1 from public.pedagogical_assignments assignment
+    join public.school_classes class on class.id = assignment.class_id
+    join public.academic_year_levels level on level.id = class.academic_year_level_id
+    join public.academic_periods period on period.id = new.period_id
+      and period.academic_year_id = assignment.academic_year_id
+      and period.cycle_id = level.cycle_id
+    where assignment.id = new.assignment_id
+  ) then raise exception 'period_does_not_belong_to_assignment_cycle'; end if;
   return new;
 end;
 $$;
@@ -204,11 +243,14 @@ create trigger gradebook_notes_prepare before insert or update on public.gradebo
 for each row execute function public.prepare_gradebook_note();
 create trigger note_results_validate before insert or update on public.note_results
 for each row execute function public.validate_note_result();
+create trigger pedagogical_assignment_periods_validate before insert or update on public.pedagogical_assignment_periods
+for each row execute function public.validate_assignment_period_cycle();
 
 create trigger pedagogical_assignments_updated before update on public.pedagogical_assignments for each row execute function public.set_updated_at();
 create trigger gradebook_notes_updated before update on public.gradebook_notes for each row execute function public.set_updated_at();
 create trigger note_results_updated before update on public.note_results for each row execute function public.set_updated_at();
 create trigger subject_appreciations_updated before update on public.subject_appreciations for each row execute function public.set_updated_at();
+create trigger pedagogical_settings_updated before update on public.pedagogical_settings for each row execute function public.set_updated_at();
 
 create trigger audit_pedagogical_assignments after insert or update or delete on public.pedagogical_assignments for each row execute function public.audit_notes_change();
 create trigger audit_gradebook_notes after insert or update or delete on public.gradebook_notes for each row execute function public.audit_notes_change();
@@ -218,7 +260,7 @@ create trigger audit_subject_appreciations after insert or update or delete on p
 do $$
 declare table_name text;
 begin
-  foreach table_name in array array['pedagogical_assignments','pedagogical_assignment_periods','gradebook_notes','note_results','subject_appreciations','notes_audit_log'] loop
+  foreach table_name in array array['pedagogical_assignments','pedagogical_assignment_periods','gradebook_notes','note_results','subject_appreciations','notes_audit_log','pedagogical_settings'] loop
     execute format('alter table public.%I enable row level security', table_name);
   end loop;
 end $$;
@@ -248,9 +290,14 @@ create policy subject_appreciations_write on public.subject_appreciations for al
 using (public.has_institution_role(institution_id, array['owner','admin','teacher']::public.app_role[]))
 with check (public.has_institution_role(institution_id, array['owner','admin','teacher']::public.app_role[]));
 create policy notes_audit_read on public.notes_audit_log for select to authenticated using (public.is_active_member(institution_id));
+create policy pedagogical_settings_read on public.pedagogical_settings for select to authenticated using (public.is_active_member(institution_id));
+create policy pedagogical_settings_manage on public.pedagogical_settings for all to authenticated
+using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]))
+with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
 
 grant select, insert, update, delete on public.pedagogical_assignments, public.pedagogical_assignment_periods,
   public.gradebook_notes, public.note_results, public.subject_appreciations to authenticated;
+grant select, insert, update, delete on public.pedagogical_settings to authenticated;
 grant select on public.notes_audit_log to authenticated;
 revoke all on public.pedagogical_assignments, public.pedagogical_assignment_periods,
-  public.gradebook_notes, public.note_results, public.subject_appreciations, public.notes_audit_log from anon;
+  public.gradebook_notes, public.note_results, public.subject_appreciations, public.notes_audit_log, public.pedagogical_settings from anon;

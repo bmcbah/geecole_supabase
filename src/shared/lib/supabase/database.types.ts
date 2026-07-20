@@ -964,6 +964,12 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      pedagogical_settings: {
+        Row: { institution_id: string; academic_year_id: string; appreciations_required: boolean; ranking_displayed: boolean; coefficients_displayed: boolean; average_decimal_places: number; notifications_enabled: boolean; multiple_teachers_enabled: boolean; validation_roles: AppRole[]; publication_roles: AppRole[]; updated_at: string };
+        Insert: { institution_id: string; academic_year_id: string; appreciations_required?: boolean; ranking_displayed?: boolean; coefficients_displayed?: boolean; average_decimal_places?: number; notifications_enabled?: boolean; multiple_teachers_enabled?: boolean; validation_roles?: AppRole[]; publication_roles?: AppRole[] };
+        Update: Partial<Database["public"]["Tables"]["pedagogical_settings"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

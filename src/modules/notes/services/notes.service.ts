@@ -2,22 +2,26 @@ import { supabase } from "../../../shared/lib/supabase/client";
 import type { CourseSummary, GradebookStudent, NoteResultStatus } from "../domain/notes";
 
 export async function listCourseSummaries(institutionId: string, yearId: string): Promise<CourseSummary[]> {
-  const [assignments, classes, subjects, people] = await Promise.all([
+  const [assignments, classes, levels, subjects, people, scopes] = await Promise.all([
     supabase.from("pedagogical_assignments").select("*").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true),
-    supabase.from("school_classes").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId),
+    supabase.from("school_classes").select("id,name,academic_year_level_id").eq("institution_id", institutionId).eq("academic_year_id", yearId),
+    supabase.from("academic_year_levels").select("id,cycle_id").eq("institution_id", institutionId).eq("academic_year_id", yearId),
     supabase.from("subjects").select("id,name").eq("institution_id", institutionId),
     supabase.from("people").select("id,first_name,last_name").eq("institution_id", institutionId),
+    supabase.from("pedagogical_assignment_periods").select("assignment_id,period_id"),
   ]);
-  for (const result of [assignments, classes, subjects, people]) if (result.error) throw result.error;
+  for (const result of [assignments, classes, levels, subjects, people, scopes]) if (result.error) throw result.error;
   return (assignments.data ?? []).filter((item) => item.subject_id).map((item) => ({
     assignmentId: item.id,
     classId: item.class_id,
     className: classes.data?.find((entry) => entry.id === item.class_id)?.name ?? "Classe",
+    cycleId: (() => { const schoolClass = classes.data?.find((entry) => entry.id === item.class_id); return levels.data?.find((level) => level.id === schoolClass?.academic_year_level_id)?.cycle_id ?? ""; })(),
     subjectId: item.subject_id as string,
     subjectName: subjects.data?.find((entry) => entry.id === item.subject_id)?.name ?? "Matière",
     teacherId: item.teacher_id,
     teacherName: (() => { const person = people.data?.find((entry) => entry.id === item.teacher_id); return person ? `${person.first_name} ${person.last_name}` : "Enseignant non renseigné"; })(),
     coefficient: item.coefficient,
+    allowedPeriodIds: item.all_periods ? [] : (scopes.data ?? []).filter((scope) => scope.assignment_id === item.id).map((scope) => scope.period_id),
   }));
 }
 
@@ -77,16 +81,30 @@ export async function listActiveNoteTypes(institutionId: string, yearId: string)
 }
 
 export async function listAssignmentOptions(institutionId: string, yearId: string) {
-  const [classes, subjects, people, roles, periods] = await Promise.all([
-    supabase.from("school_classes").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true).order("name"),
+  const [classes, levels, subjects, people, roles, periods] = await Promise.all([
+    supabase.from("school_classes").select("id,name,academic_year_level_id").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true).order("name"),
+    supabase.from("academic_year_levels").select("id,cycle_id").eq("institution_id", institutionId).eq("academic_year_id", yearId),
     supabase.from("subjects").select("id,name").eq("institution_id", institutionId).eq("is_active", true).order("name"),
     supabase.from("people").select("id,first_name,last_name").eq("institution_id", institutionId).eq("status", "active").order("last_name"),
     supabase.from("person_roles").select("person_id").eq("institution_id", institutionId).eq("role", "teacher"),
-    supabase.from("academic_periods").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId).order("sequence"),
+    supabase.from("academic_periods").select("id,name,cycle_id").eq("institution_id", institutionId).eq("academic_year_id", yearId).order("sequence"),
   ]);
-  for (const result of [classes, subjects, people, roles, periods]) if (result.error) throw result.error;
+  for (const result of [classes, levels, subjects, people, roles, periods]) if (result.error) throw result.error;
   const teacherIds = new Set(roles.data?.map((role) => role.person_id));
-  return { classes: classes.data ?? [], subjects: subjects.data ?? [], teachers: (people.data ?? []).filter((person) => teacherIds.has(person.id)), periods: periods.data ?? [] };
+  return { classes: (classes.data ?? []).map((item) => ({ ...item, cycle_id: levels.data?.find((level) => level.id === item.academic_year_level_id)?.cycle_id ?? "" })), subjects: subjects.data ?? [], teachers: (people.data ?? []).filter((person) => teacherIds.has(person.id)), periods: periods.data ?? [] };
+}
+
+export async function publishCourseNotes(noteIds: string[]) {
+  if (!noteIds.length) return;
+  const { error } = await supabase.from("gradebook_notes").update({ is_published: true }).in("id", noteIds);
+  if (error) throw error;
+}
+
+export async function listCourseAudit(noteIds: string[]) {
+  if (!noteIds.length) return [];
+  const { data, error } = await supabase.from("notes_audit_log").select("*").eq("entity_type", "gradebook_notes").in("entity_id", noteIds).order("created_at", { ascending: false }).limit(50);
+  if (error) throw error;
+  return data;
 }
 
 export async function createPedagogicalAssignment(input: { institutionId: string; yearId: string; classId: string; subjectId: string; teacherId: string; coefficient: number; periodIds: string[] }) {

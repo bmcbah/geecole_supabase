@@ -8,9 +8,10 @@
 4. Notes par élève
 5. Suivi de saisie
 6. Contrôle des moyennes
-7. Types de note
-8. Formules de calcul
-9. Affectations pédagogiques
+7. Affectations pédagogiques
+
+Les types de note, les formules et les paramètres pédagogiques sont configurés
+dans le module Paramétrage.
 
 Les pages et données visibles dépendent des permissions.
 
@@ -107,12 +108,9 @@ En-tête :
 - progression ;
 - alertes.
 
-Onglets :
-
-- Cahier
-- Appréciations
-- Moyennes
-- Historique
+La zone ne contient aucun onglet de navigation. Elle présente les actions du
+cours. Les moyennes, appréciations et historiques sont ouverts comme pages de
+travail dédiées ou comme actions contextuelles.
 
 ## Grille du cahier
 
@@ -143,6 +141,9 @@ Actions :
 - modifier libellé ou date ;
 - publier les notes ;
 - consulter l’historique.
+
+La période affichée est résolue automatiquement depuis le cycle de la classe ou
+du niveau. Le changement de cours recalcule les périodes disponibles.
 
 La grille utilise des colonnes figées et une navigation clavier.
 

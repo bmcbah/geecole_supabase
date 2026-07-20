@@ -16,6 +16,7 @@ import { FinancialBenefitTemplatesPanel } from "../components/FinancialBenefitTe
 import { PeopleAccessPanel } from "../components/PeopleAccessPanel";
 import { AssessmentTypesSettingsPage } from "../components/AssessmentTypesSettingsPage";
 import { GradingFormulasSettingsPage } from "../components/GradingFormulasSettingsPage";
+import { PedagogicalSettingsPanel } from "../components/PedagogicalSettingsPanel";
 import { EnrollmentPolicyPanel } from "../../schooling/components/EnrollmentPolicyPanel";
 import { ReenrollmentPolicyPanel } from "../../schooling/components/ReenrollmentPolicyPanel";
 import { DocumentRequirementsPanel } from "../../schooling/components/DocumentRequirementsPanel";
@@ -31,6 +32,7 @@ const sections = [
   "matieres",
   "types-notes",
   "formules-calcul",
+  "parametres-pedagogiques",
   "categories-frais",
   "grilles-tarifaires",
   "plans-paiement",
@@ -156,6 +158,8 @@ export function SettingsPage() {
           <AssessmentTypesSettingsPage />
         ) : section === "formules-calcul" ? (
           <GradingFormulasSettingsPage />
+        ) : section === "parametres-pedagogiques" ? (
+          <PedagogicalSettingsPanel />
         ) : section === "categories-frais" ? (
           <FeeTypesSettingsPanel />
         ) : section === "grilles-tarifaires" ? (

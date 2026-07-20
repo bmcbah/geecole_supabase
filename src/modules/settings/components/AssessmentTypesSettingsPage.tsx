@@ -27,7 +27,6 @@ type Assessment = Database["public"]["Tables"]["assessment_types"]["Row"];
 const fields: EntityField[] = [
   { key: "name", label: "Nom", required: true },
   { key: "code", label: "Code", required: true },
-  { key: "weight", label: "Poids", type: "number", required: true },
   { key: "scale", label: "Barème", type: "number", required: true },
   { key: "is_active", label: "Type actif", type: "boolean" },
 ];
@@ -54,7 +53,6 @@ export function AssessmentTypesSettingsPage() {
     () => ({
       name: editing?.name ?? "",
       code: editing?.code ?? "",
-      weight: editing?.weight ?? 1,
       scale: editing?.scale ?? 20,
       is_active: editing?.is_active ?? true,
     }),
@@ -71,7 +69,7 @@ export function AssessmentTypesSettingsPage() {
         {
           name: String(values.name),
           code: String(values.code).toUpperCase(),
-          weight: Number(values.weight),
+          weight: 1,
           scale: Number(values.scale),
           is_active: Boolean(values.is_active),
         },
@@ -122,7 +120,7 @@ export function AssessmentTypesSettingsPage() {
         sectionHeader={
           <PageHeader
             title="Types de notes"
-            description="Définissez les catégories de notes, leur poids et leur barème."
+            description="Définissez les catégories de notes et leur barème. Le poids est porté par les formules."
             meta={
               <Tag
                 value={`${items.length} type${items.length > 1 ? "s" : ""}`}
@@ -160,7 +158,7 @@ export function AssessmentTypesSettingsPage() {
           <DataTable
             value={items}
             globalFilter={search}
-            globalFilterFields={["name", "code", "weight", "scale", "is_active"]}
+            globalFilterFields={["name", "code", "scale", "is_active"]}
             dataKey="id"
             emptyMessage="Aucun type de note"
             stripedRows
@@ -169,7 +167,6 @@ export function AssessmentTypesSettingsPage() {
           >
             <Column field="name" header="Type" />
             <Column field="code" header="Code" />
-            <Column field="weight" header="Poids" />
             <Column field="scale" header="Barème" />
             <Column
               header="Statut"

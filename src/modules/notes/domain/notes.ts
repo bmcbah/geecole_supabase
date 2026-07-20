@@ -10,11 +10,13 @@ export type CourseSummary = {
   assignmentId: string;
   classId: string;
   className: string;
+  cycleId: string;
   subjectId: string;
   subjectName: string;
   teacherId: string;
   teacherName: string;
   coefficient: number;
+  allowedPeriodIds: string[];
 };
 
 export type GradebookStudent = {

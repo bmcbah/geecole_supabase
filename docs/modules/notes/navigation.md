@@ -24,7 +24,7 @@ Notes & Bulletins
 ├── Cahiers de notes
 ├── Suivi pédagogique
 ├── Bulletins
-└── Configuration
+└── Affectations pédagogiques
 ```
 
 Les éléments visibles dépendent des permissions de l’utilisateur.
@@ -59,13 +59,12 @@ Notes & Bulletins
 │   ├── Publication
 │   └── Historique
 │
-└── Configuration
-    ├── Affectations pédagogiques
-    ├── Types de note
-    ├── Formules de calcul
-    ├── Modèles de bulletin
-    └── Paramètres du module
+└── Affectations pédagogiques
 ```
+
+Les types de note, les formules de calcul et les paramètres pédagogiques sont
+accessibles dans le module **Paramétrage**. Les modèles propres au rendu des
+bulletins restent dans le module Bulletins.
 
 ---
 
@@ -200,8 +199,8 @@ Badges de statut :
 │                  │ Mathématiques • 7A • Période 1          │
 │ Année            │ Enseignant E1 • Coefficient 4           │
 │  └ Période       ├─────────────────────────────────────────┤
-│    └ Cycle       │ [Cahier] [Moyennes] [Appréciations]    │
-│      └ Classe    │ [Historique]                            │
+│    └ Cycle       │ Actions du cours                        │
+│      └ Classe    │ Ajouter • Saisir • Statut • Publier     │
 │        └ Cours   ├─────────────────────────────────────────┤
 │                  │ Grille de travail                       │
 │                  │ Élève | DS1 | Oral | Composition | Moy. │
@@ -635,7 +634,7 @@ Chaque version affiche :
 
 ---
 
-## 7. Configuration
+## 7. Affectations et paramétrage
 
 ### 7.1 Affectations pédagogiques
 
@@ -643,7 +642,6 @@ Chaque version affiche :
 
 ```text
 Notes & Bulletins
-→ Configuration
 → Affectations pédagogiques
 ```
 
@@ -675,8 +673,7 @@ Les enseignants spécialisés peuvent être affectés à certains cours.
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
+Paramétrage
 → Types de note
 ```
 
@@ -697,8 +694,7 @@ Le barème devient immuable après la première utilisation.
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
+Paramétrage
 → Formules de calcul
 ```
 
@@ -734,8 +730,7 @@ Héritée de : Cycle Collège
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
+Bulletins
 → Modèles de bulletin
 ```
 
@@ -756,9 +751,8 @@ Notes & Bulletins
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
-→ Paramètres
+Paramétrage
+→ Paramètres pédagogiques
 ```
 
 #### Page de travail
@@ -829,9 +823,7 @@ Notes & Bulletins
 │   ├── Générations
 │   ├── Bulletins
 │   └── Validation, si autorisée
-└── Configuration
-    ├── Affectations, si autorisées
-    └── Formules, si autorisées
+└── Affectations pédagogiques, si autorisées
 ```
 
 ### Direction
@@ -846,7 +838,7 @@ Notes & Bulletins
 │   ├── Validation
 │   ├── Publication
 │   └── Historique
-└── Configuration autorisée
+└── Affectations pédagogiques, si autorisées
 ```
 
 ### Administrateur
@@ -854,14 +846,12 @@ Notes & Bulletins
 ```text
 Notes & Bulletins
 ├── Vue d’ensemble technique
-├── Configuration
-│   ├── Affectations pédagogiques
-│   ├── Types de note
-│   ├── Formules
-│   ├── Modèles de bulletin
-│   └── Paramètres
+├── Affectations pédagogiques
 └── Audit et historique
 ```
+
+L'administrateur accède aux types de note, formules et paramètres pédagogiques
+depuis le module Paramétrage, selon ses permissions.
 
 L’administrateur ne reçoit pas automatiquement le droit de modifier les résultats pédagogiques.
 
