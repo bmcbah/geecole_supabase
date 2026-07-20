@@ -1,5 +1,8 @@
 -- Notes N1/N2: additive pedagogical foundation aligned with docs/modules/notes.
 create type public.note_result_status as enum ('absent', 'exempt', 'postponed');
+create type public.bulletin_generation_status as enum ('running', 'completed', 'partial', 'failed');
+create type public.bulletin_item_status as enum ('generated', 'warning', 'blocked');
+create type public.bulletin_status as enum ('generated', 'pending_validation', 'validated', 'published', 'rejected', 'replaced');
 
 alter table public.assessment_types
   alter column weight set default 1;
@@ -129,10 +132,66 @@ create table public.pedagogical_settings (
   primary key (institution_id, academic_year_id)
 );
 
+create table public.bulletin_generation_batches (
+  id uuid primary key default extensions.gen_random_uuid(),
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  academic_year_id uuid not null references public.academic_years(id) on delete restrict,
+  period_id uuid not null references public.academic_periods(id) on delete restrict,
+  scope_type text not null check (scope_type in ('school','cycle','level','class','student')),
+  scope_ids uuid[] not null default array[]::uuid[],
+  options jsonb not null default '{}'::jsonb,
+  status public.bulletin_generation_status not null default 'running',
+  total_count integer not null default 0,
+  generated_count integer not null default 0,
+  warning_count integer not null default 0,
+  blocked_count integer not null default 0,
+  initiated_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
+create table public.bulletin_versions (
+  id uuid primary key default extensions.gen_random_uuid(),
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  academic_year_id uuid not null references public.academic_years(id) on delete restrict,
+  period_id uuid not null references public.academic_periods(id) on delete restrict,
+  enrollment_id uuid not null references public.enrollments(id) on delete restrict,
+  student_id uuid not null references public.students(id) on delete restrict,
+  class_id uuid not null references public.school_classes(id) on delete restrict,
+  batch_id uuid not null references public.bulletin_generation_batches(id) on delete restrict,
+  version integer not null default 1 check (version > 0),
+  status public.bulletin_status not null default 'generated',
+  snapshot jsonb not null default '{}'::jsonb,
+  validation_comment text,
+  validated_by uuid references auth.users(id),
+  validated_at timestamptz,
+  published_by uuid references auth.users(id),
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (enrollment_id, period_id, version)
+);
+
+create table public.bulletin_generation_items (
+  id uuid primary key default extensions.gen_random_uuid(),
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  batch_id uuid not null references public.bulletin_generation_batches(id) on delete cascade,
+  enrollment_id uuid not null references public.enrollments(id) on delete restrict,
+  student_id uuid not null references public.students(id) on delete restrict,
+  class_id uuid references public.school_classes(id) on delete restrict,
+  status public.bulletin_item_status not null,
+  issue_code text,
+  message text,
+  bulletin_version_id uuid references public.bulletin_versions(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create index pedagogical_assignments_context_idx on public.pedagogical_assignments(academic_year_id, class_id, subject_id);
 create index gradebook_notes_course_idx on public.gradebook_notes(academic_year_id, period_id, class_id, subject_id);
 create index note_results_note_idx on public.note_results(note_id);
 create index notes_audit_entity_idx on public.notes_audit_log(entity_type, entity_id, created_at desc);
+create index bulletin_batches_year_idx on public.bulletin_generation_batches(academic_year_id, created_at desc);
+create index bulletin_versions_context_idx on public.bulletin_versions(academic_year_id, period_id, status);
+create index bulletin_items_batch_idx on public.bulletin_generation_items(batch_id, status);
 
 create or replace function public.prepare_gradebook_note()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -237,6 +296,15 @@ begin
 end;
 $$;
 
+create or replace function public.protect_published_bulletin()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if old.status = 'published' then raise exception 'published_bulletin_is_immutable'; end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
 create trigger assessment_types_rules before insert or update on public.assessment_types
 for each row execute function public.enforce_assessment_type_rules();
 create trigger gradebook_notes_prepare before insert or update on public.gradebook_notes
@@ -256,11 +324,12 @@ create trigger audit_pedagogical_assignments after insert or update or delete on
 create trigger audit_gradebook_notes after insert or update or delete on public.gradebook_notes for each row execute function public.audit_notes_change();
 create trigger audit_note_results after insert or update or delete on public.note_results for each row execute function public.audit_notes_change();
 create trigger audit_subject_appreciations after insert or update or delete on public.subject_appreciations for each row execute function public.audit_notes_change();
+create trigger bulletin_versions_protect before update or delete on public.bulletin_versions for each row execute function public.protect_published_bulletin();
 
 do $$
 declare table_name text;
 begin
-  foreach table_name in array array['pedagogical_assignments','pedagogical_assignment_periods','gradebook_notes','note_results','subject_appreciations','notes_audit_log','pedagogical_settings'] loop
+  foreach table_name in array array['pedagogical_assignments','pedagogical_assignment_periods','gradebook_notes','note_results','subject_appreciations','notes_audit_log','pedagogical_settings','bulletin_generation_batches','bulletin_versions','bulletin_generation_items'] loop
     execute format('alter table public.%I enable row level security', table_name);
   end loop;
 end $$;
@@ -294,10 +363,18 @@ create policy pedagogical_settings_read on public.pedagogical_settings for selec
 create policy pedagogical_settings_manage on public.pedagogical_settings for all to authenticated
 using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]))
 with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
+create policy bulletin_batches_read on public.bulletin_generation_batches for select to authenticated using (public.is_active_member(institution_id));
+create policy bulletin_batches_manage on public.bulletin_generation_batches for all to authenticated using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[])) with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
+create policy bulletin_versions_read on public.bulletin_versions for select to authenticated using (public.is_active_member(institution_id));
+create policy bulletin_versions_manage on public.bulletin_versions for all to authenticated using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[])) with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
+create policy bulletin_items_read on public.bulletin_generation_items for select to authenticated using (public.is_active_member(institution_id));
+create policy bulletin_items_manage on public.bulletin_generation_items for all to authenticated using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[])) with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
 
 grant select, insert, update, delete on public.pedagogical_assignments, public.pedagogical_assignment_periods,
   public.gradebook_notes, public.note_results, public.subject_appreciations to authenticated;
 grant select, insert, update, delete on public.pedagogical_settings to authenticated;
+grant select, insert, update, delete on public.bulletin_generation_batches, public.bulletin_versions, public.bulletin_generation_items to authenticated;
 grant select on public.notes_audit_log to authenticated;
 revoke all on public.pedagogical_assignments, public.pedagogical_assignment_periods,
-  public.gradebook_notes, public.note_results, public.subject_appreciations, public.notes_audit_log, public.pedagogical_settings from anon;
+  public.gradebook_notes, public.note_results, public.subject_appreciations, public.notes_audit_log, public.pedagogical_settings,
+  public.bulletin_generation_batches, public.bulletin_versions, public.bulletin_generation_items from anon;

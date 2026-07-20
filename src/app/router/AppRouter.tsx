@@ -44,6 +44,15 @@ const NotesWorkspacePage = lazy(() =>
 const PedagogicalAssignmentsPage = lazy(() =>
   import("../../modules/notes/pages/PedagogicalAssignmentsPage").then((module) => ({ default: module.PedagogicalAssignmentsPage })),
 );
+const NotesOperationsPage = lazy(() =>
+  import("../../modules/notes/pages/NotesOperationsPage").then((module) => ({ default: module.NotesOperationsPage })),
+);
+const BulletinGenerationsPage = lazy(() =>
+  import("../../modules/notes/pages/BulletinGenerationsPage").then((module) => ({ default: module.BulletinGenerationsPage })),
+);
+const BulletinsListPage = lazy(() =>
+  import("../../modules/notes/pages/BulletinsListPage").then((module) => ({ default: module.BulletinsListPage })),
+);
 
 export function AppRouter() {
   return (
@@ -65,7 +74,16 @@ export function AppRouter() {
             <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
             <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
             <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
-            <Route path="/notes-bulletins/:section?" element={<NotesWorkspacePage />} />
+            <Route path="/notes-bulletins" element={<Navigate to="/notes-bulletins/cahiers" replace />} />
+            <Route path="/notes-bulletins/cahiers" element={<NotesWorkspacePage />} />
+            <Route path="/notes-bulletins/resultats-reportes" element={<NotesOperationsPage />} />
+            <Route path="/notes-bulletins/appreciations" element={<NotesOperationsPage />} />
+            <Route path="/notes-bulletins/controle-moyennes" element={<NotesOperationsPage />} />
+            <Route path="/notes-bulletins/generations" element={<BulletinGenerationsPage />} />
+            <Route path="/notes-bulletins/bulletins" element={<BulletinsListPage />} />
+            <Route path="/notes-bulletins/validation" element={<BulletinsListPage />} />
+            <Route path="/notes-bulletins/publication" element={<BulletinsListPage />} />
+            <Route path="/notes-bulletins/historique" element={<BulletinsListPage />} />
             <Route path="/notes-bulletins/configuration/affectations" element={<PedagogicalAssignmentsPage />} />
           </Route>
         </Route>

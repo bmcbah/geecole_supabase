@@ -7,7 +7,6 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { Tag } from "primereact/tag";
-import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
@@ -21,13 +20,8 @@ type Period = Database["public"]["Tables"]["academic_periods"]["Row"];
 type GradebookNote = Database["public"]["Tables"]["gradebook_notes"]["Row"];
 type NoteResult = Database["public"]["Tables"]["note_results"]["Row"];
 type NoteType = Database["public"]["Tables"]["assessment_types"]["Row"];
-type WorkspaceSection = "overview" | "gradebooks" | "tracking" | "bulletins";
-
 export function NotesWorkspacePage() {
-  const { section: routeSection } = useParams();
-  const navigate = useNavigate();
   const { institutionId, yearId, year } = useAcademicSession();
-  const section: WorkspaceSection = routeSection === "cahiers" ? "gradebooks" : routeSection === "suivi" ? "tracking" : routeSection === "bulletins" ? "bulletins" : "overview";
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<CourseSummary>();
@@ -96,12 +90,9 @@ export function NotesWorkspacePage() {
   if (loading) return <div className="grid min-h-[50vh] place-items-center"><ProgressSpinner aria-label="Chargement du module Notes" /></div>;
 
   return <div className="space-y-4 pb-8">
-    <PageHeader title="Notes & Bulletins" description={`Cahiers, suivi pédagogique et bulletins · ${year.name}`} meta={<Tag value={periods.find((period) => period.id === periodId)?.name ?? "Aucune période"} severity="info" />} />
+    <PageHeader eyebrow="Notes & Bulletins" title="Cahiers de notes" description={`Saisissez et publiez les résultats par cours · ${year.name}`} meta={<Tag value={periods.find((period) => period.id === periodId)?.name ?? "Aucune période"} severity="info" />} />
     {error ? <Message severity="error" text={error} /> : null}
-    {section === "overview" ? <Overview courses={courses} notes={notes} completion={completion} postponed={postponed} onOpen={(course) => { setSelectedCourse(course); void navigate("/notes-bulletins/cahiers"); }} /> : null}
-    {section === "gradebooks" ? <Gradebook courses={courses} selectedCourse={selectedCourse} onCourse={setSelectedCourse} period={periods.find((item) => item.id === periodId)} students={students} notes={notes} results={results} resultFor={resultFor} completion={completion} postponed={postponed} onAdd={() => setNoteDialog(true)} onResult={(noteId, studentId, value) => { void updateResult(noteId, studentId, value); }} onReload={loadGradebook} institutionId={institutionId} /> : null}
-    {section === "tracking" ? <Tracking courses={courses} notes={notes} completion={completion} postponed={postponed} /> : null}
-    {section === "bulletins" ? <BulletinsBlocked reason="Le moteur de formules et le modèle officiel de bulletin restent à finaliser dans le backlog du référentiel." /> : null}
+    <Gradebook courses={courses} selectedCourse={selectedCourse} onCourse={setSelectedCourse} period={periods.find((item) => item.id === periodId)} students={students} notes={notes} results={results} resultFor={resultFor} completion={completion} postponed={postponed} onAdd={() => setNoteDialog(true)} onResult={(noteId, studentId, value) => { void updateResult(noteId, studentId, value); }} onReload={loadGradebook} institutionId={institutionId} />
 
     <Dialog header="Ajouter une note" visible={noteDialog} modal className="w-[min(94vw,34rem)]" onHide={() => setNoteDialog(false)}>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -113,11 +104,6 @@ export function NotesWorkspacePage() {
       <div className="mt-5 flex justify-end gap-2"><Button label="Annuler" severity="secondary" outlined onClick={() => setNoteDialog(false)} /><Button label="Créer la note" icon="pi pi-plus" disabled={!draft.label.trim() || !draft.code.trim() || !draft.noteTypeId} onClick={() => void handleCreateNote()} /></div>
     </Dialog>
   </div>;
-}
-
-function Overview({ courses, notes, completion, postponed, onOpen }: { courses: CourseSummary[]; notes: GradebookNote[]; completion: number; postponed: number; onOpen: (course: CourseSummary) => void }) {
-  const metrics = [["Cours actifs", courses.length, "pi-book"], ["Notes créées", notes.length, "pi-pencil"], ["Saisie complétée", `${completion} %`, "pi-chart-line"], ["Résultats reportés", postponed, "pi-clock"]] as const;
-  return <><section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value, icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><MetricIcon icon={icon} /></div><strong className="mt-3 block text-2xl text-slate-950">{value}</strong></article>)}</section><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="m-0 text-base font-semibold text-slate-950">Mes cours</h2><div className="mt-4 grid gap-3 lg:grid-cols-2">{courses.length ? courses.map((course) => <button type="button" key={course.assignmentId} onClick={() => onOpen(course)} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50"><strong className="block text-slate-950">{course.subjectName} · {course.className}</strong><span className="mt-1 block text-sm text-slate-500">{course.teacherName} · Coefficient {course.coefficient}</span></button>) : <Empty title="Aucun cours disponible" detail="Configurez d’abord les affectations pédagogiques." />}</div></section></>;
 }
 
 function Gradebook(props: { courses: CourseSummary[]; selectedCourse?: CourseSummary; onCourse: (course: CourseSummary) => void; period?: Period; students: GradebookStudent[]; notes: GradebookNote[]; results: NoteResult[]; resultFor: (noteId: string, studentId: string) => NoteResult | undefined; completion: number; postponed: number; onAdd: () => void; onResult: (noteId: string, studentId: string, value: string) => void; onReload: () => Promise<void>; institutionId: string }) {
@@ -145,7 +131,4 @@ function Gradebook(props: { courses: CourseSummary[]; selectedCourse?: CourseSum
   </section>;
 }
 
-function Tracking({ courses, notes, completion, postponed }: { courses: CourseSummary[]; notes: GradebookNote[]; completion: number; postponed: number }) { return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="m-0 text-base font-semibold">Suivi de saisie</h2><p className="mt-1 text-sm text-slate-500">Progression du périmètre actuellement sélectionné.</p><div className="mt-5 grid gap-3 md:grid-cols-3"><TrackingCard label="Cours configurés" value={String(courses.length)} /><TrackingCard label="Taux de saisie" value={`${completion} %`} /><TrackingCard label="Blocages reportés" value={String(postponed)} danger={postponed > 0} /></div><div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex justify-between text-sm"><span>Complétude globale</span><strong>{completion}%</strong></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-emerald-500" style={{ width: `${completion}%` }} /></div><p className="mb-0 mt-3 text-xs text-slate-500">{notes.length} note(s) chargée(s). Les résultats reportés empêchent les calculs dépendants.</p></div></section>; }
-function TrackingCard({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) { return <div className={`rounded-xl border p-4 ${danger ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50/60"}`}><span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><strong className="mt-2 block text-2xl text-slate-950">{value}</strong></div>; }
-function BulletinsBlocked({ reason }: { reason: string }) { return <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm"><MetricIcon icon="pi-file-pdf" size="md" tone="slate" className="mx-auto" /><h2 className="mt-4 text-lg font-semibold text-slate-950">Bulletins — fondations prêtes</h2><p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">{reason}</p><Message className="mx-auto mt-5 max-w-2xl text-left" severity="info" text="La génération restera désactivée tant que ces règles ne seront pas validées, afin de ne pas produire de document scolaire incorrect." /></section>; }
 function Empty({ title, detail }: { title: string; detail: string }) { return <div className="grid min-h-48 place-items-center p-6 text-center"><div><MetricIcon icon="pi-inbox" size="md" tone="slate" className="mx-auto" /><h3 className="mt-3 text-sm font-semibold text-slate-900">{title}</h3><p className="mt-1 text-sm text-slate-500">{detail}</p></div></div>; }

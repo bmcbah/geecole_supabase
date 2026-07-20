@@ -20,10 +20,15 @@ Les fonctionnalités métier sont :
 
 ```text
 Notes & Bulletins
-├── Vue d’ensemble
 ├── Cahiers de notes
-├── Suivi pédagogique
+├── Résultats reportés
+├── Appréciations
+├── Contrôle des moyennes
+├── Générations
 ├── Bulletins
+├── Validation
+├── Publication
+├── Historique
 └── Affectations pédagogiques
 ```
 
@@ -38,27 +43,15 @@ Le TreeView sert à sélectionner le contexte. Il ne remplace pas la page de tra
 ```text
 Notes & Bulletins
 │
-├── Vue d’ensemble
-│
 ├── Cahiers de notes
-│   ├── Mes cours
-│   ├── Tous les cahiers
-│   ├── Notes par élève
-│   └── Résultats reportés
-│
-├── Suivi pédagogique
-│   ├── Suivi de saisie
-│   ├── Contrôle des moyennes
-│   ├── Appréciations
-│   └── Anomalies et blocages
-│
+├── Résultats reportés
+├── Appréciations
+├── Contrôle des moyennes
+├── Générations
 ├── Bulletins
-│   ├── Générations
-│   ├── Bulletins
-│   ├── Validation
-│   ├── Publication
-│   └── Historique
-│
+├── Validation
+├── Publication
+├── Historique
 └── Affectations pédagogiques
 ```
 
@@ -68,32 +61,12 @@ bulletins restent dans le module Bulletins.
 
 ---
 
-## 3. Vue d’ensemble
+## 3. Pages de travail
 
-### Navigation
-
-```text
-Notes & Bulletins
-→ Vue d’ensemble
-```
-
-### Page de travail enseignant
-
-- cours affectés ;
-- notes à compléter ;
-- résultats reportés ;
-- appréciations manquantes ;
-- période en cours ;
-- échéance de clôture.
-
-### Page de travail supervision
-
-- progression globale ;
-- classes prêtes ;
-- classes bloquées ;
-- enseignants en retard ;
-- bulletins à valider ;
-- générations récentes.
+Les pages génériques « Vue d’ensemble » et « Suivi pédagogique » sont retirées.
+Chaque entrée ouvre une page de travail normalisée : PageHeader, actions contextuelles,
+barre d’outils et DataTable. La génération est un workflow par lots avec portée,
+contrôles, blocages, validation, publication et historique des versions.
 
 ---
 

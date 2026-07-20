@@ -970,6 +970,24 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["pedagogical_settings"]["Insert"]>;
         Relationships: [];
       };
+      bulletin_generation_batches: {
+        Row: { id: string; institution_id: string; academic_year_id: string; period_id: string; scope_type: string; scope_ids: string[]; options: Json; status: "running" | "completed" | "partial" | "failed"; total_count: number; generated_count: number; warning_count: number; blocked_count: number; initiated_by: string | null; created_at: string; completed_at: string | null };
+        Insert: { id?: string; institution_id: string; academic_year_id: string; period_id: string; scope_type: string; scope_ids?: string[]; options?: Json; status?: "running" | "completed" | "partial" | "failed"; total_count?: number; generated_count?: number; warning_count?: number; blocked_count?: number; initiated_by?: string | null; completed_at?: string | null };
+        Update: Partial<Database["public"]["Tables"]["bulletin_generation_batches"]["Insert"]>;
+        Relationships: [];
+      };
+      bulletin_versions: {
+        Row: { id: string; institution_id: string; academic_year_id: string; period_id: string; enrollment_id: string; student_id: string; class_id: string; batch_id: string; version: number; status: "generated" | "pending_validation" | "validated" | "rejected" | "published" | "replaced"; snapshot: Json; validation_comment: string | null; validated_by: string | null; validated_at: string | null; published_by: string | null; published_at: string | null; created_at: string };
+        Insert: { id?: string; institution_id: string; academic_year_id: string; period_id: string; enrollment_id: string; student_id: string; class_id: string; batch_id: string; version?: number; status?: "generated" | "pending_validation" | "validated" | "rejected" | "published" | "replaced"; snapshot?: Json; validation_comment?: string | null; validated_by?: string | null; validated_at?: string | null; published_by?: string | null; published_at?: string | null };
+        Update: Partial<Database["public"]["Tables"]["bulletin_versions"]["Insert"]>;
+        Relationships: [];
+      };
+      bulletin_generation_items: {
+        Row: { id: string; institution_id: string; batch_id: string; enrollment_id: string; student_id: string; class_id: string | null; status: "generated" | "warning" | "blocked"; issue_code: string | null; message: string | null; bulletin_version_id: string | null; created_at: string };
+        Insert: { id?: string; institution_id: string; batch_id: string; enrollment_id: string; student_id: string; class_id?: string | null; status: "generated" | "warning" | "blocked"; issue_code?: string | null; message?: string | null; bulletin_version_id?: string | null };
+        Update: Partial<Database["public"]["Tables"]["bulletin_generation_items"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
