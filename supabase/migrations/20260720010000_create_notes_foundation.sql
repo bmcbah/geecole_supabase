@@ -193,6 +193,25 @@ create index bulletin_batches_year_idx on public.bulletin_generation_batches(aca
 create index bulletin_versions_context_idx on public.bulletin_versions(academic_year_id, period_id, status);
 create index bulletin_items_batch_idx on public.bulletin_generation_items(batch_id, status);
 
+create view public.notes_average_controls with (security_invoker = true) as
+select assignment.id, assignment.institution_id, assignment.academic_year_id,
+  assignment.class_id, class.name as class_name, subject.name as subject_name,
+  concat_ws(' ', teacher.first_name, teacher.last_name) as teacher_name,
+  assignment.coefficient, count(distinct note.id)::integer as notes_count,
+  count(result.id) filter (where result.status = 'postponed')::integer as postponed_count,
+  case when count(distinct note.id) = 0 then 'not_started'
+       when count(result.id) filter (where result.status = 'postponed') > 0 then 'incomplete'
+       else 'ready' end as state
+from public.pedagogical_assignments assignment
+join public.school_classes class on class.id = assignment.class_id
+join public.subjects subject on subject.id = assignment.subject_id
+join public.people teacher on teacher.id = assignment.teacher_id
+left join public.gradebook_notes note on note.academic_year_id = assignment.academic_year_id and note.class_id = assignment.class_id and note.subject_id = assignment.subject_id
+left join public.note_results result on result.note_id = note.id
+where assignment.is_active and assignment.subject_id is not null
+group by assignment.id, class.name, subject.name, teacher.first_name, teacher.last_name;
+grant select on public.notes_average_controls to authenticated;
+
 create or replace function public.prepare_gradebook_note()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare selected_type public.assessment_types;

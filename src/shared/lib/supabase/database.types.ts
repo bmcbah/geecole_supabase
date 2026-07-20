@@ -989,7 +989,12 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      notes_average_controls: {
+        Row: { id: string; institution_id: string; academic_year_id: string; class_id: string; class_name: string; subject_name: string; teacher_name: string; coefficient: number; notes_count: number; postponed_count: number; state: "ready" | "incomplete" | "not_started" };
+        Relationships: [];
+      };
+    };
     Functions: {
       change_enrollment_status: {
         Args: {
