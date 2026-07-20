@@ -928,6 +928,42 @@ export interface Database {
         >;
         Relationships: [];
       };
+      pedagogical_assignments: {
+        Row: { id: string; institution_id: string; academic_year_id: string; class_id: string; subject_id: string | null; teacher_id: string; role: string; coefficient: number; all_periods: boolean; is_active: boolean; created_by: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; academic_year_id: string; class_id: string; subject_id?: string | null; teacher_id: string; role?: string; coefficient?: number; all_periods?: boolean; is_active?: boolean };
+        Update: Partial<Database["public"]["Tables"]["pedagogical_assignments"]["Insert"]>;
+        Relationships: [];
+      };
+      pedagogical_assignment_periods: {
+        Row: { assignment_id: string; period_id: string };
+        Insert: { assignment_id: string; period_id: string };
+        Update: Partial<Database["public"]["Tables"]["pedagogical_assignment_periods"]["Insert"]>;
+        Relationships: [];
+      };
+      gradebook_notes: {
+        Row: { id: string; institution_id: string; academic_year_id: string; class_id: string; subject_id: string; period_id: string; note_type_id: string; teacher_id: string; label: string; code: string; note_date: string; scale_snapshot: number; internal_comment: string | null; is_locked: boolean; is_published: boolean; created_by: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; academic_year_id: string; class_id: string; subject_id: string; period_id: string; note_type_id: string; teacher_id: string; label: string; code: string; note_date?: string; scale_snapshot?: number; internal_comment?: string | null; is_locked?: boolean; is_published?: boolean };
+        Update: Partial<Database["public"]["Tables"]["gradebook_notes"]["Insert"]>;
+        Relationships: [];
+      };
+      note_results: {
+        Row: { id: string; institution_id: string; note_id: string; student_id: string; value: number | null; status: "absent" | "exempt" | "postponed" | null; comment: string | null; is_makeup: boolean; created_by: string | null; updated_by: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; note_id: string; student_id: string; value?: number | null; status?: "absent" | "exempt" | "postponed" | null; comment?: string | null; is_makeup?: boolean };
+        Update: Partial<Database["public"]["Tables"]["note_results"]["Insert"]>;
+        Relationships: [];
+      };
+      subject_appreciations: {
+        Row: { id: string; institution_id: string; academic_year_id: string; period_id: string; class_id: string; subject_id: string; student_id: string; appreciation: string; author_id: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; institution_id: string; academic_year_id: string; period_id: string; class_id: string; subject_id: string; student_id: string; appreciation: string; author_id?: string | null };
+        Update: Partial<Database["public"]["Tables"]["subject_appreciations"]["Insert"]>;
+        Relationships: [];
+      };
+      notes_audit_log: {
+        Row: { id: number; institution_id: string; academic_year_id: string | null; entity_type: string; entity_id: string; action: string; before_data: Json | null; after_data: Json | null; actor_id: string | null; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

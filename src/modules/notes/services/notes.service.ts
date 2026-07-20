@@ -1,0 +1,104 @@
+import { supabase } from "../../../shared/lib/supabase/client";
+import type { CourseSummary, GradebookStudent, NoteResultStatus } from "../domain/notes";
+
+export async function listCourseSummaries(institutionId: string, yearId: string): Promise<CourseSummary[]> {
+  const [assignments, classes, subjects, people] = await Promise.all([
+    supabase.from("pedagogical_assignments").select("*").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true),
+    supabase.from("school_classes").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId),
+    supabase.from("subjects").select("id,name").eq("institution_id", institutionId),
+    supabase.from("people").select("id,first_name,last_name").eq("institution_id", institutionId),
+  ]);
+  for (const result of [assignments, classes, subjects, people]) if (result.error) throw result.error;
+  return (assignments.data ?? []).filter((item) => item.subject_id).map((item) => ({
+    assignmentId: item.id,
+    classId: item.class_id,
+    className: classes.data?.find((entry) => entry.id === item.class_id)?.name ?? "Classe",
+    subjectId: item.subject_id as string,
+    subjectName: subjects.data?.find((entry) => entry.id === item.subject_id)?.name ?? "Matière",
+    teacherId: item.teacher_id,
+    teacherName: (() => { const person = people.data?.find((entry) => entry.id === item.teacher_id); return person ? `${person.first_name} ${person.last_name}` : "Enseignant non renseigné"; })(),
+    coefficient: item.coefficient,
+  }));
+}
+
+export async function listClassStudents(classId: string): Promise<GradebookStudent[]> {
+  const assignments = await supabase.from("class_assignments").select("enrollment_id").eq("class_id", classId).is("ends_on", null);
+  if (assignments.error) throw assignments.error;
+  const enrollmentIds = assignments.data.map((item) => item.enrollment_id);
+  if (!enrollmentIds.length) return [];
+  const enrollments = await supabase.from("enrollments").select("student_id").in("id", enrollmentIds).eq("status", "confirmed");
+  if (enrollments.error) throw enrollments.error;
+  const studentIds = enrollments.data.map((item) => item.student_id);
+  if (!studentIds.length) return [];
+  const students = await supabase.from("students").select("id,matricule,first_name,last_name").in("id", studentIds).order("last_name");
+  if (students.error) throw students.error;
+  return students.data.map((student) => ({ studentId: student.id, matricule: student.matricule, name: `${student.first_name} ${student.last_name}` }));
+}
+
+export async function listCourseNotes(yearId: string, periodId: string, course: CourseSummary) {
+  const { data, error } = await supabase.from("gradebook_notes").select("*").eq("academic_year_id", yearId).eq("period_id", periodId).eq("class_id", course.classId).eq("subject_id", course.subjectId).order("note_date");
+  if (error) throw error;
+  return data;
+}
+
+export async function listNoteResults(noteIds: string[]) {
+  if (!noteIds.length) return [];
+  const { data, error } = await supabase.from("note_results").select("*").in("note_id", noteIds);
+  if (error) throw error;
+  return data;
+}
+
+export async function createGradebookNote(input: {
+  institutionId: string; yearId: string; periodId: string; course: CourseSummary;
+  noteTypeId: string; label: string; code: string; noteDate: string; comment?: string;
+}) {
+  const { data, error } = await supabase.from("gradebook_notes").insert({
+    institution_id: input.institutionId, academic_year_id: input.yearId, period_id: input.periodId,
+    class_id: input.course.classId, subject_id: input.course.subjectId, teacher_id: input.course.teacherId,
+    note_type_id: input.noteTypeId, label: input.label, code: input.code.toUpperCase(), note_date: input.noteDate,
+    internal_comment: input.comment || null,
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function saveNoteResult(input: { institutionId: string; noteId: string; studentId: string; value?: number | null; status?: NoteResultStatus | null }) {
+  const { error } = await supabase.from("note_results").upsert({
+    institution_id: input.institutionId, note_id: input.noteId, student_id: input.studentId,
+    value: input.value ?? null, status: input.status ?? null,
+  }, { onConflict: "note_id,student_id,is_makeup" });
+  if (error) throw error;
+}
+
+export async function listActiveNoteTypes(institutionId: string, yearId: string) {
+  const { data, error } = await supabase.from("assessment_types").select("*").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true).order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function listAssignmentOptions(institutionId: string, yearId: string) {
+  const [classes, subjects, people, roles, periods] = await Promise.all([
+    supabase.from("school_classes").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true).order("name"),
+    supabase.from("subjects").select("id,name").eq("institution_id", institutionId).eq("is_active", true).order("name"),
+    supabase.from("people").select("id,first_name,last_name").eq("institution_id", institutionId).eq("status", "active").order("last_name"),
+    supabase.from("person_roles").select("person_id").eq("institution_id", institutionId).eq("role", "teacher"),
+    supabase.from("academic_periods").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId).order("sequence"),
+  ]);
+  for (const result of [classes, subjects, people, roles, periods]) if (result.error) throw result.error;
+  const teacherIds = new Set(roles.data?.map((role) => role.person_id));
+  return { classes: classes.data ?? [], subjects: subjects.data ?? [], teachers: (people.data ?? []).filter((person) => teacherIds.has(person.id)), periods: periods.data ?? [] };
+}
+
+export async function createPedagogicalAssignment(input: { institutionId: string; yearId: string; classId: string; subjectId: string; teacherId: string; coefficient: number; periodIds: string[] }) {
+  const { data, error } = await supabase.from("pedagogical_assignments").insert({
+    institution_id: input.institutionId, academic_year_id: input.yearId, class_id: input.classId,
+    subject_id: input.subjectId, teacher_id: input.teacherId, coefficient: input.coefficient,
+    all_periods: input.periodIds.length === 0,
+  }).select().single();
+  if (error) throw error;
+  if (input.periodIds.length) {
+    const scope = await supabase.from("pedagogical_assignment_periods").insert(input.periodIds.map((periodId) => ({ assignment_id: data.id, period_id: periodId })));
+    if (scope.error) throw scope.error;
+  }
+  return data;
+}

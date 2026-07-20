@@ -36,6 +36,22 @@ export const navigation: NavigationGroup[] = [
     ],
   },
   {
+    label: "Notes & Bulletins",
+    icon: "pi-chart-bar",
+    match: "/notes-bulletins",
+    items: [
+      { type: "link", label: "Vue d’ensemble", icon: "pi-chart-pie", to: "/notes-bulletins/vue-ensemble" },
+      { type: "link", label: "Cahiers de notes", icon: "pi-book", to: "/notes-bulletins/cahiers" },
+      { type: "link", label: "Suivi pédagogique", icon: "pi-chart-line", to: "/notes-bulletins/suivi" },
+      { type: "link", label: "Bulletins", icon: "pi-file-pdf", to: "/notes-bulletins/bulletins" },
+      { type: "divider" },
+      { type: "title", label: "Configuration" },
+      { type: "link", label: "Affectations pédagogiques", icon: "pi-users", to: "/notes-bulletins/configuration/affectations" },
+      { type: "link", label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
+      { type: "link", label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
+    ],
+  },
+  {
     label: "Gestion financière",
     icon: "pi-wallet",
     match: "/gestion-financiere",

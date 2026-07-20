@@ -38,6 +38,12 @@ const FinancialAccountDetailPage = lazy(() =>
 const FinancialPaymentsPage = lazy(() =>
   import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })),
 );
+const NotesWorkspacePage = lazy(() =>
+  import("../../modules/notes/pages/NotesWorkspacePage").then((module) => ({ default: module.NotesWorkspacePage })),
+);
+const PedagogicalAssignmentsPage = lazy(() =>
+  import("../../modules/notes/pages/PedagogicalAssignmentsPage").then((module) => ({ default: module.PedagogicalAssignmentsPage })),
+);
 
 export function AppRouter() {
   return (
@@ -59,6 +65,8 @@ export function AppRouter() {
             <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
             <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
             <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
+            <Route path="/notes-bulletins/:section?" element={<NotesWorkspacePage />} />
+            <Route path="/notes-bulletins/configuration/affectations" element={<PedagogicalAssignmentsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

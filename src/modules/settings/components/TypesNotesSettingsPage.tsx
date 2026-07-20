@@ -33,7 +33,6 @@ type DialogState =
 const assessmentFields: EntityField[] = [
   { key: "name", label: "Nom", required: true },
   { key: "code", label: "Code", required: true },
-  { key: "weight", label: "Poids", type: "number", required: true },
   { key: "scale", label: "Barème", type: "number", required: true },
   { key: "is_active", label: "Type actif", type: "boolean" },
 ];
@@ -74,16 +73,23 @@ export function EvaluationSettingsPage() {
   }, [load]);
 
   const initial = useMemo<Record<string, EntityValue>>(
-    () =>
-       {
-            name: dialog.item?.name ?? "",
-            code: dialog.item?.code ?? "",
-            expression:
-              dialog.item?.expression ??
-              "(moyenne_notes * poids) / somme_poids",
-            description: dialog.item?.description ?? "",
-            is_default: dialog.item?.is_default ?? false,
-          },
+    () => {
+      if (!dialog) return {};
+      if (dialog.kind === "assessment") return {
+        name: dialog.item?.name ?? "",
+        code: dialog.item?.code ?? "",
+        scale: dialog.item?.scale ?? 20,
+        is_active: dialog.item?.is_active ?? true,
+      };
+      return {
+        name: dialog.item?.name ?? "",
+        code: dialog.item?.code ?? "",
+        expression: dialog.item?.expression ?? "MOYENNE(DEVOIR)",
+        description: dialog.item?.description ?? "",
+        is_default: dialog.item?.is_default ?? false,
+      };
+    },
+    [dialog],
   );
 
   const submit = async (values: Record<string, EntityValue>) => {
@@ -97,7 +103,7 @@ export function EvaluationSettingsPage() {
           {
             name: String(values.name),
             code: String(values.code).toUpperCase(),
-            weight: Number(values.weight),
+            weight: 1,
             scale: Number(values.scale),
             is_active: Boolean(values.is_active),
           },
@@ -162,7 +168,7 @@ export function EvaluationSettingsPage() {
     <section className="space-y-6">
       <TablePanel
         title="Types de notes"
-        description="Définissez les catégories de notes, leur poids et leur barème."
+        description="Définissez les catégories de notes et leur barème. Le poids est porté exclusivement par les formules."
         meta={
           <Tag
             value={`${assessments.length} type${assessments.length > 1 ? "s" : ""}`}
@@ -191,7 +197,7 @@ export function EvaluationSettingsPage() {
         <DataTable
           value={assessments}
           globalFilter={assessmentSearch}
-          globalFilterFields={["name", "code", "weight", "scale", "is_active"]}
+          globalFilterFields={["name", "code", "scale", "is_active"]}
           dataKey="id"
           emptyMessage="Aucun type de note"
           stripedRows
@@ -200,7 +206,6 @@ export function EvaluationSettingsPage() {
         >
           <Column field="name" header="Type" />
           <Column field="code" header="Code" />
-          <Column field="weight" header="Poids" />
           <Column field="scale" header="Barème" />
           <Column
             header="Statut"
