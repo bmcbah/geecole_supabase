@@ -1,6 +1,25 @@
 -- Notes & Bulletins: representative local data (ready, absent, exempt and blocked cases).
 begin;
 
+-- Keep the same authorization path as the application so fixture data also
+-- validates teacher assignments and note-result permissions.
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+
+-- Academic periods are normally generated from Settings. They are explicit
+-- here so the Notes fixtures remain deterministic after a clean db reset.
+insert into public.academic_periods (
+  id, institution_id, academic_year_id, cycle_id, name, code, sequence,
+  starts_on, ends_on, status
+) values
+  ('46000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000001','1er trimestre','P1',1,'2025-09-15','2025-12-20','closed'),
+  ('46000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000001','2e trimestre','P2',2,'2026-01-05','2026-03-31','closed'),
+  ('46000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000001','3e trimestre','P3',3,'2026-04-01','2026-06-30','open'),
+  ('46000000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000002','1er trimestre','P1',1,'2025-09-15','2025-12-20','closed'),
+  ('46000000-0000-0000-0000-000000000005','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000002','2e trimestre','P2',2,'2026-01-05','2026-03-31','closed'),
+  ('46000000-0000-0000-0000-000000000006','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000002','3e trimestre','P3',3,'2026-04-01','2026-06-30','open')
+on conflict (academic_year_id, cycle_id, sequence) do nothing;
+
 insert into public.people (id,institution_id,first_name,last_name,email,phone) values
  ('41000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Moussa','Condé','moussa.conde@geecole.local','+224 620 20 20 01'),
  ('41000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','Nènè','Sylla','nene.sylla@geecole.local','+224 620 20 20 02');
