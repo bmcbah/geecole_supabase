@@ -3,6 +3,8 @@ import type { Json } from "../../../shared/lib/supabase/database.types";
 
 export type BulletinBatchRow = { id: string; periodName: string; scope: string; status: string; total: number; generated: number; blocked: number; createdAt: string };
 export type BulletinRow = { id: string; studentName: string; matricule: string; className: string; periodName: string; version: number; status: "generated" | "pending_validation" | "validated" | "published" | "rejected" | "replaced"; createdAt: string; snapshot: Json };
+export type ServerPage<T> = { rows: T[]; total: number };
+export type BulletinListFilters = { first: number; rows: number; search?: string; status?: string; statuses?: BulletinRow["status"][]; classId?: string; periodId?: string; dateFrom?: string; dateTo?: string; sortField?: string; sortOrder?: 1 | -1 | 0 };
 
 export async function listGenerationContext(institutionId: string, yearId: string) {
   const [periods, classes] = await Promise.all([
@@ -12,12 +14,21 @@ export async function listGenerationContext(institutionId: string, yearId: strin
   return { periods: periods.data ?? [], classes: classes.data ?? [] };
 }
 
-export async function listBatches(institutionId: string, yearId: string): Promise<BulletinBatchRow[]> {
+export async function listBatches(institutionId: string, yearId: string, filters: BulletinListFilters = { first: 0, rows: 10 }): Promise<ServerPage<BulletinBatchRow>> {
+  let searchedPeriodIds: string[] | undefined;
+  if (filters.search?.trim()) { const { data, error } = await supabase.from("academic_periods").select("id").eq("institution_id", institutionId).eq("academic_year_id", yearId).ilike("name", `%${filters.search.trim()}%`); if (error) throw error; searchedPeriodIds = (data ?? []).map((item) => item.id); if (!searchedPeriodIds.length) return { rows: [], total: 0 }; }
+  let query = supabase.from("bulletin_generation_batches").select("*", { count: "exact" }).eq("institution_id", institutionId).eq("academic_year_id", yearId);
+  if (searchedPeriodIds) query = query.in("period_id", searchedPeriodIds);
+  if (filters.status) query = query.eq("status", filters.status as "running" | "completed" | "partial" | "failed");
+  if (filters.periodId) query = query.eq("period_id", filters.periodId);
+  if (filters.dateFrom) query = query.gte("created_at", `${filters.dateFrom}T00:00:00`);
+  if (filters.dateTo) query = query.lte("created_at", `${filters.dateTo}T23:59:59`);
+  query = query.order(filters.sortField === "total" ? "total_count" : "created_at", { ascending: filters.sortOrder === 1 }).range(filters.first, filters.first + filters.rows - 1);
   const [batches, periods] = await Promise.all([
-    supabase.from("bulletin_generation_batches").select("*").eq("institution_id", institutionId).eq("academic_year_id", yearId).order("created_at", { ascending: false }),
+    query,
     supabase.from("academic_periods").select("id,name").eq("institution_id", institutionId).eq("academic_year_id", yearId),
   ]); if (batches.error) throw batches.error; if (periods.error) throw periods.error;
-  return (batches.data ?? []).map((row) => ({ id: row.id, periodName: periods.data?.find((p) => p.id === row.period_id)?.name ?? "—", scope: row.scope_type === "class" ? "Classe" : "Établissement", status: row.status, total: row.total_count, generated: row.generated_count, blocked: row.blocked_count, createdAt: row.created_at }));
+  return { rows: (batches.data ?? []).map((row) => ({ id: row.id, periodName: periods.data?.find((p) => p.id === row.period_id)?.name ?? "—", scope: row.scope_type === "class" ? "Classe" : "Établissement", status: row.status, total: row.total_count, generated: row.generated_count, blocked: row.blocked_count, createdAt: row.created_at })), total: batches.count ?? 0 };
 }
 
 export async function generateBulletins(input: { institutionId: string; yearId: string; periodId: string; classId?: string }) {
@@ -43,12 +54,17 @@ export async function generateBulletins(input: { institutionId: string; yearId: 
   return { generated, blocked };
 }
 
-export async function listBulletins(institutionId: string, yearId: string): Promise<BulletinRow[]> {
+export async function listBulletins(institutionId: string, yearId: string, filters: BulletinListFilters = { first: 0, rows: 10 }): Promise<ServerPage<BulletinRow>> {
+  let studentIds: string[] | undefined;
+  if (filters.search?.trim()) { const term = filters.search.trim(); const { data, error } = await supabase.from("students").select("id").eq("institution_id", institutionId).or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,matricule.ilike.%${term}%`); if (error) throw error; studentIds = (data ?? []).map((item) => item.id); if (!studentIds.length) return { rows: [], total: 0 }; }
+  let query = supabase.from("bulletin_versions").select("*", { count: "exact" }).eq("institution_id", institutionId).eq("academic_year_id", yearId);
+  if (studentIds) query = query.in("student_id", studentIds); if (filters.status) query = query.eq("status", filters.status as BulletinRow["status"]); if (filters.statuses?.length) query = query.in("status", filters.statuses); if (filters.classId) query = query.eq("class_id", filters.classId); if (filters.periodId) query = query.eq("period_id", filters.periodId); if (filters.dateFrom) query = query.gte("created_at", `${filters.dateFrom}T00:00:00`); if (filters.dateTo) query = query.lte("created_at", `${filters.dateTo}T23:59:59`);
+  const sortable: Record<string,string> = { version: "version", createdAt: "created_at", status: "status" }; query = query.order(sortable[filters.sortField ?? ""] ?? "created_at", { ascending: filters.sortOrder === 1 }).range(filters.first, filters.first + filters.rows - 1);
   const [versions, students, classes, periods] = await Promise.all([
-    supabase.from("bulletin_versions").select("*").eq("institution_id", institutionId).eq("academic_year_id", yearId).order("created_at", { ascending: false }),
+    query,
     supabase.from("students").select("id,first_name,last_name,matricule").eq("institution_id", institutionId), supabase.from("school_classes").select("id,name").eq("academic_year_id", yearId), supabase.from("academic_periods").select("id,name").eq("academic_year_id", yearId),
   ]); for (const result of [versions, students, classes, periods]) if (result.error) throw result.error;
-  return (versions.data ?? []).map((row) => { const student = students.data?.find((item) => item.id === row.student_id); return { id: row.id, studentName: student ? `${student.first_name} ${student.last_name}` : "Élève", matricule: student?.matricule ?? "—", className: classes.data?.find((item) => item.id === row.class_id)?.name ?? "—", periodName: periods.data?.find((item) => item.id === row.period_id)?.name ?? "—", version: row.version, status: row.status, createdAt: row.created_at, snapshot: row.snapshot }; });
+  return { rows: (versions.data ?? []).map((row) => { const student = students.data?.find((item) => item.id === row.student_id); return { id: row.id, studentName: student ? `${student.first_name} ${student.last_name}` : "Élève", matricule: student?.matricule ?? "—", className: classes.data?.find((item) => item.id === row.class_id)?.name ?? "—", periodName: periods.data?.find((item) => item.id === row.period_id)?.name ?? "—", version: row.version, status: row.status, createdAt: row.created_at, snapshot: row.snapshot }; }), total: versions.count ?? 0 };
 }
 
 export async function changeBulletinStatus(id: string, status: BulletinRow["status"], comment?: string) { const { data: auth } = await supabase.auth.getUser(); const now = new Date().toISOString(); const patch = status === "validated" ? { status, validation_comment: comment ?? null, validated_by: auth.user?.id, validated_at: now } : status === "published" ? { status, published_by: auth.user?.id, published_at: now } : { status, validation_comment: comment ?? null }; const { error } = await supabase.from("bulletin_versions").update(patch).eq("id", id); if (error) throw error; }
