@@ -42,7 +42,7 @@ export const navigation: NavigationGroup[] = [
     items: [
       { type: "title", label: "Notes" },
       { type: "link", label: "Cahiers de notes", icon: "pi-book", to: "/notes-bulletins/cahiers" },
-      { type: "link", label: "Résultats reportés", icon: "pi-clock", to: "/notes-bulletins/resultats-reportes" },
+      { type: "link", label: "Rattrapages à compléter", icon: "pi-clock", to: "/notes-bulletins/resultats-reportes" },
       { type: "link", label: "Appréciations", icon: "pi-comment", to: "/notes-bulletins/appreciations" },
       { type: "link", label: "Contrôle des moyennes", icon: "pi-calculator", to: "/notes-bulletins/controle-moyennes" },
       { type: "divider" },

@@ -996,6 +996,7 @@ export interface Database {
       };
     };
     Functions: {
+      change_academic_period_status: { Args: { target_period_id: string; target_status: string }; Returns: void };
       change_enrollment_status: {
         Args: {
           target_enrollment_id: string;

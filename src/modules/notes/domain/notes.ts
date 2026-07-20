@@ -11,6 +11,8 @@ export type CourseSummary = {
   classId: string;
   className: string;
   cycleId: string;
+  cycleName: string;
+  levelName: string;
   subjectId: string;
   subjectName: string;
   teacherId: string;

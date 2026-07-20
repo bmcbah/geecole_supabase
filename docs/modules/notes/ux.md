@@ -47,15 +47,17 @@ Une carte de cours affiche :
 - moyenne de classe ;
 - blocages.
 
-## Cahier de notes en TreeView
+## Cahier de notes en TreeView — page centrale
+
+Le cahier est la page principale de gestion de toutes les notes de l’école. Le
+parcours visible est : choisir un cours, saisir les résultats, compléter les
+appréciations, contrôler les moyennes puis générer les bulletins.
 
 Le cahier utilise un panneau latéral hiérarchique. Une grille globale de tous les cours serait illisible.
 
 ```text
-Année scolaire 2026–2027
-├── Période 1
-│   ├── Primaire
-│   │   └── CM1
+Période active
+├── CM1
 │   │       └── CM1-A
 │   │           ├── Mathématiques — E1
 │   │           └── Sport — E3
@@ -141,6 +143,23 @@ Actions :
 - modifier libellé ou date ;
 - publier les notes ;
 - consulter l’historique.
+
+Le libellé affiché dans l’interface est **Journal des modifications**. Il sert à
+retracer les créations, changements et publications ; ce n’est pas une page de
+navigation.
+
+La **saisie en masse** accepte le collage de deux colonnes depuis un tableur :
+matricule et résultat. Les valeurs Absent, Dispensé et Reporté sont acceptées.
+
+Une **appréciation** est un commentaire pédagogique par élève et matière. Elle
+est saisie dans la dernière partie du cahier et reprise dans le bulletin.
+
+Un **rattrapage à compléter** est un résultat marqué Reporté. Tant qu’il n’est
+pas remplacé par une note ou un statut définitif, la moyenne et le bulletin de
+l’élève sont bloqués.
+
+Une seule période peut être active par cycle. L’activation ou la clôture se fait
+depuis la toolbar du cahier et conditionne les actions de saisie.
 
 La période affichée est résolue automatiquement depuis le cycle de la classe ou
 du niveau. Le changement de cours recalcule les périodes disponibles.

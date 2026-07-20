@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(14);
 
 select has_table('public', 'pedagogical_assignments', 'pedagogical assignments table exists');
 select has_table('public', 'pedagogical_assignment_periods', 'assignment period scope exists');
@@ -12,6 +12,7 @@ select has_table('public', 'bulletin_generation_batches', 'bulletin batches tabl
 select has_table('public', 'bulletin_versions', 'bulletin versions table exists');
 select has_table('public', 'bulletin_generation_items', 'bulletin generation items table exists');
 select has_view('public', 'notes_average_controls', 'server-side average controls view exists');
+select has_function('public', 'change_academic_period_status', array['uuid','text'], 'period activation workflow exists');
 select col_is_null('public', 'note_results', 'value', 'numeric value may be null for statuses');
 select col_is_null('public', 'note_results', 'status', 'status may be null for numeric results');
 

@@ -5,24 +5,26 @@ export async function listCourseSummaries(institutionId: string, yearId: string)
   const [assignments, classes, levels, subjects, people, scopes] = await Promise.all([
     supabase.from("pedagogical_assignments").select("*").eq("institution_id", institutionId).eq("academic_year_id", yearId).eq("is_active", true),
     supabase.from("school_classes").select("id,name,academic_year_level_id").eq("institution_id", institutionId).eq("academic_year_id", yearId),
-    supabase.from("academic_year_levels").select("id,cycle_id").eq("institution_id", institutionId).eq("academic_year_id", yearId),
+    supabase.from("academic_year_levels").select("id,cycle_id,cycle_name_snapshot,level_name_snapshot").eq("institution_id", institutionId).eq("academic_year_id", yearId),
     supabase.from("subjects").select("id,name").eq("institution_id", institutionId),
     supabase.from("people").select("id,first_name,last_name").eq("institution_id", institutionId),
     supabase.from("pedagogical_assignment_periods").select("assignment_id,period_id"),
   ]);
   for (const result of [assignments, classes, levels, subjects, people, scopes]) if (result.error) throw result.error;
-  return (assignments.data ?? []).filter((item) => item.subject_id).map((item) => ({
+  return (assignments.data ?? []).filter((item) => item.subject_id).map((item) => { const schoolClass = classes.data?.find((entry) => entry.id === item.class_id); const level = levels.data?.find((entry) => entry.id === schoolClass?.academic_year_level_id); return ({
     assignmentId: item.id,
     classId: item.class_id,
     className: classes.data?.find((entry) => entry.id === item.class_id)?.name ?? "Classe",
-    cycleId: (() => { const schoolClass = classes.data?.find((entry) => entry.id === item.class_id); return levels.data?.find((level) => level.id === schoolClass?.academic_year_level_id)?.cycle_id ?? ""; })(),
+    cycleId: level?.cycle_id ?? "",
+    cycleName: level?.cycle_name_snapshot ?? "Cycle",
+    levelName: level?.level_name_snapshot ?? "Niveau",
     subjectId: item.subject_id as string,
     subjectName: subjects.data?.find((entry) => entry.id === item.subject_id)?.name ?? "Matière",
     teacherId: item.teacher_id,
     teacherName: (() => { const person = people.data?.find((entry) => entry.id === item.teacher_id); return person ? `${person.first_name} ${person.last_name}` : "Enseignant non renseigné"; })(),
     coefficient: item.coefficient,
     allowedPeriodIds: item.all_periods ? [] : (scopes.data ?? []).filter((scope) => scope.assignment_id === item.id).map((scope) => scope.period_id),
-  }));
+  }); });
 }
 
 export async function listClassStudents(classId: string): Promise<GradebookStudent[]> {
@@ -51,6 +53,12 @@ export async function listNoteResults(noteIds: string[]) {
   if (error) throw error;
   return data;
 }
+
+export async function listCourseAppreciations(input: { institutionId: string; yearId: string; periodId: string; course: CourseSummary }) { const { data, error } = await supabase.from("subject_appreciations").select("*").eq("institution_id", input.institutionId).eq("academic_year_id", input.yearId).eq("period_id", input.periodId).eq("class_id", input.course.classId).eq("subject_id", input.course.subjectId); if (error) throw error; return data; }
+
+export async function saveCourseAppreciation(input: { institutionId: string; yearId: string; periodId: string; course: CourseSummary; studentId: string; appreciation: string }) { const { error } = await supabase.from("subject_appreciations").upsert({ institution_id: input.institutionId, academic_year_id: input.yearId, period_id: input.periodId, class_id: input.course.classId, subject_id: input.course.subjectId, student_id: input.studentId, appreciation: input.appreciation.trim() }, { onConflict: "period_id,class_id,subject_id,student_id" }); if (error) throw error; }
+
+export async function changePeriodStatus(periodId: string, status: "open" | "closed") { const { error } = await supabase.rpc("change_academic_period_status", { target_period_id: periodId, target_status: status }); if (error) throw error; }
 
 export async function createGradebookNote(input: {
   institutionId: string; yearId: string; periodId: string; course: CourseSummary;

@@ -324,6 +324,22 @@ begin
 end;
 $$;
 
+create or replace function public.change_academic_period_status(target_period_id uuid, target_status text)
+returns void language plpgsql security definer set search_path = '' as $$
+declare target_period public.academic_periods;
+begin
+  select * into target_period from public.academic_periods where id = target_period_id;
+  if target_period.id is null then raise exception 'academic_period_not_found'; end if;
+  if not public.has_institution_role(target_period.institution_id, array['owner','admin']::public.app_role[]) then raise exception 'permission_denied'; end if;
+  if target_status not in ('open','closed') then raise exception 'invalid_period_status'; end if;
+  if target_status = 'open' then
+    update public.academic_periods set status = 'closed'
+    where academic_year_id = target_period.academic_year_id and cycle_id = target_period.cycle_id and status = 'open' and id <> target_period.id;
+  end if;
+  update public.academic_periods set status = target_status where id = target_period.id;
+end;
+$$;
+
 create trigger assessment_types_rules before insert or update on public.assessment_types
 for each row execute function public.enforce_assessment_type_rules();
 create trigger gradebook_notes_prepare before insert or update on public.gradebook_notes
@@ -393,6 +409,8 @@ grant select, insert, update, delete on public.pedagogical_assignments, public.p
   public.gradebook_notes, public.note_results, public.subject_appreciations to authenticated;
 grant select, insert, update, delete on public.pedagogical_settings to authenticated;
 grant select, insert, update, delete on public.bulletin_generation_batches, public.bulletin_versions, public.bulletin_generation_items to authenticated;
+revoke all on function public.change_academic_period_status(uuid, text) from public;
+grant execute on function public.change_academic_period_status(uuid, text) to authenticated;
 grant select on public.notes_audit_log to authenticated;
 revoke all on public.pedagogical_assignments, public.pedagogical_assignment_periods,
   public.gradebook_notes, public.note_results, public.subject_appreciations, public.notes_audit_log, public.pedagogical_settings,

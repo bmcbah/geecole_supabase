@@ -21,7 +21,7 @@ Les fonctionnalités métier sont :
 ```text
 Notes & Bulletins
 ├── Cahiers de notes
-├── Résultats reportés
+├── Rattrapages à compléter
 ├── Appréciations
 ├── Contrôle des moyennes
 ├── Générations
@@ -44,7 +44,7 @@ Le TreeView sert à sélectionner le contexte. Il ne remplace pas la page de tra
 Notes & Bulletins
 │
 ├── Cahiers de notes
-├── Résultats reportés
+├── Rattrapages à compléter
 ├── Appréciations
 ├── Contrôle des moyennes
 ├── Générations
@@ -233,14 +233,14 @@ Actions selon permissions :
 
 ---
 
-### 4.5 Résultats reportés
+### 4.5 Rattrapages à compléter
 
 #### Navigation
 
 ```text
 Notes & Bulletins
 → Cahiers de notes
-→ Résultats reportés
+→ Rattrapages à compléter
 ```
 
 #### Page de travail
