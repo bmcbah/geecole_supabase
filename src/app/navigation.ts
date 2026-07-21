@@ -82,6 +82,18 @@ export const navigation: NavigationGroup[] = [
       },
       {
         type: "link",
+        label: "Avances",
+        icon: "pi-wallet",
+        to: "/personnel/avances",
+      },
+      {
+        type: "link",
+        label: "Sanctions",
+        icon: "pi-exclamation-triangle",
+        to: "/personnel/sanctions",
+      },
+      {
+        type: "link",
         label: "Paie",
         icon: "pi-money-bill",
         to: "/personnel/paie",

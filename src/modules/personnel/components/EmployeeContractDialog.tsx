@@ -38,6 +38,7 @@ export function EmployeeContractDialog({
     ends: "",
     mode: "fixed" as CompensationMode,
     fixed: 0,
+    hourly: 0,
     session: 0,
     weekly: 0,
     method: "",
@@ -45,15 +46,14 @@ export function EmployeeContractDialog({
   });
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
-  const amountOk = useMemo(
-    () =>
-      form.mode === "unpaid" || form.mode === "hourly"
-        ? true
-        : form.mode === "session"
-          ? form.session > 0
-          : form.fixed > 0,
-    [form],
-  );
+  const amountOk = useMemo(() => {
+    if (form.mode === "unpaid") return true;
+    if (form.mode === "hourly") return form.hourly > 0 && form.weekly > 0;
+    if (form.mode === "mixed")
+      return form.fixed > 0 && form.hourly > 0 && form.weekly > 0;
+    if (form.mode === "session") return form.session > 0;
+    return form.fixed > 0;
+  }, [form]);
   const save = async () => {
     setBusy(true);
     setFailure("");
@@ -70,6 +70,7 @@ export function EmployeeContractDialog({
         status: form.status,
         compensation_mode: form.mode,
         fixed_amount: form.fixed,
+        hourly_rate: form.hourly,
         session_rate: form.session,
         weekly_hours: form.weekly,
         payment_method: form.method,
@@ -155,10 +156,13 @@ export function EmployeeContractDialog({
           </Field>
         )}
         {["hourly", "mixed"].includes(form.mode) && (
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-800">
-            Le taux horaire est défini sur la fiche de l’employé et historisé
-            séparément du contrat.
-          </div>
+          <Field label="Taux horaire de base (GNF) *">
+            <InputNumber
+              value={form.hourly}
+              min={0}
+              onValueChange={(e) => set("hourly", e.value || 0)}
+            />
+          </Field>
         )}
         {form.mode === "session" && (
           <Field label="Taux par séance (GNF) *">
@@ -169,14 +173,17 @@ export function EmployeeContractDialog({
             />
           </Field>
         )}
-        <Field label="Heures hebdomadaires prévues">
-          <InputNumber
-            value={form.weekly}
-            min={0}
-            max={168}
-            onValueChange={(e) => set("weekly", e.value || 0)}
-          />
-        </Field>
+        {["hourly", "mixed"].includes(form.mode) && (
+          <Field label="Heures hebdomadaires prévues *">
+            <InputNumber
+              value={form.weekly}
+              min={0.5}
+              max={168}
+              maxFractionDigits={2}
+              onValueChange={(e) => set("weekly", e.value || 0)}
+            />
+          </Field>
+        )}
         <Field label="Mode de paiement">
           <Dropdown
             value={form.method}

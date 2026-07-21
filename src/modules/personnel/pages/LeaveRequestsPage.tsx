@@ -7,6 +7,7 @@ import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Tag } from "primereact/tag";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { useToast } from "../../../shared/components/toast-context";
@@ -30,6 +31,8 @@ const iso = (date: Date) => date.toISOString().slice(0, 10);
 export function LeaveRequestsPage() {
   const { institutionId } = useAcademicSession();
   const notify = useToast();
+  const [searchParams] = useSearchParams();
+  const employeeFilter = searchParams.get("employee") || "";
   const [items, setItems] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [types, setTypes] = useState<{ label: string; value: string }[]>([]);
@@ -62,8 +65,13 @@ export function LeaveRequestsPage() {
     void load();
   }, [load]);
   const filtered = useMemo(
-    () => items.filter((x) => !status || x.status === status),
-    [items, status],
+    () =>
+      items.filter(
+        (x) =>
+          (!status || x.status === status) &&
+          (!employeeFilter || x.employee_id === employeeFilter),
+      ),
+    [employeeFilter, items, status],
   );
   const save = async () => {
     if (!form.employeeId || form.ends < form.starts) return;

@@ -19,10 +19,13 @@ Les écrans de sécurité, profils et autorisations ne font pas partie de ce par
 - Employés
 - Présences et heures
 - Congés et absences
+- Avances
+- Sanctions
 - Paie
 
-Les contrats, fonctions, documents, avances, sanctions et accès sont gérés depuis la fiche de
-l'employé ou par des actions de la page de travail. Il n'y a pas de sous-navigation métier imbriquée.
+Les fonctions, contrats, documents et accès sont gérés depuis la fiche. L'assiduité, les congés,
+les avances, les sanctions et la paie disposent de pages de travail globales. Il n'y a pas de
+sous-navigation métier imbriquée.
 
 ## Employés
 
@@ -35,10 +38,13 @@ rémunération, puis vérification. Le matricule n'est pas demandé à l'utilisa
 l'enregistrement. Le contrat initial reste facultatif afin de permettre la création d'un dossier
 administratif incomplet, clairement signalé dans la fiche.
 
-La fiche présente d'abord une synthèse utile (fonction principale, contrat actif, mode de
-rémunération et état du dossier), puis les onglets Informations, Emploi, Contrats, Assiduité,
-Documents, Avances, Sanctions et Accès. Les actions non disponibles ne doivent pas être présentées
-comme opérationnelles.
+La fiche n'utilise pas d'onglets servant uniquement de redirection. Elle reste un dossier individuel
+simple : informations personnelles, situation professionnelle, fonctions, contrats, documents et
+accès. Des actions compactes ouvrent les pages globales déjà filtrées sur l'employé.
+
+Le formulaire de contrat adapte ses champs au mode de rémunération. Pour `Taux horaire`, le taux de
+base et les heures hebdomadaires prévues sont obligatoires. Pour `Fixe + heures`, le salaire fixe,
+le taux de base et les heures prévues sont obligatoires et visibles ensemble.
 
 La liste fournit également des indicateurs simples, des filtres réinitialisables, une pagination et
 des états explicites de chargement ou d'absence de résultat. Le clic sur une ligne ouvre la fiche.
@@ -80,9 +86,9 @@ les fonctions, contrats, activités, primes, retenues, avances, congés et sanct
 
 ## Formulaires de la fiche
 
-La modification de l'identité et des coordonnées, l'ajout d'une fonction, d'un contrat, d'une
-avance, d'une sanction ou d'un document utilisent chacun un formulaire dédié. Les actions sont
-placées dans l'onglet concerné et rechargent la fiche après succès. Un formulaire ne doit pas
+La modification de l'identité et des coordonnées, l'ajout d'une fonction, d'un contrat ou d'un
+document utilisent chacun un formulaire dédié. Les avances et sanctions sont créées depuis leurs
+pages globales après sélection de l'employé. Un formulaire ne doit pas
 fermer ni perdre les données saisies lorsqu'une validation échoue.
 
 Le dépôt documentaire accepte les images et PDF jusqu'à 10 Mo. Les types de documents possèdent

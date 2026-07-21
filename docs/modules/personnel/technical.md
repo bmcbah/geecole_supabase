@@ -14,6 +14,10 @@ Les données sont isolées par `institution_id` et protégées par RLS. Les fonc
 d'un catalogue activable et ne sont jamais déduites du rôle applicatif. Les montants sont stockés en
 `numeric(14,2)` et les durées en minutes.
 
+Le contrat stocke directement `hourly_rate` et `weekly_hours` pour les modes `hourly` et `mixed`.
+La contrainte `employee_contracts_complete_compensation_check` bloque les nouvelles écritures
+incomplètes. Elle est créée `NOT VALID` pour préserver les contrats historiques à corriger.
+
 Le calcul d'une paie utilise uniquement les contrats actifs et les heures `validated` non encore
 rattachées à une paie. La période suit `draft -> calculated -> validated -> paid -> closed`.
 La clôture interdit toute mutation des lignes. Les paiements peuvent être partiels.
@@ -26,7 +30,9 @@ séquence logique propre à l'établissement afin d'éviter que deux créations 
 le même numéro. Le format initial est `PER-AAAA-NNNN`; sa personnalisation par établissement reste
 un lot distinct prévu par `PER-008`.
 
-La route `/personnel/employes/:employeeId` charge la fiche et ses relations sous RLS. La création
+La route `/personnel/employes/:employeeId` charge la fiche et ses relations sous RLS. Les routes
+`/personnel/avances` et `/personnel/sanctions` portent les traitements collectifs et acceptent un
+filtre `employee` dans l'URL. La création
 initiale peut enregistrer la fonction principale et un contrat actif ; l'accès GeEcole n'est jamais
 créé implicitement.
 

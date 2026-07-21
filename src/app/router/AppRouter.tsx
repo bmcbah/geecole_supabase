@@ -85,6 +85,16 @@ const LeaveRequestsPage = lazy(() =>
     default: module.LeaveRequestsPage,
   })),
 );
+const SalaryAdvancesPage = lazy(() =>
+  import("../../modules/personnel/pages/SalaryAdvancesPage").then((module) => ({
+    default: module.SalaryAdvancesPage,
+  })),
+);
+const EmployeeSanctionsPage = lazy(() =>
+  import("../../modules/personnel/pages/EmployeeSanctionsPage").then((module) => ({
+    default: module.EmployeeSanctionsPage,
+  })),
+);
 const PayrollPage = lazy(() =>
   import("../../modules/personnel/pages/PayrollPage").then((module) => ({
     default: module.PayrollPage,
@@ -211,6 +221,11 @@ export function AppRouter() {
             />
             <Route path="/personnel/heures" element={<WorkEntriesPage />} />
             <Route path="/personnel/conges" element={<LeaveRequestsPage />} />
+            <Route path="/personnel/avances" element={<SalaryAdvancesPage />} />
+            <Route
+              path="/personnel/sanctions"
+              element={<EmployeeSanctionsPage />}
+            />
             <Route path="/personnel/paie" element={<PayrollPage />} />
             <Route
               path="/personnel/paie/:periodId/bulletins/:entryId"

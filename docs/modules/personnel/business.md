@@ -116,3 +116,7 @@ L'établissement configure le format du matricule, sa modifiabilité, les modes 
 ## PER-017 — Sécurité reportée
 
 La matrice des profils, capacités et autorisations fines fera l'objet d'un cadrage séparé. Les protections existantes restent provisoires et ne doivent pas être présentées comme le modèle cible.
+
+## PER-018 — Contrat explicite
+
+Le contrat porte la base de rémunération utilisée par la paie. Un contrat horaire exige un taux horaire de base et des heures hebdomadaires prévues. Un contrat fixe avec heures exige le salaire fixe, le taux horaire de base et les heures hebdomadaires prévues. Le taux du contrat ne doit pas être remplacé implicitement par un taux défini ailleurs sur la fiche.

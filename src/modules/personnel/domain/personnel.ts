@@ -83,15 +83,18 @@ export type EmployeeDocument = {
 };
 export type EmployeeSanction = {
   id: string;
+  employee_id?: string;
   incident_on: string;
   decided_on: string | null;
   reason: string;
   description: string | null;
   decision: string | null;
   status: "draft" | "notified" | "contested" | "closed" | "cancelled";
+  employee?: Pick<Employee, "first_name" | "last_name" | "employee_number">;
 };
 export type SalaryAdvance = {
   id: string;
+  employee_id?: string;
   amount_requested: number;
   amount_approved: number | null;
   repaid_amount: number;
@@ -100,6 +103,7 @@ export type SalaryAdvance = {
   reason: string | null;
   status:
     "requested" | "approved" | "rejected" | "paid" | "settled" | "cancelled";
+  employee?: Pick<Employee, "first_name" | "last_name" | "employee_number">;
 };
 export type WorkEntry = {
   id: string;

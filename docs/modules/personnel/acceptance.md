@@ -40,3 +40,7 @@ Un enseignant peut être affecté sans compte. Un compte désactivé ne supprime
 - [ ] Le tableau de bord remonte contrats et documents expirants, congés, heures et paie à traiter.
 - [ ] Le format du matricule, les arrondis, seuils et modes de paiement sont paramétrables.
 - [ ] Les profils et autorisations fines restent hors de ce lot et sont identifiés comme dette de sécurité.
+- [ ] La fiche employé ne duplique pas les pages RH globales dans des onglets.
+- [ ] Les pages Avances et Sanctions affichent la liste globale et acceptent un filtre employé.
+- [ ] Un contrat horaire est refusé sans taux de base et heures prévues positifs.
+- [ ] Un contrat fixe avec heures est refusé sans montant fixe, taux de base et heures prévues positifs.

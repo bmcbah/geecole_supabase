@@ -2,12 +2,14 @@ import { supabase } from "../../../shared/lib/supabase/client";
 import type {
   CompensationMode,
   Employee,
+  EmployeeSanction,
   EmployeeProfile,
   LeaveRequest,
   PayrollEntry,
   PayrollEntryDetail,
   PayrollPeriod,
   PersonnelDashboard,
+  SalaryAdvance,
   WorkEntry,
 } from "../domain/personnel";
 export type CatalogItem = {
@@ -109,6 +111,7 @@ export type CreateEmployeeInput = Partial<
   compensation_mode?: CompensationMode;
   fixed_amount?: number;
   hourly_rate?: number;
+  weekly_hours?: number;
   session_rate?: number;
 };
 export async function createEmployee(
@@ -121,6 +124,7 @@ export async function createEmployee(
     compensation_mode,
     fixed_amount,
     hourly_rate,
+    weekly_hours,
     session_rate,
     ...employee
   } = input;
@@ -158,8 +162,9 @@ export async function createEmployee(
           status: "active",
           compensation_mode,
           fixed_amount: fixed_amount ?? 0,
-          hourly_rate: 0,
+          hourly_rate: hourly_rate ?? 0,
           session_rate: session_rate ?? 0,
+          weekly_hours: weekly_hours || null,
         } as never);
       fail(contractError);
     }
@@ -229,13 +234,14 @@ export async function createEmployeeContract(input: {
   status: "draft" | "active";
   compensation_mode: CompensationMode;
   fixed_amount: number;
+  hourly_rate: number;
   session_rate: number;
   weekly_hours?: number;
   payment_method?: string;
 }) {
   const { error } = await supabase.from("employee_contracts" as never).insert({
     ...input,
-    hourly_rate: 0,
+    hourly_rate: input.hourly_rate,
     contract_type_item_id: input.contract_type_item_id || null,
     reference: input.reference || null,
     ends_on: input.ends_on || null,
@@ -340,6 +346,15 @@ export async function createSalaryAdvance(input: {
   } as never);
   fail(error);
 }
+export async function listSalaryAdvances(institutionId: string) {
+  const { data, error } = await supabase
+    .from("salary_advances" as never)
+    .select("*,employee:employees(first_name,last_name,employee_number)")
+    .eq("institution_id", institutionId)
+    .order("requested_on", { ascending: false });
+  fail(error);
+  return (data ?? []) as SalaryAdvance[];
+}
 export async function createEmployeeSanction(input: {
   institution_id: string;
   employee_id: string;
@@ -357,6 +372,15 @@ export async function createEmployeeSanction(input: {
     decision: input.decision || null,
   } as never);
   fail(error);
+}
+export async function listEmployeeSanctions(institutionId: string) {
+  const { data, error } = await supabase
+    .from("employee_sanctions" as never)
+    .select("*,employee:employees(first_name,last_name,employee_number)")
+    .eq("institution_id", institutionId)
+    .order("incident_on", { ascending: false });
+  fail(error);
+  return (data ?? []) as EmployeeSanction[];
 }
 export async function createPayrollAdjustment(input: {
   institution_id: string;

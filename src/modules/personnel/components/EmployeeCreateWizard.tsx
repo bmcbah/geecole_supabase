@@ -50,6 +50,7 @@ const initial = {
   compensation_mode: "" as CompensationMode | "",
   fixed_amount: 0,
   hourly_rate: 0,
+  weekly_hours: 0,
   session_rate: 0,
   notes: "",
 };
@@ -103,6 +104,14 @@ export function EmployeeCreateWizard({
     setSaving(true);
     setFailure("");
     try {
+      if (
+        ["hourly", "mixed"].includes(form.compensation_mode) &&
+        (form.hourly_rate <= 0 || form.weekly_hours <= 0)
+      ) {
+        throw new Error(
+          "Le taux horaire de base et les heures prévues sont obligatoires.",
+        );
+      }
       const payload: CreateEmployeeInput = {
         ...form,
         institution_id: institutionId,
@@ -343,6 +352,29 @@ export function EmployeeCreateWizard({
                   currency="GNF"
                   locale="fr-GN"
                   onValueChange={(e) => set(moneyField[0], e.value || 0)}
+                />
+              </Field>
+            )}
+            {form.compensation_mode === "mixed" && (
+              <Field label="Taux horaire de base">
+                <InputNumber
+                  value={form.hourly_rate}
+                  min={0}
+                  mode="currency"
+                  currency="GNF"
+                  locale="fr-GN"
+                  onValueChange={(e) => set("hourly_rate", e.value || 0)}
+                />
+              </Field>
+            )}
+            {["hourly", "mixed"].includes(form.compensation_mode) && (
+              <Field label="Heures hebdomadaires prévues">
+                <InputNumber
+                  value={form.weekly_hours}
+                  min={0.5}
+                  max={168}
+                  maxFractionDigits={2}
+                  onValueChange={(e) => set("weekly_hours", e.value || 0)}
                 />
               </Field>
             )}

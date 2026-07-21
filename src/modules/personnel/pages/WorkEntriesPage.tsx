@@ -10,6 +10,7 @@ import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
+import { useSearchParams } from "react-router-dom";
 import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
@@ -40,6 +41,8 @@ const iso = (date: Date) => date.toISOString().slice(0, 10);
 export function WorkEntriesPage() {
   const { institutionId } = useAcademicSession();
   const notify = useToast();
+  const [searchParams] = useSearchParams();
+  const employeeFilter = searchParams.get("employee") || "";
   const [items, setItems] = useState<WorkEntry[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [types, setTypes] = useState<{ label: string; value: string }[]>([]);
@@ -86,11 +89,12 @@ export function WorkEntriesPage() {
       items.filter(
         (x) =>
           (!status || x.status === status) &&
+          (!employeeFilter || x.employee_id === employeeFilter) &&
           `${x.employee?.first_name} ${x.employee?.last_name} ${x.employee?.employee_number}`
             .toLowerCase()
             .includes(query.toLowerCase()),
       ),
-    [items, query, status],
+    [employeeFilter, items, query, status],
   );
   const totals = useMemo(
     () => ({
