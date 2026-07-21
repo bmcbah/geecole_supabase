@@ -44,37 +44,27 @@ export function NotesDataTableToolbar(props: Props) {
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="p-4 sm:p-5">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="m-0 text-base font-semibold text-slate-950">
-              Périmètre pédagogique
-            </h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Choisissez le cycle, le niveau et la période avant d’affiner la liste.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {props.activeCount > 0 ? (
-              <Button
-                label="Réinitialiser"
-                icon="pi pi-filter-slash"
-                severity="secondary"
-                text
-                size="small"
-                onClick={props.onReset}
-              />
-            ) : null}
+      <div className="p-3 sm:p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+          {props.activeCount > 0 ? (
             <Button
-              label={props.advanced ? "Masquer les filtres" : "Plus de filtres"}
-              icon={props.advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
+              label="Réinitialiser"
+              icon="pi pi-filter-slash"
               severity="secondary"
-              outlined
+              text
               size="small"
-              badge={props.activeCount > 0 ? String(props.activeCount) : undefined}
-              onClick={props.onAdvanced}
+              onClick={props.onReset}
             />
-          </div>
+          ) : null}
+          <Button
+            label={props.advanced ? "Masquer les filtres" : "Plus de filtres"}
+            icon={props.advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
+            severity="secondary"
+            outlined
+            size="small"
+            badge={props.activeCount > 0 ? String(props.activeCount) : undefined}
+            onClick={props.onAdvanced}
+          />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -129,12 +119,6 @@ export function NotesDataTableToolbar(props: Props) {
 
       {props.advanced ? (
         <div className="border-t border-emerald-100 bg-emerald-50/35 p-4 sm:p-5">
-          <div className="mb-4">
-            <h3 className="m-0 text-sm font-semibold text-slate-900">Filtres complémentaires</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Affinez la liste sans changer le périmètre pédagogique sélectionné.
-            </p>
-          </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {props.onClass ? (
               <label>
@@ -162,13 +146,23 @@ export function NotesDataTableToolbar(props: Props) {
             {props.onDateFrom ? (
               <label>
                 <span className={labelClass}>Du</span>
-                <InputText type="date" value={props.dateFrom ?? ""} onChange={(event) => props.onDateFrom?.(event.target.value)} className={controlClass} />
+                <InputText
+                  type="date"
+                  value={props.dateFrom ?? ""}
+                  onChange={(event) => props.onDateFrom?.(event.target.value)}
+                  className={controlClass}
+                />
               </label>
             ) : null}
             {props.onDateTo ? (
               <label>
                 <span className={labelClass}>Au</span>
-                <InputText type="date" value={props.dateTo ?? ""} onChange={(event) => props.onDateTo?.(event.target.value)} className={controlClass} />
+                <InputText
+                  type="date"
+                  value={props.dateTo ?? ""}
+                  onChange={(event) => props.onDateTo?.(event.target.value)}
+                  className={controlClass}
+                />
               </label>
             ) : null}
           </div>
