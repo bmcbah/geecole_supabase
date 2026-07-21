@@ -11,15 +11,15 @@ type Props = {
   onAdvanced: () => void;
   onReset: () => void;
   activeCount: number;
-  cycleId: string;
-  onCycle: (value: string) => void;
-  cycleOptions: FilterOption[];
-  levelId: string;
-  onLevel: (value: string) => void;
-  levelOptions: FilterOption[];
-  periodId: string;
-  onPeriod: (value: string) => void;
-  periodOptions: FilterOption[];
+  cycleId?: string;
+  onCycle?: (value: string) => void;
+  cycleOptions?: FilterOption[];
+  levelId?: string;
+  onLevel?: (value: string) => void;
+  levelOptions?: FilterOption[];
+  periodId?: string;
+  onPeriod?: (value: string) => void;
+  periodOptions?: FilterOption[];
   status?: string;
   onStatus?: (value: string) => void;
   statusOptions?: FilterOption[];
@@ -38,6 +38,10 @@ const controlClass =
 const labelClass = "mb-1.5 block text-xs font-semibold text-slate-600";
 
 export function NotesDataTableToolbar(props: Props) {
+  const cycleOptions = props.cycleOptions ?? [];
+  const levelOptions = props.levelOptions ?? [];
+  const periodOptions = props.periodOptions ?? [];
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="p-4 sm:p-5">
@@ -74,34 +78,40 @@ export function NotesDataTableToolbar(props: Props) {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label>
-            <span className={labelClass}>Cycle</span>
-            <Dropdown
-              value={props.cycleId}
-              options={[{ label: "Tous les cycles", value: "" }, ...props.cycleOptions]}
-              onChange={(event) => props.onCycle(String(event.value ?? ""))}
-              className={controlClass}
-            />
-          </label>
-          <label>
-            <span className={labelClass}>Niveau</span>
-            <Dropdown
-              value={props.levelId}
-              options={[{ label: "Tous les niveaux", value: "" }, ...props.levelOptions]}
-              disabled={!props.cycleId}
-              onChange={(event) => props.onLevel(String(event.value ?? ""))}
-              className={controlClass}
-            />
-          </label>
-          <label>
-            <span className={labelClass}>Période</span>
-            <Dropdown
-              value={props.periodId}
-              options={[{ label: "Toutes les périodes", value: "" }, ...props.periodOptions]}
-              onChange={(event) => props.onPeriod(String(event.value ?? ""))}
-              className={controlClass}
-            />
-          </label>
+          {props.onCycle ? (
+            <label>
+              <span className={labelClass}>Cycle</span>
+              <Dropdown
+                value={props.cycleId ?? ""}
+                options={[{ label: "Tous les cycles", value: "" }, ...cycleOptions]}
+                onChange={(event) => props.onCycle?.(String(event.value ?? ""))}
+                className={controlClass}
+              />
+            </label>
+          ) : null}
+          {props.onLevel ? (
+            <label>
+              <span className={labelClass}>Niveau</span>
+              <Dropdown
+                value={props.levelId ?? ""}
+                options={[{ label: "Tous les niveaux", value: "" }, ...levelOptions]}
+                disabled={!props.cycleId}
+                onChange={(event) => props.onLevel?.(String(event.value ?? ""))}
+                className={controlClass}
+              />
+            </label>
+          ) : null}
+          {props.onPeriod ? (
+            <label>
+              <span className={labelClass}>Période</span>
+              <Dropdown
+                value={props.periodId ?? ""}
+                options={[{ label: "Toutes les périodes", value: "" }, ...periodOptions]}
+                onChange={(event) => props.onPeriod?.(String(event.value ?? ""))}
+                className={controlClass}
+              />
+            </label>
+          ) : null}
           <label>
             <span className={labelClass}>Rechercher</span>
             <span className="p-input-icon-left block w-full">
@@ -130,7 +140,7 @@ export function NotesDataTableToolbar(props: Props) {
               <label>
                 <span className={labelClass}>Classe</span>
                 <Dropdown
-                  value={props.classId}
+                  value={props.classId ?? ""}
                   options={[{ label: "Toutes les classes", value: "" }, ...(props.classOptions ?? [])]}
                   filter
                   onChange={(event) => props.onClass?.(String(event.value ?? ""))}
@@ -142,7 +152,7 @@ export function NotesDataTableToolbar(props: Props) {
               <label>
                 <span className={labelClass}>Statut</span>
                 <Dropdown
-                  value={props.status}
+                  value={props.status ?? ""}
                   options={[{ label: "Tous les statuts", value: "" }, ...(props.statusOptions ?? [])]}
                   onChange={(event) => props.onStatus?.(String(event.value ?? ""))}
                   className={controlClass}
@@ -152,13 +162,13 @@ export function NotesDataTableToolbar(props: Props) {
             {props.onDateFrom ? (
               <label>
                 <span className={labelClass}>Du</span>
-                <InputText type="date" value={props.dateFrom} onChange={(event) => props.onDateFrom?.(event.target.value)} className={controlClass} />
+                <InputText type="date" value={props.dateFrom ?? ""} onChange={(event) => props.onDateFrom?.(event.target.value)} className={controlClass} />
               </label>
             ) : null}
             {props.onDateTo ? (
               <label>
                 <span className={labelClass}>Au</span>
-                <InputText type="date" value={props.dateTo} onChange={(event) => props.onDateTo?.(event.target.value)} className={controlClass} />
+                <InputText type="date" value={props.dateTo ?? ""} onChange={(event) => props.onDateTo?.(event.target.value)} className={controlClass} />
               </label>
             ) : null}
           </div>
