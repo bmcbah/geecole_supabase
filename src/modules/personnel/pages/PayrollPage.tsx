@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
 import { Calendar } from "primereact/calendar";
 import { Column } from "primereact/column";
@@ -24,6 +25,7 @@ import {
 const money = (n: number) => `${Number(n).toLocaleString("fr-GN")} GNF`;
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 export function PayrollPage() {
+  const navigate = useNavigate();
   const { institutionId } = useAcademicSession();
   const notify = useToast();
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
@@ -195,6 +197,56 @@ export function PayrollPage() {
         />
       ) : (
         <>
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="grid gap-3 md:grid-cols-4">
+              {[
+                ["1", "Préparer", "Contrats et heures validées", ["draft"]],
+                [
+                  "2",
+                  "Contrôler",
+                  "Bulletins calculés et anomalies",
+                  ["calculated"],
+                ],
+                [
+                  "3",
+                  "Payer",
+                  "Validation et règlements",
+                  ["validated", "partially_paid", "paid"],
+                ],
+                ["4", "Clôturer", "Période figée", ["closed"]],
+              ].map(([number, label, help, statuses]) => {
+                const active = (statuses as string[]).includes(period.status);
+                return (
+                  <div
+                    key={String(number)}
+                    className={`flex gap-3 rounded-xl border p-3 ${
+                      active
+                        ? "border-emerald-300 bg-emerald-50"
+                        : "border-slate-200 bg-slate-50/60"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                        active
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white text-slate-500 ring-1 ring-slate-200"
+                      }`}
+                    >
+                      {number as string}
+                    </span>
+                    <div>
+                      <strong className="block text-sm text-slate-900">
+                        {label as string}
+                      </strong>
+                      <span className="text-xs text-slate-500">
+                        {help as string}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
               ["Net à payer", money(total)],
@@ -230,6 +282,12 @@ export function PayrollPage() {
                       ? "Lancez le calcul pour générer les lignes de paie."
                       : "Aucune ligne calculée"
                   }
+                  rowHover
+                  onRowClick={(event) =>
+                    navigate(
+                      `/personnel/paie/${period.id}/bulletins/${(event.data as PayrollEntry).id}`,
+                    )
+                  }
                 >
                   <Column
                     header="Employé"
@@ -244,6 +302,23 @@ export function PayrollPage() {
                           {x.employee?.employee_number}
                         </small>
                       </div>
+                    )}
+                  />
+                  <Column
+                    header="Bulletin"
+                    body={(x: PayrollEntry) => (
+                      <Button
+                        label="Consulter"
+                        icon="pi pi-eye"
+                        size="small"
+                        text
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          navigate(
+                            `/personnel/paie/${period.id}/bulletins/${x.id}`,
+                          );
+                        }}
+                      />
                     )}
                   />
                   <Column

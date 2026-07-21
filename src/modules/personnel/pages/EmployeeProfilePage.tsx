@@ -5,7 +5,6 @@ import { Skeleton } from "primereact/skeleton";
 import { TabPanel, TabView } from "primereact/tabview";
 import { Tag } from "primereact/tag";
 import { useNavigate, useParams } from "react-router-dom";
-import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import type { EmployeeProfile } from "../domain/personnel";
 import { employeeStatusLabels } from "../domain/personnel";
@@ -49,6 +48,26 @@ export function EmployeeProfilePage() {
         .reduce((sum, x) => sum + x.minutes, 0) ?? 0,
     [profile],
   );
+  const approvedLeaveCount = useMemo(
+    () =>
+      profile?.leave_requests.filter((item) => item.status === "approved")
+        .length ?? 0,
+    [profile],
+  );
+  const outstandingAdvances = useMemo(
+    () =>
+      profile?.advances.reduce(
+        (total, item) =>
+          total +
+          Math.max(
+            0,
+            (item.amount_approved ?? item.amount_requested) -
+              item.repaid_amount,
+          ),
+        0,
+      ) ?? 0,
+    [profile],
+  );
   if (profile === undefined)
     return (
       <div className="space-y-4">
@@ -64,41 +83,109 @@ export function EmployeeProfilePage() {
       />
     );
   return (
-    <div className="space-y-4 pb-8">
-      <PageHeader
-        title={`${profile.first_name} ${profile.last_name}`}
-        description={`${profile.employee_number} · ${catalogLabel(activeFunction?.function_item)}`}
-        meta={
-          <Tag
-            value={employeeStatusLabels[profile.status]}
-            severity={
-              profile.status === "active"
-                ? "success"
-                : profile.status === "suspended"
-                  ? "warning"
-                  : "secondary"
-            }
+    <div className="mx-auto max-w-[1480px] space-y-4 pb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button
+          label="Retour au personnel"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          text
+          onClick={() => void navigate("/personnel/employes")}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            label="Voir les heures"
+            icon="pi pi-clock"
+            severity="secondary"
+            outlined
+            onClick={() => void navigate("/personnel/heures")}
           />
-        }
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              label="Retour"
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              text
-              onClick={() => void navigate("/personnel/employes")}
+          <Button
+            label="Voir la paie"
+            icon="pi pi-wallet"
+            severity="secondary"
+            outlined
+            onClick={() => void navigate("/personnel/paie")}
+          />
+          <Button
+            label={profile.membership_id ? "Gérer l’accès" : "Créer un accès"}
+            icon="pi pi-key"
+            disabled={!profile.email}
+            onClick={() => void navigate("/parametrage/utilisateurs-roles")}
+          />
+        </div>
+      </div>
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="relative grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-7">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-xl font-bold text-emerald-700 ring-1 ring-emerald-100">
+              {profile.first_name[0]}
+              {profile.last_name[0]}
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                  Dossier personnel
+                </span>
+                <Tag
+                  value={employeeStatusLabels[profile.status]}
+                  severity={
+                    profile.status === "active"
+                      ? "success"
+                      : profile.status === "suspended"
+                        ? "warning"
+                        : "secondary"
+                  }
+                />
+              </div>
+              <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-950">
+                {profile.first_name} {profile.last_name}
+              </h1>
+              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+                <span>
+                  <i className="pi pi-id-card mr-2 text-emerald-500" />
+                  {profile.employee_number}
+                </span>
+                <span>
+                  <i className="pi pi-briefcase mr-2 text-emerald-500" />
+                  {catalogLabel(activeFunction?.function_item)}
+                </span>
+                <span>
+                  <i className="pi pi-calendar mr-2 text-emerald-500" />
+                  Entrée le {date(profile.hired_on)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[520px]">
+            <HeroMetric
+              label="Contrat"
+              value={
+                activeContract
+                  ? catalogLabel(activeContract.contract_type)
+                  : "À compléter"
+              }
+              icon="pi-file-edit"
             />
-            <Button label="Modifier" icon="pi pi-pencil" outlined disabled />
-            <Button
-              label={profile.membership_id ? "Gérer l’accès" : "Créer un accès"}
-              icon="pi pi-key"
-              disabled={!profile.email}
-              onClick={() => void navigate("/parametrage/utilisateurs-roles")}
+            <HeroMetric
+              label="Heures validées"
+              value={`${Math.floor(validatedMinutes / 60)} h ${validatedMinutes % 60} min`}
+              icon="pi-clock"
+            />
+            <HeroMetric
+              label="Congés validés"
+              value={String(approvedLeaveCount)}
+              icon="pi-calendar-minus"
+            />
+            <HeroMetric
+              label="Avances dues"
+              value={money(outstandingAdvances)}
+              icon="pi-wallet"
             />
           </div>
-        }
-      />
+        </div>
+      </section>
       <section className="grid gap-3 md:grid-cols-4">
         <Metric
           icon="pi-briefcase"
@@ -256,6 +343,32 @@ export function EmployeeProfilePage() {
                 value={String(profile.leave_requests.length)}
               />
             </div>
+            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+              <ActivityList
+                title="Dernières activités"
+                empty="Aucune activité enregistrée."
+                items={profile.work_entries
+                  .slice(0, 5)
+                  .map((item) => ({
+                    id: item.id,
+                    title: `${date(item.work_date)} · ${Math.floor(item.minutes / 60)} h ${item.minutes % 60} min`,
+                    detail: item.notes || "Activité sans commentaire",
+                    status: item.status,
+                  }))}
+              />
+              <ActivityList
+                title="Congés et absences"
+                empty="Aucune demande enregistrée."
+                items={profile.leave_requests
+                  .slice(0, 5)
+                  .map((item) => ({
+                    id: item.id,
+                    title: `${date(item.starts_on)} → ${date(item.ends_on)}`,
+                    detail: item.reason || "Sans motif",
+                    status: item.status,
+                  }))}
+              />
+            </div>
           </TabPanel>
           <TabPanel header="Documents">
             <PanelHeader
@@ -355,6 +468,66 @@ function Metric({
         <strong className="text-sm text-slate-900">{value}</strong>
       </div>
     </article>
+  );
+}
+function HeroMetric({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+}) {
+  return (
+    <div className="flex min-h-[62px] flex-col justify-center rounded-xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm">
+      <div className="flex items-center justify-between gap-2 text-slate-400">
+        <span className="text-[10px] font-bold uppercase tracking-[0.1em]">
+          {label}
+        </span>
+        <i className={`pi ${icon} text-[11px] text-emerald-500`} />
+      </div>
+      <strong className="mt-1 block truncate text-sm font-semibold text-slate-900">
+        {value}
+      </strong>
+    </div>
+  );
+}
+function ActivityList({
+  title,
+  empty,
+  items,
+}: {
+  title: string;
+  empty: string;
+  items: Array<{ id: string; title: string; detail: string; status: string }>;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-200 p-4">
+      <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+      {items.length ? (
+        <div className="mt-3 divide-y divide-slate-100">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-start justify-between gap-3 py-3"
+            >
+              <div>
+                <strong className="block text-sm text-slate-800">
+                  {item.title}
+                </strong>
+                <span className="mt-1 block text-xs text-slate-500">
+                  {item.detail}
+                </span>
+              </div>
+              <Tag value={item.status} severity="secondary" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-slate-500">{empty}</p>
+      )}
+    </section>
   );
 }
 function PanelHeader({ title, action }: { title: string; action?: string }) {

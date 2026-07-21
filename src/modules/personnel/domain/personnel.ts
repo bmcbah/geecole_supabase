@@ -131,6 +131,36 @@ export type PayrollEntry = {
   status: PayrollPeriod["status"];
   employee?: Pick<Employee, "first_name" | "last_name" | "employee_number">;
 };
+export type PayrollAdjustment = {
+  id: string;
+  kind: "gain" | "deduction" | "regularization";
+  label: string;
+  amount: number;
+  notes: string | null;
+  created_at: string;
+};
+export type PayrollPayment = {
+  id: string;
+  amount: number;
+  paid_on: string;
+  method: string;
+  reference: string | null;
+  created_at: string;
+};
+export type PayrollEntryDetail = PayrollEntry & {
+  institution_id: string;
+  contract_id: string | null;
+  created_at: string;
+  employee: Pick<
+    Employee,
+    "id" | "first_name" | "last_name" | "employee_number" | "phone" | "email"
+  >;
+  period: PayrollPeriod;
+  contract: EmployeeContract | null;
+  adjustments: PayrollAdjustment[];
+  payments: PayrollPayment[];
+  work_entries: WorkEntry[];
+};
 export const employeeStatusLabels: Record<EmployeeStatus, string> = {
   active: "Actif",
   suspended: "Suspendu",

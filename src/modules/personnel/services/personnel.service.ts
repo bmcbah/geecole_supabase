@@ -5,6 +5,7 @@ import type {
   EmployeeProfile,
   LeaveRequest,
   PayrollEntry,
+  PayrollEntryDetail,
   PayrollPeriod,
   WorkEntry,
 } from "../domain/personnel";
@@ -247,6 +248,58 @@ export async function listPayrollEntries(
     .order("created_at");
   fail(error);
   return (data ?? []) as PayrollEntry[];
+}
+export async function getPayrollEntryDetail(
+  institutionId: string,
+  periodId: string,
+  entryId: string,
+): Promise<PayrollEntryDetail | null> {
+  const { data: entry, error: entryError } = await supabase
+    .from("payroll_entries" as never)
+    .select(
+      "*, employee:employees(id,first_name,last_name,employee_number,phone,email), period:payroll_periods(id,name,starts_on,ends_on,status), contract:employee_contracts(*)",
+    )
+    .eq("institution_id", institutionId)
+    .eq("period_id", periodId)
+    .eq("id", entryId)
+    .maybeSingle();
+  fail(entryError);
+  if (!entry) return null;
+
+  const [adjustmentsResult, paymentsResult, workEntriesResult] =
+    await Promise.all([
+      supabase
+        .from("payroll_adjustments" as never)
+        .select("*")
+        .eq("institution_id", institutionId)
+        .eq("payroll_entry_id", entryId)
+        .order("created_at"),
+      supabase
+        .from("payroll_payments" as never)
+        .select("*")
+        .eq("institution_id", institutionId)
+        .eq("payroll_entry_id", entryId)
+        .order("paid_on", { ascending: false }),
+      supabase
+        .from("work_entries" as never)
+        .select("*")
+        .eq("institution_id", institutionId)
+        .eq("payroll_entry_id", entryId)
+        .order("work_date"),
+    ]);
+  fail(adjustmentsResult.error);
+  fail(paymentsResult.error);
+  fail(workEntriesResult.error);
+
+  return {
+    ...(entry as Omit<
+      PayrollEntryDetail,
+      "adjustments" | "payments" | "work_entries"
+    >),
+    adjustments: adjustmentsResult.data ?? [],
+    payments: paymentsResult.data ?? [],
+    work_entries: workEntriesResult.data ?? [],
+  } as PayrollEntryDetail;
 }
 export async function createPayrollPeriod(input: {
   institution_id: string;

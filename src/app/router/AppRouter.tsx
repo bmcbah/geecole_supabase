@@ -85,6 +85,11 @@ const PayrollPage = lazy(() =>
     default: module.PayrollPage,
   })),
 );
+const PayrollStatementPage = lazy(() =>
+  import("../../modules/personnel/pages/PayrollStatementPage").then(
+    (module) => ({ default: module.PayrollStatementPage }),
+  ),
+);
 const PersonnelFunctionsSettingsPage = lazy(() =>
   import("../../modules/personnel/pages/PersonnelFunctionsSettingsPage").then(
     (module) => ({ default: module.PersonnelFunctionsSettingsPage }),
@@ -196,6 +201,10 @@ export function AppRouter() {
             <Route path="/personnel/heures" element={<WorkEntriesPage />} />
             <Route path="/personnel/conges" element={<LeaveRequestsPage />} />
             <Route path="/personnel/paie" element={<PayrollPage />} />
+            <Route
+              path="/personnel/paie/:periodId/bulletins/:entryId"
+              element={<PayrollStatementPage />}
+            />
             <Route
               path="/parametrage/personnel/fonctions"
               element={<PersonnelFunctionsSettingsPage />}
