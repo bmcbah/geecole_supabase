@@ -26,6 +26,7 @@ import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTa
 import { useToast } from "../../../shared/components/toast-context";
 
 type Option = { label: string; value: string };
+type CycleOption = Option & { gradingScale: number };
 type ScopeType = "cycle" | "level";
 type Draft = {
   name: string;
@@ -51,7 +52,7 @@ export function GradingFormulasSettingsPage() {
   const [types, setTypes] = useState<
     Array<{ id: string; code: string; name: string; scale: number }>
   >([]);
-  const [cycles, setCycles] = useState<Option[]>([]);
+  const [cycles, setCycles] = useState<CycleOption[]>([]);
   const [levels, setLevels] = useState<Array<Option & { cycleId: string }>>([]);
   const [editing, setEditing] = useState<
     VersionedFormulaListItem | null | undefined
@@ -71,8 +72,8 @@ export function GradingFormulasSettingsPage() {
       listVersionedGradingFormulas(year.id),
       listAssessmentTypes(year.id),
       supabase
-        .from("academic_cycles")
-        .select("id,name")
+        .from("academic_year_cycles")
+        .select("cycle_id,name,grading_scale")
         .eq("institution_id", institutionId)
         .eq("is_active", true)
         .order("sort_order"),
@@ -99,7 +100,8 @@ export function GradingFormulasSettingsPage() {
     setCycles(
       (cycleRows.data ?? []).map((item) => ({
         label: item.name,
-        value: item.id,
+        value: item.cycle_id,
+        gradingScale: item.grading_scale,
       })),
     );
     setLevels(
@@ -116,9 +118,15 @@ export function GradingFormulasSettingsPage() {
   }, [load]);
 
   const allowedCodes = useMemo(() => types.map((type) => type.code), [types]);
+  const selectedCycleId =
+    draft.scopeType === "cycle"
+      ? draft.scopeId
+      : levels.find((level) => level.value === draft.scopeId)?.cycleId;
+  const gradingScale =
+    cycles.find((cycle) => cycle.value === selectedCycleId)?.gradingScale ?? 20;
   const validation = useMemo(
-    () => validateExpression(draft.expression, allowedCodes),
-    [draft.expression, allowedCodes],
+    () => validateExpression(draft.expression, allowedCodes, gradingScale),
+    [draft.expression, allowedCodes, gradingScale],
   );
   const scopeOptions = draft.scopeType === "cycle" ? cycles : levels;
 
@@ -168,10 +176,11 @@ export function GradingFormulasSettingsPage() {
         .filter((type) => referenced.has(type.code))
         .map((type) => ({
           value: testValues[type.code] ?? 0,
-          scale: 20,
+          scale: gradingScale,
           assessmentTypeCode: type.code,
         })),
       { expression: draft.expression, rounding: draft.rounding },
+      gradingScale,
     );
     if (result.error || result.missingTypeCodes.length) {
       setTestError(
@@ -591,6 +600,7 @@ function Field({
 function validateExpression(
   expression: string,
   allowedCodes: string[],
+  gradingScale: number,
 ): { valid: boolean; error: string; variables: string[] } {
   if (!expression.trim())
     return {
@@ -609,18 +619,18 @@ function validateExpression(
       };
     const result = calculateCourseAverage(
       variables.map((code) => ({
-        value: 10,
-        scale: 20,
+        value: gradingScale / 2,
+        scale: gradingScale,
         assessmentTypeCode: code,
       })),
       { expression, rounding: 2 },
+      gradingScale,
     );
     if (result.error) return { valid: false, error: result.error, variables };
-    if (result.average !== 10)
+    if (result.average !== gradingScale / 2)
       return {
         valid: false,
-        error:
-          "La formule n’est pas une moyenne cohérente : lorsque toutes les variables valent 10, le résultat doit être 10. Vérifiez notamment que le dénominateur correspond à la somme des pondérations.",
+        error: `La formule n’est pas une moyenne cohérente : lorsque toutes les variables valent ${gradingScale / 2}, le résultat doit rester ${gradingScale / 2}. Vérifiez notamment que le dénominateur correspond à la somme des pondérations.`,
         variables,
       };
     return { valid: true, error: "", variables };

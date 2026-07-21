@@ -12,6 +12,7 @@ describe("calculateCourseAverage", () => {
         { value: 18, scale: 20, assessmentTypeCode: "COMPO" },
       ],
       { expression: "(DEVOIR + COMPO * 2) / 3", rounding: 2 },
+      20,
     );
     expect(result).toEqual({ average: 15.33, missingTypeCodes: [] });
   });
@@ -24,6 +25,7 @@ describe("calculateCourseAverage", () => {
         { value: 16, scale: 20, assessmentTypeCode: "INTERRO" },
       ],
       { expression: "(DEVOIR + INTERRO * 2) / 3", rounding: 2 },
+      20,
     );
     expect(result.average).toBe(15.92);
   });
@@ -36,6 +38,7 @@ describe("calculateCourseAverage", () => {
         { value: 16, scale: 20, assessmentTypeCode: "INTERRO" },
       ],
       { expression: "(DEVOIR + INTERRO * 2) / 2", rounding: 2 },
+      20,
     );
     expect(result.average).toBeNull();
     expect(result.error).toContain("Résultat hors barème");
@@ -48,6 +51,7 @@ describe("calculateCourseAverage", () => {
         { value: 16, scale: 20, assessmentTypeCode: "DS" },
       ],
       { expression: "DS" },
+      20,
     );
     expect(result.average).toBe(14);
   });
@@ -56,17 +60,30 @@ describe("calculateCourseAverage", () => {
     const result = calculateCourseAverage(
       [{ value: 15, scale: 20, assessmentTypeCode: "DS" }],
       { expression: "(DS + COMPO * 2) / 3" },
+      20,
     );
     expect(result).toEqual({ average: null, missingTypeCodes: ["COMPO"] });
   });
 
   it("refuse le code JavaScript et la division par zéro", () => {
     expect(
-      calculateCourseAverage([], { expression: "alert(1)" }).average,
+      calculateCourseAverage([], { expression: "alert(1)" }, 20).average,
     ).toBeNull();
-    expect(calculateCourseAverage([], { expression: "1 / 0" }).error).toBe(
+    expect(calculateCourseAverage([], { expression: "1 / 0" }, 20).error).toBe(
       "Division par zéro",
     );
+  });
+
+  it("normalise et borne avec le barème annuel du cycle", () => {
+    const result = calculateCourseAverage(
+      [
+        { value: 16, scale: 20, assessmentTypeCode: "DEVOIR" },
+        { value: 7, scale: 10, assessmentTypeCode: "INTERRO" },
+      ],
+      { expression: "(DEVOIR + INTERRO) / 2", rounding: 2 },
+      10,
+    );
+    expect(result.average).toBe(7.5);
   });
 
   it("extrait les variables sans doublon", () => {

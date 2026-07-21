@@ -13,6 +13,7 @@ export type CourseSummary = {
   cycleId: string;
   levelId: string;
   cycleName: string;
+  gradingScale: number;
   levelName: string;
   subjectId: string;
   subjectName: string;

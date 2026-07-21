@@ -837,7 +837,11 @@ function Gradebook(props: {
           ];
     });
     return (
-      calculateCourseAverage(values, props.formula.rules).average ?? undefined
+      calculateCourseAverage(
+        values,
+        props.formula.rules,
+        props.course?.gradingScale ?? 20,
+      ).average ?? undefined
     );
   };
 

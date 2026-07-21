@@ -2,8 +2,8 @@
 
 - « Évaluation » n’est pas une entité principale.
 - Une note exige un cours accessible.
-- Le barème vient du type et n’est pas modifiable dans la note.
-- Le barème d’un type utilisé est immuable.
+- Le barème vient du cycle annuel et n’est pas modifiable dans la note.
+- Une note et un bulletin conservent le barème figé utilisé lors de leur création.
 - La saisie existe par classe et par élève.
 - La classe charge automatiquement ses élèves.
 - Absent, dispensé et reporté sont distincts.

@@ -564,7 +564,11 @@ export async function listAverageControls(
               ];
         });
         const calculation = formula
-          ? calculateCourseAverage(normalized, formula.rules)
+          ? calculateCourseAverage(
+              normalized,
+              formula.rules,
+              course.gradingScale,
+            )
           : { average: null, missingTypeCodes: [] };
         const average = calculation.average;
         const anomalies = [

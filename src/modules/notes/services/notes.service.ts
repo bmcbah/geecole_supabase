@@ -9,7 +9,7 @@ export async function listCourseSummaries(
   institutionId: string,
   yearId: string,
 ): Promise<CourseSummary[]> {
-  const [assignments, classes, levels, subjects, people, scopes] =
+  const [assignments, classes, levels, cycles, subjects, people, scopes] =
     await Promise.all([
       supabase
         .from("pedagogical_assignments")
@@ -28,6 +28,11 @@ export async function listCourseSummaries(
         .eq("institution_id", institutionId)
         .eq("academic_year_id", yearId),
       supabase
+        .from("academic_year_cycles")
+        .select("cycle_id,grading_scale")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId),
+      supabase
         .from("subjects")
         .select("id,name")
         .eq("institution_id", institutionId),
@@ -39,7 +44,15 @@ export async function listCourseSummaries(
         .from("pedagogical_assignment_periods")
         .select("assignment_id,period_id"),
     ]);
-  for (const result of [assignments, classes, levels, subjects, people, scopes])
+  for (const result of [
+    assignments,
+    classes,
+    levels,
+    cycles,
+    subjects,
+    people,
+    scopes,
+  ])
     if (result.error) throw result.error;
   return (assignments.data ?? [])
     .filter((item) => item.subject_id)
@@ -59,6 +72,9 @@ export async function listCourseSummaries(
         cycleId: level?.cycle_id ?? "",
         levelId: level?.id ?? "",
         cycleName: level?.cycle_name_snapshot ?? "Cycle",
+        gradingScale:
+          cycles.data?.find((cycle) => cycle.cycle_id === level?.cycle_id)
+            ?.grading_scale ?? 20,
         levelName: level?.level_name_snapshot ?? "Niveau",
         subjectId: item.subject_id as string,
         subjectName:
