@@ -308,6 +308,7 @@ function GradebookTree(props: {
   const [periodId, setPeriodId] = useState("");
   const [levelName, setLevelName] = useState("");
   const [classId, setClassId] = useState("");
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const cycles = useMemo(
     () =>
@@ -428,6 +429,19 @@ function GradebookTree(props: {
     props.selectedCourse && periodId
       ? `${periodId}:course:${props.selectedCourse.assignmentId}`
       : undefined;
+  const expandableKeys = useMemo(() => {
+    const keys: Record<string, boolean> = {};
+    const visit = (items: TreeNode[]) => {
+      items.forEach((node) => {
+        if (node.children?.length && node.key != null) {
+          keys[String(node.key)] = true;
+          visit(node.children);
+        }
+      });
+    };
+    visit(nodes);
+    return keys;
+  }, [nodes]);
   const selectNode = (key: string) => {
     const find = (list: TreeNode[]): TreeNode | undefined => {
       for (const node of list) {
@@ -453,12 +467,26 @@ function GradebookTree(props: {
   const tree = (
     <Tree
       value={nodes}
+      expandedKeys={expandedKeys}
+      onToggle={(event) => setExpandedKeys(event.value)}
+      togglerTemplate={(_node, options) => (
+        <button
+          type="button"
+          className={options.containerClassName}
+          aria-label={options.expanded ? "Replier" : "Déplier"}
+          onClick={(event) => options.onClick(event)}
+        >
+          <i
+            className={`pi ${options.expanded ? "pi-minus" : "pi-plus"} ${options.iconClassName}`}
+          />
+        </button>
+      )}
       selectionMode="single"
       selectionKeys={selectedKey}
       onSelectionChange={(e) => {
         if (typeof e.value === "string") selectNode(e.value);
       }}
-      className="border-0 bg-transparent p-0 text-xs"
+      className="gradebook-tree border-0 bg-transparent p-0 text-xs"
     />
   );
   return (
@@ -522,8 +550,34 @@ function GradebookTree(props: {
               />
             </span>
           </div>
-          <div className="mb-2 mt-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            Niveau → Classe → Cours
+          <div className="mb-1.5 mt-2 flex items-center justify-between gap-1 border-b border-slate-200 pb-1.5 pl-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Niveau → Classe → Cours
+            </span>
+            <span className="flex shrink-0 items-center gap-0.5">
+              <Button
+                type="button"
+                icon="pi pi-plus"
+                text
+                rounded
+                size="small"
+                aria-label="Déplier tout l’arbre"
+                tooltip="Déplier tout"
+                onClick={() => setExpandedKeys(expandableKeys)}
+                className="h-6 w-6 p-0"
+              />
+              <Button
+                type="button"
+                icon="pi pi-minus"
+                text
+                rounded
+                size="small"
+                aria-label="Replier tout l’arbre"
+                tooltip="Replier tout"
+                onClick={() => setExpandedKeys({})}
+                className="h-6 w-6 p-0"
+              />
+            </span>
           </div>
           {tree}
         </aside>
@@ -604,6 +658,24 @@ function GradebookTree(props: {
             placeholder="Période, cycle, niveau, classe ou cours"
           />
         </span>
+        <div className="mb-2 flex justify-end gap-1">
+          <Button
+            type="button"
+            label="Déplier tout"
+            icon="pi pi-plus"
+            text
+            size="small"
+            onClick={() => setExpandedKeys(expandableKeys)}
+          />
+          <Button
+            type="button"
+            label="Replier tout"
+            icon="pi pi-minus"
+            text
+            size="small"
+            onClick={() => setExpandedKeys({})}
+          />
+        </div>
         {tree}
       </Dialog>
     </section>
@@ -859,7 +931,7 @@ function Gradebook(props: {
                     }
                   />
                 </th>
-                <th className="sticky left-0 z-10 w-px whitespace-nowrap border-b border-r bg-slate-50 p-2">
+                <th className="sticky left-0 z-10 w-[clamp(8.5rem,13vw,11rem)] max-w-[11rem] border-b border-r bg-slate-50 px-2 py-1.5">
                   Élève
                 </th>
                 {props.notes.map((note) => (
@@ -906,9 +978,11 @@ function Gradebook(props: {
                       }
                     />
                   </td>
-                  <td className="sticky left-0 z-10 w-px whitespace-nowrap border-b border-r bg-white p-2">
-                    <strong className="block">{student.name}</strong>
-                    <span className="text-xs text-slate-400">
+                  <td className="sticky left-0 z-10 w-[clamp(8.5rem,13vw,11rem)] max-w-[11rem] border-b border-r bg-white px-2 py-1.5">
+                    <strong className="block truncate" title={student.name}>
+                      {student.name}
+                    </strong>
+                    <span className="block truncate text-[10px] text-slate-400">
                       {student.matricule}
                     </span>
                   </td>
