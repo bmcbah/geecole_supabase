@@ -13,6 +13,11 @@ export type PostponedResultItem = {
 };
 export type AppreciationItem = {
   id: string;
+  appreciationId?: string;
+  studentId: string;
+  classId: string;
+  subjectId: string;
+  periodId: string;
   studentName: string;
   matricule: string;
   className: string;
@@ -27,8 +32,20 @@ export type AverageControlItem = {
   subjectName: string;
   teacherName: string;
   coefficient: number;
+  periodId: string;
+  periodName: string;
+  formulaName: string;
+  formulaExpression: string;
   notesCount: number;
+  expectedResults: number;
+  enteredResults: number;
+  missingCount: number;
   postponedCount: number;
+  absentCount: number;
+  exemptCount: number;
+  average: number | null;
+  contribution: number | null;
+  anomalies: string[];
   state: "ready" | "incomplete" | "not_started";
 };
 export type OperationsMode = "postponed" | "appreciations" | "averages";
@@ -60,11 +77,22 @@ export async function completePostponedResult(input: {
   if (error) throw error;
 }
 
-export async function updateAppreciation(id: string, appreciation: string) {
-  const { error } = await supabase
-    .from("subject_appreciations")
-    .update({ appreciation: appreciation.trim() })
-    .eq("id", id);
+export async function updateAppreciation(
+  item: AppreciationItem,
+  appreciation: string,
+) {
+  const { error } = await supabase.from("subject_appreciations").upsert(
+    {
+      institution_id: item.id.split(":")[0],
+      academic_year_id: item.id.split(":")[1],
+      period_id: item.periodId,
+      class_id: item.classId,
+      subject_id: item.subjectId,
+      student_id: item.studentId,
+      appreciation: appreciation.trim(),
+    },
+    { onConflict: "period_id,class_id,subject_id,student_id" },
+  );
   if (error) throw error;
 }
 
@@ -113,22 +141,21 @@ export async function listOperationsPage(
       return { rows: [], total: 0 };
   }
   if (mode === "appreciations") {
-    let query = supabase
-      .from("subject_appreciations")
-      .select("*", { count: "exact" })
-      .eq("institution_id", institutionId)
-      .eq("academic_year_id", yearId);
-    if (studentIds) query = query.in("student_id", studentIds);
-    if (filters.classId) query = query.eq("class_id", filters.classId);
-    if (filters.periodId) query = query.eq("period_id", filters.periodId);
-    query = query
-      .order("updated_at", { ascending: false })
-      .range(filters.first, filters.first + filters.rows - 1);
-    const { data, count, error } = await query;
-    if (error) throw error;
-    const all = await listAppreciations(institutionId, yearId);
-    const ids = new Set((data ?? []).map((i) => i.id));
-    return { rows: all.filter((i) => ids.has(i.id)), total: count ?? 0 };
+    const all = await listExpectedAppreciations(institutionId, yearId);
+    const rows = all.filter(
+      (item) =>
+        (!studentIds || studentIds.includes(item.studentId)) &&
+        (!filters.classId || item.classId === filters.classId) &&
+        (!filters.periodId || item.periodId === filters.periodId) &&
+        (!filters.state ||
+          (filters.state === "complete"
+            ? Boolean(item.appreciation)
+            : !item.appreciation)),
+    );
+    return {
+      rows: rows.slice(filters.first, filters.first + filters.rows),
+      total: rows.length,
+    };
   }
   if (mode === "postponed") {
     let notesQuery = supabase
@@ -160,42 +187,104 @@ export async function listOperationsPage(
     const ids = new Set((data ?? []).map((i) => i.id));
     return { rows: all.filter((i) => ids.has(i.id)), total: count ?? 0 };
   }
-  let query = supabase
-    .from("notes_average_controls")
-    .select("*", { count: "exact" })
-    .eq("institution_id", institutionId)
-    .eq("academic_year_id", yearId);
-  if (filters.classId) query = query.eq("class_id", filters.classId);
-  if (filters.state)
-    query = query.eq(
-      "state",
-      filters.state as "ready" | "incomplete" | "not_started",
-    );
-  if (filters.search?.trim()) {
-    const term = filters.search.trim();
-    query = query.or(
-      `class_name.ilike.%${term}%,subject_name.ilike.%${term}%,teacher_name.ilike.%${term}%`,
-    );
-  }
-  query = query
-    .order("class_name")
-    .range(filters.first, filters.first + filters.rows - 1);
-  const { data, count, error } = await query;
-  if (error) throw error;
+  const all = await listAverageControls(institutionId, yearId);
+  const term = filters.search?.trim().toLocaleLowerCase("fr") ?? "";
+  const rows = all.filter(
+    (item) =>
+      (!filters.classId || item.classId === filters.classId) &&
+      (!filters.periodId || item.periodId === filters.periodId) &&
+      (!filters.state || item.state === filters.state) &&
+      (!term ||
+        [item.className, item.subjectName, item.teacherName].some((value) =>
+          value.toLocaleLowerCase("fr").includes(term),
+        )),
+  );
   return {
-    rows: (data ?? []).map((i) => ({
-      id: i.id,
-      classId: i.class_id,
-      className: i.class_name,
-      subjectName: i.subject_name,
-      teacherName: i.teacher_name,
-      coefficient: i.coefficient,
-      notesCount: i.notes_count,
-      postponedCount: i.postponed_count,
-      state: i.state,
-    })),
-    total: count ?? 0,
+    rows: rows.slice(filters.first, filters.first + filters.rows),
+    total: rows.length,
   };
+}
+
+async function listExpectedAppreciations(
+  institutionId: string,
+  yearId: string,
+): Promise<AppreciationItem[]> {
+  const courses = await listCourseSummaries(institutionId, yearId);
+  const [periods, assignments, enrollments, students, stored] =
+    await Promise.all([
+      supabase
+        .from("academic_periods")
+        .select("id,cycle_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId),
+      supabase
+        .from("class_assignments")
+        .select("class_id,enrollment_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .is("ends_on", null),
+      supabase
+        .from("enrollments")
+        .select("id,student_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("status", "confirmed"),
+      supabase
+        .from("students")
+        .select("id,first_name,last_name,matricule")
+        .eq("institution_id", institutionId),
+      supabase
+        .from("subject_appreciations")
+        .select("*")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId),
+    ]);
+  for (const result of [periods, assignments, enrollments, students, stored])
+    if (result.error) throw result.error;
+  return courses.flatMap((course) => {
+    const courseStudents = (assignments.data ?? []).flatMap((assignment) => {
+      if (assignment.class_id !== course.classId) return [];
+      const enrollment = enrollments.data?.find(
+        (item) => item.id === assignment.enrollment_id,
+      );
+      const student = students.data?.find(
+        (item) => item.id === enrollment?.student_id,
+      );
+      return student ? [student] : [];
+    });
+    return (periods.data ?? [])
+      .filter(
+        (period) =>
+          period.cycle_id === course.cycleId &&
+          (!course.allowedPeriodIds.length ||
+            course.allowedPeriodIds.includes(period.id)),
+      )
+      .flatMap((period) =>
+        courseStudents.map((student) => {
+          const current = stored.data?.find(
+            (item) =>
+              item.period_id === period.id &&
+              item.class_id === course.classId &&
+              item.subject_id === course.subjectId &&
+              item.student_id === student.id,
+          );
+          return {
+            id: `${institutionId}:${yearId}:${period.id}:${course.classId}:${course.subjectId}:${student.id}`,
+            appreciationId: current?.id,
+            studentId: student.id,
+            classId: course.classId,
+            subjectId: course.subjectId,
+            periodId: period.id,
+            studentName: `${student.first_name} ${student.last_name}`,
+            matricule: student.matricule,
+            className: course.className,
+            subjectName: course.subjectName,
+            appreciation: current?.appreciation ?? "",
+            updatedAt: current?.updated_at ?? "",
+          };
+        }),
+      );
+  });
 }
 
 export async function listPostponedResults(
@@ -306,44 +395,137 @@ export async function listAverageControls(
   yearId: string,
 ): Promise<AverageControlItem[]> {
   const courses = await listCourseSummaries(institutionId, yearId);
-  const [notes, results] = await Promise.all([
-    supabase
-      .from("gradebook_notes")
-      .select("id,class_id,subject_id")
-      .eq("institution_id", institutionId)
-      .eq("academic_year_id", yearId),
-    supabase
-      .from("note_results")
-      .select("note_id,status")
-      .eq("institution_id", institutionId),
-  ]);
-  if (notes.error) throw notes.error;
-  if (results.error) throw results.error;
-  return courses.map((course) => {
-    const courseNotes = (notes.data ?? []).filter(
-      (note) =>
-        note.class_id === course.classId &&
-        note.subject_id === course.subjectId,
-    );
-    const noteIds = new Set(courseNotes.map((note) => note.id));
-    const postponedCount = (results.data ?? []).filter(
-      (result) => noteIds.has(result.note_id) && result.status === "postponed",
-    ).length;
-    return {
-      id: course.assignmentId,
-      classId: course.classId,
-      className: course.className,
-      subjectName: course.subjectName,
-      teacherName: course.teacherName,
-      coefficient: course.coefficient,
-      notesCount: courseNotes.length,
-      postponedCount,
-      state:
-        courseNotes.length === 0
-          ? "not_started"
-          : postponedCount
-            ? "incomplete"
-            : "ready",
-    };
-  });
+  const [periods, notes, results, assignments, enrollments, formula] =
+    await Promise.all([
+      supabase
+        .from("academic_periods")
+        .select("id,name,cycle_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId),
+      supabase
+        .from("gradebook_notes")
+        .select("id,class_id,subject_id,period_id,scale_snapshot")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId),
+      supabase
+        .from("note_results")
+        .select("note_id,student_id,value,status")
+        .eq("institution_id", institutionId),
+      supabase
+        .from("class_assignments")
+        .select("class_id,enrollment_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .is("ends_on", null),
+      supabase
+        .from("enrollments")
+        .select("id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("status", "confirmed"),
+      supabase
+        .from("grading_formulas")
+        .select("name,expression")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("is_default", true)
+        .maybeSingle(),
+    ]);
+  for (const result of [
+    periods,
+    notes,
+    results,
+    assignments,
+    enrollments,
+    formula,
+  ])
+    if (result.error) throw result.error;
+  const confirmed = new Set((enrollments.data ?? []).map((item) => item.id));
+  return courses.flatMap((course) =>
+    (periods.data ?? [])
+      .filter(
+        (period) =>
+          period.cycle_id === course.cycleId &&
+          (!course.allowedPeriodIds.length ||
+            course.allowedPeriodIds.includes(period.id)),
+      )
+      .map((period) => {
+        const courseNotes = (notes.data ?? []).filter(
+          (note) =>
+            note.class_id === course.classId &&
+            note.subject_id === course.subjectId &&
+            note.period_id === period.id,
+        );
+        const noteIds = new Set(courseNotes.map((note) => note.id));
+        const courseResults = (results.data ?? []).filter((result) =>
+          noteIds.has(result.note_id),
+        );
+        const studentsCount = (assignments.data ?? []).filter(
+          (item) =>
+            item.class_id === course.classId &&
+            confirmed.has(item.enrollment_id),
+        ).length;
+        const expectedResults = courseNotes.length * studentsCount;
+        const postponedCount = courseResults.filter(
+          (result) => result.status === "postponed",
+        ).length;
+        const absentCount = courseResults.filter(
+          (result) => result.status === "absent",
+        ).length;
+        const exemptCount = courseResults.filter(
+          (result) => result.status === "exempt",
+        ).length;
+        const missingCount = Math.max(
+          0,
+          expectedResults - courseResults.length,
+        );
+        const normalized = courseResults.flatMap((result) => {
+          const note = courseNotes.find((item) => item.id === result.note_id);
+          return result.value == null || !note
+            ? []
+            : [(result.value / note.scale_snapshot) * 20];
+        });
+        const average = normalized.length
+          ? normalized.reduce((sum, value) => sum + value, 0) /
+            normalized.length
+          : null;
+        const anomalies = [
+          ...(courseNotes.length ? [] : ["Aucune évaluation créée"]),
+          ...(postponedCount
+            ? [`${postponedCount} résultat(s) reporté(s)`]
+            : []),
+          ...(missingCount ? [`${missingCount} note(s) non saisie(s)`] : []),
+        ];
+        return {
+          id: `${course.assignmentId}:${period.id}`,
+          classId: course.classId,
+          className: course.className,
+          subjectName: course.subjectName,
+          teacherName: course.teacherName,
+          coefficient: course.coefficient,
+          periodId: period.id,
+          periodName: period.name,
+          formulaName: formula.data?.name ?? "Moyenne arithmétique",
+          formulaExpression:
+            formula.data?.expression ??
+            "SUM(note / barème × 20) / nombre de notes",
+          notesCount: courseNotes.length,
+          expectedResults,
+          enteredResults: courseResults.length,
+          missingCount,
+          postponedCount,
+          absentCount,
+          exemptCount,
+          average,
+          contribution: average === null ? null : average * course.coefficient,
+          anomalies,
+          state:
+            courseNotes.length === 0
+              ? ("not_started" as const)
+              : anomalies.length
+                ? ("incomplete" as const)
+                : ("ready" as const),
+        };
+      }),
+  );
 }

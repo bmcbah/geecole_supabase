@@ -428,6 +428,8 @@ export async function changeBulletinStatus(
   status: BulletinRow["status"],
   comment?: string,
 ) {
+  if (status === "rejected" && (!comment || comment.trim().length < 3))
+    throw new Error("Le motif de rejet est obligatoire.");
   const { data: auth } = await supabase.auth.getUser();
   const now = new Date().toISOString();
   const patch =

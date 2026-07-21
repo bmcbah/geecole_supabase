@@ -12,3 +12,10 @@
 - Le coefficient est saisi lors de l’affectation.
 - Le TreeView est filtré par permissions.
 - Les modifications sont auditées.
+- L’ouverture, la clôture et la réouverture sont possibles uniquement depuis
+  Gestion des périodes.
+- La page Appréciations affiche également les appréciations manquantes.
+- Le contrôle des moyennes est contextualisé par période et explique chaque
+  blocage.
+- Un rejet de bulletin exige un motif et reste tracé sur sa version.
+- Le modèle de bulletin enregistré est appliqué à l’aperçu et à l’impression.

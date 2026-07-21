@@ -141,7 +141,7 @@ export function NotesOperationsPage() {
           value: resultStatus ? undefined : (resultValue ?? undefined),
           status: resultStatus || undefined,
         });
-      else await updateAppreciation(editing.id, appreciation);
+      else await updateAppreciation(editing, appreciation);
       setEditing(undefined);
       await load();
     } catch (cause) {
@@ -186,18 +186,25 @@ export function NotesOperationsPage() {
         activeCount={[query, classId, periodId, state].filter(Boolean).length}
         status={state}
         onStatus={
-          mode === "averages"
+          mode !== "postponed"
             ? (v) => {
                 setFirst(0);
                 setState(v);
               }
             : undefined
         }
-        statusOptions={[
-          { label: "Prêt", value: "ready" },
-          { label: "Bloqué", value: "incomplete" },
-          { label: "À démarrer", value: "not_started" },
-        ]}
+        statusOptions={
+          mode === "appreciations"
+            ? [
+                { label: "Complétée", value: "complete" },
+                { label: "Manquante", value: "missing" },
+              ]
+            : [
+                { label: "Prêt", value: "ready" },
+                { label: "Bloqué", value: "incomplete" },
+                { label: "À démarrer", value: "not_started" },
+              ]
+        }
         classId={classId}
         onClass={(v) => {
           setFirst(0);
@@ -205,14 +212,10 @@ export function NotesOperationsPage() {
         }}
         classOptions={classes.map((i) => ({ label: i.name, value: i.id }))}
         periodId={periodId}
-        onPeriod={
-          mode === "averages"
-            ? undefined
-            : (v) => {
-                setFirst(0);
-                setPeriodId(v);
-              }
-        }
+        onPeriod={(v) => {
+          setFirst(0);
+          setPeriodId(v);
+        }}
         periodOptions={periods.map((i) => ({ label: i.name, value: i.id }))}
         placeholder="Élève, matricule, matière ou enseignant"
       />
@@ -266,12 +269,29 @@ export function NotesOperationsPage() {
               <Column field="studentName" header="Élève" />
               <Column field="className" header="Classe" />
               <Column field="subjectName" header="Matière" />
-              <Column field="appreciation" header="Appréciation du bulletin" />
+              <Column
+                header="État"
+                body={(row: AppreciationItem) => (
+                  <Tag
+                    value={row.appreciation ? "Complétée" : "À saisir"}
+                    severity={row.appreciation ? "success" : "warning"}
+                  />
+                )}
+              />
+              <Column
+                field="appreciation"
+                header="Appréciation du bulletin"
+                body={(row: AppreciationItem) =>
+                  row.appreciation || (
+                    <span className="text-slate-400">Non renseignée</span>
+                  )
+                }
+              />
               <Column
                 header="Action"
                 body={(row: AppreciationItem) => (
                   <Button
-                    label="Modifier"
+                    label={row.appreciation ? "Modifier" : "Saisir"}
                     icon="pi pi-pencil"
                     size="small"
                     text
@@ -283,11 +303,46 @@ export function NotesOperationsPage() {
           ) : (
             <>
               <Column field="className" header="Classe" />
+              <Column field="periodName" header="Période" />
               <Column field="subjectName" header="Matière" />
               <Column field="teacherName" header="Enseignant" />
               <Column field="coefficient" header="Coef." />
-              <Column field="notesCount" header="Évaluations" />
-              <Column field="postponedCount" header="Rattrapages" />
+              <Column
+                header="Moyenne"
+                body={(row: AverageControlItem) =>
+                  row.average === null
+                    ? "—"
+                    : `${row.average.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} /20`
+                }
+              />
+              <Column
+                header="Saisie"
+                body={(row: AverageControlItem) => (
+                  <span title={`${row.notesCount} évaluation(s)`}>
+                    {row.enteredResults}/{row.expectedResults}
+                  </span>
+                )}
+              />
+              <Column
+                header="Anomalies"
+                body={(row: AverageControlItem) =>
+                  row.anomalies.length ? (
+                    <ul className="m-0 list-none space-y-1 p-0 text-xs text-red-700">
+                      {row.anomalies.map((anomaly) => (
+                        <li key={anomaly}>{anomaly}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-emerald-700">Aucune</span>
+                  )
+                }
+              />
+              <Column
+                header="Formule"
+                body={(row: AverageControlItem) => (
+                  <span title={row.formulaExpression}>{row.formulaName}</span>
+                )}
+              />
               <Column
                 header="État"
                 body={(row: AverageControlItem) => (
@@ -296,7 +351,7 @@ export function NotesOperationsPage() {
                       row.state === "ready"
                         ? "Prêt à générer"
                         : row.state === "incomplete"
-                          ? `${row.postponedCount} blocage(s)`
+                          ? "À corriger"
                           : "Aucune évaluation"
                     }
                     severity={
@@ -311,12 +366,16 @@ export function NotesOperationsPage() {
               />
               <Column
                 header="Action"
-                body={() => (
+                body={(row: AverageControlItem) => (
                   <Button
                     label="Voir le cahier"
                     size="small"
                     text
-                    onClick={() => void navigate("/notes-bulletins/cahiers")}
+                    onClick={() =>
+                      void navigate(
+                        `/notes-bulletins/cahiers?class=${row.classId}&period=${row.periodId}`,
+                      )
+                    }
                   />
                 )}
               />

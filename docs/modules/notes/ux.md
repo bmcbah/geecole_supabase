@@ -160,8 +160,9 @@ Un **rattrapage à compléter** est un résultat marqué Reporté. Tant qu’il 
 pas remplacé par une note ou un statut définitif, la moyenne et le bulletin de
 l’élève sont bloqués.
 
-Une seule période peut être active par cycle. L’activation ou la clôture se fait
-depuis la toolbar du cahier et conditionne les actions de saisie.
+Une seule période peut être ouverte par cycle. Son ouverture, sa clôture et sa
+réouverture se font **uniquement** dans la page **Gestion des périodes**. Le
+cahier affiche l’état en lecture seule et conditionne les actions de saisie.
 
 La période affichée est résolue automatiquement depuis le cycle de la classe ou
 du niveau. Le changement de cours recalcule les périodes disponibles.
@@ -223,6 +224,17 @@ Affiche sans modification directe :
 - coefficient ;
 - contribution à la moyenne générale ;
 - anomalies.
+
+Le contrôle est filtré par période et présente aussi les notes manquantes, les
+résultats reportés, les absences, les dispenses et la raison précise d’un
+blocage. Une ligne sans évaluation ou avec résultat reporté n’est jamais déclarée
+prête.
+
+## Appréciations
+
+La page présente tous les couples élève–matière attendus pour la période, y
+compris lorsqu’aucune appréciation n’a encore été saisie. Elle permet la création
+et la modification sur place et affiche un état de complétude.
 
 ## Navigation détaillée par profil
 
