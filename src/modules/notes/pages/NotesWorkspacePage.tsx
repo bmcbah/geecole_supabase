@@ -930,7 +930,7 @@ function Gradebook(props: {
           <table className="w-full min-w-[980px] border-collapse text-xs">
             <thead className="sticky top-0 z-20">
               <tr className="bg-slate-50 text-left text-xs text-slate-500">
-                <th className="w-10 border-b p-2">
+                <th className="border-b p-2">
                   <Checkbox
                     checked={
                       selected.length === visible.length && visible.length > 0
@@ -944,7 +944,7 @@ function Gradebook(props: {
                     }
                   />
                 </th>
-                <th className="sticky left-0 z-10 w-[clamp(8.5rem,13vw,11rem)] max-w-[11rem] border-b border-r bg-slate-50 px-2 py-1.5">
+                <th className="sticky left-0 z-10 w-[clamp(6.5rem,11vw,11rem)] max-w-[8rem] min-w-28 border-b border-r bg-slate-50 px-2 py-1.5">
                   Élève
                 </th>
                 {props.notes.map((note) => (
@@ -991,7 +991,7 @@ function Gradebook(props: {
                       }
                     />
                   </td>
-                  <td className="sticky left-0 z-10 w-[clamp(8.5rem,13vw,11rem)] max-w-[11rem] border-b border-r bg-white px-2 py-1.5">
+                  <td className="sticky left-0 z-10 w-[clamp(6.5rem,11vw,11rem)] max-w-[8rem] border-b border-r bg-white px-2 py-1.5">
                     <strong className="block truncate" title={student.name}>
                       {student.name}
                     </strong>
