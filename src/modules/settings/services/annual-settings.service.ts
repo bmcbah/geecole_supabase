@@ -90,6 +90,32 @@ export async function listAssessmentTypes(yearId: string) {
   if (error) throw error;
   return data;
 }
+export const recommendedAssessmentTypes = [
+  { name: "Interrogation", code: "INTERRO", scale: 20 },
+  { name: "Devoir surveillé", code: "DS", scale: 20 },
+  { name: "Devoir à domicile", code: "DM", scale: 20 },
+  { name: "Composition", code: "COMPO", scale: 20 },
+  { name: "Examen blanc", code: "EXAM-BLANC", scale: 20 },
+  { name: "Évaluation orale", code: "ORAL", scale: 20 },
+  { name: "Travaux pratiques", code: "TP", scale: 20 },
+  { name: "Projet", code: "PROJET", scale: 20 },
+] as const;
+export async function installRecommendedAssessmentTypes(
+  institutionId: string,
+  yearId: string,
+) {
+  const { error } = await supabase.from("assessment_types").upsert(
+    recommendedAssessmentTypes.map((item) => ({
+      institution_id: institutionId,
+      academic_year_id: yearId,
+      ...item,
+      weight: 1,
+      is_active: true,
+    })),
+    { onConflict: "academic_year_id,code", ignoreDuplicates: true },
+  );
+  if (error) throw error;
+}
 export async function saveAssessmentType(
   institutionId: string,
   yearId: string,

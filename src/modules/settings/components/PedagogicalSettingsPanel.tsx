@@ -5,6 +5,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputSwitch } from "primereact/inputswitch";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
+import { Accordion, AccordionTab } from "primereact/accordion";
 import { Message } from "primereact/message";
 import { MultiSelect } from "primereact/multiselect";
 import type { AppRole } from "../../../shared/lib/supabase/database.types";
@@ -91,7 +92,11 @@ export function PedagogicalSettingsPanel() {
         description="Règles transverses appliquées aux notes, moyennes et bulletins."
       />
       {error ? <Message severity="error" text={error} /> : null}
-      <div className="grid gap-3 lg:grid-cols-2">
+      <Accordion
+        multiple
+        activeIndex={[0]}
+        className="pedagogical-settings-accordion"
+      >
         <SettingsCard title="Notes et calculs">
           <Toggle
             label="Appréciations obligatoires"
@@ -289,7 +294,7 @@ export function PedagogicalSettingsPanel() {
             />
           </label>
         </SettingsCard>
-      </div>
+      </Accordion>
       <div className="flex justify-end">
         <Button
           label="Enregistrer"
@@ -311,12 +316,9 @@ function SettingsCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-4 mt-0 text-sm font-semibold text-slate-900">
-        {title}
-      </h3>
-      {children}
-    </section>
+    <AccordionTab header={title}>
+      <div className="px-1 pb-1">{children}</div>
+    </AccordionTab>
   );
 }
 function Toggle({

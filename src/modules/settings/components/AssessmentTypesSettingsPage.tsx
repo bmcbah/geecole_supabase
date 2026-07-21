@@ -8,6 +8,7 @@ import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deleteAssessmentType,
+  installRecommendedAssessmentTypes,
   listAssessmentTypes,
   saveAssessmentType,
 } from "../services/annual-settings.service";
@@ -35,10 +36,14 @@ export function AssessmentTypesSettingsPage() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
   const [items, setItems] = useState<Assessment[]>([]);
-  const [editing, setEditing] = useState<Assessment | null | undefined>(undefined);
+  const [editing, setEditing] = useState<Assessment | null | undefined>(
+    undefined,
+  );
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const editable = Boolean(year && !["closed", "archived"].includes(year.status));
+  const editable = Boolean(
+    year && !["closed", "archived"].includes(year.status),
+  );
 
   const load = useCallback(async () => {
     if (!year) return;
@@ -97,6 +102,19 @@ export function AssessmentTypesSettingsPage() {
       notify({ severity: "error", summary: "Suppression impossible" });
     }
   };
+  const installCatalog = async () => {
+    if (!year) return;
+    setSaving(true);
+    try {
+      await installRecommendedAssessmentTypes(institutionId, year.id);
+      await load();
+      notify({ severity: "success", summary: "Catalogue GeeCole ajouté" });
+    } catch {
+      notify({ severity: "error", summary: "Import du catalogue impossible" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!year) {
     return (
@@ -143,13 +161,24 @@ export function AssessmentTypesSettingsPage() {
               />
             }
             end={
-              <Button
-                label="Nouveau type"
-                icon="pi pi-plus"
-                size="small"
-                disabled={!editable}
-                onClick={() => setEditing(null)}
-              />
+              <div className="flex gap-2">
+                <Button
+                  label="Catalogue GeeCole"
+                  icon="pi pi-download"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  disabled={!editable || saving}
+                  onClick={() => void installCatalog()}
+                />
+                <Button
+                  label="Nouveau type"
+                  icon="pi pi-plus"
+                  size="small"
+                  disabled={!editable}
+                  onClick={() => setEditing(null)}
+                />
+              </div>
             }
             className="min-h-0 rounded-none border-0 bg-transparent p-0"
           />

@@ -1,10 +1,468 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button } from "primereact/button"; import { Column } from "primereact/column"; import { DataTable, type DataTablePageEvent, type DataTableSortEvent } from "primereact/datatable"; import { Dialog } from "primereact/dialog"; import { Dropdown } from "primereact/dropdown"; import { Message } from "primereact/message"; import { Tag } from "primereact/tag";
-import { PageHeader } from "../../../shared/components/layout/PageHeader"; import { useAcademicSession } from "../../academic-session/components/academic-session-context"; import { generateBulletins, listBatches, listGenerationContext, type BulletinBatchRow } from "../services/bulletins.service";
+import { Button } from "primereact/button";
+import { Column } from "primereact/column";
+import {
+  DataTable,
+  type DataTablePageEvent,
+  type DataTableSortEvent,
+} from "primereact/datatable";
+import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
+import { Message } from "primereact/message";
+import { Tag } from "primereact/tag";
+import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { NotesDataTableToolbar } from "../components/NotesDataTableToolbar";
+import {
+  generateBulletins,
+  listBatches,
+  listGenerationContext,
+  listGenerationItems,
+  type BulletinBatchRow,
+  type BulletinGenerationItem,
+  type GenerationScope,
+} from "../services/bulletins.service";
 
-export function BulletinGenerationsPage() { const { institutionId, yearId, year } = useAcademicSession(); const [items,setItems]=useState<BulletinBatchRow[]>([]); const [total,setTotal]=useState(0); const [first,setFirst]=useState(0); const [pageSize,setPageSize]=useState(10); const [sortField,setSortField]=useState("createdAt"); const [sortOrder,setSortOrder]=useState<1|-1|0>(-1); const [advanced,setAdvanced]=useState(false); const [status,setStatus]=useState(""); const [dateFrom,setDateFrom]=useState(""); const [dateTo,setDateTo]=useState(""); const [periodFilter,setPeriodFilter]=useState(""); const [periods,setPeriods]=useState<{id:string;name:string}[]>([]); const [classes,setClasses]=useState<{id:string;name:string}[]>([]); const [query,setQuery]=useState(""); const [open,setOpen]=useState(false); const [periodId,setPeriodId]=useState(""); const [classId,setClassId]=useState(""); const [loading,setLoading]=useState(false); const [error,setError]=useState(""); const [notice,setNotice]=useState("");
-  const load=useCallback(async()=>{if(!yearId)return; setLoading(true); try { const [page,context]=await Promise.all([listBatches(institutionId,yearId,{first,rows:pageSize,search:query,status,periodId:periodFilter,dateFrom,dateTo,sortField,sortOrder}),listGenerationContext(institutionId,yearId)]); setItems(page.rows); setTotal(page.total); setPeriods(context.periods); setClasses(context.classes); } catch {setError("Impossible de charger les générations.");} finally{setLoading(false);}},[dateFrom,dateTo,first,institutionId,pageSize,periodFilter,query,sortField,sortOrder,status,yearId]); useEffect(()=>{const timer=setTimeout(()=>void load(),250);return()=>clearTimeout(timer);},[load]);
-  const activeCount=useMemo(()=>[query,status,periodFilter,dateFrom,dateTo].filter(Boolean).length,[dateFrom,dateTo,periodFilter,query,status]); async function submit(){if(!yearId||!periodId)return;setLoading(true);setError("");try{const result=await generateBulletins({institutionId,yearId,periodId,classId:classId||undefined});setNotice(`${result.generated} bulletin(s) généré(s), ${result.blocked} bloqué(s).`);setOpen(false);await load();}catch{setError("La génération a échoué. Vérifiez les affectations, notes et résultats reportés.");}finally{setLoading(false);}}
-  if(!yearId)return <Message severity="warn" text="Sélectionnez une année scolaire."/>; return <div className="space-y-4 pb-8"><PageHeader eyebrow="Notes & Bulletins" title="Générations" description={`Préparer et contrôler les lots de bulletins · ${year?.name??"Année"}`} actions={<Button label="Générer des bulletins" icon="pi pi-sparkles" onClick={()=>setOpen(true)}/>}/>{error?<Message severity="error" text={error}/>:null}{notice?<Message severity="success" text={notice}/>:null}<NotesDataTableToolbar search={query} onSearch={(v)=>{setFirst(0);setQuery(v)}} advanced={advanced} onAdvanced={()=>setAdvanced(v=>!v)} activeCount={activeCount} onReset={()=>{setQuery("");setStatus("");setPeriodFilter("");setDateFrom("");setDateTo("");setFirst(0)}} status={status} onStatus={(v)=>{setFirst(0);setStatus(v)}} statusOptions={[{label:"Terminé",value:"completed"},{label:"Partiel",value:"partial"},{label:"Bloqué",value:"failed"}]} periodId={periodFilter} onPeriod={(v)=>{setFirst(0);setPeriodFilter(v)}} periodOptions={periods.map(p=>({label:p.name,value:p.id}))} dateFrom={dateFrom} onDateFrom={(v)=>{setFirst(0);setDateFrom(v)}} dateTo={dateTo} onDateTo={(v)=>{setFirst(0);setDateTo(v)}} placeholder="Période"/><section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><DataTable value={items} lazy loading={loading} dataKey="id" stripedRows paginator first={first} rows={pageSize} totalRecords={total} rowsPerPageOptions={[10,25,50]} onPage={(e:DataTablePageEvent)=>{setFirst(e.first);setPageSize(e.rows)}} sortField={sortField} sortOrder={sortOrder} onSort={(e:DataTableSortEvent)=>{setFirst(0);setSortField(String(e.sortField));setSortOrder(e.sortOrder??0)}} emptyMessage="Aucun lot de génération"><Column field="createdAt" header="Date" sortable body={(r:BulletinBatchRow)=>new Date(r.createdAt).toLocaleString("fr-FR")}/><Column field="periodName" header="Période"/><Column field="scope" header="Portée"/><Column field="total" header="Élèves" sortable/><Column field="generated" header="Générés"/><Column field="blocked" header="Bloqués"/><Column field="status" header="État" sortable body={(r:BulletinBatchRow)=><Tag value={r.status} severity={r.status==="completed"?"success":r.status==="failed"?"danger":"warning"}/>} /></DataTable></section><Dialog header="Générer les bulletins" visible={open} modal className="w-[min(94vw,34rem)]" onHide={()=>setOpen(false)}><div className="space-y-4"><Message severity="info" text="La période appartient au cycle de la classe. Les résultats reportés bloquent le bulletin concerné."/><label className="field"><span>Période *</span><Dropdown value={periodId} options={periods.map(p=>({label:p.name,value:p.id}))} onChange={(e)=>setPeriodId(String(e.value))} className="w-full" placeholder="Choisir la période"/></label><label className="field"><span>Classe (facultatif)</span><Dropdown value={classId} options={classes.map(c=>({label:c.name,value:c.id}))} showClear onChange={(e)=>setClassId(typeof e.value==="string"?e.value:"")} className="w-full" placeholder="Tout l’établissement"/></label><div className="flex justify-end gap-2"><Button label="Annuler" severity="secondary" outlined onClick={()=>setOpen(false)}/><Button label="Lancer la génération" icon="pi pi-play" loading={loading} disabled={!periodId} onClick={()=>void submit()}/></div></div></Dialog></div>;
+type Context = Awaited<ReturnType<typeof listGenerationContext>>;
+const emptyContext: Context = {
+  periods: [],
+  cycles: [],
+  levels: [],
+  classes: [],
+  students: [],
+};
+const scopeOptions: { label: string; value: GenerationScope }[] = [
+  { label: "Toute l’école", value: "school" },
+  { label: "Un cycle", value: "cycle" },
+  { label: "Un niveau", value: "level" },
+  { label: "Une classe", value: "class" },
+  { label: "Un élève", value: "student" },
+];
+
+export function BulletinGenerationsPage() {
+  const { institutionId, yearId, year } = useAcademicSession();
+  const [items, setItems] = useState<BulletinBatchRow[]>([]);
+  const [context, setContext] = useState<Context>(emptyContext);
+  const [total, setTotal] = useState(0);
+  const [first, setFirst] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState<1 | -1 | 0>(-1);
+  const [advanced, setAdvanced] = useState(false);
+  const [status, setStatus] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [periodFilter, setPeriodFilter] = useState("");
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [periodId, setPeriodId] = useState("");
+  const [scope, setScope] = useState<GenerationScope>("school");
+  const [scopeId, setScopeId] = useState("");
+  const [details, setDetails] = useState<BulletinGenerationItem[]>([]);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    if (!yearId) return;
+    setLoading(true);
+    try {
+      const [page, generationContext] = await Promise.all([
+        listBatches(institutionId, yearId, {
+          first,
+          rows: pageSize,
+          search: query,
+          status,
+          periodId: periodFilter,
+          dateFrom,
+          dateTo,
+          sortField,
+          sortOrder,
+        }),
+        listGenerationContext(institutionId, yearId),
+      ]);
+      setItems(page.rows);
+      setTotal(page.total);
+      setContext(generationContext);
+    } catch {
+      setError("Impossible de charger les générations.");
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    dateFrom,
+    dateTo,
+    first,
+    institutionId,
+    pageSize,
+    periodFilter,
+    query,
+    sortField,
+    sortOrder,
+    status,
+    yearId,
+  ]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => void load(), 250);
+    return () => clearTimeout(timer);
+  }, [load]);
+  const activeCount = useMemo(
+    () =>
+      [query, status, periodFilter, dateFrom, dateTo].filter(Boolean).length,
+    [dateFrom, dateTo, periodFilter, query, status],
+  );
+  const selectedPeriod = context.periods.find((item) => item.id === periodId);
+  const compatibleLevels = context.levels.filter(
+    (item) => !selectedPeriod || item.cycle_id === selectedPeriod.cycle_id,
+  );
+  const compatibleClasses = context.classes.filter((item) =>
+    compatibleLevels.some((level) => level.id === item.academic_year_level_id),
+  );
+  const compatibleStudents = context.students.filter((item) =>
+    compatibleClasses.some((schoolClass) => schoolClass.id === item.classId),
+  );
+  const scopeValues =
+    scope === "cycle"
+      ? context.cycles
+          .filter(
+            (item) => !selectedPeriod || item.id === selectedPeriod.cycle_id,
+          )
+          .map((item) => ({ label: item.name, value: item.id }))
+      : scope === "level"
+        ? compatibleLevels.map((item) => ({
+            label: item.level_name_snapshot,
+            value: item.id,
+          }))
+        : scope === "class"
+          ? compatibleClasses.map((item) => ({
+              label: item.name,
+              value: item.id,
+            }))
+          : scope === "student"
+            ? compatibleStudents.map((item) => ({
+                label: `${item.name} · ${item.matricule}`,
+                value: item.id,
+              }))
+            : [];
+
+  function resetGeneration() {
+    setPeriodId("");
+    setScope("school");
+    setScopeId("");
+    setOpen(true);
+  }
+  async function submit() {
+    if (!yearId || !periodId || (scope !== "school" && !scopeId)) return;
+    setLoading(true);
+    setError("");
+    try {
+      const result = await generateBulletins({
+        institutionId,
+        yearId,
+        periodId,
+        scope,
+        scopeId: scope === "school" ? undefined : scopeId,
+      });
+      setNotice(
+        `${result.generated} bulletin(s) généré(s), ${result.blocked} bloqué(s). Ouvrez le détail du lot pour corriger les blocages.`,
+      );
+      setOpen(false);
+      await load();
+    } catch {
+      setError(
+        "La génération a échoué. Vérifiez le périmètre, les affectations et les notes.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function showDetails(row: BulletinBatchRow) {
+    setLoading(true);
+    try {
+      setDetails(await listGenerationItems(row.id));
+      setDetailsOpen(true);
+    } catch {
+      setError("Impossible de charger le rapport du lot.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!yearId)
+    return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+  return (
+    <div className="space-y-4 pb-8">
+      <PageHeader
+        eyebrow="Notes & Bulletins"
+        title="Générations"
+        description={`Préparer et contrôler les lots de bulletins · ${year?.name ?? "Année"}`}
+        actions={
+          <Button
+            label="Générer des bulletins"
+            icon="pi pi-sparkles"
+            onClick={resetGeneration}
+          />
+        }
+      />
+      {error ? <Message severity="error" text={error} /> : null}
+      {notice ? <Message severity="success" text={notice} /> : null}
+      <NotesDataTableToolbar
+        search={query}
+        onSearch={(value) => {
+          setFirst(0);
+          setQuery(value);
+        }}
+        advanced={advanced}
+        onAdvanced={() => setAdvanced((value) => !value)}
+        activeCount={activeCount}
+        onReset={() => {
+          setQuery("");
+          setStatus("");
+          setPeriodFilter("");
+          setDateFrom("");
+          setDateTo("");
+          setFirst(0);
+        }}
+        status={status}
+        onStatus={(value) => {
+          setFirst(0);
+          setStatus(value);
+        }}
+        statusOptions={[
+          { label: "Terminé", value: "completed" },
+          { label: "Partiel", value: "partial" },
+          { label: "Bloqué", value: "failed" },
+        ]}
+        periodId={periodFilter}
+        onPeriod={(value) => {
+          setFirst(0);
+          setPeriodFilter(value);
+        }}
+        periodOptions={context.periods.map((period) => ({
+          label: period.label,
+          value: period.id,
+        }))}
+        dateFrom={dateFrom}
+        onDateFrom={(value) => {
+          setFirst(0);
+          setDateFrom(value);
+        }}
+        dateTo={dateTo}
+        onDateTo={(value) => {
+          setFirst(0);
+          setDateTo(value);
+        }}
+        placeholder="Période ou lot"
+      />
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <DataTable
+          value={items}
+          lazy
+          loading={loading}
+          dataKey="id"
+          stripedRows
+          paginator
+          first={first}
+          rows={pageSize}
+          totalRecords={total}
+          rowsPerPageOptions={[10, 25, 50]}
+          onPage={(event: DataTablePageEvent) => {
+            setFirst(event.first);
+            setPageSize(event.rows);
+          }}
+          sortField={sortField}
+          sortOrder={sortOrder}
+          onSort={(event: DataTableSortEvent) => {
+            setFirst(0);
+            setSortField(String(event.sortField));
+            setSortOrder(event.sortOrder ?? 0);
+          }}
+          emptyMessage="Aucun lot de génération"
+        >
+          <Column
+            field="createdAt"
+            header="Date"
+            sortable
+            body={(row: BulletinBatchRow) =>
+              new Date(row.createdAt).toLocaleString("fr-FR")
+            }
+          />
+          <Column field="periodName" header="Période" />
+          <Column field="scope" header="Portée" />
+          <Column field="total" header="Élèves" sortable />
+          <Column field="generated" header="Générés" />
+          <Column
+            field="blocked"
+            header="Bloqués"
+            body={(row: BulletinBatchRow) => (
+              <Tag
+                value={row.blocked}
+                severity={row.blocked ? "danger" : "success"}
+              />
+            )}
+          />
+          <Column
+            field="status"
+            header="État"
+            sortable
+            body={(row: BulletinBatchRow) => (
+              <Tag
+                value={row.status}
+                severity={
+                  row.status === "completed"
+                    ? "success"
+                    : row.status === "failed"
+                      ? "danger"
+                      : "warning"
+                }
+              />
+            )}
+          />
+          <Column
+            header="Rapport"
+            body={(row: BulletinBatchRow) => (
+              <Button
+                label="Voir le détail"
+                icon="pi pi-list"
+                text
+                onClick={() => void showDetails(row)}
+              />
+            )}
+          />
+        </DataTable>
+      </section>
+      <Dialog
+        header="Générer les bulletins"
+        visible={open}
+        modal
+        className="w-[min(94vw,38rem)]"
+        onHide={() => setOpen(false)}
+      >
+        <div className="space-y-4">
+          <Message
+            severity="info"
+            text="Choisissez d’abord la période : les périmètres proposés seront limités à son cycle."
+          />
+          <Field label="Période *">
+            <Dropdown
+              value={periodId}
+              options={context.periods.map((period) => ({
+                label: period.label,
+                value: period.id,
+              }))}
+              filter
+              onChange={(event) => {
+                setPeriodId(String(event.value));
+                setScopeId("");
+              }}
+              className="w-full"
+              placeholder="Choisir le cycle et la période"
+            />
+          </Field>
+          <Field label="Périmètre *">
+            <Dropdown
+              value={scope}
+              options={scopeOptions}
+              disabled={!periodId}
+              onChange={(event) => {
+                setScope(event.value as GenerationScope);
+                setScopeId("");
+              }}
+              className="w-full"
+            />
+          </Field>
+          {scope !== "school" ? (
+            <Field
+              label={`${scopeOptions.find((item) => item.value === scope)?.label ?? "Sélection"} *`}
+            >
+              <Dropdown
+                value={scopeId}
+                options={scopeValues}
+                filter
+                disabled={!periodId}
+                onChange={(event) => setScopeId(String(event.value))}
+                className="w-full"
+                placeholder="Sélectionner"
+              />
+            </Field>
+          ) : (
+            <Message
+              severity="warn"
+              text="Tous les élèves compatibles avec cette période seront contrôlés. Les bulletins incomplets seront bloqués individuellement."
+            />
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              label="Annuler"
+              severity="secondary"
+              outlined
+              onClick={() => setOpen(false)}
+            />
+            <Button
+              label="Lancer la génération"
+              icon="pi pi-play"
+              loading={loading}
+              disabled={!periodId || (scope !== "school" && !scopeId)}
+              onClick={() => void submit()}
+            />
+          </div>
+        </div>
+      </Dialog>
+      <Dialog
+        header="Rapport de génération"
+        visible={detailsOpen}
+        modal
+        className="w-[min(96vw,64rem)]"
+        onHide={() => setDetailsOpen(false)}
+      >
+        <DataTable
+          value={details}
+          dataKey="id"
+          paginator
+          rows={10}
+          emptyMessage="Aucun élève dans ce lot"
+        >
+          <Column field="studentName" header="Élève" />
+          <Column field="matricule" header="Matricule" />
+          <Column field="className" header="Classe" />
+          <Column
+            field="status"
+            header="État"
+            body={(row: BulletinGenerationItem) => (
+              <Tag
+                value={row.status === "blocked" ? "Bloqué" : "Généré"}
+                severity={row.status === "blocked" ? "danger" : "success"}
+              />
+            )}
+          />
+          <Column
+            field="message"
+            header="Motif / résultat"
+            body={(row: BulletinGenerationItem) =>
+              row.message ?? "Bulletin généré"
+            }
+          />
+        </DataTable>
+      </Dialog>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
 }

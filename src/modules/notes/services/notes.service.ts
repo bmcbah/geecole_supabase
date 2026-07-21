@@ -371,17 +371,50 @@ export async function publishCourseNotes(noteIds: string[]) {
   if (error) throw error;
 }
 
-export async function listCourseAudit(noteIds: string[]) {
-  if (!noteIds.length) return [];
+export type CourseAuditEvent = {
+  id: number;
+  entity_type: string;
+  action: string;
+  before_data: unknown;
+  after_data: unknown;
+  actorName: string;
+  created_at: string;
+};
+
+export async function listCourseAudit(
+  entityIds: string[],
+): Promise<CourseAuditEvent[]> {
+  if (!entityIds.length) return [];
   const { data, error } = await supabase
     .from("notes_audit_log")
     .select("*")
-    .eq("entity_type", "gradebook_notes")
-    .in("entity_id", noteIds)
+    .in("entity_id", entityIds)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
   if (error) throw error;
-  return data;
+  const actorIds = [
+    ...new Set(
+      (data ?? []).flatMap((event) => (event.actor_id ? [event.actor_id] : [])),
+    ),
+  ];
+  const actors = actorIds.length
+    ? await supabase
+        .from("people")
+        .select("auth_user_id,first_name,last_name")
+        .in("auth_user_id", actorIds)
+    : { data: [], error: null };
+  if (actors.error) throw actors.error;
+  return (data ?? []).map((event) => {
+    const actor = actors.data?.find(
+      (person) => person.auth_user_id === event.actor_id,
+    );
+    return {
+      ...event,
+      actorName: actor
+        ? `${actor.first_name} ${actor.last_name}`
+        : "Utilisateur système",
+    };
+  });
 }
 
 export async function createPedagogicalAssignment(input: {

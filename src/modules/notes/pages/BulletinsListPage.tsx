@@ -20,6 +20,7 @@ import {
   listGenerationContext,
   type BulletinRow,
 } from "../services/bulletins.service";
+import { downloadBulletinsZip } from "../utils/bulletin-export";
 const labels: Record<BulletinRow["status"], string> = {
   generated: "Généré",
   pending_validation: "À valider",
@@ -151,6 +152,37 @@ export function BulletinsListPage() {
       setError("Cette action n’a pas pu être appliquée.");
     }
   }
+  async function exportZip() {
+    if (!yearId) return;
+    setLoading(true);
+    setError("");
+    try {
+      const page = await listBulletins(institutionId, yearId, {
+        first: 0,
+        rows: 10000,
+        search: query,
+        status: modeStatus,
+        classId,
+        periodId,
+        dateFrom,
+        dateTo,
+        sortField,
+        sortOrder,
+      });
+      if (!page.rows.length) {
+        setError("Aucun bulletin à exporter avec ces filtres.");
+        return;
+      }
+      await downloadBulletinsZip(
+        page.rows,
+        `bulletins-${year?.name ?? "annee"}`,
+      );
+    } catch {
+      setError("La génération du ZIP a échoué.");
+    } finally {
+      setLoading(false);
+    }
+  }
   function reset() {
     setQuery("");
     setStatus("");
@@ -169,13 +201,23 @@ export function BulletinsListPage() {
         title={config.title}
         description={`${config.description} · ${year?.name ?? "Année"}`}
         actions={
-          <Button
-            label="Actualiser"
-            icon="pi pi-refresh"
-            severity="secondary"
-            outlined
-            onClick={() => void load()}
-          />
+          <div className="flex gap-2">
+            <Button
+              label="Télécharger le ZIP"
+              icon="pi pi-file-export"
+              severity="secondary"
+              outlined
+              loading={loading}
+              onClick={() => void exportZip()}
+            />
+            <Button
+              label="Actualiser"
+              icon="pi pi-refresh"
+              severity="secondary"
+              outlined
+              onClick={() => void load()}
+            />
+          </div>
         }
       />
       {error ? <Message severity="error" text={error} /> : null}
@@ -213,7 +255,10 @@ export function BulletinsListPage() {
           setFirst(0);
           setPeriodId(v);
         }}
-        periodOptions={periods.map((p) => ({ label: p.name, value: p.id }))}
+        periodOptions={periods.map((p) => ({
+          label: "label" in p ? String(p.label) : p.name,
+          value: p.id,
+        }))}
         dateFrom={dateFrom}
         onDateFrom={(v) => {
           setFirst(0);
@@ -408,7 +453,7 @@ function BulletinDocument({ row }: { row: BulletinRow }) {
   const subjects: Array<BulletinSubject> = Array.isArray(rawSubjects)
     ? rawSubjects.filter(
         (item): item is BulletinSubject =>
-          Boolean(item) &&
+          item !== null &&
           typeof item === "object" &&
           "name" in item &&
           typeof item.name === "string" &&

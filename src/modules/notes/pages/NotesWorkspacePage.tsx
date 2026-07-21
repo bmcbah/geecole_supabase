@@ -33,6 +33,7 @@ import {
   publishCourseNotes,
   saveCourseAppreciation,
   saveNoteResult,
+  type CourseAuditEvent,
 } from "../services/notes.service";
 type Period = Database["public"]["Tables"]["academic_periods"]["Row"];
 type GradebookNote = Database["public"]["Tables"]["gradebook_notes"]["Row"];
@@ -459,11 +460,28 @@ function GradebookTree(props: {
       setMobileTreeOpen(false);
     }
   };
+  const activateNode = (node: TreeNode) => {
+    const key = String(node.key ?? "");
+    if (node.children?.length) {
+      setExpandedKeys((current) => ({ ...current, [key]: !current[key] }));
+      return;
+    }
+    selectNode(key);
+  };
   const tree = (
     <Tree
       value={nodes}
       expandedKeys={expandedKeys}
       onToggle={(event) => setExpandedKeys(event.value)}
+      nodeTemplate={(node) => (
+        <button
+          type="button"
+          className="w-full bg-transparent p-0 text-left text-inherit"
+          onClick={() => activateNode(node)}
+        >
+          {String(node.label ?? "")}
+        </button>
+      )}
       togglerTemplate={(_node, options) => (
         <button
           type="button"
@@ -700,9 +718,7 @@ function Gradebook(props: {
   const [statusOpen, setStatusOpen] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<NoteResultStatus>("absent");
   const [journalOpen, setJournalOpen] = useState(false);
-  const [journal, setJournal] = useState<
-    Database["public"]["Tables"]["notes_audit_log"]["Row"][]
-  >([]);
+  const [journal, setJournal] = useState<CourseAuditEvent[]>([]);
   const visible = props.students.filter((s) =>
     `${s.name} ${s.matricule}`
       .toLowerCase()
@@ -892,12 +908,14 @@ function Gradebook(props: {
             text
             disabled={!props.notes.length}
             onClick={() =>
-              void listCourseAudit(props.notes.map((n) => n.id)).then(
-                (rows) => {
-                  setJournal(rows);
-                  setJournalOpen(true);
-                },
-              )
+              void listCourseAudit([
+                ...props.notes.map((note) => note.id),
+                ...props.results.map((result) => result.id),
+                ...props.appreciations.map((appreciation) => appreciation.id),
+              ]).then((rows) => {
+                setJournal(rows);
+                setJournalOpen(true);
+              })
             }
           />
         </div>
@@ -1161,18 +1179,96 @@ function Gradebook(props: {
       >
         <Message
           severity="info"
-          text="Ce journal permet de savoir quand une évaluation a été créée, modifiée ou publiée."
+          text="Le journal identifie l’auteur et les valeurs modifiées pour les évaluations, résultats et appréciations."
         />
         {journal.map((event) => (
           <div key={event.id} className="border-b py-3">
-            <strong>{event.action}</strong>
-            <span className="float-right text-xs text-slate-400">
-              {new Date(event.created_at).toLocaleString("fr-FR")}
-            </span>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <strong>
+                  {auditActionLabel(event.action)} ·{" "}
+                  {auditEntityLabel(event.entity_type)}
+                </strong>
+                <p className="mb-0 mt-1 text-xs text-slate-500">
+                  Par {event.actorName}
+                </p>
+              </div>
+              <span className="float-right text-xs text-slate-400">
+                {new Date(event.created_at).toLocaleString("fr-FR")}
+              </span>
+            </div>
+            <AuditChanges before={event.before_data} after={event.after_data} />
           </div>
         ))}
       </Dialog>
     </>
+  );
+}
+function auditActionLabel(action: string) {
+  return (
+    (
+      {
+        insert: "Création",
+        update: "Modification",
+        delete: "Suppression",
+      } as Record<string, string>
+    )[action] ?? action
+  );
+}
+function auditEntityLabel(entity: string) {
+  return (
+    (
+      {
+        gradebook_notes: "évaluation",
+        note_results: "résultat",
+        subject_appreciations: "appréciation",
+      } as Record<string, string>
+    )[entity] ?? entity
+  );
+}
+function AuditChanges({ before, after }: { before: unknown; after: unknown }) {
+  const previous =
+    before && typeof before === "object" && !Array.isArray(before)
+      ? (before as Record<string, unknown>)
+      : {};
+  const current =
+    after && typeof after === "object" && !Array.isArray(after)
+      ? (after as Record<string, unknown>)
+      : {};
+  const ignored = new Set([
+    "id",
+    "institution_id",
+    "academic_year_id",
+    "created_at",
+    "updated_at",
+    "updated_by",
+  ]);
+  const changed = [
+    ...new Set([...Object.keys(previous), ...Object.keys(current)]),
+  ].filter(
+    (key) =>
+      !ignored.has(key) &&
+      JSON.stringify(previous[key]) !== JSON.stringify(current[key]),
+  );
+  if (!changed.length) return null;
+  const display = (value: unknown) =>
+    value == null
+      ? "—"
+      : typeof value === "string" ||
+          typeof value === "number" ||
+          typeof value === "boolean"
+        ? String(value)
+        : JSON.stringify(value);
+  return (
+    <div className="mt-2 grid gap-1 rounded-lg bg-slate-50 p-2 text-xs">
+      {changed.map((key) => (
+        <div key={key}>
+          <span className="font-semibold text-slate-600">{key}</span> :{" "}
+          <span className="text-rose-700">{display(previous[key])}</span> →{" "}
+          <span className="text-emerald-700">{display(current[key])}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 function Field({

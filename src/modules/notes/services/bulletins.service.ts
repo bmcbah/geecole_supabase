@@ -11,6 +11,17 @@ export type BulletinBatchRow = {
   blocked: number;
   createdAt: string;
 };
+export type GenerationScope =
+  "school" | "cycle" | "level" | "class" | "student";
+export type BulletinGenerationItem = {
+  id: string;
+  studentName: string;
+  matricule: string;
+  className: string;
+  status: string;
+  issueCode: string | null;
+  message: string | null;
+};
 export type BulletinRow = {
   id: string;
   studentName: string;
@@ -47,24 +58,137 @@ export async function listGenerationContext(
   institutionId: string,
   yearId: string,
 ) {
-  const [periods, classes] = await Promise.all([
-    supabase
-      .from("academic_periods")
-      .select("id,name,cycle_id,sequence")
-      .eq("institution_id", institutionId)
-      .eq("academic_year_id", yearId)
-      .order("sequence"),
-    supabase
-      .from("school_classes")
-      .select("id,name,academic_year_level_id")
-      .eq("institution_id", institutionId)
-      .eq("academic_year_id", yearId)
-      .eq("is_active", true)
-      .order("name"),
+  const [periods, cycles, levels, classes, enrollments, assignments, students] =
+    await Promise.all([
+      supabase
+        .from("academic_periods")
+        .select("id,name,cycle_id,sequence")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .order("sequence"),
+      supabase
+        .from("academic_cycles")
+        .select("id,name")
+        .eq("institution_id", institutionId)
+        .eq("is_active", true)
+        .order("sort_order"),
+      supabase
+        .from("academic_year_levels")
+        .select("id,cycle_id,level_name_snapshot,sort_order")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("is_active", true)
+        .order("sort_order"),
+      supabase
+        .from("school_classes")
+        .select("id,name,academic_year_level_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("is_active", true)
+        .order("name"),
+      supabase
+        .from("enrollments")
+        .select("id,student_id,academic_year_level_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("status", "confirmed"),
+      supabase
+        .from("class_assignments")
+        .select("enrollment_id,class_id")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .is("ends_on", null),
+      supabase
+        .from("students")
+        .select("id,matricule,first_name,last_name")
+        .eq("institution_id", institutionId)
+        .eq("status", "active")
+        .order("last_name"),
+    ]);
+  for (const result of [
+    periods,
+    cycles,
+    levels,
+    classes,
+    enrollments,
+    assignments,
+    students,
+  ])
+    if (result.error) throw result.error;
+  return {
+    periods: (periods.data ?? []).map((period) => ({
+      ...period,
+      label: `${cycles.data?.find((cycle) => cycle.id === period.cycle_id)?.name ?? "Cycle"} — ${period.name}`,
+    })),
+    cycles: cycles.data ?? [],
+    levels: levels.data ?? [],
+    classes: classes.data ?? [],
+    students: (enrollments.data ?? []).flatMap((enrollment) => {
+      const student = students.data?.find(
+        (item) => item.id === enrollment.student_id,
+      );
+      const assignment = assignments.data?.find(
+        (item) => item.enrollment_id === enrollment.id,
+      );
+      return student && assignment
+        ? [
+            {
+              id: student.id,
+              enrollmentId: enrollment.id,
+              levelId: enrollment.academic_year_level_id,
+              classId: assignment.class_id,
+              matricule: student.matricule,
+              name: `${student.first_name} ${student.last_name}`,
+            },
+          ]
+        : [];
+    }),
+  };
+}
+
+export async function listGenerationItems(
+  batchId: string,
+): Promise<BulletinGenerationItem[]> {
+  const { data: items, error } = await supabase
+    .from("bulletin_generation_items")
+    .select("id,student_id,class_id,status,issue_code,message")
+    .eq("batch_id", batchId)
+    .order("created_at");
+  if (error) throw error;
+  const studentIds = [...new Set((items ?? []).map((item) => item.student_id))];
+  const classIds = [
+    ...new Set(
+      (items ?? []).flatMap((item) => (item.class_id ? [item.class_id] : [])),
+    ),
+  ];
+  const [students, classes] = await Promise.all([
+    studentIds.length
+      ? supabase
+          .from("students")
+          .select("id,matricule,first_name,last_name")
+          .in("id", studentIds)
+      : Promise.resolve({ data: [], error: null }),
+    classIds.length
+      ? supabase.from("school_classes").select("id,name").in("id", classIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
-  if (periods.error) throw periods.error;
+  if (students.error) throw students.error;
   if (classes.error) throw classes.error;
-  return { periods: periods.data ?? [], classes: classes.data ?? [] };
+  return (items ?? []).map((item) => {
+    const student = students.data?.find((row) => row.id === item.student_id);
+    return {
+      id: item.id,
+      studentName: student
+        ? `${student.first_name} ${student.last_name}`
+        : "Élève",
+      matricule: student?.matricule ?? "—",
+      className:
+        classes.data?.find((row) => row.id === item.class_id)?.name ?? "—",
+      status: item.status,
+      issueCode: item.issue_code,
+      message: item.message,
+    };
+  });
 }
 
 export async function listBatches(
@@ -120,7 +244,16 @@ export async function listBatches(
       id: row.id,
       periodName:
         periods.data?.find((p) => p.id === row.period_id)?.name ?? "—",
-      scope: row.scope_type === "class" ? "Classe" : "Établissement",
+      scope:
+        (
+          {
+            school: "Toute l’école",
+            cycle: "Cycle",
+            level: "Niveau",
+            class: "Classe",
+            student: "Élève",
+          } as const
+        )[row.scope_type] ?? "Périmètre",
       status: row.status,
       total: row.total_count,
       generated: row.generated_count,
@@ -135,7 +268,8 @@ export async function generateBulletins(input: {
   institutionId: string;
   yearId: string;
   periodId: string;
-  classId?: string;
+  scope: GenerationScope;
+  scopeId?: string;
 }) {
   const { data: auth } = await supabase.auth.getUser();
   const { data: bulletinSettings, error: settingsError } = await supabase
@@ -153,8 +287,8 @@ export async function generateBulletins(input: {
       institution_id: input.institutionId,
       academic_year_id: input.yearId,
       period_id: input.periodId,
-      scope_type: input.classId ? "class" : "school",
-      scope_ids: input.classId ? [input.classId] : [],
+      scope_type: input.scope,
+      scope_ids: input.scopeId ? [input.scopeId] : [],
       initiated_by: auth.user?.id,
     })
     .select("id")
@@ -174,12 +308,36 @@ export async function generateBulletins(input: {
     .eq("academic_year_id", input.yearId)
     .is("ends_on", null);
   if (assignmentError) throw assignmentError;
+  const { data: classRows, error: classesError } = await supabase
+    .from("school_classes")
+    .select("id,academic_year_level_id")
+    .eq("institution_id", input.institutionId)
+    .eq("academic_year_id", input.yearId);
+  if (classesError) throw classesError;
+  const { data: levelRows, error: levelsError } = await supabase
+    .from("academic_year_levels")
+    .select("id,cycle_id")
+    .eq("institution_id", input.institutionId)
+    .eq("academic_year_id", input.yearId);
+  if (levelsError) throw levelsError;
   const selected = (enrollments ?? []).flatMap((enrollment) => {
     const assignment = assignments?.find(
       (item) => item.enrollment_id === enrollment.id,
     );
-    return assignment &&
-      (!input.classId || assignment.class_id === input.classId)
+    const schoolClass = classRows?.find(
+      (item) => item.id === assignment?.class_id,
+    );
+    const level = levelRows?.find(
+      (item) => item.id === schoolClass?.academic_year_level_id,
+    );
+    const matches =
+      input.scope === "school" ||
+      (input.scope === "cycle" && level?.cycle_id === input.scopeId) ||
+      (input.scope === "level" &&
+        schoolClass?.academic_year_level_id === input.scopeId) ||
+      (input.scope === "class" && assignment?.class_id === input.scopeId) ||
+      (input.scope === "student" && enrollment.student_id === input.scopeId);
+    return assignment && matches
       ? [{ ...enrollment, classId: assignment.class_id }]
       : [];
   });
