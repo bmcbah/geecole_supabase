@@ -28,7 +28,6 @@ type Assessment = Database["public"]["Tables"]["assessment_types"]["Row"];
 const fields: EntityField[] = [
   { key: "name", label: "Nom", required: true },
   { key: "code", label: "Code", required: true },
-  { key: "scale", label: "Barème", type: "number", required: true },
   { key: "is_active", label: "Type actif", type: "boolean" },
 ];
 
@@ -58,7 +57,6 @@ export function AssessmentTypesSettingsPage() {
     () => ({
       name: editing?.name ?? "",
       code: editing?.code ?? "",
-      scale: editing?.scale ?? 20,
       is_active: editing?.is_active ?? true,
     }),
     [editing],
@@ -75,7 +73,6 @@ export function AssessmentTypesSettingsPage() {
           name: String(values.name),
           code: String(values.code).toUpperCase(),
           weight: 1,
-          scale: Number(values.scale),
           is_active: Boolean(values.is_active),
         },
         editing?.id,
@@ -138,7 +135,7 @@ export function AssessmentTypesSettingsPage() {
         sectionHeader={
           <PageHeader
             title="Types de notes"
-            description="Définissez les catégories de notes et leur barème. Le poids est porté par les formules."
+            description="Définissez les catégories de notes. Le barème appartient au cycle et le poids aux formules."
             meta={
               <Tag
                 value={`${items.length} type${items.length > 1 ? "s" : ""}`}

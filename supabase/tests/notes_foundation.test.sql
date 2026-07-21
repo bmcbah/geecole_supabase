@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(18);
 
 select has_table('public', 'pedagogical_assignments', 'pedagogical assignments table exists');
 select has_table('public', 'pedagogical_assignment_periods', 'assignment period scope exists');
@@ -17,6 +17,8 @@ select has_function('public', 'invalidate_unpublished_bulletins', 'bulletin inva
 select trigger_is('public', 'bulletin_versions', 'audit_bulletin_versions', 'public', 'audit_notes_change', 'bulletin decisions are audited');
 select col_is_null('public', 'note_results', 'value', 'numeric value may be null for statuses');
 select col_is_null('public', 'note_results', 'status', 'status may be null for numeric results');
+select hasnt_column('public', 'assessment_types', 'scale', 'the assessment type does not own a grading scale');
+select hasnt_column('public', 'assessment_type_catalog', 'default_scale', 'the GeeCole catalogue does not impose a grading scale');
 
 select * from finish();
 rollback;

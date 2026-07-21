@@ -50,7 +50,7 @@ export function GradingFormulasSettingsPage() {
   const expressionRef = useRef<HTMLTextAreaElement>(null);
   const [items, setItems] = useState<VersionedFormulaListItem[]>([]);
   const [types, setTypes] = useState<
-    Array<{ id: string; code: string; name: string; scale: number }>
+    Array<{ id: string; code: string; name: string }>
   >([]);
   const [cycles, setCycles] = useState<CycleOption[]>([]);
   const [levels, setLevels] = useState<Array<Option & { cycleId: string }>>([]);
@@ -90,11 +90,10 @@ export function GradingFormulasSettingsPage() {
     setTypes(
       typeRows
         .filter((item) => item.is_active)
-        .map(({ id, code, name, scale }) => ({
+        .map(({ id, code, name }) => ({
           id,
           code: code.toUpperCase(),
           name,
-          scale,
         })),
     );
     setCycles(
@@ -496,7 +495,7 @@ export function GradingFormulasSettingsPage() {
                       label={type.code}
                       size="small"
                       outlined
-                      tooltip={`${type.name} · barème /${type.scale}`}
+                      tooltip={type.name}
                       onClick={() => insertVariable(type.code)}
                     />
                   ))}
@@ -544,7 +543,7 @@ export function GradingFormulasSettingsPage() {
                     <InputNumber
                       value={testValues[type.code] ?? 10}
                       min={0}
-                      max={20}
+                      max={gradingScale}
                       maxFractionDigits={2}
                       className="w-full"
                       inputClassName="w-full"

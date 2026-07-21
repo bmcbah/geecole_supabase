@@ -117,7 +117,6 @@ export async function saveAssessmentType(
     name: string;
     code: string;
     weight: number;
-    scale: number;
     is_active: boolean;
   },
   id?: string,

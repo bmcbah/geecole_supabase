@@ -702,7 +702,6 @@ export interface Database {
           name: string;
           code: string;
           weight: number;
-          scale: number;
           is_active: boolean;
           created_at: string;
         };
@@ -714,7 +713,6 @@ export interface Database {
           name: string;
           code: string;
           weight?: number;
-          scale?: number;
           is_active?: boolean;
         };
         Update: Partial<
@@ -728,7 +726,6 @@ export interface Database {
           code: string;
           name: string;
           description: string | null;
-          default_scale: number;
           sort_order: number;
           is_active: boolean;
         };
@@ -737,7 +734,6 @@ export interface Database {
           code: string;
           name: string;
           description?: string | null;
-          default_scale?: number;
           sort_order?: number;
           is_active?: boolean;
         };

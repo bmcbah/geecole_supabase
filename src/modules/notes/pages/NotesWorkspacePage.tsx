@@ -269,7 +269,7 @@ export function NotesWorkspacePage() {
             <Dropdown
               value={draft.noteTypeId}
               options={types.map((type) => ({
-                label: `${type.name} · /${type.scale}`,
+                label: type.name,
                 value: type.id,
               }))}
               onChange={(event) =>

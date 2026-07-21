@@ -30,9 +30,9 @@ insert into public.person_roles (institution_id,person_id,role) values
 insert into public.subjects (id,institution_id,name,code) values
  ('42000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Mathématiques','MATH'),
  ('42000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','Français','FR');
-insert into public.assessment_types (id,institution_id,academic_year_id,name,code,scale) values
- ('43000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','Interrogation','INTERRO',20),
- ('43000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','Devoir surveillé','DEVOIR',20);
+insert into public.assessment_types (id,institution_id,academic_year_id,name,code) values
+ ('43000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','Interrogation','INTERRO'),
+ ('43000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','Devoir surveillé','DEVOIR');
 
 insert into public.pedagogical_assignments (id,institution_id,academic_year_id,class_id,subject_id,teacher_id,coefficient,all_periods) values
  ('44000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','42000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000001',3,true),
@@ -139,12 +139,12 @@ on conflict (code) do update set
 -- Activate the full GeeCole assessment catalogue locally so every formula
 -- variable can be exercised from the Settings and Notes screens.
 insert into public.assessment_types (
-  institution_id, academic_year_id, catalog_id, name, code, weight, scale, is_active
+  institution_id, academic_year_id, catalog_id, name, code, weight, is_active
 )
 select
   '20000000-0000-0000-0000-000000000001',
   '25000000-0000-0000-0000-000000000002',
-  catalog.id, catalog.name, catalog.code, 1, catalog.default_scale, true
+  catalog.id, catalog.name, catalog.code, 1, true
 from public.assessment_type_catalog catalog
 where catalog.is_active
 on conflict (academic_year_id, code) do nothing;

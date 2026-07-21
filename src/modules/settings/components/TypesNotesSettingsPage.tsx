@@ -33,7 +33,6 @@ type DialogState =
 const assessmentFields: EntityField[] = [
   { key: "name", label: "Nom", required: true },
   { key: "code", label: "Code", required: true },
-  { key: "scale", label: "Barème", type: "number", required: true },
   { key: "is_active", label: "Type actif", type: "boolean" },
 ];
 
@@ -78,7 +77,6 @@ export function EvaluationSettingsPage() {
       if (dialog.kind === "assessment") return {
         name: dialog.item?.name ?? "",
         code: dialog.item?.code ?? "",
-        scale: dialog.item?.scale ?? 20,
         is_active: dialog.item?.is_active ?? true,
       };
       return {
@@ -104,7 +102,6 @@ export function EvaluationSettingsPage() {
             name: String(values.name),
             code: String(values.code).toUpperCase(),
             weight: 1,
-            scale: Number(values.scale),
             is_active: Boolean(values.is_active),
           },
           dialog.item?.id,

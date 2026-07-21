@@ -21,11 +21,6 @@ create or replace function public.enforce_assessment_type_rules()
 returns trigger language plpgsql set search_path = '' as $$
 begin
   new.weight := 1;
-  if tg_op = 'UPDATE' and old.scale <> new.scale and exists (
-    select 1 from public.gradebook_notes where note_type_id = old.id
-  ) then
-    raise exception 'note_type_scale_is_immutable_after_use';
-  end if;
   return new;
 end;
 $$;
@@ -222,7 +217,7 @@ grant select on public.notes_average_controls to authenticated;
 
 create or replace function public.prepare_gradebook_note()
 returns trigger language plpgsql security definer set search_path = '' as $$
-declare selected_type public.assessment_types;
+declare selected_type public.assessment_types; applicable_scale numeric(6,2);
 begin
   select * into selected_type from public.assessment_types
   where id = new.note_type_id and institution_id = new.institution_id
@@ -253,7 +248,18 @@ begin
       select 1 from public.people person
       where person.id = new.teacher_id and person.auth_user_id = auth.uid()
     ) then raise exception 'teacher_course_access_denied'; end if;
-  new.scale_snapshot := selected_type.scale;
+  select annual_cycle.grading_scale into applicable_scale
+  from public.school_classes class
+  join public.academic_year_levels level on level.id = class.academic_year_level_id
+  join public.academic_year_cycles annual_cycle
+    on annual_cycle.academic_year_id = class.academic_year_id
+   and annual_cycle.cycle_id = level.cycle_id
+  where class.id = new.class_id
+    and class.institution_id = new.institution_id
+    and class.academic_year_id = new.academic_year_id
+    and annual_cycle.is_active;
+  if applicable_scale is null then raise exception 'cycle_grading_scale_not_configured'; end if;
+  new.scale_snapshot := applicable_scale;
   return new;
 end;
 $$;
@@ -592,7 +598,6 @@ create table public.assessment_type_catalog (
   code text not null unique,
   name text not null,
   description text,
-  default_scale numeric(6,2) not null default 20 check (default_scale > 0),
   sort_order smallint not null default 0,
   is_active boolean not null default true
 );
@@ -717,8 +722,8 @@ begin
   if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
     raise exception 'permission_denied';
   end if;
-  insert into public.assessment_types(institution_id,academic_year_id,catalog_id,name,code,weight,scale,is_active)
-  select target_institution_id,target_year_id,id,name,code,1,default_scale,true
+  insert into public.assessment_types(institution_id,academic_year_id,catalog_id,name,code,weight,is_active)
+  select target_institution_id,target_year_id,id,name,code,1,true
   from public.assessment_type_catalog where is_active
   on conflict(academic_year_id,code) do nothing;
   get diagnostics inserted_count=row_count;
@@ -919,4 +924,3 @@ end;
 $$;
 
 grant execute on function public.save_cycle_responsibility(uuid,uuid,uuid,uuid,uuid,uuid,text,date,date,uuid) to authenticated;
-

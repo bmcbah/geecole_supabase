@@ -452,7 +452,7 @@ export function GradingFormulasSettingsPage() {
                       label={type.code.toUpperCase()}
                       size="small"
                       outlined
-                      tooltip={`${type.name} · barème /${type.scale}`}
+                      tooltip={type.name}
                       onClick={() => insertVariable(type.code.toUpperCase())}
                     />
                   ))

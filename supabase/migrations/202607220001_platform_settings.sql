@@ -442,7 +442,6 @@ create table public.assessment_types (
   name text not null check (char_length(trim(name)) between 2 and 80),
   code text not null check (char_length(trim(code)) between 1 and 20),
   weight numeric(6,2) not null default 1 check (weight > 0),
-  scale numeric(6,2) not null default 20 check (scale > 0),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   constraint assessment_types_year_fk foreign key (academic_year_id, institution_id)
@@ -601,8 +600,8 @@ begin
     get diagnostics subjects_count = row_count;
   end if;
   if include_assessments then
-    insert into public.assessment_types (institution_id, academic_year_id, name, code, weight, scale, is_active)
-    select institution_id, target_year_id, name, code, weight, scale, is_active from public.assessment_types where academic_year_id = source_year_id
+    insert into public.assessment_types (institution_id, academic_year_id, name, code, weight, is_active)
+    select institution_id, target_year_id, name, code, weight, is_active from public.assessment_types where academic_year_id = source_year_id
     on conflict (academic_year_id, code) do nothing;
     get diagnostics assessments_count = row_count;
     insert into public.grading_formulas (institution_id, academic_year_id, name, expression, description, is_default)
@@ -1135,8 +1134,8 @@ begin
     get diagnostics subjects_count=row_count;
   end if;
   if include_assessments then
-    insert into public.assessment_types(institution_id,academic_year_id,name,code,weight,scale,is_active)
-    select institution_id,target_year_id,name,code,weight,scale,is_active from public.assessment_types where academic_year_id=source_year_id
+    insert into public.assessment_types(institution_id,academic_year_id,name,code,weight,is_active)
+    select institution_id,target_year_id,name,code,weight,is_active from public.assessment_types where academic_year_id=source_year_id
     on conflict (academic_year_id,code) do nothing; get diagnostics assessments_count=row_count;
     insert into public.grading_formulas(institution_id,academic_year_id,name,code,expression,description,is_default)
     select institution_id,target_year_id,name,code,expression,description,is_default from public.grading_formulas where academic_year_id=source_year_id
@@ -1387,4 +1386,3 @@ begin
 end; $$;
 revoke all on function public.set_institution_cycle(uuid,uuid,boolean,uuid) from public;
 grant execute on function public.set_institution_cycle(uuid,uuid,boolean,uuid) to authenticated;
-
