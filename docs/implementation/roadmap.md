@@ -40,10 +40,10 @@ Ces sujets devront être finalisés pendant les lots concernés, sans empêcher 
 
 ## 3. Principe de migration
 
-La migration est additive et progressive.
+La V1 repart d'une baseline consolidée, autorisée avant tout déploiement avec données à conserver. Après publication de cette baseline, la migration redevient additive et progressive.
 
-- Les migrations Supabase déjà partagées ne sont jamais modifiées.
-- Les nouvelles structures sont introduites par de nouvelles migrations.
+- Les cinq fichiers de baseline sont ordonnés par dépendances et deviennent immuables après publication.
+- Les nouvelles structures sont ensuite introduites par de nouvelles migrations.
 - Les écrans sont migrés module par module.
 - Les anciennes structures ne sont supprimées qu'après reprise des données et validation fonctionnelle.
 - Chaque lot doit conserver une application compilable et testable.
