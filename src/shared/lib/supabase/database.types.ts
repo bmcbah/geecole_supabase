@@ -698,6 +698,7 @@ export interface Database {
           id: string;
           institution_id: string;
           academic_year_id: string;
+          catalog_id: string | null;
           name: string;
           code: string;
           weight: number;
@@ -709,6 +710,7 @@ export interface Database {
           id?: string;
           institution_id: string;
           academic_year_id: string;
+          catalog_id?: string | null;
           name: string;
           code: string;
           weight?: number;
@@ -717,6 +719,103 @@ export interface Database {
         };
         Update: Partial<
           Database["public"]["Tables"]["assessment_types"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      assessment_type_catalog: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          description: string | null;
+          default_scale: number;
+          sort_order: number;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          description?: string | null;
+          default_scale?: number;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["assessment_type_catalog"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      grading_formula_series: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          code: string;
+          name: string;
+          formula_type: "course_average";
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          code: string;
+          name: string;
+          formula_type?: "course_average";
+          description?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["grading_formula_series"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      grading_formula_versions: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          series_id: string;
+          version: number;
+          rules: Json;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          series_id: string;
+          version: number;
+          rules: Json;
+          created_by?: string | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      grading_formula_assignments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          formula_version_id: string;
+          cycle_id: string | null;
+          academic_year_level_id: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          formula_version_id: string;
+          cycle_id?: string | null;
+          academic_year_level_id?: string | null;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["grading_formula_assignments"]["Insert"]
         >;
         Relationships: [];
       };
@@ -1339,6 +1438,10 @@ export interface Database {
       };
     };
     Functions: {
+      install_assessment_type_catalog: {
+        Args: { target_institution_id: string; target_year_id: string };
+        Returns: number;
+      };
       change_academic_period_status: {
         Args: { target_period_id: string; target_status: string };
         Returns: void;

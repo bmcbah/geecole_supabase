@@ -1,5 +1,7 @@
 import { supabase } from "../../../shared/lib/supabase/client";
 import type { Json } from "../../../shared/lib/supabase/database.types";
+import { calculateCourseAverage } from "../domain/grading-formula";
+import { resolveFormula } from "./grading-formulas.service";
 
 export type BulletinBatchRow = {
   id: string;
@@ -343,10 +345,44 @@ export async function generateBulletins(input: {
   });
   let generated = 0;
   let blocked = 0;
+  const selectedLevelIds = [
+    ...new Set(
+      selected.flatMap((enrollment) => {
+        const schoolClass = classRows?.find(
+          (item) => item.id === enrollment.classId,
+        );
+        return schoolClass ? [schoolClass.academic_year_level_id] : [];
+      }),
+    ),
+  ];
+  const formulasByLevel = new Map(
+    await Promise.all(
+      selectedLevelIds.flatMap((levelId) => {
+        const level = levelRows?.find((item) => item.id === levelId);
+        return level
+          ? [
+              resolveFormula({
+                institutionId: input.institutionId,
+                yearId: input.yearId,
+                cycleId: level.cycle_id,
+                levelId: level.id,
+              }).then((formula) => [level.id, formula] as const),
+            ]
+          : [];
+      }),
+    ),
+  );
   for (const enrollment of selected) {
+    const schoolClass = classRows?.find(
+      (item) => item.id === enrollment.classId,
+    );
+    const level = levelRows?.find(
+      (item) => item.id === schoolClass?.academic_year_level_id,
+    );
+    const formula = level ? (formulasByLevel.get(level.id) ?? null) : null;
     const { data: notes } = await supabase
       .from("gradebook_notes")
-      .select("id,label,subject_id,scale_snapshot")
+      .select("id,label,subject_id,note_type_id,scale_snapshot")
       .eq("period_id", input.periodId)
       .eq("class_id", enrollment.classId);
     const noteIds = (notes ?? []).map((n) => n.id);
@@ -363,23 +399,29 @@ export async function generateBulletins(input: {
     const postponed = (results ?? []).some(
       (result) => result.status === "postponed",
     );
-    const blockingIssue = !noteIds.length
+    const blockingIssue = !formula
       ? {
-          code: "NO_ASSESSMENT",
+          code: "FORMULA_MISSING",
           message:
-            "Aucune évaluation n’existe pour cette classe et cette période.",
+            "Aucune formule active n’est affectée à ce niveau ni à son cycle.",
         }
-      : missingNoteIds.length
+      : !noteIds.length
         ? {
-            code: "MISSING_RESULTS",
-            message: `${missingNoteIds.length} note(s) obligatoire(s) ne sont pas renseignée(s).`,
+            code: "NO_ASSESSMENT",
+            message:
+              "Aucune évaluation n’existe pour cette classe et cette période.",
           }
-        : postponed
+        : missingNoteIds.length
           ? {
-              code: "POSTPONED_RESULT",
-              message: "Un résultat reporté bloque le calcul.",
+              code: "MISSING_RESULTS",
+              message: `${missingNoteIds.length} note(s) obligatoire(s) ne sont pas renseignée(s).`,
             }
-          : null;
+          : postponed
+            ? {
+                code: "POSTPONED_RESULT",
+                message: "Un résultat reporté bloque le calcul.",
+              }
+            : null;
     if (blockingIssue) {
       blocked += 1;
       const { error: itemError } = await supabase
@@ -400,40 +442,58 @@ export async function generateBulletins(input: {
     const subjectIds = [
       ...new Set((notes ?? []).map((note) => note.subject_id)),
     ];
-    const [subjects, coefficients, appreciations] = await Promise.all([
-      subjectIds.length
-        ? supabase.from("subjects").select("id,name").in("id", subjectIds)
-        : Promise.resolve({ data: [], error: null }),
-      subjectIds.length
-        ? supabase
-            .from("pedagogical_assignments")
-            .select("subject_id,coefficient")
-            .eq("academic_year_id", input.yearId)
-            .eq("class_id", enrollment.classId)
-            .in("subject_id", subjectIds)
-        : Promise.resolve({ data: [], error: null }),
-      supabase
-        .from("subject_appreciations")
-        .select("subject_id,appreciation")
-        .eq("period_id", input.periodId)
-        .eq("student_id", enrollment.student_id),
-    ]);
+    const [subjects, coefficients, appreciations, assessmentTypes] =
+      await Promise.all([
+        subjectIds.length
+          ? supabase.from("subjects").select("id,name").in("id", subjectIds)
+          : Promise.resolve({ data: [], error: null }),
+        subjectIds.length
+          ? supabase
+              .from("pedagogical_assignments")
+              .select("subject_id,coefficient")
+              .eq("academic_year_id", input.yearId)
+              .eq("class_id", enrollment.classId)
+              .in("subject_id", subjectIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase
+          .from("subject_appreciations")
+          .select("subject_id,appreciation")
+          .eq("period_id", input.periodId)
+          .eq("student_id", enrollment.student_id),
+        supabase
+          .from("assessment_types")
+          .select("id,code")
+          .eq("academic_year_id", input.yearId),
+      ]);
     if (subjects.error) throw subjects.error;
     if (coefficients.error) throw coefficients.error;
     if (appreciations.error) throw appreciations.error;
+    if (assessmentTypes.error) throw assessmentTypes.error;
+    const missingFormulaTypes = new Set<string>();
     const subjectLines = subjectIds.map((subjectId) => {
       const subjectNotes = (notes ?? []).filter(
         (note) => note.subject_id === subjectId,
       );
       const values = subjectNotes.flatMap((note) => {
         const result = (results ?? []).find((item) => item.note_id === note.id);
-        return result?.value == null
+        const assessmentType = assessmentTypes.data?.find(
+          (item) => item.id === note.note_type_id,
+        );
+        return result?.value == null || !assessmentType
           ? []
-          : [(result.value / note.scale_snapshot) * 20];
+          : [
+              {
+                value: result.value,
+                scale: note.scale_snapshot,
+                assessmentTypeCode: assessmentType.code,
+              },
+            ];
       });
-      const average = values.length
-        ? values.reduce((sum, value) => sum + value, 0) / values.length
-        : null;
+      const calculation = calculateCourseAverage(values, formula!.rules);
+      calculation.missingTypeCodes.forEach((code) =>
+        missingFormulaTypes.add(code),
+      );
+      const average = calculation.average;
       return {
         subject_id: subjectId,
         name:
@@ -448,6 +508,24 @@ export async function generateBulletins(input: {
             ?.appreciation ?? "",
       };
     });
+    const missingFormulaType = [...missingFormulaTypes][0];
+    if (missingFormulaType) {
+      blocked += 1;
+      const { error: itemError } = await supabase
+        .from("bulletin_generation_items")
+        .insert({
+          institution_id: input.institutionId,
+          batch_id: batch.id,
+          enrollment_id: enrollment.id,
+          student_id: enrollment.student_id,
+          class_id: enrollment.classId,
+          status: "blocked",
+          issue_code: "FORMULA_TYPE_WEIGHT_MISSING",
+          message: `Le type de note ${missingFormulaType} n’a aucun poids dans la formule ${formula!.name} v${formula!.version}.`,
+        });
+      if (itemError) throw itemError;
+      continue;
+    }
     const calculable = subjectLines.filter((line) => line.average !== null);
     const coefficientTotal = calculable.reduce(
       (sum, line) => sum + line.coefficient,
@@ -482,6 +560,15 @@ export async function generateBulletins(input: {
           general_average: generalAverage,
           generated_at: new Date().toISOString(),
           display: bulletinSettings,
+          formula: {
+            series_id: formula!.seriesId,
+            version_id: formula!.versionId,
+            code: formula!.code,
+            name: formula!.name,
+            version: formula!.version,
+            source: formula!.source,
+            rules: formula!.rules,
+          },
         },
       })
       .select("id")

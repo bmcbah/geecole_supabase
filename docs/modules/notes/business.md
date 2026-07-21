@@ -106,13 +106,29 @@ Le motif du blocage doit être affiché clairement.
 
 Les types de note ne portent pas de coefficient propre.
 
-Le poids des types est défini dans une formule configurable. Les règles peuvent aussi définir :
+Le poids des types est défini dans une formule guidée et versionnée. Une version est immuable dès sa création ; toute modification crée une nouvelle version et une version antérieure peut être réactivée.
+
+Une version active est affectée soit à un cycle, soit à un niveau. Il n'existe aucune affectation à une période, une classe, une matière, un cours ou un élève. L'affectation vaut pour toutes les périodes de l'année :
+
+- la formule du niveau est prioritaire sur celle du cycle ;
+- à défaut de formule de niveau, la formule du cycle est utilisée ;
+- sans formule applicable, la moyenne et le bulletin sont bloqués.
+
+La formule calcule la moyenne de chaque matière à partir des poids attribués aux types de note. La moyenne générale est ensuite calculée séparément avec le coefficient du cours :
+
+```text
+moyenne générale = somme(moyenne matière × coefficient cours) / somme(coefficients cours)
+```
+
+Les règles peuvent aussi définir :
 
 - nombre minimal de notes ;
 - traitement des absences ;
 - traitement des dispenses ;
 - traitement des données manquantes ;
 - arrondis.
+
+Le bulletin conserve l'identifiant, la version, le périmètre de résolution et le snapshot des règles utilisés. Une nouvelle version ne recalcule jamais silencieusement un bulletin déjà publié.
 
 ## Appréciations
 

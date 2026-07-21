@@ -1,5 +1,7 @@
 import { supabase } from "../../../shared/lib/supabase/client";
 import { listCourseSummaries } from "./notes.service";
+import { calculateCourseAverage } from "../domain/grading-formula";
+import { resolveFormula } from "./grading-formulas.service";
 
 export type PostponedResultItem = {
   id: string;
@@ -395,7 +397,7 @@ export async function listAverageControls(
   yearId: string,
 ): Promise<AverageControlItem[]> {
   const courses = await listCourseSummaries(institutionId, yearId);
-  const [periods, notes, results, assignments, enrollments, formula] =
+  const [periods, notes, results, assignments, enrollments, assessmentTypes] =
     await Promise.all([
       supabase
         .from("academic_periods")
@@ -404,7 +406,7 @@ export async function listAverageControls(
         .eq("academic_year_id", yearId),
       supabase
         .from("gradebook_notes")
-        .select("id,class_id,subject_id,period_id,scale_snapshot")
+        .select("id,class_id,subject_id,period_id,note_type_id,scale_snapshot")
         .eq("institution_id", institutionId)
         .eq("academic_year_id", yearId),
       supabase
@@ -424,12 +426,10 @@ export async function listAverageControls(
         .eq("academic_year_id", yearId)
         .eq("status", "confirmed"),
       supabase
-        .from("grading_formulas")
-        .select("name,expression")
+        .from("assessment_types")
+        .select("id,code")
         .eq("institution_id", institutionId)
-        .eq("academic_year_id", yearId)
-        .eq("is_default", true)
-        .maybeSingle(),
+        .eq("academic_year_id", yearId),
     ]);
   for (const result of [
     periods,
@@ -437,9 +437,25 @@ export async function listAverageControls(
     results,
     assignments,
     enrollments,
-    formula,
+    assessmentTypes,
   ])
     if (result.error) throw result.error;
+  const formulas = new Map(
+    await Promise.all(
+      courses.map(
+        async (course) =>
+          [
+            course.assignmentId,
+            await resolveFormula({
+              institutionId,
+              yearId,
+              cycleId: course.cycleId,
+              levelId: course.levelId,
+            }),
+          ] as const,
+      ),
+    ),
+  );
   const confirmed = new Set((enrollments.data ?? []).map((item) => item.id));
   return courses.flatMap((course) =>
     (periods.data ?? [])
@@ -450,6 +466,7 @@ export async function listAverageControls(
             course.allowedPeriodIds.includes(period.id)),
       )
       .map((period) => {
+        const formula = formulas.get(course.assignmentId) ?? null;
         const courseNotes = (notes.data ?? []).filter(
           (note) =>
             note.class_id === course.classId &&
@@ -481,15 +498,28 @@ export async function listAverageControls(
         );
         const normalized = courseResults.flatMap((result) => {
           const note = courseNotes.find((item) => item.id === result.note_id);
-          return result.value == null || !note
+          const assessmentType = assessmentTypes.data?.find(
+            (item) => item.id === note?.note_type_id,
+          );
+          return result.value == null || !note || !assessmentType
             ? []
-            : [(result.value / note.scale_snapshot) * 20];
+            : [
+                {
+                  value: result.value,
+                  scale: note.scale_snapshot,
+                  assessmentTypeCode: assessmentType.code,
+                },
+              ];
         });
-        const average = normalized.length
-          ? normalized.reduce((sum, value) => sum + value, 0) /
-            normalized.length
-          : null;
+        const calculation = formula
+          ? calculateCourseAverage(normalized, formula.rules)
+          : { average: null, missingTypeCodes: [] };
+        const average = calculation.average;
         const anomalies = [
+          ...(!formula ? ["Aucune formule applicable"] : []),
+          ...(calculation.missingTypeCodes.length
+            ? [`Poids absent pour : ${calculation.missingTypeCodes.join(", ")}`]
+            : []),
           ...(courseNotes.length ? [] : ["Aucune évaluation créée"]),
           ...(postponedCount
             ? [`${postponedCount} résultat(s) reporté(s)`]
@@ -505,10 +535,12 @@ export async function listAverageControls(
           coefficient: course.coefficient,
           periodId: period.id,
           periodName: period.name,
-          formulaName: formula.data?.name ?? "Moyenne arithmétique",
-          formulaExpression:
-            formula.data?.expression ??
-            "SUM(note / barème × 20) / nombre de notes",
+          formulaName: formula
+            ? `${formula.name} v${formula.version}`
+            : "Formule manquante",
+          formulaExpression: formula
+            ? `Pondération par type (${formula.source === "level" ? "niveau" : "cycle"})`
+            : "Aucune affectation active au niveau ou au cycle",
           notesCount: courseNotes.length,
           expectedResults,
           enteredResults: courseResults.length,

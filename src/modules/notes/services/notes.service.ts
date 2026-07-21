@@ -57,6 +57,7 @@ export async function listCourseSummaries(
           classes.data?.find((entry) => entry.id === item.class_id)?.name ??
           "Classe",
         cycleId: level?.cycle_id ?? "",
+        levelId: level?.id ?? "",
         cycleName: level?.cycle_name_snapshot ?? "Cycle",
         levelName: level?.level_name_snapshot ?? "Niveau",
         subjectId: item.subject_id as string,

@@ -23,13 +23,15 @@
 
 ## Résolution des configurations
 
-Ordre recommandé :
+Résolution des formules de moyenne matière :
 
 ```text
-Établissement → Cycle → Niveau → Matière → Période
+Niveau → Cycle → blocage explicite
 ```
 
-La règle active la plus spécifique est appliquée et sa provenance reste visible.
+La formule n'a aucune dimension période. Une seule version active est autorisée par périmètre et par année. Les versions sont immuables et le bulletin en conserve un snapshot.
+
+La configuration est guidée (`weights` par code de type de note et `rounding`) et n'exécute jamais une expression libre saisie par l'utilisateur.
 
 ## API du TreeView
 
