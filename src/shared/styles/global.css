@@ -896,6 +896,13 @@ input {
 .p-datatable .p-datatable-tbody > tr:hover {
   background: #eef8f5;
 }
+.notes-operations-table .p-datatable-tbody > tr,
+.notes-operations-table .p-datatable-tbody > tr > td {
+  color: #334155;
+}
+.notes-operations-table .p-datatable-tbody > tr > td {
+  background-color: transparent;
+}
 .structure-page {
   display: flex;
   flex-direction: column;

@@ -222,6 +222,7 @@ export function NotesOperationsPage() {
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <DataTable
           value={items}
+          className="notes-operations-table"
           lazy
           loading={loading}
           paginator
