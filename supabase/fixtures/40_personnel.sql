@@ -214,8 +214,7 @@ begin
     (institution,period_current,employee_hourly,contract_hourly,0,150000,0,50000,250000,0,'calculated'),
     (institution,period_current,employee_mixed,contract_mixed,3200000,150000,100000,0,0,0,'validated'),
     (institution,period_current,employee_session,contract_session,0,240000,0,0,0,0,'calculated'),
-    (institution,period_current,employee_flat,contract_flat,2500000,0,0,100000,0,0,'calculated')
-  returning id into entry_flat;
+    (institution,period_current,employee_flat,contract_flat,2500000,0,0,100000,0,0,'calculated');
 
   select id into entry_fixed from public.payroll_entries where period_id=period_current and employee_id=employee_fixed;
   select id into entry_hourly from public.payroll_entries where period_id=period_current and employee_id=employee_hourly;
