@@ -47,6 +47,7 @@ export function CycleResponsibilitiesPage() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -88,8 +89,19 @@ export function CycleResponsibilitiesPage() {
       !draft.personId ||
       !draft.startsOn ||
       (draft.capacity === "acting" && !draft.replacedPersonId)
-    )
+    ) {
+      setFormError(
+        draft.capacity === "acting" && !draft.replacedPersonId
+          ? "Sélectionnez la personne remplacée pour un intérim."
+          : "Renseignez le cycle, la responsabilité, la personne et la date de début.",
+      );
       return;
+    }
+    if (draft.endsOn && draft.endsOn < draft.startsOn) {
+      setFormError("La date de fin doit être postérieure à la date de début.");
+      return;
+    }
+    setFormError("");
     setSaving(true);
     try {
       await saveCycleResponsibility({
@@ -124,7 +136,11 @@ export function CycleResponsibilitiesPage() {
           <Button
             label="Affecter une responsabilité"
             icon="pi pi-plus"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setDraft(emptyDraft);
+              setFormError("");
+              setOpen(true);
+            }}
           />
         }
       />
@@ -225,124 +241,155 @@ export function CycleResponsibilitiesPage() {
         header="Affecter une responsabilité"
         visible={open}
         modal
-        className="w-[min(94vw,42rem)]"
-        onHide={() => setOpen(false)}
+        className="w-[min(94vw,46rem)]"
+        onHide={() => {
+          setOpen(false);
+          setFormError("");
+        }}
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Cycle">
-            <Dropdown
-              value={draft.cycleId}
-              options={(context?.cycles ?? []).map((cycle) => ({
-                label: cycle.name,
-                value: cycle.cycle_id,
-              }))}
-              onChange={(event) =>
-                setDraft((value) => ({
-                  ...value,
-                  cycleId: String(event.value ?? ""),
-                }))
-              }
-              className="w-full"
-            />
-          </Field>
-          <Field label="Responsabilité">
-            <Dropdown
-              value={draft.typeId}
-              options={(context?.types ?? []).map((type) => ({
-                label: type.name,
-                value: type.id,
-              }))}
-              onChange={(event) =>
-                setDraft((value) => ({
-                  ...value,
-                  typeId: String(event.value ?? ""),
-                }))
-              }
-              className="w-full"
-            />
-          </Field>
-          <Field label="Personne">
-            <Dropdown
-              filter
-              value={draft.personId}
-              options={(context?.people ?? []).map((person) => ({
-                label: `${person.first_name} ${person.last_name}`,
-                value: person.id,
-              }))}
-              onChange={(event) =>
-                setDraft((value) => ({
-                  ...value,
-                  personId: String(event.value ?? ""),
-                }))
-              }
-              className="w-full"
-            />
-          </Field>
-          <Field label="Qualité">
-            <Dropdown
-              value={draft.capacity}
-              options={capacityOptions}
-              onChange={(event) =>
-                setDraft((value) => ({
-                  ...value,
-                  capacity: event.value as ResponsibilityCapacity,
-                  replacedPersonId: "",
-                }))
-              }
-              className="w-full"
-            />
-          </Field>
-          {draft.capacity === "acting" ? (
-            <Field label="Personne remplacée">
-              <Dropdown
-                filter
-                value={draft.replacedPersonId}
-                options={(context?.people ?? [])
-                  .filter((person) => person.id !== draft.personId)
-                  .map((person) => ({
+        <div className="space-y-5">
+          {formError ? <Message severity="error" text={formError} /> : null}
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">
+              Périmètre et responsabilité
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Cycle">
+                <Dropdown
+                  value={draft.cycleId}
+                  options={(context?.cycles ?? []).map((cycle) => ({
+                    label: cycle.name,
+                    value: cycle.cycle_id,
+                  }))}
+                  onChange={(event) =>
+                    setDraft((value) => ({
+                      ...value,
+                      cycleId: String(event.value ?? ""),
+                    }))
+                  }
+                  className="w-full"
+                />
+              </Field>
+              <Field label="Responsabilité">
+                <Dropdown
+                  value={draft.typeId}
+                  options={(context?.types ?? []).map((type) => ({
+                    label: type.name,
+                    value: type.id,
+                  }))}
+                  onChange={(event) =>
+                    setDraft((value) => ({
+                      ...value,
+                      typeId: String(event.value ?? ""),
+                    }))
+                  }
+                  className="w-full"
+                />
+              </Field>
+            </div>
+          </section>
+          <section className="border-t border-slate-200 pt-5">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">
+              Personne désignée
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Personne">
+                <Dropdown
+                  filter
+                  value={draft.personId}
+                  options={(context?.people ?? []).map((person) => ({
                     label: `${person.first_name} ${person.last_name}`,
                     value: person.id,
                   }))}
-                onChange={(event) =>
-                  setDraft((value) => ({
-                    ...value,
-                    replacedPersonId: String(event.value ?? ""),
-                  }))
-                }
-                className="w-full"
-              />
-            </Field>
-          ) : null}
-          <Field label="Début">
-            <InputText
-              type="date"
-              value={draft.startsOn}
-              onChange={(event) =>
-                setDraft((value) => ({
-                  ...value,
-                  startsOn: event.target.value,
-                }))
-              }
-              className="w-full"
-            />
-          </Field>
-          <Field label="Fin facultative">
-            <InputText
-              type="date"
-              value={draft.endsOn}
-              onChange={(event) =>
-                setDraft((value) => ({ ...value, endsOn: event.target.value }))
-              }
-              className="w-full"
-            />
-          </Field>
+                  onChange={(event) =>
+                    setDraft((value) => ({
+                      ...value,
+                      personId: String(event.value ?? ""),
+                    }))
+                  }
+                  className="w-full"
+                />
+              </Field>
+              <Field label="Qualité">
+                <Dropdown
+                  value={draft.capacity}
+                  options={capacityOptions}
+                  onChange={(event) =>
+                    setDraft((value) => ({
+                      ...value,
+                      capacity: event.value as ResponsibilityCapacity,
+                      replacedPersonId: "",
+                    }))
+                  }
+                  className="w-full"
+                />
+              </Field>
+              {draft.capacity === "acting" ? (
+                <Field label="Personne remplacée">
+                  <Dropdown
+                    filter
+                    value={draft.replacedPersonId}
+                    options={(context?.people ?? [])
+                      .filter((person) => person.id !== draft.personId)
+                      .map((person) => ({
+                        label: `${person.first_name} ${person.last_name}`,
+                        value: person.id,
+                      }))}
+                    onChange={(event) =>
+                      setDraft((value) => ({
+                        ...value,
+                        replacedPersonId: String(event.value ?? ""),
+                      }))
+                    }
+                    className="w-full"
+                  />
+                </Field>
+              ) : null}
+            </div>
+          </section>
+          <section className="border-t border-slate-200 pt-5">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">
+              Période de responsabilité
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Début">
+                <InputText
+                  type="date"
+                  value={draft.startsOn}
+                  onChange={(event) =>
+                    setDraft((value) => ({
+                      ...value,
+                      startsOn: event.target.value,
+                    }))
+                  }
+                  className="w-full"
+                />
+              </Field>
+              <Field label="Fin facultative">
+                <InputText
+                  type="date"
+                  value={draft.endsOn}
+                  onChange={(event) =>
+                    setDraft((value) => ({
+                      ...value,
+                      endsOn: event.target.value,
+                    }))
+                  }
+                  className="w-full"
+                />
+              </Field>
+            </div>
+          </section>
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <Button
             label="Annuler"
             severity="secondary"
             outlined
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              setFormError("");
+            }}
           />
           <Button
             label="Affecter"

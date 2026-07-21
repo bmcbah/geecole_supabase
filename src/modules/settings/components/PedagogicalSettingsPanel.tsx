@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { Button } from "primereact/button";
 import { InputNumber } from "primereact/inputnumber";
 import { InputSwitch } from "primereact/inputswitch";
@@ -97,203 +96,209 @@ export function PedagogicalSettingsPanel() {
         activeIndex={[0]}
         className="pedagogical-settings-accordion"
       >
-        <SettingsCard title="Notes et calculs">
-          <Toggle
-            label="Appréciations obligatoires"
-            checked={value.appreciations_required}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                appreciations_required: checked,
-              }))
-            }
-          />
-          <Toggle
-            label="Afficher le classement"
-            checked={value.ranking_displayed}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                ranking_displayed: checked,
-              }))
-            }
-          />
-          <Toggle
-            label="Afficher les coefficients"
-            checked={value.coefficients_displayed}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                coefficients_displayed: checked,
-              }))
-            }
-          />
-          <Toggle
-            label="Autoriser plusieurs enseignants par cours"
-            checked={value.multiple_teachers_enabled}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                multiple_teachers_enabled: checked,
-              }))
-            }
-          />
-          <label className="field mt-3">
-            <span>Décimales des moyennes</span>
-            <InputNumber
-              value={value.average_decimal_places}
-              min={0}
-              max={4}
-              showButtons
-              onValueChange={(event) =>
+        <AccordionTab header="Notes et calculs">
+          <div className="px-1 pb-1">
+            <Toggle
+              label="Appréciations obligatoires"
+              checked={value.appreciations_required}
+              onChange={(checked) =>
                 setValue((current) => ({
                   ...current,
-                  average_decimal_places: event.value ?? 2,
+                  appreciations_required: checked,
                 }))
               }
             />
-          </label>
-        </SettingsCard>
-        <SettingsCard title="Validation et publication">
-          <label className="field">
-            <span>Profils autorisés à valider</span>
-            <MultiSelect
-              value={value.validation_roles}
-              options={roleOptions}
-              display="chip"
-              className="w-full"
-              onChange={(event) => {
-                const roles: unknown = event.value;
-                if (Array.isArray(roles))
+            <Toggle
+              label="Afficher le classement"
+              checked={value.ranking_displayed}
+              onChange={(checked) =>
+                setValue((current) => ({
+                  ...current,
+                  ranking_displayed: checked,
+                }))
+              }
+            />
+            <Toggle
+              label="Afficher les coefficients"
+              checked={value.coefficients_displayed}
+              onChange={(checked) =>
+                setValue((current) => ({
+                  ...current,
+                  coefficients_displayed: checked,
+                }))
+              }
+            />
+            <Toggle
+              label="Autoriser plusieurs enseignants par cours"
+              checked={value.multiple_teachers_enabled}
+              onChange={(checked) =>
+                setValue((current) => ({
+                  ...current,
+                  multiple_teachers_enabled: checked,
+                }))
+              }
+            />
+            <label className="field mt-3">
+              <span>Décimales des moyennes</span>
+              <InputNumber
+                value={value.average_decimal_places}
+                min={0}
+                max={4}
+                showButtons
+                onValueChange={(event) =>
                   setValue((current) => ({
                     ...current,
-                    validation_roles: roles.filter(
-                      (role): role is AppRole =>
-                        typeof role === "string" &&
-                        roleOptions.some((option) => option.value === role),
-                    ),
-                  }));
-              }}
+                    average_decimal_places: event.value ?? 2,
+                  }))
+                }
+              />
+            </label>
+          </div>
+        </AccordionTab>
+        <AccordionTab header="Validation et publication">
+          <div className="px-1 pb-1">
+            <label className="field">
+              <span>Profils autorisés à valider</span>
+              <MultiSelect
+                value={value.validation_roles}
+                options={roleOptions}
+                display="chip"
+                className="w-full"
+                onChange={(event) => {
+                  const roles: unknown = event.value;
+                  if (Array.isArray(roles))
+                    setValue((current) => ({
+                      ...current,
+                      validation_roles: roles.filter(
+                        (role): role is AppRole =>
+                          typeof role === "string" &&
+                          roleOptions.some((option) => option.value === role),
+                      ),
+                    }));
+                }}
+              />
+            </label>
+            <label className="field mt-3">
+              <span>Profils autorisés à publier</span>
+              <MultiSelect
+                value={value.publication_roles}
+                options={roleOptions}
+                display="chip"
+                className="w-full"
+                onChange={(event) => {
+                  const roles: unknown = event.value;
+                  if (Array.isArray(roles))
+                    setValue((current) => ({
+                      ...current,
+                      publication_roles: roles.filter(
+                        (role): role is AppRole =>
+                          typeof role === "string" &&
+                          roleOptions.some((option) => option.value === role),
+                      ),
+                    }));
+                }}
+              />
+            </label>
+            <Toggle
+              label="Notifications pédagogiques"
+              checked={value.notifications_enabled}
+              onChange={(checked) =>
+                setValue((current) => ({
+                  ...current,
+                  notifications_enabled: checked,
+                }))
+              }
             />
-          </label>
-          <label className="field mt-3">
-            <span>Profils autorisés à publier</span>
-            <MultiSelect
-              value={value.publication_roles}
-              options={roleOptions}
-              display="chip"
-              className="w-full"
-              onChange={(event) => {
-                const roles: unknown = event.value;
-                if (Array.isArray(roles))
+          </div>
+        </AccordionTab>
+        <AccordionTab header="Format du bulletin">
+          <div className="px-1 pb-1">
+            <label className="field">
+              <span>Titre</span>
+              <InputText
+                value={value.bulletin_title}
+                onChange={(e) =>
                   setValue((current) => ({
                     ...current,
-                    publication_roles: roles.filter(
-                      (role): role is AppRole =>
-                        typeof role === "string" &&
-                        roleOptions.some((option) => option.value === role),
-                    ),
-                  }));
-              }}
-            />
-          </label>
-          <Toggle
-            label="Notifications pédagogiques"
-            checked={value.notifications_enabled}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                notifications_enabled: checked,
-              }))
-            }
-          />
-        </SettingsCard>
-        <SettingsCard title="Format du bulletin">
-          <label className="field">
-            <span>Titre</span>
-            <InputText
-              value={value.bulletin_title}
-              onChange={(e) =>
+                    bulletin_title: e.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="field mt-3">
+              <span>Orientation</span>
+              <Dropdown
+                value={value.bulletin_orientation}
+                options={[
+                  { label: "Portrait", value: "portrait" },
+                  { label: "Paysage", value: "landscape" },
+                ]}
+                onChange={(e) =>
+                  setValue((current) => ({
+                    ...current,
+                    bulletin_orientation: String(e.value),
+                  }))
+                }
+              />
+            </label>
+            <Toggle
+              label="Afficher le classement"
+              checked={value.bulletin_show_rank}
+              onChange={(checked) =>
                 setValue((current) => ({
                   ...current,
-                  bulletin_title: e.target.value,
+                  bulletin_show_rank: checked,
                 }))
               }
             />
-          </label>
-          <label className="field mt-3">
-            <span>Orientation</span>
-            <Dropdown
-              value={value.bulletin_orientation}
-              options={[
-                { label: "Portrait", value: "portrait" },
-                { label: "Paysage", value: "landscape" },
-              ]}
-              onChange={(e) =>
+            <Toggle
+              label="Afficher les appréciations"
+              checked={value.bulletin_show_appreciations}
+              onChange={(checked) =>
                 setValue((current) => ({
                   ...current,
-                  bulletin_orientation: String(e.value),
+                  bulletin_show_appreciations: checked,
                 }))
               }
             />
-          </label>
-          <Toggle
-            label="Afficher le classement"
-            checked={value.bulletin_show_rank}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                bulletin_show_rank: checked,
-              }))
-            }
-          />
-          <Toggle
-            label="Afficher les appréciations"
-            checked={value.bulletin_show_appreciations}
-            onChange={(checked) =>
-              setValue((current) => ({
-                ...current,
-                bulletin_show_appreciations: checked,
-              }))
-            }
-          />
-          <label className="field mt-3">
-            <span>Signature enseignant</span>
-            <InputText
-              value={value.bulletin_teacher_signature_label}
-              onChange={(e) =>
-                setValue((current) => ({
-                  ...current,
-                  bulletin_teacher_signature_label: e.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="field mt-3">
-            <span>Signature direction</span>
-            <InputText
-              value={value.bulletin_direction_signature_label}
-              onChange={(e) =>
-                setValue((current) => ({
-                  ...current,
-                  bulletin_direction_signature_label: e.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="field mt-3">
-            <span>Pied de page</span>
-            <InputText
-              value={value.bulletin_footer}
-              onChange={(e) =>
-                setValue((current) => ({
-                  ...current,
-                  bulletin_footer: e.target.value,
-                }))
-              }
-            />
-          </label>
-        </SettingsCard>
+            <label className="field mt-3">
+              <span>Signature enseignant</span>
+              <InputText
+                value={value.bulletin_teacher_signature_label}
+                onChange={(e) =>
+                  setValue((current) => ({
+                    ...current,
+                    bulletin_teacher_signature_label: e.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="field mt-3">
+              <span>Signature direction</span>
+              <InputText
+                value={value.bulletin_direction_signature_label}
+                onChange={(e) =>
+                  setValue((current) => ({
+                    ...current,
+                    bulletin_direction_signature_label: e.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="field mt-3">
+              <span>Pied de page</span>
+              <InputText
+                value={value.bulletin_footer}
+                onChange={(e) =>
+                  setValue((current) => ({
+                    ...current,
+                    bulletin_footer: e.target.value,
+                  }))
+                }
+              />
+            </label>
+          </div>
+        </AccordionTab>
       </Accordion>
       <div className="flex justify-end">
         <Button
@@ -308,19 +313,6 @@ export function PedagogicalSettingsPanel() {
   );
 }
 
-function SettingsCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <AccordionTab header={title}>
-      <div className="px-1 pb-1">{children}</div>
-    </AccordionTab>
-  );
-}
 function Toggle({
   label,
   checked,
