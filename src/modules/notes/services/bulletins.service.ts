@@ -323,6 +323,12 @@ export async function generateBulletins(input: {
     .eq("institution_id", input.institutionId)
     .eq("academic_year_id", input.yearId);
   if (levelsError) throw levelsError;
+  const { data: cycleRows, error: cyclesError } = await supabase
+    .from("academic_year_cycles")
+    .select("cycle_id,grading_scale")
+    .eq("institution_id", input.institutionId)
+    .eq("academic_year_id", input.yearId);
+  if (cyclesError) throw cyclesError;
   const selected = (enrollments ?? []).flatMap((enrollment) => {
     const assignment = assignments?.find(
       (item) => item.enrollment_id === enrollment.id,
@@ -491,7 +497,14 @@ export async function generateBulletins(input: {
               },
             ];
       });
-      const calculation = calculateCourseAverage(values, formula!.rules);
+      const gradingScale =
+        cycleRows?.find((cycle) => cycle.cycle_id === level?.cycle_id)
+          ?.grading_scale ?? 20;
+      const calculation = calculateCourseAverage(
+        values,
+        formula!.rules,
+        gradingScale,
+      );
       calculation.missingTypeCodes.forEach((code) =>
         missingFormulaTypes.add(code),
       );
@@ -579,6 +592,9 @@ export async function generateBulletins(input: {
         snapshot: {
           subjects: subjectLines,
           general_average: generalAverage,
+          grading_scale:
+            cycleRows?.find((cycle) => cycle.cycle_id === level?.cycle_id)
+              ?.grading_scale ?? 20,
           generated_at: new Date().toISOString(),
           display: bulletinSettings,
           formula: {

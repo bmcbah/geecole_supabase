@@ -21,9 +21,9 @@ Le type de note vient d’un catalogue GeeCole surchargeable localement.
 
 Exemples : évaluation, devoir surveillé, examen, composition, oral, travaux pratiques, interrogation.
 
-Le type définit le barème. Le barème est imposé à toutes les notes utilisant ce type et ne peut pas être modifié au niveau d’une note.
+Le barème de référence est défini sur le cycle pour chaque année scolaire. Toutes les notes du cycle utilisent ce barème, figé dans la note lors de sa création.
 
-Une fois le type utilisé, son barème devient immuable. Pour changer de barème, l’établissement crée une nouvelle surcharge locale et désactive l’ancien type.
+Le type de note ne porte pas de barème métier. Un changement de barème du cycle ne doit jamais réécrire les notes ni les bulletins déjà figés.
 
 ## Affectation pédagogique
 
@@ -106,7 +106,7 @@ Le motif du blocage doit être affiché clairement.
 
 Les types de note ne portent pas de coefficient propre.
 
-La moyenne matière est définie par une expression libre et versionnée. Les codes des types de note actifs sont les seules variables disponibles, par exemple `(DEVOIR + COMPO * 2) / 3`. Pour un type comportant plusieurs évaluations, la variable représente leur moyenne normalisée sur 20. Une version est immuable dès sa création ; toute modification crée une nouvelle version et une version antérieure peut être réactivée.
+La moyenne matière est définie par une expression libre et versionnée. Les codes des types de note actifs sont les seules variables disponibles, par exemple `(DEVOIR + COMPO * 2) / 3`. Pour un type comportant plusieurs notes, la variable représente leur moyenne normalisée sur le barème annuel du cycle. Une version est immuable dès sa création ; toute modification crée une nouvelle version et une version antérieure peut être réactivée.
 
 Une version active est affectée soit à un cycle, soit à un niveau. Il n'existe aucune affectation à une période, une classe, une matière, un cours ou un élève. L'affectation vaut pour toutes les périodes de l'année :
 

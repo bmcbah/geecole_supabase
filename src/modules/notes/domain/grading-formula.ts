@@ -112,15 +112,17 @@ export function listFormulaVariables(expression: string): string[] {
 export function calculateCourseAverage(
   values: Array<{ value: number; scale: number; assessmentTypeCode: string }>,
   rules: FormulaRules,
+  gradingScale: number,
 ): FormulaResult {
   try {
+    if (!(gradingScale > 0)) throw new Error("Barème du cycle invalide");
     const grouped = new Map<string, number[]>();
     for (const item of values) {
       if (!(item.scale > 0)) continue;
       const code = item.assessmentTypeCode.toUpperCase();
       grouped.set(code, [
         ...(grouped.get(code) ?? []),
-        (item.value / item.scale) * 20,
+        (item.value / item.scale) * gradingScale,
       ]);
     }
     const variables = Object.fromEntries(
@@ -133,9 +135,9 @@ export function calculateCourseAverage(
     const missingTypeCodes = referenced.filter((code) => !(code in variables));
     if (missingTypeCodes.length) return { average: null, missingTypeCodes };
     const raw = evaluateExpression(rules.expression, variables);
-    if (raw < 0 || raw > 20)
+    if (raw < 0 || raw > gradingScale)
       throw new Error(
-        `Résultat hors barème : ${raw.toFixed(2)} / 20. Vérifiez les pondérations et le dénominateur.`,
+        `Résultat hors barème : ${raw.toFixed(2)} / ${gradingScale}. Vérifiez les pondérations et le dénominateur.`,
       );
     const precision = Math.min(4, Math.max(0, rules.rounding ?? 2));
     return { average: Number(raw.toFixed(precision)), missingTypeCodes: [] };
