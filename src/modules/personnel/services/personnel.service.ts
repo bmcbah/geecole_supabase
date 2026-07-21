@@ -106,10 +106,17 @@ export async function createEmployee(
           status: "active",
           compensation_mode,
           fixed_amount: fixed_amount ?? 0,
-          hourly_rate: hourly_rate ?? 0,
+          hourly_rate: 0,
           session_rate: session_rate ?? 0,
         } as never);
       fail(contractError);
+    }
+    if ((hourly_rate ?? 0) > 0) {
+      await setEmployeeHourlyRate({
+        employeeId: created.id,
+        hourlyRate: hourly_rate ?? 0,
+        effectiveFrom: input.hired_on,
+      });
     }
   } catch (setupError) {
     await supabase
@@ -127,7 +134,7 @@ export async function getEmployeeProfile(
   const { data, error } = await supabase
     .from("employees" as never)
     .select(
-      "*, functions:employee_functions(*,function_item:personnel_catalog_items(default_label,local_label)), contracts:employee_contracts(*,contract_type:personnel_catalog_items(default_label,local_label)), leave_requests(*), work_entries(*), sanctions:employee_sanctions(*), advances:salary_advances(*), documents:employee_documents(*,document_type:personnel_catalog_items(default_label,local_label))",
+      "*, functions:employee_functions(*,function_item:personnel_catalog_items(default_label,local_label)), contracts:employee_contracts(*,contract_type:personnel_catalog_items(default_label,local_label)), compensation_rates:employee_compensation_rates(*), leave_requests(*), work_entries(*), sanctions:employee_sanctions(*), advances:salary_advances(*), documents:employee_documents(*,document_type:personnel_catalog_items(default_label,local_label)), payroll_entries(*,period:payroll_periods(*))",
     )
     .eq("institution_id", institutionId)
     .eq("id", employeeId)
@@ -170,13 +177,13 @@ export async function createEmployeeContract(input: {
   status: "draft" | "active";
   compensation_mode: CompensationMode;
   fixed_amount: number;
-  hourly_rate: number;
   session_rate: number;
   weekly_hours?: number;
   payment_method?: string;
 }) {
   const { error } = await supabase.from("employee_contracts" as never).insert({
     ...input,
+    hourly_rate: 0,
     contract_type_item_id: input.contract_type_item_id || null,
     reference: input.reference || null,
     ends_on: input.ends_on || null,
@@ -184,6 +191,86 @@ export async function createEmployeeContract(input: {
     payment_method: input.payment_method || null,
   } as never);
   fail(error);
+}
+
+export async function setEmployeeHourlyRate(input: {
+  employeeId: string;
+  hourlyRate: number;
+  effectiveFrom: string;
+  notes?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "set_employee_hourly_rate" as never,
+    {
+      target_employee_id: input.employeeId,
+      new_hourly_rate: input.hourlyRate,
+      starts_on: input.effectiveFrom,
+      rate_notes: input.notes || null,
+    } as never,
+  );
+  fail(error);
+}
+
+export async function createEmployeeAccessInvitation(
+  employeeId: string,
+  role: "teacher" | "admin" | "secretary" | "finance",
+) {
+  const { data, error } = await supabase.rpc(
+    "create_employee_access_invitation" as never,
+    { target_employee_id: employeeId, assigned_role: role } as never,
+  );
+  fail(error);
+  return String(data);
+}
+
+export async function createProposedWorkEntries(input: {
+  institutionId: string;
+  employeeId: string;
+  contractId: string;
+  startsOn: string;
+  endsOn: string;
+  weeklyHours: number;
+  workTypeItemId?: string;
+}) {
+  const start = new Date(`${input.startsOn}T12:00:00`);
+  const end = new Date(`${input.endsOn}T12:00:00`);
+  const rows: Record<string, unknown>[] = [];
+  for (
+    const cursor = new Date(start);
+    cursor <= end;
+    cursor.setDate(cursor.getDate() + 7)
+  ) {
+    rows.push({
+      institution_id: input.institutionId,
+      employee_id: input.employeeId,
+      contract_id: input.contractId,
+      work_type_item_id: input.workTypeItemId || null,
+      work_date: cursor.toISOString().slice(0, 10),
+      minutes: Math.round(input.weeklyHours * 60),
+      quantity: 1,
+      source: "weekly_load_proposal",
+      status: "planned",
+      notes:
+        "Proposition automatique à confirmer selon les heures réellement effectuées",
+    });
+  }
+  if (!rows.length) return 0;
+  const { error: cleanupError } = await supabase
+    .from("work_entries" as never)
+    .delete()
+    .eq("institution_id", input.institutionId)
+    .eq("employee_id", input.employeeId)
+    .eq("contract_id", input.contractId)
+    .eq("source", "weekly_load_proposal")
+    .eq("status", "planned")
+    .gte("work_date", input.startsOn)
+    .lte("work_date", input.endsOn);
+  fail(cleanupError);
+  const { error } = await supabase
+    .from("work_entries" as never)
+    .insert(rows as never);
+  fail(error);
+  return rows.length;
 }
 export async function createSalaryAdvance(input: {
   institution_id: string;

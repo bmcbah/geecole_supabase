@@ -131,7 +131,7 @@ export function EmployeeCreateWizard({
   };
   const moneyField =
     form.compensation_mode === "hourly"
-      ? (["hourly_rate", "Taux horaire"] as const)
+      ? (["hourly_rate", "Taux horaire propre à l’employé"] as const)
       : form.compensation_mode === "session"
         ? (["session_rate", "Taux par séance"] as const)
         : ([

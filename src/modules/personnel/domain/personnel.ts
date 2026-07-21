@@ -54,6 +54,13 @@ export type EmployeeContract = {
   payment_method: string | null;
   contract_type?: { default_label: string; local_label: string | null };
 };
+export type EmployeeCompensationRate = {
+  id: string;
+  hourly_rate: number;
+  effective_from: string;
+  effective_to: string | null;
+  notes: string | null;
+};
 export type EmployeeProfile = Employee & {
   functions: EmployeeFunction[];
   contracts: EmployeeContract[];
@@ -62,6 +69,8 @@ export type EmployeeProfile = Employee & {
   sanctions: EmployeeSanction[];
   advances: SalaryAdvance[];
   documents: EmployeeDocument[];
+  compensation_rates: EmployeeCompensationRate[];
+  payroll_entries: (PayrollEntry & { period: PayrollPeriod })[];
 };
 export type EmployeeDocument = {
   id: string;

@@ -38,7 +38,6 @@ export function EmployeeContractDialog({
     ends: "",
     mode: "fixed" as CompensationMode,
     fixed: 0,
-    hourly: 0,
     session: 0,
     weekly: 0,
     method: "",
@@ -49,7 +48,7 @@ export function EmployeeContractDialog({
   const amountOk = useMemo(
     () =>
       form.mode === "unpaid" || form.mode === "hourly"
-        ? form.hourly > 0
+        ? true
         : form.mode === "session"
           ? form.session > 0
           : form.fixed > 0,
@@ -71,7 +70,6 @@ export function EmployeeContractDialog({
         status: form.status,
         compensation_mode: form.mode,
         fixed_amount: form.fixed,
-        hourly_rate: form.hourly,
         session_rate: form.session,
         weekly_hours: form.weekly,
         payment_method: form.method,
@@ -157,13 +155,10 @@ export function EmployeeContractDialog({
           </Field>
         )}
         {["hourly", "mixed"].includes(form.mode) && (
-          <Field label="Taux horaire (GNF) *">
-            <InputNumber
-              value={form.hourly}
-              min={0}
-              onValueChange={(e) => set("hourly", e.value || 0)}
-            />
-          </Field>
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-800">
+            Le taux horaire est défini sur la fiche de l’employé et historisé
+            séparément du contrat.
+          </div>
         )}
         {form.mode === "session" && (
           <Field label="Taux par séance (GNF) *">

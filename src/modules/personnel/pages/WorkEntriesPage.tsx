@@ -8,6 +8,7 @@ import { Dropdown } from "primereact/dropdown";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
+import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
@@ -17,6 +18,8 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import type { Employee, WorkEntry } from "../domain/personnel";
 import {
   createWorkEntry,
+  createProposedWorkEntries,
+  getEmployeeProfile,
   listEmployees,
   listPersonnelCatalog,
   listWorkEntries,
@@ -43,6 +46,7 @@ export function WorkEntriesPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [open, setOpen] = useState(false);
+  const [proposalOpen, setProposalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     employeeId: "",
@@ -52,6 +56,13 @@ export function WorkEntriesPage() {
     rate: 0,
     status: "completed" as WorkEntry["status"],
     notes: "",
+  });
+  const [proposal, setProposal] = useState({
+    employeeId: "",
+    contractId: "",
+    startsOn: new Date().toISOString().slice(0, 10),
+    endsOn: new Date().toISOString().slice(0, 10),
+    weeklyHours: 0,
   });
   const load = useCallback(async () => {
     const [entries, people, catalog] = await Promise.all([
@@ -126,17 +137,67 @@ export function WorkEntriesPage() {
       setSaving(false);
     }
   };
+  const selectProposalEmployee = async (employeeId: string) => {
+    const profile = await getEmployeeProfile(institutionId, employeeId);
+    const contract = profile?.contracts.find(
+      (item) => item.status === "active",
+    );
+    setProposal((current) => ({
+      ...current,
+      employeeId,
+      contractId: contract?.id || "",
+      weeklyHours: contract?.weekly_hours || 0,
+    }));
+  };
+  const propose = async () => {
+    setSaving(true);
+    try {
+      const count = await createProposedWorkEntries({
+        institutionId,
+        employeeId: proposal.employeeId,
+        contractId: proposal.contractId,
+        startsOn: proposal.startsOn,
+        endsOn: proposal.endsOn,
+        weeklyHours: proposal.weeklyHours,
+        workTypeItemId: types[0]?.value,
+      });
+      setProposalOpen(false);
+      await load();
+      notify({
+        severity: "success",
+        summary: `${count} proposition(s) créée(s)`,
+        detail: "Elles doivent être confirmées puis validées avant la paie.",
+      });
+    } catch (error) {
+      notify({
+        severity: "error",
+        summary: "Proposition impossible",
+        detail: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <div className="space-y-4 pb-8">
       <PageHeader
         title="Présences et heures"
         description="Saisissez les activités réellement effectuées avant leur validation et leur intégration à la paie."
         actions={
-          <Button
-            label="Saisir des heures"
-            icon="pi pi-plus"
-            onClick={() => setOpen(true)}
-          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              label="Proposer les heures enseignant"
+              icon="pi pi-sparkles"
+              severity="secondary"
+              outlined
+              onClick={() => setProposalOpen(true)}
+            />
+            <Button
+              label="Saisir des heures"
+              icon="pi pi-plus"
+              onClick={() => setOpen(true)}
+            />
+          </div>
         }
       />
       <section className="grid gap-3 sm:grid-cols-3">
@@ -405,6 +466,98 @@ export function WorkEntriesPage() {
             loading={saving}
             disabled={!form.employeeId || form.hours <= 0}
             onClick={() => void save()}
+          />
+        </div>
+      </Dialog>
+      <Dialog
+        header="Proposer les heures d’un enseignant"
+        visible={proposalOpen}
+        modal
+        className="w-[min(96vw,42rem)]"
+        onHide={() => setProposalOpen(false)}
+      >
+        <Message
+          severity="info"
+          text="La proposition reprend la charge hebdomadaire du contrat. Elle doit être corrigée selon les cours réellement effectués, puis validée."
+          className="mb-4 w-full"
+        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="md:col-span-2">
+            <span className="mb-1 block text-sm font-medium">Enseignant *</span>
+            <Dropdown
+              className="w-full"
+              filter
+              value={proposal.employeeId}
+              options={employees.map((x) => ({
+                value: x.id,
+                label: `${x.first_name} ${x.last_name} — ${x.employee_number}`,
+              }))}
+              onChange={(e) => void selectProposalEmployee(e.value)}
+            />
+          </label>
+          <label>
+            <span className="mb-1 block text-sm font-medium">Du *</span>
+            <InputText
+              className="w-full"
+              type="date"
+              value={proposal.startsOn}
+              onChange={(e) =>
+                setProposal({ ...proposal, startsOn: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            <span className="mb-1 block text-sm font-medium">Au *</span>
+            <InputText
+              className="w-full"
+              type="date"
+              value={proposal.endsOn}
+              onChange={(e) =>
+                setProposal({ ...proposal, endsOn: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            <span className="mb-1 block text-sm font-medium">
+              Charge hebdomadaire proposée *
+            </span>
+            <InputNumber
+              className="w-full"
+              value={proposal.weeklyHours}
+              min={0.25}
+              max={60}
+              maxFractionDigits={2}
+              onValueChange={(e) =>
+                setProposal({ ...proposal, weeklyHours: e.value || 0 })
+              }
+            />
+          </label>
+        </div>
+        {!proposal.contractId && proposal.employeeId && (
+          <Message
+            severity="warn"
+            text="Aucun contrat actif n’a été trouvé pour cette personne."
+            className="mt-4 w-full"
+          />
+        )}
+        <div className="mt-5 flex justify-end gap-2">
+          <Button
+            label="Annuler"
+            outlined
+            severity="secondary"
+            onClick={() => setProposalOpen(false)}
+          />
+          <Button
+            label="Créer les propositions"
+            icon="pi pi-sparkles"
+            loading={saving}
+            disabled={
+              !proposal.contractId ||
+              proposal.weeklyHours <= 0 ||
+              !proposal.startsOn ||
+              !proposal.endsOn
+            }
+            onClick={() => void propose()}
           />
         </div>
       </Dialog>

@@ -20,6 +20,8 @@ import { EmployeeContractDialog } from "../components/EmployeeContractDialog";
 import { SalaryAdvanceDialog } from "../components/SalaryAdvanceDialog";
 import { EmployeeSanctionDialog } from "../components/EmployeeSanctionDialog";
 import { EmployeeDocumentDialog } from "../components/EmployeeDocumentDialog";
+import { EmployeeRateDialog } from "../components/EmployeeRateDialog";
+import { EmployeeAccessDialog } from "../components/EmployeeAccessDialog";
 
 const money = (value: number) =>
   new Intl.NumberFormat("fr-GN", {
@@ -49,6 +51,8 @@ export function EmployeeProfilePage() {
     | "document"
     | "advance"
     | "sanction"
+    | "rate"
+    | "access"
     | null
   >(null);
   const load = useCallback(
@@ -125,24 +129,10 @@ export function EmployeeProfilePage() {
             onClick={() => setDialog("edit")}
           />
           <Button
-            label="Voir les heures"
-            icon="pi pi-clock"
-            severity="secondary"
-            outlined
-            onClick={() => void navigate("/personnel/heures")}
-          />
-          <Button
-            label="Voir la paie"
-            icon="pi pi-wallet"
-            severity="secondary"
-            outlined
-            onClick={() => void navigate("/personnel/paie")}
-          />
-          <Button
             label={profile.membership_id ? "Gérer l’accès" : "Créer un accès"}
             icon="pi pi-key"
             disabled={!profile.email}
-            onClick={() => void navigate("/parametrage/utilisateurs-roles")}
+            onClick={() => setDialog("access")}
           />
         </div>
       </div>
@@ -359,6 +349,73 @@ export function EmployeeProfilePage() {
             {!profile.contracts.length && (
               <Empty text="Aucun contrat enregistré." />
             )}
+            <div className="mt-6 border-t border-slate-200 pt-5">
+              <PanelHeader
+                title="Taux horaire de l’employé"
+                action="Définir un nouveau taux"
+                onAction={() => setDialog("rate")}
+              />
+              {profile.compensation_rates.length ? (
+                <div className="divide-y divide-slate-100">
+                  {profile.compensation_rates.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid gap-2 py-3 sm:grid-cols-3"
+                    >
+                      <Info label="Taux" value={money(item.hourly_rate)} />
+                      <Info
+                        label="Applicable depuis"
+                        value={date(item.effective_from)}
+                      />
+                      <Info label="Fin" value={date(item.effective_to)} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Empty text="Aucun taux horaire défini pour cet employé." />
+              )}
+            </div>
+          </TabPanel>
+          <TabPanel header={`Paie (${profile.payroll_entries.length})`}>
+            <PanelHeader title="Bulletins de paie" />
+            {profile.payroll_entries.length ? (
+              <div className="divide-y divide-slate-100">
+                {profile.payroll_entries.map((item) => (
+                  <article
+                    key={item.id}
+                    className="grid gap-3 py-4 md:grid-cols-[1.3fr_repeat(4,1fr)] md:items-center"
+                  >
+                    <div>
+                      <strong className="block text-slate-900">
+                        {item.period.name}
+                      </strong>
+                      <small className="text-slate-500">
+                        {date(item.period.starts_on)} →{" "}
+                        {date(item.period.ends_on)}
+                      </small>
+                    </div>
+                    <Info label="Fixe" value={money(item.fixed_amount)} />
+                    <Info
+                      label="Variable"
+                      value={money(item.variable_amount)}
+                    />
+                    <Info label="Net" value={money(item.net_amount)} />
+                    <div className="md:text-right">
+                      <Tag
+                        value={item.status}
+                        severity={
+                          item.status === "paid" || item.status === "closed"
+                            ? "success"
+                            : "info"
+                        }
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <Empty text="Aucun bulletin de paie généré pour cette personne." />
+            )}
           </TabPanel>
           <TabPanel header="Assiduité">
             <PanelHeader title="Présences, heures et congés" />
@@ -559,6 +616,18 @@ export function EmployeeProfilePage() {
         visible={dialog === "sanction"}
         onHide={() => setDialog(null)}
         onSaved={load}
+      />
+      <EmployeeRateDialog
+        employeeId={profile.id}
+        visible={dialog === "rate"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
+      <EmployeeAccessDialog
+        employeeId={profile.id}
+        email={profile.email}
+        visible={dialog === "access"}
+        onHide={() => setDialog(null)}
       />
     </div>
   );
