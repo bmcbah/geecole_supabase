@@ -16,6 +16,31 @@ describe("calculateCourseAverage", () => {
     expect(result).toEqual({ average: 15.33, missingTypeCodes: [] });
   });
 
+  it("calcule le cas affiché avec la moyenne de chaque type", () => {
+    const result = calculateCourseAverage(
+      [
+        { value: 17, scale: 20, assessmentTypeCode: "DEVOIR" },
+        { value: 14.5, scale: 20, assessmentTypeCode: "DEVOIR" },
+        { value: 16, scale: 20, assessmentTypeCode: "INTERRO" },
+      ],
+      { expression: "(DEVOIR + INTERRO * 2) / 3", rounding: 2 },
+    );
+    expect(result.average).toBe(15.92);
+  });
+
+  it("refuse une formule qui produit une moyenne hors barème", () => {
+    const result = calculateCourseAverage(
+      [
+        { value: 17, scale: 20, assessmentTypeCode: "DEVOIR" },
+        { value: 14.5, scale: 20, assessmentTypeCode: "DEVOIR" },
+        { value: 16, scale: 20, assessmentTypeCode: "INTERRO" },
+      ],
+      { expression: "(DEVOIR + INTERRO * 2) / 2", rounding: 2 },
+    );
+    expect(result.average).toBeNull();
+    expect(result.error).toContain("Résultat hors barème");
+  });
+
   it("utilise la moyenne des évaluations d'un même type", () => {
     const result = calculateCourseAverage(
       [
