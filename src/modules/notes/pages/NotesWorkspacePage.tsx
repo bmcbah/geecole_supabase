@@ -21,6 +21,7 @@ import type {
   NoteResultStatus,
 } from "../domain/notes";
 import { noteResultStatusLabels } from "../domain/notes";
+import { calculateCourseAverage } from "../domain/grading-formula";
 import {
   createGradebookNote,
   listActiveNoteTypes,
@@ -35,6 +36,10 @@ import {
   saveNoteResult,
   type CourseAuditEvent,
 } from "../services/notes.service";
+import {
+  resolveFormula,
+  type ResolvedFormula,
+} from "../services/grading-formulas.service";
 
 type Period = Database["public"]["Tables"]["academic_periods"]["Row"];
 type GradebookNote = Database["public"]["Tables"]["gradebook_notes"]["Row"];
@@ -54,6 +59,8 @@ export function NotesWorkspacePage() {
   const [results, setResults] = useState<NoteResult[]>([]);
   const [appreciations, setAppreciations] = useState<Appreciation[]>([]);
   const [types, setTypes] = useState<NoteType[]>([]);
+  const [formula, setFormula] = useState<ResolvedFormula | null>(null);
+  const [formulaError, setFormulaError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
@@ -90,17 +97,32 @@ export function NotesWorkspacePage() {
       setNotes([]);
       setResults([]);
       setAppreciations([]);
+      setFormula(null);
+      setFormulaError("");
       return;
     }
     try {
-      const [studentRows, noteRows, appreciationRows] = await Promise.all([
-        listClassStudents(course.classId),
-        listCourseNotes(yearId, periodId, course),
-        listCourseAppreciations({ institutionId, yearId, periodId, course }),
-      ]);
+      const [studentRows, noteRows, appreciationRows, applicableFormula] =
+        await Promise.all([
+          listClassStudents(course.classId),
+          listCourseNotes(yearId, periodId, course),
+          listCourseAppreciations({ institutionId, yearId, periodId, course }),
+          resolveFormula({
+            institutionId,
+            yearId,
+            cycleId: course.cycleId,
+            levelId: course.levelId,
+          }),
+        ]);
       setStudents(studentRows);
       setNotes(noteRows);
       setAppreciations(appreciationRows);
+      setFormula(applicableFormula);
+      setFormulaError(
+        applicableFormula
+          ? ""
+          : "Aucune formule applicable : affectez une formule au niveau ou au cycle.",
+      );
       setResults(await listNoteResults(noteRows.map((note) => note.id)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cahier indisponible.");
@@ -222,6 +244,8 @@ export function NotesWorkspacePage() {
           results={results}
           types={types}
           appreciations={appreciations}
+          formula={formula}
+          formulaError={formulaError}
           institutionId={institutionId}
           yearId={yearId}
           onAdd={() => setNoteOpen(true)}
@@ -766,6 +790,8 @@ function Gradebook(props: {
   results: NoteResult[];
   types: NoteType[];
   appreciations: Appreciation[];
+  formula: ResolvedFormula | null;
+  formulaError: string;
   institutionId: string;
   yearId: string;
   onAdd: () => void;
@@ -795,20 +821,24 @@ function Gradebook(props: {
   const typeFor = (note: GradebookNote) =>
     props.types.find((type) => type.id === note.note_type_id);
 
-  const score = (note: GradebookNote, studentId: string) => {
-    const result = resultFor(note.id, studentId);
-    return result?.value == null
-      ? undefined
-      : (result.value / note.scale_snapshot) * 20;
-  };
-
   const average = (studentId: string, noteRows: GradebookNote[]) => {
-    const values = noteRows
-      .map((note) => score(note, studentId))
-      .filter((value): value is number => value !== undefined);
-    return values.length
-      ? values.reduce((total, value) => total + value, 0) / values.length
-      : undefined;
+    if (!props.formula) return undefined;
+    const values = noteRows.flatMap((note) => {
+      const result = resultFor(note.id, studentId);
+      const type = typeFor(note);
+      return result?.value == null || !type
+        ? []
+        : [
+            {
+              value: result.value,
+              scale: note.scale_snapshot,
+              assessmentTypeCode: type.code,
+            },
+          ];
+    });
+    return (
+      calculateCourseAverage(values, props.formula.rules).average ?? undefined
+    );
   };
 
   const usedTypes = props.types.filter((type) =>
@@ -927,6 +957,20 @@ function Gradebook(props: {
             severity={props.period?.status === "open" ? "success" : "secondary"}
           />
         </div>
+
+        {props.formulaError ? (
+          <Message
+            className="mt-2 w-full"
+            severity="warn"
+            text={props.formulaError}
+          />
+        ) : props.formula ? (
+          <p className="mb-0 mt-2 text-xs text-slate-500">
+            Formule applicable : <strong>{props.formula.name}</strong> v
+            {props.formula.version} · {props.formula.rules.expression} · portée{" "}
+            {props.formula.source === "level" ? "niveau" : "cycle"}
+          </p>
+        ) : null}
 
         <div className="mt-2 flex items-center gap-1.5 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/70 p-1.5">
           <span className="p-input-icon-left min-w-48 flex-1">

@@ -62,6 +62,17 @@ function createBulletinPdf(row: BulletinRow) {
   pdf.text(`Classe : ${row.className}`, 15, y);
   pdf.text(`Version : v${row.version}`, width / 2, y);
   y += 10;
+  if (display.bulletin_show_rank !== false) {
+    const rank = typeof data.rank === "number" ? data.rank : null;
+    const classSize =
+      typeof data.class_size === "number" ? data.class_size : null;
+    pdf.text(
+      `Classement : ${rank === null ? "Non calculé" : `${rank}${rank === 1 ? "er" : "e"}${classSize ? ` sur ${classSize}` : ""}`}`,
+      15,
+      y,
+    );
+    y += 8;
+  }
   pdf.setFont("helvetica", "bold");
   pdf.text("Matière", 15, y);
   pdf.text("Coef.", 86, y);

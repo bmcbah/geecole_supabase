@@ -477,6 +477,16 @@ function BulletinDocument({ row }: { row: BulletinRow }) {
       ? rawDisplay
       : {};
   const showAppreciations = display.bulletin_show_appreciations !== false;
+  const rank =
+    snapshot && "rank" in snapshot && typeof snapshot.rank === "number"
+      ? snapshot.rank
+      : null;
+  const classSize =
+    snapshot &&
+    "class_size" in snapshot &&
+    typeof snapshot.class_size === "number"
+      ? snapshot.class_size
+      : null;
   const colSpan = showAppreciations ? 4 : 3;
   return (
     <div className="space-y-4">
@@ -516,6 +526,16 @@ function BulletinDocument({ row }: { row: BulletinRow }) {
             <span className="text-slate-500">Version :</span>{" "}
             <strong>{row.version}</strong>
           </p>
+          {display.bulletin_show_rank !== false ? (
+            <p>
+              <span className="text-slate-500">Classement :</span>{" "}
+              <strong>
+                {rank === null
+                  ? "Non calculé"
+                  : `${rank}${rank === 1 ? "er" : "e"}${classSize ? ` sur ${classSize}` : ""}`}
+              </strong>
+            </p>
+          ) : null}
         </div>
         <table className="w-full border-collapse text-sm">
           <thead>

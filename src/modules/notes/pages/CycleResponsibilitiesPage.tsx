@@ -116,9 +116,7 @@ export function CycleResponsibilitiesPage() {
       setDraft(emptyDraft);
       await load();
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Affectation impossible.",
-      );
+      setFormError(cycleResponsibilityErrorMessage(reason));
     } finally {
       setSaving(false);
     }
@@ -308,6 +306,7 @@ export function CycleResponsibilitiesPage() {
                     }))
                   }
                   className="w-full"
+                  emptyMessage="Aucune personne active. Ajoutez d’abord la personne dans Paramétrage → Utilisateurs."
                 />
               </Field>
               <Field label="Qualité">
@@ -401,6 +400,19 @@ export function CycleResponsibilitiesPage() {
       </Dialog>
     </div>
   );
+}
+
+function cycleResponsibilityErrorMessage(reason: unknown) {
+  const message = reason instanceof Error ? reason.message : String(reason);
+  if (message.includes("permission_denied"))
+    return "Vous n’avez pas l’autorisation d’affecter un responsable.";
+  if (message.includes("replaced_person_required"))
+    return "Sélectionnez la personne remplacée pour cet intérim.";
+  if (message.includes("invalid_responsibility_dates"))
+    return "Vérifiez les dates de début et de fin.";
+  if (message.includes("foreign key"))
+    return "Le cycle, la responsabilité ou la personne sélectionnée n’est plus disponible.";
+  return message || "Affectation impossible.";
 }
 
 function Field(props: { label: string; children: React.ReactNode }) {

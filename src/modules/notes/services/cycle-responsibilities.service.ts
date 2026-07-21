@@ -99,23 +99,19 @@ export async function saveCycleResponsibility(input: {
   replacedPersonId: string | null;
   status: ResponsibilityStatus;
 }) {
-  const payload = {
-    institution_id: input.institutionId,
-    academic_year_id: input.yearId,
-    cycle_id: input.cycleId,
-    responsibility_type_id: input.typeId,
-    person_id: input.personId,
-    capacity: input.capacity,
-    starts_on: input.startsOn,
-    ends_on: input.endsOn,
-    replaced_person_id:
+  const { error } = await supabase.rpc("save_cycle_responsibility", {
+    target_id: input.id ?? null,
+    target_institution_id: input.institutionId,
+    target_year_id: input.yearId,
+    target_cycle_id: input.cycleId,
+    target_type_id: input.typeId,
+    target_person_id: input.personId,
+    target_capacity: input.capacity,
+    target_starts_on: input.startsOn,
+    target_ends_on: input.endsOn,
+    target_replaced_person_id:
       input.capacity === "acting" ? input.replacedPersonId : null,
-    status: input.status,
-  };
-  const query = input.id
-    ? supabase.from("cycle_responsibilities").update(payload).eq("id", input.id)
-    : supabase.from("cycle_responsibilities").insert(payload);
-  const { error } = await query;
+  });
   if (error) throw error;
 }
 

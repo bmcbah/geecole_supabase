@@ -1438,6 +1438,21 @@ export interface Database {
       };
     };
     Functions: {
+      save_cycle_responsibility: {
+        Args: {
+          target_id: string | null;
+          target_institution_id: string;
+          target_year_id: string;
+          target_cycle_id: string;
+          target_type_id: string;
+          target_person_id: string;
+          target_capacity: string;
+          target_starts_on: string;
+          target_ends_on: string | null;
+          target_replaced_person_id: string | null;
+        };
+        Returns: string;
+      };
       save_grading_formula_version: {
         Args: {
           target_institution_id: string;

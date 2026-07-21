@@ -1,6 +1,7 @@
 import { supabase } from "../../../shared/lib/supabase/client";
 import type { Json } from "../../../shared/lib/supabase/database.types";
 import { calculateCourseAverage } from "../domain/grading-formula";
+import { rankAverages } from "../domain/bulletin-ranking";
 import { resolveFormula } from "./grading-formulas.service";
 
 export type BulletinBatchRow = {
@@ -608,6 +609,61 @@ export async function generateBulletins(input: {
       });
     if (itemError) throw itemError;
   }
+  const { data: generatedBulletins, error: generatedBulletinsError } =
+    await supabase
+      .from("bulletin_versions")
+      .select("id,class_id,snapshot")
+      .eq("batch_id", batch.id);
+  if (generatedBulletinsError) throw generatedBulletinsError;
+  const bulletinsByClass = new Map<string, typeof generatedBulletins>();
+  for (const bulletin of generatedBulletins ?? []) {
+    bulletinsByClass.set(bulletin.class_id, [
+      ...(bulletinsByClass.get(bulletin.class_id) ?? []),
+      bulletin,
+    ]);
+  }
+  for (const classBulletins of bulletinsByClass.values()) {
+    const classId = classBulletins[0]?.class_id;
+    if (!classId) continue;
+    const { data: classVersions, error: classVersionsError } = await supabase
+      .from("bulletin_versions")
+      .select("id,enrollment_id,version,snapshot")
+      .eq("academic_year_id", input.yearId)
+      .eq("period_id", input.periodId)
+      .eq("class_id", classId)
+      .not("status", "in", "(rejected,replaced)")
+      .order("version", { ascending: false });
+    if (classVersionsError) throw classVersionsError;
+    const latestByEnrollment = new Map<
+      string,
+      NonNullable<typeof classVersions>[number]
+    >();
+    for (const version of classVersions ?? []) {
+      if (!latestByEnrollment.has(version.enrollment_id))
+        latestByEnrollment.set(version.enrollment_id, version);
+    }
+    const ranked = rankAverages(
+      [...latestByEnrollment.values()].map((bulletin) => ({
+        id: bulletin.id,
+        average: (() => {
+          const average = asSnapshot(bulletin.snapshot).general_average;
+          return typeof average === "number" ? average : null;
+        })(),
+      })),
+    );
+    for (const result of ranked) {
+      const bulletin = classBulletins.find((item) => item.id === result.id);
+      if (!bulletin) continue;
+      const rankedSnapshot = asSnapshot(bulletin.snapshot);
+      rankedSnapshot.rank = result.rank;
+      rankedSnapshot.class_size = result.classSize;
+      const { error: rankError } = await supabase
+        .from("bulletin_versions")
+        .update({ snapshot: rankedSnapshot })
+        .eq("id", bulletin.id);
+      if (rankError) throw rankError;
+    }
+  }
   const status =
     blocked && generated ? "partial" : blocked ? "failed" : "completed";
   const { error: updateError } = await supabase
@@ -622,6 +678,12 @@ export async function generateBulletins(input: {
     .eq("id", batch.id);
   if (updateError) throw updateError;
   return { generated, blocked };
+}
+
+function asSnapshot(value: Json): Record<string, Json | undefined> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? { ...value }
+    : {};
 }
 
 export async function listBulletins(
