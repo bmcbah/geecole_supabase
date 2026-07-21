@@ -24,4 +24,10 @@ GeeCole simplifie la gestion quotidienne d’un établissement scolaire sans dev
 
 ## Limites V1
 
-GeeCole V1 ne cherche pas à couvrir la comptabilité générale, la paie, le rapprochement bancaire ou un moteur de règles universel.
+GeeCole V1 inclut une paie scolaire simplifiée : rémunération fixe, horaire, à la séance,
+forfaitaire ou mixte, primes, retenues, avances et suivi des paiements.
+
+GeeCole V1 ne couvre pas la comptabilité générale, les déclarations sociales et fiscales,
+le rapprochement bancaire, les virements bancaires automatisés ni un moteur de règles universel.
+Les documents produits sont des bulletins de rémunération et ne sont pas présentés comme des
+bulletins de paie réglementaires tant que les obligations guinéennes ne sont pas formellement cadrées.

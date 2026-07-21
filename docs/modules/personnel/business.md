@@ -68,6 +68,15 @@ L'évaluation professionnelle du personnel est exclue du périmètre actuel.
 
 Ces fonctionnalités devront être découpées en lots fonctionnels distincts lors du cadrage détaillé.
 
+### Extension validée — paie scolaire simplifiée
+
+La rémunération peut être fixe, horaire, à la séance, forfaitaire ou mixte. Le module calcule un
+brut et un net à payer à partir du contrat, des heures validées, primes, retenues et remboursements
+d'avances. Il suit les paiements partiels et produit un bulletin de rémunération.
+
+Les heures planifiées ne sont jamais payables sans validation. Une période clôturée est immuable.
+La comptabilité générale, les obligations sociales et fiscales et la paie réglementaire restent exclues.
+
 ## PER-011 — Documents administratifs
 
 Les documents exigés pour le personnel sont paramétrables par établissement, selon le même principe que les documents demandés pour les élèves.

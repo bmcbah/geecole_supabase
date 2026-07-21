@@ -38,6 +38,11 @@ const FinancialAccountDetailPage = lazy(() =>
 const FinancialPaymentsPage = lazy(() =>
   import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })),
 );
+const EmployeesPage = lazy(() => import("../../modules/personnel/pages/EmployeesPage").then((module) => ({ default: module.EmployeesPage })));
+const WorkEntriesPage = lazy(() => import("../../modules/personnel/pages/WorkEntriesPage").then((module) => ({ default: module.WorkEntriesPage })));
+const LeaveRequestsPage = lazy(() => import("../../modules/personnel/pages/LeaveRequestsPage").then((module) => ({ default: module.LeaveRequestsPage })));
+const PayrollPage = lazy(() => import("../../modules/personnel/pages/PayrollPage").then((module) => ({ default: module.PayrollPage })));
+const PersonnelCatalogsPage = lazy(() => import("../../modules/personnel/pages/PersonnelCatalogsPage").then((module) => ({ default: module.PersonnelCatalogsPage })));
 
 export function AppRouter() {
   return (
@@ -59,6 +64,11 @@ export function AppRouter() {
             <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
             <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
             <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
+            <Route path="/personnel/employes" element={<EmployeesPage />} />
+            <Route path="/personnel/heures" element={<WorkEntriesPage />} />
+            <Route path="/personnel/conges" element={<LeaveRequestsPage />} />
+            <Route path="/personnel/paie" element={<PayrollPage />} />
+            <Route path="/parametrage/catalogues-personnel" element={<PersonnelCatalogsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

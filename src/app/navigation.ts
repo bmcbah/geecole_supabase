@@ -36,6 +36,17 @@ export const navigation: NavigationGroup[] = [
     ],
   },
   {
+    label: "Personnel",
+    icon: "pi-id-card",
+    match: "/personnel",
+    items: [
+      { type: "link", label: "Employés", icon: "pi-users", to: "/personnel/employes" },
+      { type: "link", label: "Présences et heures", icon: "pi-clock", to: "/personnel/heures" },
+      { type: "link", label: "Congés et absences", icon: "pi-calendar-minus", to: "/personnel/conges" },
+      { type: "link", label: "Paie", icon: "pi-money-bill", to: "/personnel/paie" },
+    ],
+  },
+  {
     label: "Gestion financière",
     icon: "pi-wallet",
     match: "/gestion-financiere",
@@ -59,6 +70,7 @@ export const navigation: NavigationGroup[] = [
       { type: "link", label: "Général", icon: "pi-cog", to: "/parametrage/etablissement" },
       { type: "link", label: "Années scolaires", icon: "pi-calendar", to: "/parametrage/annees-scolaires" },
       { type: "link", label: "Personnes et accès", icon: "pi-users", to: "/parametrage/utilisateurs-roles" },
+      { type: "link", label: "Catalogues Personnel", icon: "pi-id-card", to: "/parametrage/catalogues-personnel" },
       { type: "divider" },
       { type: "title", label: "Organisation scolaire" },
       { type: "link", label: "Cycles", icon: "pi-sitemap", to: "/parametrage/cycles" },

@@ -1,0 +1,9 @@
+export type EmployeeStatus = "active" | "suspended" | "exited";
+export type CompensationMode = "fixed" | "hourly" | "session" | "flat_rate" | "mixed" | "unpaid";
+export type Employee = { id: string; institution_id: string; employee_number: string; first_name: string; last_name: string; phone: string | null; email: string | null; status: EmployeeStatus; hired_on: string; membership_id: string | null };
+export type WorkEntry = { id: string; employee_id: string; work_date: string; minutes: number; quantity: number; rate: number | null; status: "planned" | "completed" | "validated" | "rejected" | "paid"; notes: string | null; employee?: Pick<Employee, "first_name" | "last_name" | "employee_number"> };
+export type LeaveRequest = { id: string; employee_id: string; starts_on: string; ends_on: string; reason: string | null; status: "draft" | "submitted" | "approved" | "rejected" | "cancelled"; employee?: Pick<Employee, "first_name" | "last_name" | "employee_number"> };
+export type PayrollPeriod = { id: string; name: string; starts_on: string; ends_on: string; status: "draft" | "calculated" | "validated" | "partially_paid" | "paid" | "closed" | "cancelled" };
+export type PayrollEntry = { id: string; period_id: string; employee_id: string; fixed_amount: number; variable_amount: number; gains: number; deductions: number; advance_repayments: number; gross_amount: number; net_amount: number; paid_amount: number; status: PayrollPeriod["status"]; employee?: Pick<Employee, "first_name" | "last_name" | "employee_number"> };
+export const employeeStatusLabels: Record<EmployeeStatus, string> = { active: "Actif", suspended: "Suspendu", exited: "Sorti" };
+export const payrollStatusLabels: Record<PayrollPeriod["status"], string> = { draft: "Brouillon", calculated: "Calculée", validated: "Validée", partially_paid: "Partiellement payée", paid: "Payée", closed: "Clôturée", cancelled: "Annulée" };
