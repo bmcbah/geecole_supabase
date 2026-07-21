@@ -120,7 +120,9 @@ export function AppreciationsPage() {
           field="subjectName"
           header="Matière"
           body={(row: AppreciationItem) => (
-            <span className="font-medium text-slate-700">{row.subjectName}</span>
+            <span className="font-medium text-slate-700">
+              {row.subjectName}
+            </span>
           )}
         />
         <Column
@@ -173,7 +175,7 @@ export function AppreciationsPage() {
         }
         visible={Boolean(editing)}
         modal
-        className="w-[min(94vw,38rem)]"
+        className="form-dialog"
         onHide={() => setEditing(undefined)}
       >
         {editing ? (

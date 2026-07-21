@@ -129,8 +129,9 @@ export function NotesWorkspacePage() {
     setPeriodId((current) =>
       available.some((period) => period.id === current)
         ? current
-        : ((available.find((period) => period.status === "open") ??
-            available[0])?.id ?? ""),
+        : ((
+            available.find((period) => period.status === "open") ?? available[0]
+          )?.id ?? ""),
     );
   }, [course, periods]);
 
@@ -232,7 +233,7 @@ export function NotesWorkspacePage() {
         header="Ajouter une évaluation"
         visible={noteOpen}
         modal
-        className="w-[min(94vw,38rem)]"
+        className="form-dialog"
         onHide={() => setNoteOpen(false)}
       >
         <Message
@@ -346,9 +347,7 @@ function GradebookTree(props: {
 
   const availablePeriods = useMemo(
     () =>
-      props.periods.filter(
-        (period) => !cycleId || period.cycle_id === cycleId,
-      ),
+      props.periods.filter((period) => !cycleId || period.cycle_id === cycleId),
     [cycleId, props.periods],
   );
 
@@ -389,9 +388,8 @@ function GradebookTree(props: {
       if (availablePeriods.some((period) => period.id === current))
         return current;
       return (
-        availablePeriods.find(
-          (period) => period.id === props.selectedPeriodId,
-        )?.id ??
+        availablePeriods.find((period) => period.id === props.selectedPeriodId)
+          ?.id ??
         availablePeriods.find((period) => period.status === "open")?.id ??
         availablePeriods[0]?.id ??
         ""
@@ -524,9 +522,7 @@ function GradebookTree(props: {
     <Tree
       value={nodes}
       expandedKeys={expandedKeys}
-      onToggle={(event) =>
-        setExpandedKeys(event.value as Record<string, boolean>)
-      }
+      onToggle={(event) => setExpandedKeys(event.value)}
       nodeTemplate={(node) => (
         <button
           type="button"
@@ -593,10 +589,7 @@ function GradebookTree(props: {
           <Field label="Classe">
             <Dropdown
               value={classId}
-              options={[
-                { label: "Toutes les classes", value: "" },
-                ...classes,
-              ]}
+              options={[{ label: "Toutes les classes", value: "" }, ...classes]}
               onChange={(event) => setClassId(String(event.value))}
               className="h-10 w-full"
               placeholder="Classe"
@@ -686,7 +679,7 @@ function GradebookTree(props: {
           header="Choisir le cours"
           visible={mobileTreeOpen}
           modal
-          className="w-[min(96vw,34rem)]"
+          className="form-dialog"
           onHide={() => setMobileTreeOpen(false)}
         >
           <div className="mb-3 grid gap-2 sm:grid-cols-2">
@@ -723,10 +716,7 @@ function GradebookTree(props: {
             />
             <Dropdown
               value={classId}
-              options={[
-                { label: "Toutes les classes", value: "" },
-                ...classes,
-              ]}
+              options={[{ label: "Toutes les classes", value: "" }, ...classes]}
               onChange={(event) => setClassId(String(event.value))}
               className="h-9 w-full text-xs"
               placeholder="Classe"
@@ -787,8 +777,7 @@ function Gradebook(props: {
   const [bulkNote, setBulkNote] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [statusOpen, setStatusOpen] = useState(false);
-  const [bulkStatus, setBulkStatus] =
-    useState<NoteResultStatus>("absent");
+  const [bulkStatus, setBulkStatus] = useState<NoteResultStatus>("absent");
   const [journalOpen, setJournalOpen] = useState(false);
   const [journal, setJournal] = useState<CourseAuditEvent[]>([]);
 
@@ -800,8 +789,7 @@ function Gradebook(props: {
 
   const resultFor = (noteId: string, studentId: string) =>
     props.results.find(
-      (result) =>
-        result.note_id === noteId && result.student_id === studentId,
+      (result) => result.note_id === noteId && result.student_id === studentId,
     );
 
   const typeFor = (note: GradebookNote) =>
@@ -832,11 +820,7 @@ function Gradebook(props: {
       (appreciation) => appreciation.student_id === studentId,
     )?.appreciation ?? "";
 
-  async function saveResult(
-    noteId: string,
-    studentId: string,
-    raw: string,
-  ) {
+  async function saveResult(noteId: string, studentId: string, raw: string) {
     if (!raw.trim()) return;
     const normalized = raw.trim().toLowerCase();
     const status =
@@ -862,7 +846,10 @@ function Gradebook(props: {
   async function pasteBulk() {
     if (!bulkNote) return;
     const byMatricule = new Map(
-      props.students.map((student) => [student.matricule.toLowerCase(), student]),
+      props.students.map((student) => [
+        student.matricule.toLowerCase(),
+        student,
+      ]),
     );
     const tasks = bulkText
       .split(/\r?\n/)
@@ -871,9 +858,7 @@ function Gradebook(props: {
       .flatMap(([matricule, value]) => {
         if (!matricule || !value) return [];
         const student = byMatricule.get(matricule.toLowerCase());
-        return student
-          ? [saveResult(bulkNote, student.studentId, value)]
-          : [];
+        return student ? [saveResult(bulkNote, student.studentId, value)] : [];
       });
     await Promise.all(tasks);
     setBulkOpen(false);
@@ -939,9 +924,7 @@ function Gradebook(props: {
                 ? "Période active"
                 : "Période fermée"
             }
-            severity={
-              props.period?.status === "open" ? "success" : "secondary"
-            }
+            severity={props.period?.status === "open" ? "success" : "secondary"}
           />
         </div>
 
@@ -1048,7 +1031,9 @@ function Gradebook(props: {
                 </th>
                 {props.notes.map((note) => (
                   <th key={note.id} className="min-w-28 border-b p-2">
-                    <strong className="block text-slate-800">{note.label}</strong>
+                    <strong className="block text-slate-800">
+                      {note.label}
+                    </strong>
                     <span className="block text-[11px] font-semibold text-emerald-700">
                       {typeFor(note)?.name ?? "Évaluation"}
                     </span>
@@ -1069,9 +1054,7 @@ function Gradebook(props: {
                 <th className="min-w-24 border-b bg-emerald-50 p-2">
                   Moyenne /20
                 </th>
-                <th className="min-w-52 border-b p-2">
-                  Appréciation du cours
-                </th>
+                <th className="min-w-52 border-b p-2">Appréciation du cours</th>
                 <th className="border-b p-2">État</th>
               </tr>
             </thead>
@@ -1191,7 +1174,7 @@ function Gradebook(props: {
         header="Saisie en masse"
         visible={bulkOpen}
         modal
-        className="w-[min(96vw,44rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={() => setBulkOpen(false)}
       >
         <Message
@@ -1240,7 +1223,7 @@ function Gradebook(props: {
         header="Appliquer un statut"
         visible={statusOpen}
         modal
-        className="w-[min(94vw,32rem)]"
+        className="form-dialog"
         onHide={() => setStatusOpen(false)}
       >
         <Message
@@ -1281,7 +1264,7 @@ function Gradebook(props: {
         header="Journal des modifications"
         visible={journalOpen}
         modal
-        className="w-[min(96vw,48rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={() => setJournalOpen(false)}
       >
         <Message

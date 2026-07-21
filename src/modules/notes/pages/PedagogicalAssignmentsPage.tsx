@@ -171,7 +171,7 @@ export function PedagogicalAssignmentsPage() {
         header="Nouvelle affectation"
         visible={open}
         modal
-        className="w-[min(94vw,46rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={() => {
           setOpen(false);
           setFormError(undefined);

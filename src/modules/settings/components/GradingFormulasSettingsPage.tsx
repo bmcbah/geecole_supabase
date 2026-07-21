@@ -29,7 +29,6 @@ type Option = { label: string; value: string };
 type ScopeType = "cycle" | "level";
 type Draft = {
   name: string;
-  code: string;
   scopeType: ScopeType;
   scopeId: string;
   expression: string;
@@ -38,7 +37,6 @@ type Draft = {
 
 const emptyDraft: Draft = {
   name: "",
-  code: "",
   scopeType: "cycle",
   scopeId: "",
   expression: "",
@@ -128,8 +126,7 @@ export function GradingFormulasSettingsPage() {
     const next = row
       ? {
           name: row.name,
-          code: row.code,
-          scopeType: row.scopeType ?? ("cycle" as ScopeType),
+          scopeType: row.scopeType ?? "cycle",
           scopeId: row.scopeId ?? "",
           expression: row.rules.expression,
           rounding: row.rules.rounding ?? 2,
@@ -186,18 +183,13 @@ export function GradingFormulasSettingsPage() {
 
   const submit = async () => {
     if (!year || editing === undefined) return;
-    if (
-      !draft.name.trim() ||
-      !draft.code.trim() ||
-      !draft.scopeId ||
-      !validation.valid
-    ) {
+    if (!draft.name.trim() || !draft.scopeId || !validation.valid) {
       notify({
         severity: "error",
         summary: "Formulaire incomplet",
         detail: !validation.valid
           ? validation.error
-          : "Renseignez le nom, le code et le périmètre.",
+          : "Renseignez le nom et le périmètre.",
       });
       return;
     }
@@ -208,7 +200,7 @@ export function GradingFormulasSettingsPage() {
         yearId: year.id,
         seriesId: editing?.seriesId,
         name: draft.name.trim(),
-        code: draft.code.trim().toUpperCase(),
+        code: formulaCodeFromName(draft.name),
         scopeType: draft.scopeType,
         scopeId: draft.scopeId,
         rounding: draft.rounding,
@@ -271,7 +263,6 @@ export function GradingFormulasSettingsPage() {
     editable &&
     !saving &&
     draft.name.trim() &&
-    draft.code.trim() &&
     draft.scopeId &&
     validation.valid;
 
@@ -373,7 +364,7 @@ export function GradingFormulasSettingsPage() {
         }
         visible={editing !== undefined}
         modal
-        className="w-[min(96vw,64rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={closeEditor}
         footer={
           <div className="flex justify-end gap-2">
@@ -394,117 +385,129 @@ export function GradingFormulasSettingsPage() {
           </div>
         }
       >
-        <div className="grid gap-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Nom *">
-              <InputText
-                value={draft.name}
-                className="w-full"
-                disabled={Boolean(editing)}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, name: e.target.value }))
-                }
-              />
-            </Field>
-            <Field label="Code *">
-              <InputText
-                value={draft.code}
-                className="w-full uppercase"
-                disabled={Boolean(editing)}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    code: e.target.value.toUpperCase(),
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Appliquer à *">
-              <Dropdown
-                value={draft.scopeType}
-                options={[
-                  { label: "Un cycle", value: "cycle" },
-                  { label: "Un niveau (prioritaire)", value: "level" },
-                ]}
-                className="w-full"
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    scopeType: e.value as ScopeType,
-                    scopeId: "",
-                  }))
-                }
-              />
-            </Field>
-            <Field label={draft.scopeType === "cycle" ? "Cycle *" : "Niveau *"}>
-              <Dropdown
-                value={draft.scopeId}
-                options={scopeOptions}
-                filter
-                className="w-full"
-                placeholder="Sélectionner"
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, scopeId: String(e.value) }))
-                }
-              />
-            </Field>
-          </div>
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-            <Field label="Expression *">
-              <textarea
-                ref={expressionRef}
-                value={draft.expression}
-                rows={6}
-                spellCheck={false}
-                className={`w-full resize-y rounded-md border px-3 py-2 font-mono text-sm outline-none ${validation.valid ? "border-slate-300" : "border-rose-400"}`}
-                placeholder="(DEVOIR + COMPO * 2) / 3"
-                onChange={(e) => {
-                  setDraft((d) => ({
-                    ...d,
-                    expression: e.target.value.toUpperCase(),
-                  }));
-                  setTestResult(undefined);
-                  setTestError("");
-                }}
-              />
-              <small
-                className={
-                  validation.valid ? "text-emerald-700" : "text-rose-700"
-                }
+        <div className="form-stack gap-6">
+          <section className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+            <div className="mb-4">
+              <h3 className="m-0 text-sm font-semibold text-slate-900">
+                Identification et périmètre
+              </h3>
+              <p className="mb-0 mt-1 text-xs text-slate-500">
+                Le code technique est généré automatiquement à partir du nom.
+              </p>
+            </div>
+            <div className="form-grid">
+              <Field label="Nom *">
+                <InputText
+                  value={draft.name}
+                  className="w-full"
+                  disabled={Boolean(editing)}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, name: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Appliquer à *">
+                <Dropdown
+                  value={draft.scopeType}
+                  options={[
+                    { label: "Un cycle", value: "cycle" },
+                    { label: "Un niveau (prioritaire)", value: "level" },
+                  ]}
+                  className="w-full"
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      scopeType: e.value as ScopeType,
+                      scopeId: "",
+                    }))
+                  }
+                />
+              </Field>
+              <Field
+                label={draft.scopeType === "cycle" ? "Cycle *" : "Niveau *"}
               >
-                {validation.valid ? "Expression valide." : validation.error}
-              </small>
-            </Field>
-            <div>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
-                Variables disponibles
-              </span>
-              <div className="flex min-h-32 flex-wrap content-start gap-2 rounded-lg border border-slate-200 p-3">
-                {types.map((type) => (
-                  <Button
-                    key={type.id}
-                    type="button"
-                    label={type.code}
-                    size="small"
-                    outlined
-                    tooltip={`${type.name} · barème /${type.scale}`}
-                    onClick={() => insertVariable(type.code)}
-                  />
-                ))}
+                <Dropdown
+                  value={draft.scopeId}
+                  options={scopeOptions}
+                  filter
+                  className="w-full"
+                  placeholder="Sélectionner"
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, scopeId: String(e.value) }))
+                  }
+                />
+              </Field>
+            </div>
+          </section>
+          <section className="rounded-xl border border-slate-200 p-4">
+            <div className="mb-4">
+              <h3 className="m-0 text-sm font-semibold text-slate-900">
+                Expression de calcul
+              </h3>
+              <p className="mb-0 mt-1 text-xs text-slate-500">
+                Insérez les types de note comme variables puis validez
+                l’expression.
+              </p>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+              <Field label="Expression *">
+                <textarea
+                  ref={expressionRef}
+                  value={draft.expression}
+                  rows={6}
+                  spellCheck={false}
+                  className={`w-full resize-y rounded-md border px-3 py-2 font-mono text-sm outline-none ${validation.valid ? "border-slate-300" : "border-rose-400"}`}
+                  placeholder="(DEVOIR + COMPO * 2) / 3"
+                  onChange={(e) => {
+                    setDraft((d) => ({
+                      ...d,
+                      expression: e.target.value.toUpperCase(),
+                    }));
+                    setTestResult(undefined);
+                    setTestError("");
+                  }}
+                />
+                <small
+                  className={
+                    validation.valid ? "text-emerald-700" : "text-rose-700"
+                  }
+                >
+                  {validation.valid ? "Expression valide." : validation.error}
+                </small>
+              </Field>
+              <div>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  Variables disponibles
+                </span>
+                <div className="flex min-h-32 flex-wrap content-start gap-2 rounded-lg border border-slate-200 p-3">
+                  {types.map((type) => (
+                    <Button
+                      key={type.id}
+                      type="button"
+                      label={type.code}
+                      size="small"
+                      outlined
+                      tooltip={`${type.name} · barème /${type.scale}`}
+                      onClick={() => insertVariable(type.code)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-          <Field label="Nombre de décimales">
-            <InputNumber
-              value={draft.rounding}
-              min={0}
-              max={4}
-              className="w-full md:w-48"
-              onValueChange={(e) =>
-                setDraft((d) => ({ ...d, rounding: e.value ?? 2 }))
-              }
-            />
-          </Field>
+            <div className="mt-4 max-w-48">
+              <Field label="Nombre de décimales">
+                <InputNumber
+                  value={draft.rounding}
+                  min={0}
+                  max={4}
+                  className="w-full md:w-48"
+                  onValueChange={(e) =>
+                    setDraft((d) => ({ ...d, rounding: e.value ?? 2 }))
+                  }
+                />
+              </Field>
+            </div>
+          </section>
           <section className="rounded-xl border border-slate-200 p-4">
             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -640,4 +643,15 @@ function formulaErrorMessage(error: unknown) {
   if (message.includes("grading_formula_assignment"))
     return "Une formule active existe déjà sur ce périmètre. Rechargez la page puis réessayez.";
   return message || "Une erreur technique empêche l’enregistrement.";
+}
+
+function formulaCodeFromName(name: string) {
+  const code = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64);
+  return code || `FORMULE_${Date.now()}`;
 }

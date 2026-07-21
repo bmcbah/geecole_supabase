@@ -131,7 +131,7 @@ export function PostponedResultsPage() {
         header="Régulariser le rattrapage"
         visible={Boolean(editing)}
         modal
-        className="w-[min(92vw,34rem)]"
+        className="form-dialog"
         onHide={() => setEditing(undefined)}
       >
         {editing ? (

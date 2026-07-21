@@ -16,6 +16,8 @@ export type PostponedResultItem = {
 export type AppreciationItem = {
   id: string;
   appreciationId?: string;
+  institutionId: string;
+  academicYearId: string;
   studentId: string;
   classId: string;
   subjectId: string;
@@ -87,8 +89,8 @@ export async function updateAppreciation(
 ) {
   const { error } = await supabase.from("subject_appreciations").upsert(
     {
-      institution_id: item.id.split(":")[0],
-      academic_year_id: item.id.split(":")[1],
+      institution_id: item.institutionId,
+      academic_year_id: item.academicYearId,
       period_id: item.periodId,
       class_id: item.classId,
       subject_id: item.subjectId,
@@ -314,6 +316,8 @@ async function listExpectedAppreciations(
           return {
             id: `${institutionId}:${yearId}:${period.id}:${course.classId}:${course.subjectId}:${student.id}`,
             appreciationId: current?.id,
+            institutionId,
+            academicYearId: yearId,
             studentId: student.id,
             classId: course.classId,
             subjectId: course.subjectId,
@@ -418,6 +422,13 @@ export async function listAppreciations(
     );
     return {
       id: item.id,
+      appreciationId: item.id,
+      institutionId,
+      academicYearId: yearId,
+      studentId: item.student_id,
+      classId: item.class_id,
+      subjectId: item.subject_id,
+      periodId: item.period_id,
       studentName: student
         ? `${student.first_name} ${student.last_name}`
         : "Élève",

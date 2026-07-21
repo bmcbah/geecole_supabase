@@ -1,5 +1,5 @@
 -- Keep formula version creation and scope activation atomic. Configuration is
--- editable while an academic year is in preparation or active, as documented.
+-- editable while an academic year is in preparation or open.
 
 create or replace function public.ensure_preparation_year_write()
 returns trigger language plpgsql set search_path = '' as $$
@@ -7,7 +7,7 @@ declare year_id uuid; year_status public.academic_year_status;
 begin
   year_id := case when tg_op = 'DELETE' then old.academic_year_id else new.academic_year_id end;
   select status into year_status from public.academic_years where id = year_id;
-  if year_status not in ('preparation', 'active') then
+  if year_status not in ('preparation', 'open') then
     raise exception 'academic_year_configuration_locked';
   end if;
   return case when tg_op = 'DELETE' then old else new end;

@@ -36,12 +36,13 @@ function tokenize(expression: string): Token[] {
       offset += identifier[0].length;
       continue;
     }
-    if ("+-*/()".includes(rest[0])) {
-      tokens.push({ type: "operator", value: rest[0] });
+    const character = rest[0];
+    if (character && "+-*/()".includes(character)) {
+      tokens.push({ type: "operator", value: character });
       offset += 1;
       continue;
     }
-    throw new Error(`Caractère interdit « ${rest[0]} »`);
+    throw new Error(`Caractère interdit « ${character ?? ""} »`);
   }
   return [...tokens, { type: "eof", value: "" }];
 }
@@ -52,15 +53,15 @@ function evaluateExpression(
 ) {
   const tokens = tokenize(expression);
   let index = 0;
-  const peek = () => tokens[index];
-  const take = () => tokens[index++];
+  const peek = () => tokens[index] ?? { type: "eof" as const, value: "" };
+  const take = () => tokens[index++] ?? { type: "eof" as const, value: "" };
   function primary(): number {
     const token = take();
     if (token.type === "number") return Number(token.value);
     if (token.type === "identifier") {
       if (!(token.value in variables))
         throw new Error(`Variable ${token.value} sans note`);
-      return variables[token.value];
+      return variables[token.value] ?? 0;
     }
     if (token.value === "(") {
       const result = add();

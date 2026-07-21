@@ -382,7 +382,7 @@ export function BulletinsListPage() {
         header={preview ? `Bulletin de ${preview.studentName}` : "Aperçu"}
         visible={!!preview}
         modal
-        className="w-[min(96vw,58rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={() => setPreview(null)}
       >
         {preview ? <BulletinDocument row={preview} /> : null}
@@ -391,7 +391,7 @@ export function BulletinsListPage() {
         header="Rejeter le bulletin"
         visible={!!rejecting}
         modal
-        className="w-[min(92vw,32rem)]"
+        className="form-dialog"
         onHide={() => setRejecting(null)}
       >
         <label className="field">

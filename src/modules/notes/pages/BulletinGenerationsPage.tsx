@@ -320,7 +320,7 @@ export function BulletinGenerationsPage() {
         header="Générer les bulletins"
         visible={open}
         modal
-        className="w-[min(94vw,38rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={() => setOpen(false)}
       >
         <div className="space-y-4">
@@ -446,7 +446,7 @@ export function BulletinGenerationsPage() {
         header="Rapport de génération"
         visible={detailsOpen}
         modal
-        className="w-[min(96vw,64rem)]"
+        className="form-dialog form-dialog-wide"
         onHide={() => setDetailsOpen(false)}
       >
         <DataTable
