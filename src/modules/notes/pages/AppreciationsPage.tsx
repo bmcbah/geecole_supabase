@@ -5,6 +5,7 @@ import { Dialog } from "primereact/dialog";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
+import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
 import { NotesOperationsTable } from "../components/NotesOperationsTable";
 import { useNotesOperationsPage } from "../hooks/useNotesOperationsPage";
 import {
@@ -103,9 +104,25 @@ export function AppreciationsPage() {
           page.setPageSize(event.rows);
         }}
       >
-        <Column field="studentName" header="Élève" />
-        <Column field="className" header="Classe" />
-        <Column field="subjectName" header="Matière" />
+        <Column
+          field="studentName"
+          header="Élève"
+          body={(row: AppreciationItem) => (
+            <div>
+              <strong className="block text-sm font-semibold text-slate-900">
+                {row.studentName}
+              </strong>
+              <span className="text-xs text-slate-400">{row.className}</span>
+            </div>
+          )}
+        />
+        <Column
+          field="subjectName"
+          header="Matière"
+          body={(row: AppreciationItem) => (
+            <span className="font-medium text-slate-700">{row.subjectName}</span>
+          )}
+        />
         <Column
           header="État"
           body={(row: AppreciationItem) => (
@@ -119,27 +136,35 @@ export function AppreciationsPage() {
           field="appreciation"
           header="Appréciation du bulletin"
           body={(row: AppreciationItem) =>
-            row.appreciation || (
-              <span className="text-slate-400">Non renseignée</span>
+            row.appreciation ? (
+              <p className="m-0 max-w-2xl text-sm leading-6 text-slate-600">
+                {row.appreciation}
+              </p>
+            ) : (
+              <span className="text-sm text-slate-400">Non renseignée</span>
             )
           }
         />
         <Column
-          header="Action"
+          header=""
           body={(row: AppreciationItem) => (
-            <Button
-              label={row.appreciation ? "Modifier" : "Saisir"}
-              icon="pi pi-pencil"
-              size="small"
-              text
-              onClick={() => {
-                setEditing(row);
-                setAppreciation(row.appreciation);
-              }}
-            />
+            <div className="flex justify-end">
+              <Button
+                label={row.appreciation ? "Modifier" : "Saisir"}
+                icon="pi pi-pencil"
+                size="small"
+                severity="secondary"
+                outlined
+                onClick={() => {
+                  setEditing(row);
+                  setAppreciation(row.appreciation);
+                }}
+              />
+            </div>
           )}
         />
       </NotesOperationsTable>
+
       <Dialog
         header={
           editing?.appreciation
@@ -148,38 +173,63 @@ export function AppreciationsPage() {
         }
         visible={Boolean(editing)}
         modal
-        className="w-[min(92vw,34rem)]"
+        className="w-[min(94vw,38rem)]"
         onHide={() => setEditing(undefined)}
       >
-        <label className="field">
-          <span>Commentaire repris sur le bulletin</span>
-          <InputTextarea
-            value={appreciation}
-            rows={5}
-            maxLength={500}
-            autoResize
-            className="w-full"
-            onChange={(event) => setAppreciation(event.target.value)}
-          />
-          <small>{appreciation.length}/500 caractères</small>
-        </label>
-        <div className="mt-5 flex justify-end gap-2">
-          <Button
-            label="Annuler"
-            size="small"
-            severity="secondary"
-            outlined
-            onClick={() => setEditing(undefined)}
-          />
-          <Button
-            label="Enregistrer"
-            size="small"
-            icon="pi pi-check"
-            loading={saving}
-            disabled={!appreciation.trim()}
-            onClick={() => void save()}
-          />
-        </div>
+        {editing ? (
+          <div className="space-y-5">
+            <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex items-start gap-3">
+                <MetricIcon icon="pi-user" />
+                <div className="min-w-0">
+                  <strong className="block text-sm font-semibold text-slate-950">
+                    {editing.studentName}
+                  </strong>
+                  <span className="mt-0.5 block text-xs text-slate-500">
+                    {editing.className} · {editing.subjectName}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <label>
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Commentaire repris sur le bulletin
+              </span>
+              <InputTextarea
+                value={appreciation}
+                rows={6}
+                maxLength={500}
+                autoResize
+                className="w-full rounded-xl border border-slate-300 bg-white text-sm shadow-sm transition-colors hover:border-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                placeholder="Saisissez une appréciation claire, factuelle et constructive."
+                onChange={(event) => setAppreciation(event.target.value)}
+              />
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+                <span>Cette appréciation apparaîtra sur le bulletin.</span>
+                <span className="font-medium">{appreciation.length}/500</span>
+              </div>
+            </label>
+
+            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
+              <Button
+                label="Annuler"
+                size="small"
+                severity="secondary"
+                text
+                onClick={() => setEditing(undefined)}
+              />
+              <Button
+                label="Enregistrer"
+                size="small"
+                icon="pi pi-check"
+                loading={saving}
+                disabled={!appreciation.trim()}
+                onClick={() => void save()}
+              />
+            </div>
+          </div>
+        ) : null}
       </Dialog>
     </>
   );
