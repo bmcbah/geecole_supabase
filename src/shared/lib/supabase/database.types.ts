@@ -1257,6 +1257,68 @@ export interface Database {
         >;
         Relationships: [];
       };
+      cycle_responsibility_types: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          description: string | null;
+          can_validate_bulletins: boolean;
+          can_manage_periods: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          description?: string | null;
+          can_validate_bulletins?: boolean;
+          can_manage_periods?: boolean;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["cycle_responsibility_types"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      cycle_responsibilities: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          responsibility_type_id: string;
+          person_id: string;
+          capacity: "holder" | "acting" | "deputy";
+          starts_on: string;
+          ends_on: string | null;
+          replaced_person_id: string | null;
+          status: "draft" | "active" | "closed" | "archived";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          responsibility_type_id: string;
+          person_id: string;
+          capacity?: "holder" | "acting" | "deputy";
+          starts_on: string;
+          ends_on?: string | null;
+          replaced_person_id?: string | null;
+          status?: "draft" | "active" | "closed" | "archived";
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["cycle_responsibilities"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: {
       notes_average_controls: {

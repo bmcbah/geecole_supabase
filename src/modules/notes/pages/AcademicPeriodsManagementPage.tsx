@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "primereact/button";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Message } from "primereact/message";
+import { Dropdown } from "primereact/dropdown";
+import { InputText } from "primereact/inputtext";
 import { Tag } from "primereact/tag";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
@@ -22,6 +24,9 @@ export function AcademicPeriodsManagementPage() {
   const [periods, setPeriods] = useState<PeriodManagementRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [cycleFilter, setCycleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const load = useCallback(async () => {
     if (!institutionId || !yearId) return;
@@ -46,13 +51,33 @@ export function AcademicPeriodsManagementPage() {
 
   const cycles = useMemo(() => {
     const grouped = new Map<string, PeriodManagementRow[]>();
-    for (const period of periods)
+    for (const period of periods.filter((item) => {
+      const needle = query.trim().toLocaleLowerCase("fr");
+      return (
+        (!cycleFilter || item.cycleId === cycleFilter) &&
+        (!statusFilter || item.status === statusFilter) &&
+        (!needle ||
+          `${item.cycleName} ${item.name}`
+            .toLocaleLowerCase("fr")
+            .includes(needle))
+      );
+    }))
       grouped.set(period.cycleId, [
         ...(grouped.get(period.cycleId) ?? []),
         period,
       ]);
     return [...grouped.entries()];
-  }, [periods]);
+  }, [cycleFilter, periods, query, statusFilter]);
+
+  const cycleOptions = useMemo(
+    () =>
+      [
+        ...new Map(
+          periods.map((period) => [period.cycleId, period.cycleName]),
+        ).entries(),
+      ].map(([value, label]) => ({ value, label })),
+    [periods],
+  );
 
   function requestTransition(
     period: PeriodManagementRow,
@@ -111,6 +136,34 @@ export function AcademicPeriodsManagementPage() {
         text="Les périodes et leurs dates sont définies dans Paramétrage. Ici, la direction ouvre ou clôture les saisies. Une seule période peut être ouverte par cycle."
       />
       {error ? <Message severity="error" text={error} /> : null}
+      <section className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
+        <span className="p-input-icon-left">
+          <i className="pi pi-search" />
+          <InputText
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Rechercher une période"
+            className="w-full"
+          />
+        </span>
+        <Dropdown
+          value={cycleFilter}
+          options={[{ label: "Tous les cycles", value: "" }, ...cycleOptions]}
+          onChange={(event) => setCycleFilter(String(event.value ?? ""))}
+          className="w-full"
+        />
+        <Dropdown
+          value={statusFilter}
+          options={[
+            { label: "Tous les états", value: "" },
+            { label: "À venir", value: "planned" },
+            { label: "Saisies ouvertes", value: "open" },
+            { label: "Clôturées", value: "closed" },
+          ]}
+          onChange={(event) => setStatusFilter(String(event.value ?? ""))}
+          className="w-full"
+        />
+      </section>
       {!loading && !cycles.length ? (
         <Message
           severity="warn"
@@ -160,7 +213,7 @@ export function AcademicPeriodsManagementPage() {
                         {period.sequence}
                       </span>
                       <strong className="mt-2 text-xs text-slate-900">
-                        {period.name}
+                        {period.cycleName} — {period.name}
                       </strong>
                       <span className="mt-0.5 text-[11px] text-slate-500">
                         {formatDate(period.startsOn)} –{" "}

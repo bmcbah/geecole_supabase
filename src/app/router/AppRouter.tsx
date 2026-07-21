@@ -70,6 +70,11 @@ const PedagogicalAssignmentsPage = lazy(() =>
     (module) => ({ default: module.PedagogicalAssignmentsPage }),
   ),
 );
+const CycleResponsibilitiesPage = lazy(() =>
+  import("../../modules/notes/pages/CycleResponsibilitiesPage").then(
+    (module) => ({ default: module.CycleResponsibilitiesPage }),
+  ),
+);
 const PostponedResultsPage = lazy(() =>
   import("../../modules/notes/pages/PostponedResultsPage").then((module) => ({
     default: module.PostponedResultsPage,
@@ -210,6 +215,10 @@ export function AppRouter() {
             <Route
               path="/notes-bulletins/configuration/affectations"
               element={<PedagogicalAssignmentsPage />}
+            />
+            <Route
+              path="/notes-bulletins/configuration/responsables-cycles"
+              element={<CycleResponsibilitiesPage />}
             />
           </Route>
         </Route>

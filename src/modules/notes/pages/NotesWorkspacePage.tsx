@@ -73,7 +73,6 @@ export function NotesWorkspacePage() {
       setCourses(courseRows);
       setPeriods(periodRows);
       setTypes(typeRows);
-      setCourse((c) => c ?? courseRows[0]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Chargement impossible.");
     } finally {
@@ -109,7 +108,10 @@ export function NotesWorkspacePage() {
     void loadBook();
   }, [loadBook]);
   useEffect(() => {
-    if (!course) return;
+    if (!course) {
+      setPeriodId("");
+      return;
+    }
     const available = periods.filter(
       (p) =>
         p.cycle_id === course.cycleId &&

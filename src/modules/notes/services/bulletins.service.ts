@@ -199,10 +199,30 @@ export async function generateBulletins(input: {
           .eq("student_id", enrollment.student_id)
           .in("note_id", noteIds)
       : { data: [] };
+    const missingNoteIds = noteIds.filter(
+      (noteId) => !(results ?? []).some((result) => result.note_id === noteId),
+    );
     const postponed = (results ?? []).some(
       (result) => result.status === "postponed",
     );
-    if (postponed) {
+    const blockingIssue = !noteIds.length
+      ? {
+          code: "NO_ASSESSMENT",
+          message:
+            "Aucune évaluation n’existe pour cette classe et cette période.",
+        }
+      : missingNoteIds.length
+        ? {
+            code: "MISSING_RESULTS",
+            message: `${missingNoteIds.length} note(s) obligatoire(s) ne sont pas renseignée(s).`,
+          }
+        : postponed
+          ? {
+              code: "POSTPONED_RESULT",
+              message: "Un résultat reporté bloque le calcul.",
+            }
+          : null;
+    if (blockingIssue) {
       blocked += 1;
       const { error: itemError } = await supabase
         .from("bulletin_generation_items")
@@ -213,8 +233,8 @@ export async function generateBulletins(input: {
           student_id: enrollment.student_id,
           class_id: enrollment.classId,
           status: "blocked",
-          issue_code: "POSTPONED_RESULT",
-          message: "Un résultat reporté bloque le calcul.",
+          issue_code: blockingIssue.code,
+          message: blockingIssue.message,
         });
       if (itemError) throw itemError;
       continue;
