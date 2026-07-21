@@ -428,7 +428,7 @@ export function FinancialAccountsWorkspacePage() {
                           </label>
                         </div>
                         
-                        <InputNumber className="h-9 w-32" inputClassName="h-full w-full rounded-lg border border-slate-300 text-right text-sm px-2 disabled:bg-slate-50" value={isSolded ? installment.totalAmount : (installmentAmounts[installment.id] ?? null)} min={0} max={installment.balanceAmount} disabled={isSolded} mode="currency" currency={paymentAccount.currencyCode || "GNF"} locale="fr-GN" onChange={(e) => setInstallmentAmount(installment.id, e.value)} />
+                        <InputNumber className="h-9 w-32" inputClassName="h-full w-full rounded-lg border border-slate-300 text-right text-sm px-2 disabled:bg-slate-50" value={isSolded ? installment.amount : (installmentAmounts[installment.id] ?? null)} min={0} max={installment.balanceAmount} disabled={isSolded} mode="currency" currency={paymentAccount.currencyCode || "GNF"} locale="fr-GN" onChange={(e) => setInstallmentAmount(installment.id, e.value)} />
                       </div>
                     );
                   })}

@@ -14,7 +14,7 @@ type PageHeaderProps = {
   className?: string;
 };
 
-const joinClassNames = (...classNames: Array<string | false | undefined>) =>
+const joinClassNames = (...classNames: Array<string | number | false | null | undefined>) =>
   classNames.filter(Boolean).join(" ");
 
 export function PageHeader({

@@ -620,7 +620,7 @@ function tokenize(expression: string, allowedVariables: string[]): Token[] {
   let cursor = 0;
 
   while (cursor < expression.length) {
-    const character = expression[cursor];
+    const character = expression[cursor]!;
 
     if (/\s/.test(character)) {
       cursor += 1;
@@ -630,8 +630,8 @@ function tokenize(expression: string, allowedVariables: string[]): Token[] {
     if (/[0-9.,]/.test(character)) {
       const start = cursor;
       let raw = "";
-      while (cursor < expression.length && /[0-9.,]/.test(expression[cursor])) {
-        raw += expression[cursor];
+      while (cursor < expression.length && /[0-9.,]/.test(expression[cursor]!)) {
+        raw += expression[cursor]!;
         cursor += 1;
       }
       const normalized = raw.replace(",", ".");
@@ -651,9 +651,9 @@ function tokenize(expression: string, allowedVariables: string[]): Token[] {
       let identifier = "";
       while (
         cursor < expression.length &&
-        /[A-Za-z0-9_]/.test(expression[cursor])
+        /[A-Za-z0-9_]/.test(expression[cursor]!)
       ) {
-        identifier += expression[cursor];
+        identifier += expression[cursor]!;
         cursor += 1;
       }
       const variable = identifier.toUpperCase();
@@ -749,11 +749,13 @@ function parseExpression(tokens: Token[], values: Record<string, number>) {
 
   const parseMultiplicative = (): number => {
     let value = parsePrimary();
-    while (
-      current()?.kind === "operator" &&
-      (current().value === "*" || current().value === "/")
-    ) {
+    while (true) {
       const operator = current();
+      if (
+        !operator ||
+        operator.kind !== "operator" ||
+        (operator.value !== "*" && operator.value !== "/")
+      ) break;
       index += 1;
       const right = parsePrimary();
       if (operator.kind === "operator" && operator.value === "/") {
@@ -770,11 +772,13 @@ function parseExpression(tokens: Token[], values: Record<string, number>) {
 
   const parseAdditive = (): number => {
     let value = parseMultiplicative();
-    while (
-      current()?.kind === "operator" &&
-      (current().value === "+" || current().value === "-")
-    ) {
+    while (true) {
       const operator = current();
+      if (
+        !operator ||
+        operator.kind !== "operator" ||
+        (operator.value !== "+" && operator.value !== "-")
+      ) break;
       index += 1;
       const right = parseMultiplicative();
       value =

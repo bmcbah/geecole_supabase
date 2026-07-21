@@ -6,7 +6,6 @@ import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { TabPanel, TabView } from "primereact/tabview";
-import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import type { StructureItemInput } from "../../settings/schemas/academic-structure.schema";
 import {
@@ -24,7 +23,6 @@ import type {
   GradeLevel,
 } from "../../settings/types/academic-structure";
 import { StructureItemDialog } from "../../settings/components/StructureItemDialog";
-import { TablePanel } from "../../../shared/components/layout/TablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
@@ -72,13 +70,6 @@ const toInput = (
           "repeat_allowed" in item ? Boolean(item.repeat_allowed) : undefined,
       }
     : undefined;
-
-const periodLabel = (cycle: AnnualAcademicCycle) =>
-  cycle.period_system === "semester"
-    ? `${cycle.period_count} semestres`
-    : cycle.period_system === "term"
-      ? `${cycle.period_count} trimestres`
-      : `${cycle.period_count} périodes`;
 
 export function LevelsSettingsPanel({ institutionId }: Props) {
   const { year } = useAcademicSession();
@@ -233,13 +224,6 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
       />
     );
   }
-
-  const readOnlyAlert = !editable ? (
-    <Message
-      severity="info"
-      text={`${year.name} est clôturée et reste consultable en lecture seule.`}
-    />
-  ) : undefined;
 
   return (
     <section className="flex flex-col gap-4 bg-white p-4 shadow-sm sm:rounded-md">

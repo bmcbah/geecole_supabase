@@ -132,7 +132,7 @@ export async function savePaymentPlan(
       percentage: installment.percentage,
       due_date: installment.due_date,
     }))
-    .filter((_, index) => !input.installments[index].id);
+    .filter((_, index) => !input.installments[index]?.id);
 
   if (newRows.length > 0) {
     const { error } = await db.from("payment_plan_installments").insert(newRows);

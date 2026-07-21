@@ -83,7 +83,7 @@ export function PeopleAccessPanel() {
             lastName: person.last_name,
             email: person.email ?? "",
             phone: person.phone ?? "",
-            status: person.status,
+            status: person.status === "inactive" ? "inactive" : "active",
             roles: person.roles,
           }
         : emptyForm,

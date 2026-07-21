@@ -37,7 +37,7 @@ Les opérations exposées retournent uniquement une erreur fonctionnelle contrô
 ```json
 {
   "code": "NOTE_VALIDATION_FAILED",
-  "message": "L’enregistrement de la note est impossible.",
+  "debugMessage": "La note ne respecte pas le barème applicable.",
   "correlationId": "identifiant-non-sensible"
 }
 ```
@@ -45,7 +45,8 @@ Les opérations exposées retournent uniquement une erreur fonctionnelle contrô
 Règles :
 
 - catalogue stable de codes métier ;
-- message compréhensible sans détail interne ;
+- `debugMessage` diagnostique français, nettoyé et sans détail interne, y compris en production ;
+- le frontend n’affiche jamais `debugMessage` : il traduit `code` via son catalogue i18n ;
 - statut HTTP cohérent ;
 - identifiant de corrélation généré côté serveur ;
 - aucun contenu fourni par l’utilisateur recopié sans neutralisation ;
@@ -69,7 +70,7 @@ Les erreurs attendues ne doivent pas être journalisées avec des données sensi
 - conserver les contraintes SQL comme dernière ligne de défense ;
 - utiliser des RPC contrôlées pour les opérations sensibles ;
 - traduire explicitement les erreurs attendues en codes métier ;
-- capturer les erreurs inattendues à une frontière serveur qui renvoie un message générique ;
+- capturer les erreurs inattendues à une frontière serveur qui renvoie un code et un message diagnostique génériques ;
 - ne pas construire de message SQL dynamique contenant une donnée sensible ;
 - tester la réponse HTTP brute et les en-têtes, pas seulement le rendu de l’interface.
 

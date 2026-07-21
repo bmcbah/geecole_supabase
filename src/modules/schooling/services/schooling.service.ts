@@ -4,6 +4,7 @@ import type {
   EnrollmentInput,
   StudentListItem,
 } from "../types/schooling";
+import type { Database } from "../../../shared/lib/supabase/database.types";
 
 export type GuardianLinkInput = {
   guardianId?: string;
@@ -16,11 +17,9 @@ export type GuardianLinkInput = {
   emergency: boolean;
 };
 
-export type StudentGuardian = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  primary_phone: string;
+type GuardianRow = Database["public"]["Tables"]["guardians"]["Row"];
+
+export type StudentGuardian = GuardianRow & {
   relationship: string;
   is_primary_contact: boolean;
   is_financial_responsible: boolean;
@@ -242,7 +241,7 @@ export async function getStudent(studentId: string, yearId: string) {
     : { data: [], error: null };
   if (guardianResult.error) throw guardianResult.error;
 
-  const guardians: StudentGuardian[] = linksResult.data
+  const guardians = linksResult.data
     .map((link) => {
       const guardian = guardianResult.data.find(
         (item) => item.id === link.guardian_id,
@@ -257,7 +256,7 @@ export async function getStudent(studentId: string, yearId: string) {
           }
         : null;
     })
-    .filter((guardian): guardian is StudentGuardian => Boolean(guardian))
+    .filter((guardian): guardian is StudentGuardian => guardian !== null)
     .sort(
       (left, right) =>
         Number(right.is_primary_contact) - Number(left.is_primary_contact),

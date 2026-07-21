@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { StructureItemInput } from "../domain/academic-structure";
 
 const code = z
   .string()
@@ -7,7 +6,7 @@ const code = z
   .toUpperCase()
   .regex(/^[A-Z0-9_-]+$/, "Majuscules, chiffres, tirets ou underscore");
 
-export const structureItemSchema: z.ZodType<StructureItemInput> = z.object({
+export const structureItemSchema = z.object({
   name: z.string().trim().min(1, "Le nom est obligatoire").max(80),
   code: code.min(1).max(20),
   sortOrder: z.number().int().min(0).max(999),

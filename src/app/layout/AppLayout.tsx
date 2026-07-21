@@ -31,10 +31,12 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const routeGroup = navigation.find((group) => location.pathname.startsWith(group.match)) ?? navigation[0];
+  const fallbackGroup = navigation[0];
+  if (!fallbackGroup) throw new Error("La navigation GeEcole est vide.");
+  const routeGroup = navigation.find((group) => location.pathname.startsWith(group.match)) ?? fallbackGroup;
   const initialGroup = getNavigationLinks(routeGroup).length
     ? routeGroup
-    : navigation.find((group) => getNavigationLinks(group).length) ?? navigation[0];
+    : navigation.find((group) => getNavigationLinks(group).length) ?? fallbackGroup;
   const [selectedGroupLabel, setSelectedGroupLabel] = useState(initialGroup.label);
   const [secondaryMenuOpen, setSecondaryMenuOpen] = useState(getNavigationLinks(routeGroup).length > 0);
   const selectedGroup = navigation.find(
