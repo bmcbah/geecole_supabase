@@ -22,7 +22,6 @@ import type {
 } from "../domain/notes";
 import { noteResultStatusLabels } from "../domain/notes";
 import {
-  changePeriodStatus,
   createGradebookNote,
   listActiveNoteTypes,
   listClassStudents,
@@ -205,7 +204,6 @@ export function NotesWorkspacePage() {
           yearId={yearId}
           onAdd={() => setNoteOpen(true)}
           onReload={loadBook}
-          onPeriodsReload={loadFoundation}
         />
       </GradebookTree>
       <Dialog
@@ -486,7 +484,6 @@ function Gradebook(props: {
   yearId: string;
   onAdd: () => void;
   onReload: () => Promise<void>;
-  onPeriodsReload: () => Promise<void>;
 }) {
   const [studentQuery, setStudentQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -584,14 +581,6 @@ function Gradebook(props: {
     setSelected([]);
     await props.onReload();
   }
-  async function togglePeriod() {
-    if (!props.period) return;
-    await changePeriodStatus(
-      props.period.id,
-      props.period.status === "open" ? "closed" : "open",
-    );
-    await props.onPeriodsReload();
-  }
   async function saveAppreciation(studentId: string, value: string) {
     if (!props.course || !props.period || value.trim().length < 2) return;
     await saveCourseAppreciation({
@@ -640,7 +629,8 @@ function Gradebook(props: {
               Outils du cahier
             </strong>
             <span className="text-xs text-slate-500">
-              Période ouverte : saisie autorisée · clôturée : lecture seule
+              Le pilotage des périodes est réservé à la page Gestion des
+              périodes
             </span>
           </div>
           <div className="flex flex-col gap-2 xl:flex-row xl:items-end">
@@ -669,20 +659,6 @@ function Gradebook(props: {
               </Field>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="small"
-                label={
-                  props.period?.status === "open"
-                    ? "Clôturer les saisies"
-                    : "Ouvrir les saisies"
-                }
-                icon={
-                  props.period?.status === "open" ? "pi pi-lock" : "pi pi-play"
-                }
-                severity="secondary"
-                outlined
-                onClick={() => void togglePeriod()}
-              />
               <Button
                 size="small"
                 label="Ajouter une évaluation"

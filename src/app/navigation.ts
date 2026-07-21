@@ -14,7 +14,8 @@ export type NavigationDivider = {
   type: "divider";
 };
 
-export type NavigationEntry = NavigationLink | NavigationTitle | NavigationDivider;
+export type NavigationEntry =
+  NavigationLink | NavigationTitle | NavigationDivider;
 
 export type NavigationGroup = {
   label: string;
@@ -30,9 +31,24 @@ export const navigation: NavigationGroup[] = [
     icon: "pi-graduation-cap",
     match: "/scolarite",
     items: [
-      { type: "link", label: "Élèves", icon: "pi-users", to: "/scolarite/eleves" },
-      { type: "link", label: "Nouvelle inscription", icon: "pi-user-plus", to: "/scolarite/inscriptions/nouvelle" },
-      { type: "link", label: "Réinscriptions groupées", icon: "pi-refresh", to: "/scolarite/reinscriptions" },
+      {
+        type: "link",
+        label: "Élèves",
+        icon: "pi-users",
+        to: "/scolarite/eleves",
+      },
+      {
+        type: "link",
+        label: "Nouvelle inscription",
+        icon: "pi-user-plus",
+        to: "/scolarite/inscriptions/nouvelle",
+      },
+      {
+        type: "link",
+        label: "Réinscriptions groupées",
+        icon: "pi-refresh",
+        to: "/scolarite/reinscriptions",
+      },
     ],
   },
   {
@@ -41,20 +57,76 @@ export const navigation: NavigationGroup[] = [
     match: "/notes-bulletins",
     items: [
       { type: "title", label: "Notes" },
-      { type: "link", label: "Cahiers de notes", icon: "pi-book", to: "/notes-bulletins/cahiers" },
-      { type: "link", label: "Rattrapages à compléter", icon: "pi-clock", to: "/notes-bulletins/resultats-reportes" },
-      { type: "link", label: "Appréciations", icon: "pi-comment", to: "/notes-bulletins/appreciations" },
-      { type: "link", label: "Contrôle des moyennes", icon: "pi-calculator", to: "/notes-bulletins/controle-moyennes" },
+      {
+        type: "link",
+        label: "Gestion des périodes",
+        icon: "pi-calendar-clock",
+        to: "/notes-bulletins/periodes",
+      },
+      {
+        type: "link",
+        label: "Cahiers de notes",
+        icon: "pi-book",
+        to: "/notes-bulletins/cahiers",
+      },
+      {
+        type: "link",
+        label: "Rattrapages à compléter",
+        icon: "pi-clock",
+        to: "/notes-bulletins/resultats-reportes",
+      },
+      {
+        type: "link",
+        label: "Appréciations",
+        icon: "pi-comment",
+        to: "/notes-bulletins/appreciations",
+      },
+      {
+        type: "link",
+        label: "Contrôle des moyennes",
+        icon: "pi-calculator",
+        to: "/notes-bulletins/controle-moyennes",
+      },
       { type: "divider" },
       { type: "title", label: "Bulletins" },
-      { type: "link", label: "Générations", icon: "pi-sparkles", to: "/notes-bulletins/generations" },
-      { type: "link", label: "Bulletins", icon: "pi-file-pdf", to: "/notes-bulletins/bulletins" },
-      { type: "link", label: "Validation", icon: "pi-verified", to: "/notes-bulletins/validation" },
-      { type: "link", label: "Publication", icon: "pi-send", to: "/notes-bulletins/publication" },
-      { type: "link", label: "Historique", icon: "pi-history", to: "/notes-bulletins/historique" },
+      {
+        type: "link",
+        label: "Générations",
+        icon: "pi-sparkles",
+        to: "/notes-bulletins/generations",
+      },
+      {
+        type: "link",
+        label: "Bulletins",
+        icon: "pi-file-pdf",
+        to: "/notes-bulletins/bulletins",
+      },
+      {
+        type: "link",
+        label: "Validation",
+        icon: "pi-verified",
+        to: "/notes-bulletins/validation",
+      },
+      {
+        type: "link",
+        label: "Publication",
+        icon: "pi-send",
+        to: "/notes-bulletins/publication",
+      },
+      {
+        type: "link",
+        label: "Historique",
+        icon: "pi-history",
+        to: "/notes-bulletins/historique",
+      },
       { type: "divider" },
       { type: "title", label: "Organisation" },
-      { type: "link", label: "Affectations pédagogiques", icon: "pi-users", to: "/notes-bulletins/configuration/affectations" },
+      {
+        type: "link",
+        label: "Affectations pédagogiques",
+        icon: "pi-users",
+        to: "/notes-bulletins/configuration/affectations",
+      },
     ],
   },
   {
@@ -63,13 +135,38 @@ export const navigation: NavigationGroup[] = [
     match: "/gestion-financiere",
     items: [
       { type: "title", label: "Opérations" },
-      { type: "link", label: "Dossiers financiers", icon: "pi-folder", to: "/gestion-financiere/dossiers" },
-      { type: "link", label: "Historique des encaissements", icon: "pi-history", to: "/gestion-financiere/encaissements" },
+      {
+        type: "link",
+        label: "Dossiers financiers",
+        icon: "pi-folder",
+        to: "/gestion-financiere/dossiers",
+      },
+      {
+        type: "link",
+        label: "Historique des encaissements",
+        icon: "pi-history",
+        to: "/gestion-financiere/encaissements",
+      },
       { type: "divider" },
       { type: "title", label: "Configuration" },
-      { type: "link", label: "Grille tarifaire", icon: "pi-money-bill", to: "/gestion-financiere/configuration/grilles-tarifaires" },
-      { type: "link", label: "Plans de paiement", icon: "pi-calendar-clock", to: "/gestion-financiere/configuration/plans-paiement" },
-      { type: "link", label: "Modèles d’avantages", icon: "pi-percentage", to: "/gestion-financiere/configuration/modeles-avantages" },
+      {
+        type: "link",
+        label: "Grille tarifaire",
+        icon: "pi-money-bill",
+        to: "/gestion-financiere/configuration/grilles-tarifaires",
+      },
+      {
+        type: "link",
+        label: "Plans de paiement",
+        icon: "pi-calendar-clock",
+        to: "/gestion-financiere/configuration/plans-paiement",
+      },
+      {
+        type: "link",
+        label: "Modèles d’avantages",
+        icon: "pi-percentage",
+        to: "/gestion-financiere/configuration/modeles-avantages",
+      },
     ],
   },
   {
@@ -78,26 +175,82 @@ export const navigation: NavigationGroup[] = [
     match: "/parametrage",
     items: [
       { type: "title", label: "Établissement" },
-      { type: "link", label: "Général", icon: "pi-cog", to: "/parametrage/etablissement" },
-      { type: "link", label: "Années scolaires", icon: "pi-calendar", to: "/parametrage/annees-scolaires" },
-      { type: "link", label: "Personnes et accès", icon: "pi-users", to: "/parametrage/utilisateurs-roles" },
+      {
+        type: "link",
+        label: "Général",
+        icon: "pi-cog",
+        to: "/parametrage/etablissement",
+      },
+      {
+        type: "link",
+        label: "Années scolaires",
+        icon: "pi-calendar",
+        to: "/parametrage/annees-scolaires",
+      },
+      {
+        type: "link",
+        label: "Personnes et accès",
+        icon: "pi-users",
+        to: "/parametrage/utilisateurs-roles",
+      },
       { type: "divider" },
       { type: "title", label: "Organisation scolaire" },
-      { type: "link", label: "Cycles", icon: "pi-sitemap", to: "/parametrage/cycles" },
-      { type: "link", label: "Niveaux", icon: "pi-list", to: "/parametrage/niveaux" },
-      { type: "link", label: "Classes", icon: "pi-users", to: "/parametrage/classes" },
-      { type: "link", label: "Matières", icon: "pi-book", to: "/parametrage/matieres" },
+      {
+        type: "link",
+        label: "Cycles",
+        icon: "pi-sitemap",
+        to: "/parametrage/cycles",
+      },
+      {
+        type: "link",
+        label: "Niveaux",
+        icon: "pi-list",
+        to: "/parametrage/niveaux",
+      },
+      {
+        type: "link",
+        label: "Classes",
+        icon: "pi-users",
+        to: "/parametrage/classes",
+      },
+      {
+        type: "link",
+        label: "Matières",
+        icon: "pi-book",
+        to: "/parametrage/matieres",
+      },
       { type: "divider" },
       { type: "title", label: "Évaluation" },
-      { type: "link", label: "Types de notes", icon: "pi-tags", to: "/parametrage/types-notes" },
-      { type: "link", label: "Formules de calcul", icon: "pi-percentage", to: "/parametrage/formules-calcul" },
-      { type: "link", label: "Paramètres pédagogiques", icon: "pi-sliders-h", to: "/parametrage/parametres-pedagogiques" },
+      {
+        type: "link",
+        label: "Types de notes",
+        icon: "pi-tags",
+        to: "/parametrage/types-notes",
+      },
+      {
+        type: "link",
+        label: "Formules de calcul",
+        icon: "pi-percentage",
+        to: "/parametrage/formules-calcul",
+      },
+      {
+        type: "link",
+        label: "Paramètres pédagogiques",
+        icon: "pi-sliders-h",
+        to: "/parametrage/parametres-pedagogiques",
+      },
       { type: "divider" },
       { type: "title", label: "Référentiels financiers" },
-      { type: "link", label: "Catégories de frais", icon: "pi-tags", to: "/parametrage/categories-frais" },
+      {
+        type: "link",
+        label: "Catégories de frais",
+        icon: "pi-tags",
+        to: "/parametrage/categories-frais",
+      },
     ],
   },
 ];
 
 export const getNavigationLinks = (group: NavigationGroup): NavigationLink[] =>
-  group.items?.filter((item): item is NavigationLink => item.type === "link") ?? [];
+  group.items?.filter((item): item is NavigationLink => item.type === "link") ??
+  [];

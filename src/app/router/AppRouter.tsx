@@ -6,85 +6,201 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { AcademicSessionProvider } from "../../modules/academic-session/components/AcademicSessionProvider";
 
 const LoginPage = lazy(() =>
-  import("../../modules/auth/pages/LoginPage").then((module) => ({ default: module.LoginPage })),
+  import("../../modules/auth/pages/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
 );
 const SettingsPage = lazy(() =>
-  import("../../modules/settings/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })),
+  import("../../modules/settings/pages/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  })),
 );
 const InvitationPage = lazy(() =>
-  import("../../modules/auth/pages/InvitationPage").then((module) => ({ default: module.InvitationPage })),
+  import("../../modules/auth/pages/InvitationPage").then((module) => ({
+    default: module.InvitationPage,
+  })),
 );
 const StudentsPage = lazy(() =>
-  import("../../modules/schooling/pages/StudentsPage").then((module) => ({ default: module.StudentsPage })),
+  import("../../modules/schooling/pages/StudentsPage").then((module) => ({
+    default: module.StudentsPage,
+  })),
 );
 const StudentProfilePage = lazy(() =>
-  import("../../modules/schooling/pages/StudentProfilePage").then((module) => ({ default: module.StudentProfilePage })),
+  import("../../modules/schooling/pages/StudentProfilePage").then((module) => ({
+    default: module.StudentProfilePage,
+  })),
 );
 const EnrollmentPage = lazy(() =>
-  import("../../modules/schooling/pages/EnrollmentPage").then((module) => ({ default: module.EnrollmentPage })),
+  import("../../modules/schooling/pages/EnrollmentPage").then((module) => ({
+    default: module.EnrollmentPage,
+  })),
 );
 const ReenrollmentPage = lazy(() =>
-  import("../../modules/schooling/pages/ReenrollmentPage").then((module) => ({ default: module.ReenrollmentPage })),
+  import("../../modules/schooling/pages/ReenrollmentPage").then((module) => ({
+    default: module.ReenrollmentPage,
+  })),
 );
 const BatchReenrollmentPage = lazy(() =>
-  import("../../modules/schooling/pages/BatchReenrollmentPage").then((module) => ({ default: module.BatchReenrollmentPage })),
+  import("../../modules/schooling/pages/BatchReenrollmentPage").then(
+    (module) => ({ default: module.BatchReenrollmentPage }),
+  ),
 );
 const FinancialAccountsPage = lazy(() =>
-  import("../../modules/financial-management/pages/FinancialAccountsWorkspacePage").then((module) => ({ default: module.FinancialAccountsWorkspacePage })),
+  import("../../modules/financial-management/pages/FinancialAccountsWorkspacePage").then(
+    (module) => ({ default: module.FinancialAccountsWorkspacePage }),
+  ),
 );
 const FinancialAccountDetailPage = lazy(() =>
-  import("../../modules/financial-management/pages/FinancialAccountDetailPage").then((module) => ({ default: module.FinancialAccountDetailPage })),
+  import("../../modules/financial-management/pages/FinancialAccountDetailPage").then(
+    (module) => ({ default: module.FinancialAccountDetailPage }),
+  ),
 );
 const FinancialPaymentsPage = lazy(() =>
-  import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })),
+  import("../../modules/financial-management/pages/FinancialPaymentsPage").then(
+    (module) => ({ default: module.FinancialPaymentsPage }),
+  ),
 );
 const NotesWorkspacePage = lazy(() =>
-  import("../../modules/notes/pages/NotesWorkspacePage").then((module) => ({ default: module.NotesWorkspacePage })),
+  import("../../modules/notes/pages/NotesWorkspacePage").then((module) => ({
+    default: module.NotesWorkspacePage,
+  })),
 );
 const PedagogicalAssignmentsPage = lazy(() =>
-  import("../../modules/notes/pages/PedagogicalAssignmentsPage").then((module) => ({ default: module.PedagogicalAssignmentsPage })),
+  import("../../modules/notes/pages/PedagogicalAssignmentsPage").then(
+    (module) => ({ default: module.PedagogicalAssignmentsPage }),
+  ),
 );
 const NotesOperationsPage = lazy(() =>
-  import("../../modules/notes/pages/NotesOperationsPage").then((module) => ({ default: module.NotesOperationsPage })),
+  import("../../modules/notes/pages/NotesOperationsPage").then((module) => ({
+    default: module.NotesOperationsPage,
+  })),
+);
+const AcademicPeriodsManagementPage = lazy(() =>
+  import("../../modules/notes/pages/AcademicPeriodsManagementPage").then(
+    (module) => ({ default: module.AcademicPeriodsManagementPage }),
+  ),
 );
 const BulletinGenerationsPage = lazy(() =>
-  import("../../modules/notes/pages/BulletinGenerationsPage").then((module) => ({ default: module.BulletinGenerationsPage })),
+  import("../../modules/notes/pages/BulletinGenerationsPage").then(
+    (module) => ({ default: module.BulletinGenerationsPage }),
+  ),
 );
 const BulletinsListPage = lazy(() =>
-  import("../../modules/notes/pages/BulletinsListPage").then((module) => ({ default: module.BulletinsListPage })),
+  import("../../modules/notes/pages/BulletinsListPage").then((module) => ({
+    default: module.BulletinsListPage,
+  })),
 );
 
 export function AppRouter() {
   return (
-    <Suspense fallback={<div className="grid min-h-[50vh] place-items-center"><ProgressSpinner aria-label="Chargement de la page" /></div>}>
+    <Suspense
+      fallback={
+        <div className="grid min-h-[50vh] place-items-center">
+          <ProgressSpinner aria-label="Chargement de la page" />
+        </div>
+      }
+    >
       <Routes>
         <Route path="/connexion" element={<LoginPage />} />
         <Route path="/invitation" element={<InvitationPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route element={<AcademicSessionProvider><AppLayout /></AcademicSessionProvider>}>
-            <Route index element={<Navigate to="/parametrage/etablissement" replace />} />
-            <Route path="/etablissement" element={<Navigate to="/parametrage/etablissement" replace />} />
+          <Route
+            element={
+              <AcademicSessionProvider>
+                <AppLayout />
+              </AcademicSessionProvider>
+            }
+          >
+            <Route
+              index
+              element={<Navigate to="/parametrage/etablissement" replace />}
+            />
+            <Route
+              path="/etablissement"
+              element={<Navigate to="/parametrage/etablissement" replace />}
+            />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
-            <Route path="/gestion-financiere/configuration/:section" element={<SettingsPage />} />
+            <Route
+              path="/gestion-financiere/configuration/:section"
+              element={<SettingsPage />}
+            />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
-            <Route path="/scolarite/inscriptions/nouvelle" element={<EnrollmentPage />} />
-            <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
-            <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
-            <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
-            <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
-            <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
-            <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
-            <Route path="/notes-bulletins" element={<Navigate to="/notes-bulletins/cahiers" replace />} />
-            <Route path="/notes-bulletins/cahiers" element={<NotesWorkspacePage />} />
-            <Route path="/notes-bulletins/resultats-reportes" element={<NotesOperationsPage />} />
-            <Route path="/notes-bulletins/appreciations" element={<NotesOperationsPage />} />
-            <Route path="/notes-bulletins/controle-moyennes" element={<NotesOperationsPage />} />
-            <Route path="/notes-bulletins/generations" element={<BulletinGenerationsPage />} />
-            <Route path="/notes-bulletins/bulletins" element={<BulletinsListPage />} />
-            <Route path="/notes-bulletins/validation" element={<BulletinsListPage />} />
-            <Route path="/notes-bulletins/publication" element={<BulletinsListPage />} />
-            <Route path="/notes-bulletins/historique" element={<BulletinsListPage />} />
-            <Route path="/notes-bulletins/configuration/affectations" element={<PedagogicalAssignmentsPage />} />
+            <Route
+              path="/scolarite/inscriptions/nouvelle"
+              element={<EnrollmentPage />}
+            />
+            <Route
+              path="/scolarite/eleves/:studentId"
+              element={<StudentProfilePage />}
+            />
+            <Route
+              path="/scolarite/eleves/:studentId/reinscription"
+              element={<ReenrollmentPage />}
+            />
+            <Route
+              path="/scolarite/reinscriptions"
+              element={<BatchReenrollmentPage />}
+            />
+            <Route
+              path="/gestion-financiere/dossiers"
+              element={<FinancialAccountsPage />}
+            />
+            <Route
+              path="/gestion-financiere/dossiers/:accountId"
+              element={<FinancialAccountDetailPage />}
+            />
+            <Route
+              path="/gestion-financiere/encaissements"
+              element={<FinancialPaymentsPage />}
+            />
+            <Route
+              path="/notes-bulletins"
+              element={<Navigate to="/notes-bulletins/cahiers" replace />}
+            />
+            <Route
+              path="/notes-bulletins/cahiers"
+              element={<NotesWorkspacePage />}
+            />
+            <Route
+              path="/notes-bulletins/periodes"
+              element={<AcademicPeriodsManagementPage />}
+            />
+            <Route
+              path="/notes-bulletins/resultats-reportes"
+              element={<NotesOperationsPage />}
+            />
+            <Route
+              path="/notes-bulletins/appreciations"
+              element={<NotesOperationsPage />}
+            />
+            <Route
+              path="/notes-bulletins/controle-moyennes"
+              element={<NotesOperationsPage />}
+            />
+            <Route
+              path="/notes-bulletins/generations"
+              element={<BulletinGenerationsPage />}
+            />
+            <Route
+              path="/notes-bulletins/bulletins"
+              element={<BulletinsListPage />}
+            />
+            <Route
+              path="/notes-bulletins/validation"
+              element={<BulletinsListPage />}
+            />
+            <Route
+              path="/notes-bulletins/publication"
+              element={<BulletinsListPage />}
+            />
+            <Route
+              path="/notes-bulletins/historique"
+              element={<BulletinsListPage />}
+            />
+            <Route
+              path="/notes-bulletins/configuration/affectations"
+              element={<PedagogicalAssignmentsPage />}
+            />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -15,6 +15,13 @@ dans le module Paramétrage.
 
 Les pages et données visibles dépendent des permissions.
 
+## Gestion opérationnelle des périodes
+
+L'ouverture et la clôture des saisies sont réalisées dans une page dédiée,
+organisée par cycle et présentée sous forme de frise. Le cahier des notes ne
+permet pas de modifier l'état d'une période : il affiche seulement un indicateur
+compact `À venir`, `Saisies ouvertes` ou `Clôturée`.
+
 ## Tableau de bord
 
 ### Enseignant

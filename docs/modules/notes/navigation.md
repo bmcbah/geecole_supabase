@@ -20,6 +20,7 @@ Les fonctionnalités métier sont :
 
 ```text
 Notes & Bulletins
+├── Gestion des périodes
 ├── Cahiers de notes
 ├── Rattrapages à compléter
 ├── Appréciations
@@ -43,6 +44,7 @@ Le TreeView sert à sélectionner le contexte. Il ne remplace pas la page de tra
 ```text
 Notes & Bulletins
 │
+├── Gestion des périodes
 ├── Cahiers de notes
 ├── Rattrapages à compléter
 ├── Appréciations
@@ -58,6 +60,20 @@ Notes & Bulletins
 Les types de note, les formules de calcul et les paramètres pédagogiques sont
 accessibles dans le module **Paramétrage**. Les modèles propres au rendu des
 bulletins restent dans le module Bulletins.
+
+La configuration des périodes (libellé, ordre et dates) reste dans Paramétrage.
+Leur pilotage opérationnel (ouverture et clôture des saisies) se fait uniquement
+dans **Notes & Bulletins → Gestion des périodes**.
+
+### Gestion des périodes
+
+La page présente l'année active et une frise distincte par cycle. Elle indique
+la période courante, les périodes à venir et clôturées, ainsi que leurs dates.
+Une seule période peut être ouverte simultanément pour un cycle.
+
+Les actions d'ouverture et de clôture sont réservées aux profils de direction
+autorisés. Le cahier affiche l'état de la période en lecture seule et ne porte
+aucune action de changement d'état.
 
 ---
 
@@ -245,10 +261,10 @@ Notes & Bulletins
 
 #### Page de travail
 
-| Élève | Classe | Cours | Note | Impact | Action |
-|---|---|---|---|---|---|
-| Fatou Sow | 7A | Mathématiques | Composition | Bulletin bloqué | Compléter |
-| Ali Touré | 7B | Français | Oral | Moyenne bloquée | Compléter |
+| Élève     | Classe | Cours         | Note        | Impact          | Action    |
+| --------- | ------ | ------------- | ----------- | --------------- | --------- |
+| Fatou Sow | 7A     | Mathématiques | Composition | Bulletin bloqué | Compléter |
+| Ali Touré | 7B     | Français      | Oral        | Moyenne bloquée | Compléter |
 
 L’enseignant voit uniquement ses cours. La supervision voit son périmètre.
 
@@ -324,11 +340,11 @@ Période
 → Élève
 ```
 
-| Matière | Moyenne | Coefficient | Contribution | État |
-|---|---:|---:|---:|---|
-| Mathématiques | 15 | 4 | 60 | Calculée |
-| Français | 12 | 3 | 36 | Calculée |
-| Histoire | — | 2 | — | Reporté |
+| Matière       | Moyenne | Coefficient | Contribution | État     |
+| ------------- | ------: | ----------: | -----------: | -------- |
+| Mathématiques |      15 |           4 |           60 | Calculée |
+| Français      |      12 |           3 |           36 | Calculée |
+| Histoire      |       — |           2 |            — | Reporté  |
 
 Actions :
 
@@ -360,10 +376,10 @@ Deux vues :
 
 Vue par cours :
 
-| Élève | Moyenne | Appréciation | État |
-|---|---:|---|---|
-| Awa Diallo | 15 | Bon travail | Complète |
-| Fatou Sow | 11 | — | Manquante |
+| Élève      | Moyenne | Appréciation | État      |
+| ---------- | ------: | ------------ | --------- |
+| Awa Diallo |      15 | Bon travail  | Complète  |
+| Fatou Sow  |      11 | —            | Manquante |
 
 Vue par élève : toutes les appréciations destinées au bulletin.
 
@@ -409,10 +425,10 @@ Notes & Bulletins
 
 #### Page de travail
 
-| Période | Périmètre | Élèves | Statut | Date | Actions |
-|---|---|---:|---|---|---|
-| Période 1 | Collège | 248 | Terminé | 15/12 | Voir rapport |
-| Période 1 | Primaire | 310 | Partiel | 16/12 | Reprendre |
+| Période   | Périmètre | Élèves | Statut  | Date  | Actions      |
+| --------- | --------- | -----: | ------- | ----- | ------------ |
+| Période 1 | Collège   |    248 | Terminé | 15/12 | Voir rapport |
+| Période 1 | Primaire  |    310 | Partiel | 16/12 | Reprendre    |
 
 Action principale :
 
@@ -652,11 +668,11 @@ Paramétrage
 
 #### Page de travail
 
-| Type | Barème | Utilisé | Actif | Action |
-|---|---:|---|---|---|
-| Évaluation | /20 | Oui | Oui | Consulter |
-| Composition | /100 | Oui | Oui | Consulter |
-| Oral | /20 | Non | Oui | Modifier |
+| Type        | Barème | Utilisé | Actif | Action    |
+| ----------- | -----: | ------- | ----- | --------- |
+| Évaluation  |    /20 | Oui     | Oui   | Consulter |
+| Composition |   /100 | Oui     | Oui   | Consulter |
+| Oral        |    /20 | Non     | Oui   | Modifier  |
 
 Le barème devient immuable après la première utilisation.
 

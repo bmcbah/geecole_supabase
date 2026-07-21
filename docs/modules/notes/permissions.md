@@ -28,11 +28,13 @@ Selon configuration :
 ## Direction
 
 - vision globale ;
+- ouvrir et clôturer les périodes de saisie ;
 - contrôle des moyennes ;
 - accès aux bulletins selon permissions.
 
 ## Administrateur
 
+- ouvrir et clôturer les périodes de saisie ;
 - types de note ;
 - surcharges ;
 - permissions ;
