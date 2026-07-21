@@ -254,61 +254,18 @@ export async function createGradingFormulaVersion(input: {
   scopeType: "cycle" | "level";
   scopeId: string;
 }) {
-  let seriesId = input.seriesId;
-  if (!seriesId) {
-    const { data, error } = await supabase
-      .from("grading_formula_series")
-      .insert({
-        institution_id: input.institutionId,
-        academic_year_id: input.yearId,
-        name: input.name,
-        code: input.code,
-        formula_type: "course_average",
-      })
-      .select("id")
-      .single();
-    if (error) throw error;
-    seriesId = data.id;
-  }
-  const { data: existing, error: existingError } = await supabase
-    .from("grading_formula_versions")
-    .select("version")
-    .eq("series_id", seriesId)
-    .order("version", { ascending: false })
-    .limit(1);
-  if (existingError) throw existingError;
-  const { data: version, error: versionError } = await supabase
-    .from("grading_formula_versions")
-    .insert({
-      institution_id: input.institutionId,
-      academic_year_id: input.yearId,
-      series_id: seriesId,
-      version: (existing?.[0]?.version ?? 0) + 1,
-      rules: { expression: input.expression.trim(), rounding: input.rounding },
-    })
-    .select("id")
-    .single();
-  if (versionError) throw versionError;
-  const scopeColumn =
-    input.scopeType === "level" ? "academic_year_level_id" : "cycle_id";
-  const { error: deactivateError } = await supabase
-    .from("grading_formula_assignments")
-    .update({ is_active: false })
-    .eq("academic_year_id", input.yearId)
-    .eq(scopeColumn, input.scopeId)
-    .eq("is_active", true);
-  if (deactivateError) throw deactivateError;
-  const { error: assignmentError } = await supabase
-    .from("grading_formula_assignments")
-    .insert({
-      institution_id: input.institutionId,
-      academic_year_id: input.yearId,
-      formula_version_id: version.id,
-      cycle_id: input.scopeType === "cycle" ? input.scopeId : null,
-      academic_year_level_id:
-        input.scopeType === "level" ? input.scopeId : null,
-    });
-  if (assignmentError) throw assignmentError;
+  const { error } = await supabase.rpc("save_grading_formula_version", {
+    target_institution_id: input.institutionId,
+    target_year_id: input.yearId,
+    target_series_id: input.seriesId ?? null,
+    formula_name: input.name,
+    formula_code: input.code,
+    formula_expression: input.expression.trim(),
+    formula_rounding: input.rounding,
+    scope_type: input.scopeType,
+    scope_id: input.scopeId,
+  });
+  if (error) throw error;
 }
 
 export async function activateGradingFormulaVersion(input: {

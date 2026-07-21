@@ -1438,6 +1438,20 @@ export interface Database {
       };
     };
     Functions: {
+      save_grading_formula_version: {
+        Args: {
+          target_institution_id: string;
+          target_year_id: string;
+          target_series_id: string | null;
+          formula_name: string;
+          formula_code: string;
+          formula_expression: string;
+          formula_rounding: number;
+          scope_type: "cycle" | "level";
+          scope_id: string;
+        };
+        Returns: string;
+      };
       install_assessment_type_catalog: {
         Args: { target_institution_id: string; target_year_id: string };
         Returns: number;

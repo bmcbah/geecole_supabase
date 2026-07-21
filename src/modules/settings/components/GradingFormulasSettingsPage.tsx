@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
+import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
+import { InputNumber } from "primereact/inputnumber";
+import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import {
+  calculateCourseAverage,
+  listFormulaVariables,
+} from "../../notes/domain/grading-formula";
 import { supabase } from "../../../shared/lib/supabase/client";
 import {
   activateGradingFormulaVersion,
@@ -13,28 +21,47 @@ import {
   listVersionedGradingFormulas,
   type VersionedFormulaListItem,
 } from "../services/annual-settings.service";
-import {
-  SettingsEntityDialog,
-  type EntityField,
-  type EntityValue,
-} from "./SettingsEntityDialog";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { useToast } from "../../../shared/components/toast-context";
-import { calculateCourseAverage } from "../../notes/domain/grading-formula";
 
 type Option = { label: string; value: string };
+type ScopeType = "cycle" | "level";
+type Draft = {
+  name: string;
+  code: string;
+  scopeType: ScopeType;
+  scopeId: string;
+  expression: string;
+  rounding: number;
+};
+
+const emptyDraft: Draft = {
+  name: "",
+  code: "",
+  scopeType: "cycle",
+  scopeId: "",
+  expression: "",
+  rounding: 2,
+};
 
 export function GradingFormulasSettingsPage() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
+  const expressionRef = useRef<HTMLTextAreaElement>(null);
   const [items, setItems] = useState<VersionedFormulaListItem[]>([]);
-  const [types, setTypes] = useState<Array<{ code: string; name: string }>>([]);
+  const [types, setTypes] = useState<
+    Array<{ id: string; code: string; name: string; scale: number }>
+  >([]);
   const [cycles, setCycles] = useState<Option[]>([]);
-  const [levels, setLevels] = useState<Option[]>([]);
+  const [levels, setLevels] = useState<Array<Option & { cycleId: string }>>([]);
   const [editing, setEditing] = useState<
     VersionedFormulaListItem | null | undefined
-  >(undefined);
+  >();
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [testValues, setTestValues] = useState<Record<string, number>>({});
+  const [testResult, setTestResult] = useState<number>();
+  const [testError, setTestError] = useState("");
   const [saving, setSaving] = useState(false);
   const editable = Boolean(
     year && !["closed", "archived"].includes(year.status),
@@ -53,7 +80,7 @@ export function GradingFormulasSettingsPage() {
         .order("sort_order"),
       supabase
         .from("academic_year_levels")
-        .select("id,level_name_snapshot")
+        .select("id,level_name_snapshot,cycle_id")
         .eq("academic_year_id", year.id)
         .eq("is_active", true)
         .order("sort_order"),
@@ -64,7 +91,12 @@ export function GradingFormulasSettingsPage() {
     setTypes(
       typeRows
         .filter((item) => item.is_active)
-        .map(({ code, name }) => ({ code, name })),
+        .map(({ id, code, name, scale }) => ({
+          id,
+          code: code.toUpperCase(),
+          name,
+          scale,
+        })),
     );
     setCycles(
       (cycleRows.data ?? []).map((item) => ({
@@ -76,6 +108,7 @@ export function GradingFormulasSettingsPage() {
       (levelRows.data ?? []).map((item) => ({
         label: item.level_name_snapshot,
         value: item.id,
+        cycleId: item.cycle_id,
       })),
     );
   }, [institutionId, year]);
@@ -84,81 +117,87 @@ export function GradingFormulasSettingsPage() {
     void load();
   }, [load]);
 
-  const fields = useMemo<EntityField[]>(
-    () => [
-      { key: "name", label: "Nom de la formule", required: true },
-      { key: "code", label: "Code", required: true },
-      {
-        key: "scope_type",
-        label: "Appliquer à",
-        type: "select",
-        required: true,
-        options: [
-          { label: "Un cycle (tous ses niveaux)", value: "cycle" },
-          { label: "Un niveau (prioritaire sur le cycle)", value: "level" },
-        ],
-        resetOnChange: ["cycle_id", "level_id"],
-      },
-      {
-        key: "cycle_id",
-        label: "Cycle",
-        type: "select",
-        required: true,
-        options: cycles,
-        visibleWhen: (values) => values.scope_type === "cycle",
-      },
-      {
-        key: "level_id",
-        label: "Niveau",
-        type: "select",
-        required: true,
-        options: levels,
-        visibleWhen: (values) => values.scope_type === "level",
-      },
-      {
-        key: "expression",
-        label: `Expression (${types.map((type) => type.code).join(", ")})`,
-        type: "textarea",
-        required: true,
-      },
-      { key: "rounding", label: "Décimales", type: "number", required: true },
-    ],
-    [cycles, levels, types],
+  const allowedCodes = useMemo(() => types.map((type) => type.code), [types]);
+  const validation = useMemo(
+    () => validateExpression(draft.expression, allowedCodes),
+    [draft.expression, allowedCodes],
   );
+  const scopeOptions = draft.scopeType === "cycle" ? cycles : levels;
 
-  const initial = useMemo<Record<string, EntityValue>>(
-    () => ({
-      name: editing?.name ?? "",
-      code: editing?.code ?? "",
-      scope_type: editing?.scopeType ?? "cycle",
-      cycle_id: editing?.scopeType === "cycle" ? editing.scopeId : "",
-      level_id: editing?.scopeType === "level" ? editing.scopeId : "",
-      rounding: editing?.rules.rounding ?? 2,
-      expression: editing?.rules.expression ?? "",
-    }),
-    [editing, types],
-  );
+  const openEditor = (row?: VersionedFormulaListItem) => {
+    const next = row
+      ? {
+          name: row.name,
+          code: row.code,
+          scopeType: row.scopeType ?? ("cycle" as ScopeType),
+          scopeId: row.scopeId ?? "",
+          expression: row.rules.expression,
+          rounding: row.rules.rounding ?? 2,
+        }
+      : emptyDraft;
+    setEditing(row ?? null);
+    setDraft(next);
+    setTestValues(Object.fromEntries(types.map((type) => [type.code, 10])));
+    setTestResult(undefined);
+    setTestError("");
+  };
 
-  const submit = async (values: Record<string, EntityValue>) => {
-    if (!year) return;
-    const scopeType = String(values.scope_type) as "cycle" | "level";
-    const scopeId = String(
-      values[scopeType === "cycle" ? "cycle_id" : "level_id"] ?? "",
+  const closeEditor = () => {
+    if (!saving) setEditing(undefined);
+  };
+
+  const insertVariable = (code: string) => {
+    const textarea = expressionRef.current;
+    const start = textarea?.selectionStart ?? draft.expression.length;
+    const end = textarea?.selectionEnd ?? start;
+    const before = draft.expression.slice(0, start);
+    const after = draft.expression.slice(end);
+    const value = `${before}${before && !/[\s(+\-*/]$/.test(before) ? " " : ""}${code}${after && !/^[\s)+\-*/]/.test(after) ? " " : ""}${after}`;
+    setDraft((current) => ({ ...current, expression: value }));
+    setTestResult(undefined);
+    requestAnimationFrame(() => textarea?.focus());
+  };
+
+  const runTest = () => {
+    setTestResult(undefined);
+    setTestError("");
+    if (!validation.valid) {
+      setTestError(validation.error);
+      return;
+    }
+    const referenced = new Set(listFormulaVariables(draft.expression));
+    const result = calculateCourseAverage(
+      types
+        .filter((type) => referenced.has(type.code))
+        .map((type) => ({
+          value: testValues[type.code] ?? 0,
+          scale: 20,
+          assessmentTypeCode: type.code,
+        })),
+      { expression: draft.expression, rounding: draft.rounding },
     );
-    const expression = String(values.expression ?? "").trim();
-    const validation = calculateCourseAverage(
-      types.map((type) => ({
-        value: 10,
-        scale: 20,
-        assessmentTypeCode: type.code,
-      })),
-      { expression, rounding: Number(values.rounding) },
-    );
-    if (!expression || validation.error) {
+    if (result.error || result.missingTypeCodes.length) {
+      setTestError(
+        result.error ??
+          `Valeur manquante : ${result.missingTypeCodes.join(", ")}`,
+      );
+    } else if (result.average !== null) setTestResult(result.average);
+  };
+
+  const submit = async () => {
+    if (!year || editing === undefined) return;
+    if (
+      !draft.name.trim() ||
+      !draft.code.trim() ||
+      !draft.scopeId ||
+      !validation.valid
+    ) {
       notify({
         severity: "error",
-        summary: "Formule invalide",
-        detail: validation.error ?? "Saisissez une expression.",
+        summary: "Formulaire incomplet",
+        detail: !validation.valid
+          ? validation.error
+          : "Renseignez le nom, le code et le périmètre.",
       });
       return;
     }
@@ -168,12 +207,12 @@ export function GradingFormulasSettingsPage() {
         institutionId,
         yearId: year.id,
         seriesId: editing?.seriesId,
-        name: String(values.name),
-        code: String(values.code).toUpperCase(),
-        scopeType,
-        scopeId,
-        rounding: Number(values.rounding),
-        expression,
+        name: draft.name.trim(),
+        code: draft.code.trim().toUpperCase(),
+        scopeType: draft.scopeType,
+        scopeId: draft.scopeId,
+        rounding: draft.rounding,
+        expression: draft.expression.trim(),
       });
       setEditing(undefined);
       await load();
@@ -183,12 +222,11 @@ export function GradingFormulasSettingsPage() {
           ? "Nouvelle version créée et appliquée"
           : "Formule créée et appliquée",
       });
-    } catch {
+    } catch (error) {
       notify({
         severity: "error",
         summary: "Enregistrement impossible",
-        detail:
-          "Vérifiez le périmètre et les poids. Une seule formule active est autorisée par périmètre.",
+        detail: formulaErrorMessage(error),
       });
     } finally {
       setSaving(false);
@@ -211,8 +249,12 @@ export function GradingFormulasSettingsPage() {
         severity: "success",
         summary: `Version v${row.version} réactivée`,
       });
-    } catch {
-      notify({ severity: "error", summary: "Réactivation impossible" });
+    } catch (error) {
+      notify({
+        severity: "error",
+        summary: "Réactivation impossible",
+        detail: formulaErrorMessage(error),
+      });
     } finally {
       setSaving(false);
     }
@@ -225,13 +267,21 @@ export function GradingFormulasSettingsPage() {
         text="Sélectionnez une année scolaire avant de configurer les formules."
       />
     );
+  const canSubmit =
+    editable &&
+    !saving &&
+    draft.name.trim() &&
+    draft.code.trim() &&
+    draft.scopeId &&
+    validation.valid;
+
   return (
     <>
       <SettingsTablePanel
         sectionHeader={
           <PageHeader
             title="Formules de calcul"
-            description="Versionnez une expression de calcul utilisant les types de note comme variables, puis appliquez-la à un cycle ou à un niveau."
+            description="Créez une expression avec les codes des types de note, testez-la, puis appliquez sa version à un cycle ou un niveau."
             headingAs="h2"
             compact
           />
@@ -240,7 +290,7 @@ export function GradingFormulasSettingsPage() {
           !types.length ? (
             <Message
               severity="warn"
-              text="Activez d’abord les types de note du catalogue GeeCole : ils constituent les variables de la formule."
+              text="Activez d’abord les types de note : leurs codes deviennent les variables de la formule."
             />
           ) : undefined
         }
@@ -251,7 +301,7 @@ export function GradingFormulasSettingsPage() {
               icon="pi pi-plus"
               size="small"
               disabled={!editable || !types.length}
-              onClick={() => setEditing(null)}
+              onClick={() => openEditor()}
             />
           </div>
         }
@@ -262,6 +312,7 @@ export function GradingFormulasSettingsPage() {
             size="small"
             stripedRows
             emptyMessage="Aucune formule versionnée"
+            responsiveLayout="scroll"
           >
             <Column field="name" header="Formule" />
             <Column field="code" header="Code" />
@@ -275,7 +326,7 @@ export function GradingFormulasSettingsPage() {
               )}
             />
             <Column
-              header="Périmètre actif"
+              header="Périmètre"
               body={(row: VersionedFormulaListItem) =>
                 row.scopeType
                   ? `${row.scopeType === "level" ? "Niveau" : "Cycle"} — ${[...cycles, ...levels].find((item) => item.value === row.scopeId)?.label ?? "—"}`
@@ -291,14 +342,14 @@ export function GradingFormulasSettingsPage() {
             <Column
               header="Actions"
               body={(row: VersionedFormulaListItem) => (
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1">
                   <Button
                     label="Nouvelle version"
                     icon="pi pi-copy"
                     text
                     size="small"
                     disabled={!editable}
-                    onClick={() => setEditing(row)}
+                    onClick={() => openEditor(row)}
                   />
                   {!row.assignmentId && row.scopeType && (
                     <Button
@@ -316,18 +367,277 @@ export function GradingFormulasSettingsPage() {
           </DataTable>
         }
       />
-      <SettingsEntityDialog
+      <Dialog
         header={
           editing ? `Nouvelle version de ${editing.name}` : "Nouvelle formule"
         }
         visible={editing !== undefined}
-        loading={saving}
-        fields={fields}
-        initial={initial}
-        columns={2}
-        onHide={() => setEditing(undefined)}
-        onSubmit={submit}
-      />
+        modal
+        className="w-[min(96vw,64rem)]"
+        onHide={closeEditor}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              label="Annuler"
+              severity="secondary"
+              outlined
+              disabled={saving}
+              onClick={closeEditor}
+            />
+            <Button
+              label="Enregistrer et appliquer"
+              icon="pi pi-check"
+              loading={saving}
+              disabled={!canSubmit}
+              onClick={() => void submit()}
+            />
+          </div>
+        }
+      >
+        <div className="grid gap-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Nom *">
+              <InputText
+                value={draft.name}
+                className="w-full"
+                disabled={Boolean(editing)}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, name: e.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Code *">
+              <InputText
+                value={draft.code}
+                className="w-full uppercase"
+                disabled={Boolean(editing)}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    code: e.target.value.toUpperCase(),
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Appliquer à *">
+              <Dropdown
+                value={draft.scopeType}
+                options={[
+                  { label: "Un cycle", value: "cycle" },
+                  { label: "Un niveau (prioritaire)", value: "level" },
+                ]}
+                className="w-full"
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    scopeType: e.value as ScopeType,
+                    scopeId: "",
+                  }))
+                }
+              />
+            </Field>
+            <Field label={draft.scopeType === "cycle" ? "Cycle *" : "Niveau *"}>
+              <Dropdown
+                value={draft.scopeId}
+                options={scopeOptions}
+                filter
+                className="w-full"
+                placeholder="Sélectionner"
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, scopeId: String(e.value) }))
+                }
+              />
+            </Field>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
+            <Field label="Expression *">
+              <textarea
+                ref={expressionRef}
+                value={draft.expression}
+                rows={6}
+                spellCheck={false}
+                className={`w-full resize-y rounded-md border px-3 py-2 font-mono text-sm outline-none ${validation.valid ? "border-slate-300" : "border-rose-400"}`}
+                placeholder="(DEVOIR + COMPO * 2) / 3"
+                onChange={(e) => {
+                  setDraft((d) => ({
+                    ...d,
+                    expression: e.target.value.toUpperCase(),
+                  }));
+                  setTestResult(undefined);
+                  setTestError("");
+                }}
+              />
+              <small
+                className={
+                  validation.valid ? "text-emerald-700" : "text-rose-700"
+                }
+              >
+                {validation.valid ? "Expression valide." : validation.error}
+              </small>
+            </Field>
+            <div>
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Variables disponibles
+              </span>
+              <div className="flex min-h-32 flex-wrap content-start gap-2 rounded-lg border border-slate-200 p-3">
+                {types.map((type) => (
+                  <Button
+                    key={type.id}
+                    type="button"
+                    label={type.code}
+                    size="small"
+                    outlined
+                    tooltip={`${type.name} · barème /${type.scale}`}
+                    onClick={() => insertVariable(type.code)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <Field label="Nombre de décimales">
+            <InputNumber
+              value={draft.rounding}
+              min={0}
+              max={4}
+              className="w-full md:w-48"
+              onValueChange={(e) =>
+                setDraft((d) => ({ ...d, rounding: e.value ?? 2 }))
+              }
+            />
+          </Field>
+          <section className="rounded-xl border border-slate-200 p-4">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="m-0 text-sm font-semibold">Tester la formule</h3>
+                <p className="mb-0 mt-1 text-xs text-slate-500">
+                  Renseignez les valeurs simulées des types utilisés dans
+                  l’expression.
+                </p>
+              </div>
+              <Button
+                type="button"
+                label="Tester"
+                icon="pi pi-play"
+                size="small"
+                outlined
+                disabled={!validation.valid}
+                onClick={runTest}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {types
+                .filter((type) => validation.variables.includes(type.code))
+                .map((type) => (
+                  <Field key={type.id} label={`${type.code} — ${type.name}`}>
+                    <InputNumber
+                      value={testValues[type.code] ?? 10}
+                      min={0}
+                      max={20}
+                      maxFractionDigits={2}
+                      className="w-full"
+                      inputClassName="w-full"
+                      onValueChange={(e) => {
+                        setTestValues((v) => ({
+                          ...v,
+                          [type.code]: e.value ?? 0,
+                        }));
+                        setTestResult(undefined);
+                      }}
+                    />
+                  </Field>
+                ))}
+            </div>
+            {testResult !== undefined && (
+              <Message
+                className="mt-4 w-full"
+                severity="success"
+                text={`Résultat : ${testResult.toLocaleString("fr-FR", { maximumFractionDigits: 4 })} / 20`}
+              />
+            )}
+            {testError && (
+              <Message
+                className="mt-4 w-full"
+                severity="error"
+                text={testError}
+              />
+            )}
+          </section>
+        </div>
+      </Dialog>
     </>
   );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function validateExpression(
+  expression: string,
+  allowedCodes: string[],
+): { valid: boolean; error: string; variables: string[] } {
+  if (!expression.trim())
+    return {
+      valid: false,
+      error: "L’expression est obligatoire.",
+      variables: [],
+    };
+  try {
+    const variables = listFormulaVariables(expression);
+    const unknown = variables.filter((code) => !allowedCodes.includes(code));
+    if (unknown.length)
+      return {
+        valid: false,
+        error: `Variable inconnue : ${unknown.join(", ")}.`,
+        variables,
+      };
+    const result = calculateCourseAverage(
+      variables.map((code) => ({
+        value: 10,
+        scale: 20,
+        assessmentTypeCode: code,
+      })),
+      { expression, rounding: 2 },
+    );
+    if (result.error) return { valid: false, error: result.error, variables };
+    return { valid: true, error: "", variables };
+  } catch (error) {
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : "Expression invalide.",
+      variables: [],
+    };
+  }
+}
+
+function formulaErrorMessage(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String(error.message)
+        : "";
+  if (message.includes("academic_year_configuration_locked"))
+    return "Les formules ne peuvent plus être modifiées pour cette année scolaire.";
+  if (
+    message.includes("grading_formula_series_year_code_key") ||
+    message.includes("duplicate key")
+  )
+    return "Ce code de formule existe déjà pour cette année.";
+  if (message.includes("grading_formula_assignment"))
+    return "Une formule active existe déjà sur ce périmètre. Rechargez la page puis réessayez.";
+  return message || "Une erreur technique empêche l’enregistrement.";
 }
