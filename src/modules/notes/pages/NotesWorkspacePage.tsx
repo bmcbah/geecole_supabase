@@ -125,6 +125,10 @@ export function NotesWorkspacePage() {
   }, [course, periods]);
   async function addNote() {
     if (!course || !periodId || !yearId) return;
+    const selectedType = types.find((type) => type.id === draft.noteTypeId);
+    if (!selectedType) return;
+    const typeSequence =
+      notes.filter((note) => note.note_type_id === selectedType.id).length + 1;
     try {
       await createGradebookNote({
         institutionId,
@@ -133,7 +137,7 @@ export function NotesWorkspacePage() {
         course,
         noteTypeId: draft.noteTypeId,
         label: draft.label,
-        code: draft.code,
+        code: `${selectedType.code}-${typeSequence}`,
         noteDate: draft.noteDate,
         comment: draft.comment,
       });
@@ -218,26 +222,6 @@ export function NotesWorkspacePage() {
           text={`${course?.subjectName ?? "Cours"} · ${course?.className ?? "Classe"} · ${selectedPeriod?.name ?? "Période"}`}
         />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Libellé *">
-            <InputText
-              value={draft.label}
-              onChange={(e) =>
-                setDraft((v) => ({ ...v, label: e.target.value }))
-              }
-              className="w-full"
-              placeholder="Devoir surveillé 1"
-            />
-          </Field>
-          <Field label="Code *">
-            <InputText
-              value={draft.code}
-              onChange={(e) =>
-                setDraft((v) => ({ ...v, code: e.target.value }))
-              }
-              className="w-full"
-              placeholder="DS1"
-            />
-          </Field>
           <Field label="Type d’évaluation *">
             <Dropdown
               value={draft.noteTypeId}
@@ -249,6 +233,17 @@ export function NotesWorkspacePage() {
                 setDraft((v) => ({ ...v, noteTypeId: String(e.value) }))
               }
               className="w-full"
+              placeholder="Choisir le type"
+            />
+          </Field>
+          <Field label="Nom de l’évaluation *">
+            <InputText
+              value={draft.label}
+              onChange={(e) =>
+                setDraft((v) => ({ ...v, label: e.target.value }))
+              }
+              className="w-full"
+              placeholder="Calcul mental – semaine 3"
             />
           </Field>
           <Field label="Date *">
@@ -284,9 +279,7 @@ export function NotesWorkspacePage() {
           <Button
             label="Créer l’évaluation"
             icon="pi pi-plus"
-            disabled={
-              !draft.label.trim() || !draft.code.trim() || !draft.noteTypeId
-            }
+            disabled={!draft.label.trim() || !draft.noteTypeId}
             onClick={() => void addNote()}
           />
         </div>
