@@ -106,8 +106,7 @@ begin
     (institution,'PER-2026-0005','Hawa','Sylla','female','1996-06-09','Conakry','Guinéenne','+224620000005',null,'hawa.sylla@geecole.local','Sonfonia, Conakry','Mamadou Sylla','+224621000005','CNI','GN-CNI-1005','2025-09-01','active','Enseignante vacataire payée à la séance.'),
     (institution,'PER-2026-0006','Moussa','Keita','male','1989-09-30','Siguiri','Guinéenne','+224620000006',null,'moussa.keita@geecole.local','Dabompa, Conakry','Nènè Keita','+224621000006','CNI','GN-CNI-1006','2024-01-15','active','Prestataire au forfait pour la maintenance.'),
     (institution,'PER-2026-0007','Nènè','Touré','female','1990-04-22','Boké','Guinéenne','+224620000007',null,'nene.toure@geecole.local','Cosa, Conakry','Mory Touré','+224621000007','CNI','GN-CNI-1007','2023-09-01','suspended','Dossier volontairement suspendu pour la recette.'),
-    (institution,'PER-2026-0008','Sékou','Soumah','male','1978-12-14','Dubréka','Guinéenne','+224620000008',null,'sekou.soumah@geecole.local','Dubréka','Kadiatou Soumah','+224621000008','CNI','GN-CNI-1008','2020-09-01','exited','Ancien agent conservé dans l’historique.')
-  returning id into employee_fixed;
+    (institution,'PER-2026-0008','Sékou','Soumah','male','1978-12-14','Dubréka','Guinéenne','+224620000008',null,'sekou.soumah@geecole.local','Dubréka','Kadiatou Soumah','+224621000008','CNI','GN-CNI-1008','2020-09-01','active','Ancien agent conservé dans l’historique.');
 
   select id into employee_fixed from public.employees where institution_id=institution and employee_number='PER-2026-0001';
   select id into employee_hourly from public.employees where institution_id=institution and employee_number='PER-2026-0002';
