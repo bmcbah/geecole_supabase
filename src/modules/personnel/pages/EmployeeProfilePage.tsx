@@ -207,42 +207,24 @@ export function EmployeeProfilePage() {
           </div>
         </div>
       </section>
-      <section className="grid gap-3 md:grid-cols-4">
-        <Metric
-          icon="pi-briefcase"
-          label="Contrat"
-          value={
-            activeContract
-              ? catalogLabel(activeContract.contract_type)
-              : "À compléter"
-          }
-        />
-        <Metric
-          icon="pi-wallet"
-          label="Rémunération"
-          value={
-            activeContract
-              ? compensation(activeContract.compensation_mode, activeContract)
-              : "Non définie"
-          }
-        />
-        <Metric
-          icon="pi-clock"
-          label="Heures validées"
-          value={`${Math.floor(validatedMinutes / 60)} h ${validatedMinutes % 60} min`}
-        />
-        <Metric
-          icon="pi-file"
-          label="Dossier"
-          value={
-            profile.identity_number
-              ? "Identité renseignée"
-              : "Pièce à compléter"
-          }
-        />
-      </section>
+      {(!activeContract || !profile.identity_number || !profile.email) && (
+        <section className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-amber-700 ring-1 ring-amber-200">
+            <i className="pi pi-exclamation-circle" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong className="text-sm text-amber-950">Dossier à compléter</strong>
+            <p className="m-0 mt-0.5 text-sm text-amber-800">
+              {[!activeContract && "contrat", !profile.identity_number && "pièce d’identité", !profile.email && "adresse e-mail"]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+          <Button label="Compléter la fiche" icon="pi pi-pencil" size="small" severity="warning" outlined onClick={() => setDialog("edit")} />
+        </section>
+      )}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <TabView className="[&_.p-tabview-panels]:p-5">
+        <TabView className="personnel-profile-tabs [&_.p-tabview-panels]:p-5">
           <TabPanel header="Informations">
             <div className="grid gap-x-8 gap-y-5 md:grid-cols-3">
               <Info

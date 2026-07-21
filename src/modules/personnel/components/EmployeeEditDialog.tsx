@@ -73,7 +73,7 @@ export function EmployeeEditDialog({
       header="Modifier la fiche Personnel"
       visible={visible}
       onHide={onHide}
-      className="w-[min(96vw,56rem)]"
+      className="personnel-form-dialog w-[min(96vw,56rem)]"
     >
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Prénoms *">

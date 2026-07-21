@@ -53,7 +53,7 @@ export function EmployeeRateDialog({
       header="Définir le taux horaire"
       visible={visible}
       onHide={onHide}
-      className="w-[min(96vw,34rem)]"
+      className="personnel-form-dialog w-[min(96vw,34rem)]"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">

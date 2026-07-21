@@ -69,7 +69,7 @@ export function EmployeeDocumentDialog({
       header="Ajouter un document"
       visible={visible}
       onHide={onHide}
-      className="w-[min(94vw,42rem)]"
+      className="personnel-form-dialog w-[min(94vw,42rem)]"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Type de document">

@@ -70,7 +70,7 @@ export function PayrollAdjustmentDialog({
       header="Ajouter une rubrique"
       visible={visible}
       onHide={onHide}
-      className="w-[min(94vw,38rem)]"
+      className="personnel-form-dialog w-[min(94vw,38rem)]"
     >
       <div className="space-y-4">
         <Field label="Sens de la rubrique">

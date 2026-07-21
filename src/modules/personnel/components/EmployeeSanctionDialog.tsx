@@ -61,7 +61,7 @@ export function EmployeeSanctionDialog({
       header="Enregistrer une sanction"
       visible={visible}
       onHide={onHide}
-      className="w-[min(94vw,42rem)]"
+      className="personnel-form-dialog w-[min(94vw,42rem)]"
     >
       <Message
         severity="warn"

@@ -60,7 +60,7 @@ export function PayrollPaymentDialog({
       header="Enregistrer un paiement"
       visible={visible}
       onHide={onHide}
-      className="w-[min(94vw,38rem)]"
+      className="personnel-form-dialog w-[min(94vw,38rem)]"
     >
       <Message
         severity="info"

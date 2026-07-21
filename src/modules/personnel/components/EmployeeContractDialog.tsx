@@ -88,7 +88,7 @@ export function EmployeeContractDialog({
       header="Ajouter un contrat"
       visible={visible}
       onHide={onHide}
-      className="w-[min(96vw,48rem)]"
+      className="personnel-form-dialog w-[min(96vw,48rem)]"
     >
       <p className="mt-0 text-sm text-slate-500">
         Le contrat peut être préparé en brouillon puis activé après contrôle.

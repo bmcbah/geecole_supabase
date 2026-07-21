@@ -140,3 +140,66 @@ section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
     padding: 1rem !important;
   }
 }
+
+/* Personnel : les formulaires sont des parcours lisibles, pas des grilles de champs sans hiérarchie. */
+.personnel-form-dialog .p-dialog-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid rgb(226 232 240);
+}
+
+.personnel-form-dialog .p-dialog-title {
+  font-size: 1.125rem;
+  color: rgb(15 23 42);
+}
+
+.personnel-form-dialog .p-dialog-content {
+  padding: 1.25rem 1.5rem 1.5rem;
+  background: rgb(248 250 252 / 0.55);
+}
+
+.personnel-form-dialog label {
+  min-width: 0;
+}
+
+.personnel-form-dialog label > span:first-child {
+  color: rgb(51 65 85);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.personnel-form-dialog .p-inputtext,
+.personnel-form-dialog .p-dropdown,
+.personnel-form-dialog .p-inputnumber,
+.personnel-form-dialog .p-inputnumber-input,
+.personnel-form-dialog .p-inputtextarea {
+  width: 100%;
+}
+
+.personnel-form-dialog section > div:first-child h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.personnel-form-dialog section > div:first-child p {
+  margin: 0.25rem 0 0;
+}
+
+.personnel-form-dialog .p-steps .p-steps-item::before {
+  top: 1rem;
+}
+
+.personnel-form-dialog .p-steps .p-menuitem-link {
+  background: transparent;
+}
+
+.personnel-profile-tabs .p-tabview-nav {
+  padding-inline: 0.75rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.personnel-profile-tabs .p-tabview-nav-link {
+  white-space: nowrap;
+  padding: 1rem 0.85rem;
+  font-size: 0.875rem;
+}

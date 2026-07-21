@@ -54,7 +54,7 @@ export function EmployeeFunctionDialog({
       header="Ajouter une fonction"
       visible={visible}
       onHide={onHide}
-      className="w-[min(94vw,34rem)]"
+      className="personnel-form-dialog w-[min(94vw,34rem)]"
     >
       <div className="space-y-4">
         <Field label="Fonction *">

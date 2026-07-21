@@ -43,7 +43,7 @@ export function EmployeeAccessDialog({
       header="Créer l’accès GeEcole"
       visible={visible}
       onHide={onHide}
-      className="w-[min(96vw,38rem)]"
+      className="personnel-form-dialog w-[min(96vw,38rem)]"
     >
       <p className="mt-0 text-sm text-slate-600">
         L’accès est créé par invitation pour{" "}

@@ -145,7 +145,7 @@ export function EmployeeCreateWizard({
       header="Ajouter un membre du personnel"
       visible={visible}
       modal
-      className="w-[min(96vw,58rem)]"
+      className="personnel-form-dialog w-[min(96vw,58rem)]"
       onHide={close}
       contentClassName="pt-2"
     >

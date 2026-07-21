@@ -34,8 +34,8 @@ export function PersonnelDashboardPage() {
   return (
     <div className="space-y-4 pb-8">
       <PageHeader
-        title="Pilotage du personnel"
-        description="Retrouvez les actions RH et de paie qui demandent votre attention."
+        title="Bonjour, que faut-il traiter ?"
+        description="Les priorités du personnel et de la paie, réunies au même endroit."
         actions={
           <Button
             label="Ajouter un employé"
@@ -45,7 +45,7 @@ export function PersonnelDashboardPage() {
         }
       />
       {error && <Message severity="error" text={error} />}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section aria-label="Raccourcis du module" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {data
           ? [
               ["Effectif actif", data.activeEmployees, "/personnel/employes"],
@@ -60,11 +60,12 @@ export function PersonnelDashboardPage() {
             ].map(([label, value, route]) => (
               <button
                 key={String(label)}
-                className="rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-300 hover:shadow"
+                className="group rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 onClick={() => navigate(String(route))}
               >
-                <span className="text-xs font-semibold uppercase text-slate-500">
+                <span className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {label}
+                  <i className="pi pi-arrow-up-right text-slate-300 transition group-hover:text-emerald-600" />
                 </span>
                 <strong className="mt-2 block text-2xl text-slate-900">
                   {value}
@@ -75,9 +76,10 @@ export function PersonnelDashboardPage() {
               <Skeleton key={index} height="6.5rem" borderRadius="0.75rem" />
             ))}
       </section>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(20rem,.75fr)]">
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="font-semibold text-slate-900">À traiter</h2>
+          <h2 className="font-semibold text-slate-900">Priorités</h2>
           <p className="mt-1 text-sm text-slate-500">
             Échéances et demandes classées par date.
           </p>
@@ -119,6 +121,25 @@ export function PersonnelDashboardPage() {
           ))}
         </div>
       </section>
+      <aside className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
+        <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Accès rapides</span>
+        <h2 className="mb-4 mt-1 text-lg font-semibold">Continuer mon travail</h2>
+        <div className="space-y-2">
+          {[
+            ["Consulter les employés", "pi-users", "/personnel/employes"],
+            ["Valider les heures", "pi-clock", "/personnel/heures"],
+            ["Traiter les congés", "pi-calendar-minus", "/personnel/conges"],
+            ["Préparer la paie", "pi-wallet", "/personnel/paie"],
+          ].map(([label, icon, route]) => (
+            <button key={route} className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left text-sm transition hover:border-emerald-400/50 hover:bg-white/10" onClick={() => navigate(route)}>
+              <i className={`pi ${icon} text-emerald-300`} />
+              <span className="flex-1">{label}</span>
+              <i className="pi pi-chevron-right text-xs text-slate-500" />
+            </button>
+          ))}
+        </div>
+      </aside>
+      </div>
     </div>
   );
 }

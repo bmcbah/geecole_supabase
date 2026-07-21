@@ -77,7 +77,7 @@ export function EmployeesPage() {
     <div className="space-y-4 pb-8">
       <PageHeader
         title="Personnel"
-        description="Dossiers administratifs, emplois, contrats et accès."
+        description="Recherchez une personne, consultez son dossier ou réalisez une action administrative."
         meta={
           <span className="text-sm text-slate-500">
             {filtered.length} sur {items.length} personne
@@ -117,7 +117,7 @@ export function EmployeesPage() {
           </div>
         }
       />
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-3 sm:grid-cols-3" aria-label="Synthèse de la liste">
         <Kpi label="Personnel actif" value={counts.active} icon="pi-users" />
         <Kpi
           label="Sans accès GeEcole"
@@ -130,7 +130,7 @@ export function EmployeesPage() {
           icon="pi-filter"
         />
       </section>
-      <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row">
+      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 lg:flex-row" aria-label="Filtres du personnel">
         <span className="p-input-icon-left min-w-0 flex-1">
           <i className="pi pi-search" />
           <InputText

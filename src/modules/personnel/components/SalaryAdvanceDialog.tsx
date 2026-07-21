@@ -56,7 +56,7 @@ export function SalaryAdvanceDialog({
       header="Nouvelle demande d’avance"
       visible={visible}
       onHide={onHide}
-      className="w-[min(94vw,38rem)]"
+      className="personnel-form-dialog w-[min(94vw,38rem)]"
     >
       <div className="space-y-4">
         <Field label="Type d’avance">
