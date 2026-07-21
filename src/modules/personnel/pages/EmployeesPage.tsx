@@ -12,12 +12,14 @@ import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { useToast } from "../../../shared/components/toast-context";
 import { EmployeeCreateWizard } from "../components/EmployeeCreateWizard";
+import { PersonnelDecisionDialog } from "../components/PersonnelDecisionDialog";
 import type { Employee, EmployeeStatus } from "../domain/personnel";
 import { employeeStatusLabels } from "../domain/personnel";
 import type { CatalogItem } from "../services/personnel.service";
 import {
   listEmployees,
   listPersonnelCatalog,
+  transitionEmployeeStatus,
 } from "../services/personnel.service";
 
 export function EmployeesPage() {
@@ -31,6 +33,10 @@ export function EmployeesPage() {
   const [status, setStatus] = useState<EmployeeStatus>();
   const [access, setAccess] = useState<boolean>();
   const [open, setOpen] = useState(false);
+  const [statusAction, setStatusAction] = useState<{
+    employee: Employee;
+    status: EmployeeStatus;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,7 +123,10 @@ export function EmployeesPage() {
           </div>
         }
       />
-      <section className="grid gap-3 sm:grid-cols-3" aria-label="Synthèse de la liste">
+      <section
+        className="grid gap-3 sm:grid-cols-3"
+        aria-label="Synthèse de la liste"
+      >
         <Kpi label="Personnel actif" value={counts.active} icon="pi-users" />
         <Kpi
           label="Sans accès GeEcole"
@@ -130,7 +139,10 @@ export function EmployeesPage() {
           icon="pi-filter"
         />
       </section>
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 lg:flex-row" aria-label="Filtres du personnel">
+      <section
+        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 lg:flex-row"
+        aria-label="Filtres du personnel"
+      >
         <span className="p-input-icon-left min-w-0 flex-1">
           <i className="pi pi-search" />
           <InputText
@@ -252,19 +264,57 @@ export function EmployeesPage() {
             )}
           />
           <Column
-            header=""
-            className="w-16"
+            header="Actions"
+            className="w-64"
             body={(x: Employee) => (
-              <Button
-                icon="pi pi-chevron-right"
-                text
-                rounded
-                aria-label={`Ouvrir la fiche de ${x.first_name} ${x.last_name}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void navigate(`/personnel/employes/${x.id}`);
-                }}
-              />
+              <div
+                className="flex flex-wrap justify-end gap-1"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {x.status === "suspended" && (
+                  <Button
+                    label="Activer"
+                    icon="pi pi-check"
+                    size="small"
+                    text
+                    severity="success"
+                    onClick={() =>
+                      setStatusAction({ employee: x, status: "active" })
+                    }
+                  />
+                )}
+                {x.status === "active" && (
+                  <Button
+                    label="Suspendre"
+                    icon="pi pi-pause"
+                    size="small"
+                    text
+                    severity="warning"
+                    onClick={() =>
+                      setStatusAction({ employee: x, status: "suspended" })
+                    }
+                  />
+                )}
+                {x.status !== "exited" && (
+                  <Button
+                    label="Désactiver"
+                    icon="pi pi-user-minus"
+                    size="small"
+                    text
+                    severity="danger"
+                    onClick={() =>
+                      setStatusAction({ employee: x, status: "exited" })
+                    }
+                  />
+                )}
+                <Button
+                  icon="pi pi-chevron-right"
+                  text
+                  rounded
+                  aria-label={`Ouvrir la fiche de ${x.first_name} ${x.last_name}`}
+                  onClick={() => void navigate(`/personnel/employes/${x.id}`)}
+                />
+              </div>
             )}
           />
         </DataTable>
@@ -284,6 +334,49 @@ export function EmployeesPage() {
           void navigate(`/personnel/employes/${employee.id}`);
         }}
       />
+      {statusAction && (
+        <PersonnelDecisionDialog
+          visible
+          title={
+            statusAction.status === "active"
+              ? "Activer le membre"
+              : statusAction.status === "suspended"
+                ? "Suspendre le membre"
+                : "Désactiver le membre"
+          }
+          description={`${statusAction.employee.first_name} ${statusAction.employee.last_name} passera à l’état « ${employeeStatusLabels[statusAction.status]} ». ${statusAction.status === "exited" ? "La sortie clôturera aussi les fonctions et contrats actifs." : "L’action sera enregistrée dans l’historique RH."}`}
+          confirmLabel={
+            statusAction.status === "active"
+              ? "Activer"
+              : statusAction.status === "suspended"
+                ? "Suspendre"
+                : "Confirmer la sortie"
+          }
+          severity={
+            statusAction.status === "active"
+              ? "success"
+              : statusAction.status === "suspended"
+                ? "warning"
+                : "danger"
+          }
+          commentLabel={
+            statusAction.status === "exited" ? "Motif de sortie" : "Motif"
+          }
+          onHide={() => setStatusAction(null)}
+          onConfirm={async ({ comment }) => {
+            await transitionEmployeeStatus({
+              employeeId: statusAction.employee.id,
+              status: statusAction.status,
+              motive: comment,
+            });
+            notify({
+              severity: "success",
+              summary: "État du personnel mis à jour",
+            });
+            await load();
+          }}
+        />
+      )}
     </div>
   );
 }

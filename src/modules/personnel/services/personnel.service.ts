@@ -2,6 +2,7 @@ import { supabase } from "../../../shared/lib/supabase/client";
 import type {
   CompensationMode,
   Employee,
+  EmployeeStatus,
   EmployeeSanction,
   EmployeeProfile,
   LeaveRequest,
@@ -88,6 +89,23 @@ export async function listEmployees(
     .order("last_name");
   fail(error);
   return (data ?? []) as Employee[];
+}
+export async function transitionEmployeeStatus(input: {
+  employeeId: string;
+  status: EmployeeStatus;
+  effectiveOn?: string;
+  motive?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "transition_employee_status" as never,
+    {
+      target_employee_id: input.employeeId,
+      target_status: input.status,
+      effective_on: input.effectiveOn || new Date().toISOString().slice(0, 10),
+      motive: input.motive || null,
+    } as never,
+  );
+  fail(error);
 }
 export type CreateEmployeeInput = Partial<
   Omit<
@@ -355,6 +373,23 @@ export async function listSalaryAdvances(institutionId: string) {
   fail(error);
   return (data ?? []) as SalaryAdvance[];
 }
+export async function transitionSalaryAdvance(input: {
+  advanceId: string;
+  status: "approved" | "rejected" | "paid" | "settled" | "cancelled";
+  approvedAmount?: number;
+  comment?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "transition_salary_advance" as never,
+    {
+      target_advance_id: input.advanceId,
+      target_status: input.status,
+      approved_amount: input.approvedAmount ?? null,
+      comment: input.comment || null,
+    } as never,
+  );
+  fail(error);
+}
 export async function createEmployeeSanction(input: {
   institution_id: string;
   employee_id: string;
@@ -381,6 +416,21 @@ export async function listEmployeeSanctions(institutionId: string) {
     .order("incident_on", { ascending: false });
   fail(error);
   return (data ?? []) as EmployeeSanction[];
+}
+export async function transitionEmployeeSanction(input: {
+  sanctionId: string;
+  status: "notified" | "contested" | "closed" | "cancelled";
+  decision?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "transition_employee_sanction" as never,
+    {
+      target_sanction_id: input.sanctionId,
+      target_status: input.status,
+      decision_text: input.decision || null,
+    } as never,
+  );
+  fail(error);
 }
 export async function createPayrollAdjustment(input: {
   institution_id: string;

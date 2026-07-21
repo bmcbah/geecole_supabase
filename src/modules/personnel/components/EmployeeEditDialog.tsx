@@ -69,12 +69,6 @@ export function EmployeeEditDialog({
         identity_type: form.identity_type,
         identity_number: form.identity_number,
         identity_expires_on: form.identity_expires_on || null,
-        status: form.status,
-        exited_on:
-          form.status === "exited"
-            ? form.exited_on || new Date().toISOString().slice(0, 10)
-            : null,
-        exit_reason: form.status === "exited" ? form.exit_reason : null,
         notes: form.notes,
       });
       await onSaved();
@@ -185,34 +179,6 @@ export function EmployeeEditDialog({
             onChange={(e) => set("identity_number", e.target.value)}
           />
         </Field>
-        <Field label="État">
-          <Dropdown
-            value={form.status}
-            options={[
-              { label: "Actif", value: "active" },
-              { label: "Suspendu", value: "suspended" },
-              { label: "Sorti", value: "exited" },
-            ]}
-            onChange={(e) => set("status", e.value)}
-          />
-        </Field>
-        {form.status === "exited" && (
-          <>
-            <Field label="Date de sortie *">
-              <InputText
-                type="date"
-                value={form.exited_on || ""}
-                onChange={(e) => set("exited_on", e.target.value)}
-              />
-            </Field>
-            <Field label="Motif de sortie">
-              <InputText
-                value={form.exit_reason || ""}
-                onChange={(e) => set("exit_reason", e.target.value)}
-              />
-            </Field>
-          </>
-        )}
         <Field label="Notes">
           <InputTextarea
             rows={2}
