@@ -616,6 +616,13 @@ function validateExpression(
       { expression, rounding: 2 },
     );
     if (result.error) return { valid: false, error: result.error, variables };
+    if (result.average !== 10)
+      return {
+        valid: false,
+        error:
+          "La formule n’est pas une moyenne cohérente : lorsque toutes les variables valent 10, le résultat doit être 10. Vérifiez notamment que le dénominateur correspond à la somme des pondérations.",
+        variables,
+      };
     return { valid: true, error: "", variables };
   } catch (error) {
     return {
