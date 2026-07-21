@@ -106,4 +106,124 @@ select '20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000
 insert into public.subject_appreciations (institution_id,academic_year_id,period_id,class_id,subject_id,student_id,appreciation,author_id)
 select '20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002',p.id,'30000000-0000-0000-0000-000000000002','42000000-0000-0000-0000-000000000002','31000000-0000-0000-0000-000000000007','Très bon trimestre, expression écrite précise.','41000000-0000-0000-0000-000000000002' from public.academic_periods p where p.academic_year_id='25000000-0000-0000-0000-000000000002' and p.cycle_id='23000000-0000-0000-0000-000000000002' and p.sequence=1;
 insert into public.pedagogical_settings (institution_id,academic_year_id,appreciations_required,ranking_displayed,coefficients_displayed,average_decimal_places,bulletin_title,bulletin_footer) values ('20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002',true,true,true,2,'Bulletin de résultats','Groupe scolaire GeeCole · Conakry');
+
+-- Activate the full GeeCole assessment catalogue locally so every formula
+-- variable can be exercised from the Settings and Notes screens.
+insert into public.assessment_types (
+  institution_id, academic_year_id, catalog_id, name, code, weight, scale, is_active
+)
+select
+  '20000000-0000-0000-0000-000000000001',
+  '25000000-0000-0000-0000-000000000002',
+  catalog.id, catalog.name, catalog.code, 1, catalog.default_scale, true
+from public.assessment_type_catalog catalog
+where catalog.is_active
+on conflict (academic_year_id, code) do nothing;
+
+-- Composition notes exercise expressions mixing INTERRO, DEVOIR and COMPO.
+insert into public.gradebook_notes (
+  id,institution_id,academic_year_id,class_id,subject_id,period_id,note_type_id,
+  teacher_id,label,code,note_date,is_published
+)
+select
+  note.id,
+  '20000000-0000-0000-0000-000000000001',
+  '25000000-0000-0000-0000-000000000002',
+  note.class_id,
+  note.subject_id,
+  period.id,
+  assessment_type.id,
+  note.teacher_id,
+  note.label,
+  note.code,
+  note.note_date,
+  true
+from (values
+  ('45000000-0000-0000-0000-000000000007'::uuid,'30000000-0000-0000-0000-000000000001'::uuid,'42000000-0000-0000-0000-000000000001'::uuid,'41000000-0000-0000-0000-000000000001'::uuid,'Composition de mathématiques','COMPO-MATH-P1','2025-12-10'::date,'23000000-0000-0000-0000-000000000001'::uuid),
+  ('45000000-0000-0000-0000-000000000008'::uuid,'30000000-0000-0000-0000-000000000002'::uuid,'42000000-0000-0000-0000-000000000002'::uuid,'41000000-0000-0000-0000-000000000002'::uuid,'Composition de français','COMPO-FR-P1','2025-12-11'::date,'23000000-0000-0000-0000-000000000002'::uuid)
+) as note(id,class_id,subject_id,teacher_id,label,code,note_date,cycle_id)
+join public.academic_periods period
+  on period.academic_year_id='25000000-0000-0000-0000-000000000002'
+ and period.cycle_id=note.cycle_id and period.sequence=1
+join public.assessment_types assessment_type
+  on assessment_type.academic_year_id='25000000-0000-0000-0000-000000000002'
+ and assessment_type.code='COMPO';
+
+insert into public.note_results (institution_id,note_id,student_id,value,status,comment) values
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000007','31000000-0000-0000-0000-000000000001',15.5,null,'Très bon ensemble'),
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000007','31000000-0000-0000-0000-000000000005',14,null,'Résultats solides'),
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000007','31000000-0000-0000-0000-000000000006',10,null,'Progrès attendus en calcul'),
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000002',12.5,null,'Expression correcte'),
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000007',16.5,null,'Excellente copie'),
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000008',null,'postponed','Composition de remplacement à programmer');
+
+-- Two immutable formula series, including a second version and a level override,
+-- exercise cycle fallback, level priority, history and reactivation screens.
+insert into public.grading_formula_series (
+  id,institution_id,academic_year_id,code,name,formula_type,description
+) values
+ ('47000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','FORMULE_PRIMAIRE','Formule primaire','course_average','Moyenne continue et composition'),
+ ('47000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','FORMULE_COLLEGE','Formule collège','course_average','Formule commune du collège');
+
+insert into public.grading_formula_versions (
+  id,institution_id,academic_year_id,series_id,version,rules,created_by
+) values
+ ('47100000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47000000-0000-0000-0000-000000000001',1,'{"expression":"(INTERRO + DEVOIR + COMPO * 2) / 4","rounding":2}','10000000-0000-0000-0000-000000000001'),
+ ('47100000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47000000-0000-0000-0000-000000000001',2,'{"expression":"(INTERRO + DEVOIR * 2 + COMPO * 2) / 5","rounding":2}','10000000-0000-0000-0000-000000000001'),
+ ('47100000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47000000-0000-0000-0000-000000000002',1,'{"expression":"(INTERRO + DEVOIR + COMPO * 2) / 4","rounding":2}','10000000-0000-0000-0000-000000000001');
+
+insert into public.grading_formula_assignments (
+  id,institution_id,academic_year_id,formula_version_id,cycle_id,academic_year_level_id,is_active
+) values
+ ('47200000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47100000-0000-0000-0000-000000000001','23000000-0000-0000-0000-000000000001',null,false),
+ ('47200000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47100000-0000-0000-0000-000000000002','23000000-0000-0000-0000-000000000001',null,true),
+ ('47200000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47100000-0000-0000-0000-000000000003','23000000-0000-0000-0000-000000000002',null,true),
+ ('47200000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','47100000-0000-0000-0000-000000000003',null,'28000000-0000-0000-0000-000000000004',true);
+
+-- Responsibility fixtures populate the list and cover holder, deputy and acting
+-- capacities using the catalogue installed by the migration.
+insert into public.cycle_responsibilities (
+  id,institution_id,academic_year_id,cycle_id,responsibility_type_id,person_id,
+  capacity,starts_on,ends_on,replaced_person_id,status
+)
+select fixture.id,'20000000-0000-0000-0000-000000000001',
+       '25000000-0000-0000-0000-000000000002',fixture.cycle_id,
+       responsibility_type.id,fixture.person_id,fixture.capacity,
+       fixture.starts_on,fixture.ends_on,fixture.replaced_person_id,'active'
+from (values
+ ('48000000-0000-0000-0000-000000000001'::uuid,'23000000-0000-0000-0000-000000000001'::uuid,'CYCLE_MANAGER','41000000-0000-0000-0000-000000000001'::uuid,'holder','2025-09-01'::date,null::date,null::uuid),
+ ('48000000-0000-0000-0000-000000000002'::uuid,'23000000-0000-0000-0000-000000000001'::uuid,'PEDAGOGICAL_MANAGER','41000000-0000-0000-0000-000000000002'::uuid,'deputy','2025-09-01'::date,null::date,null::uuid),
+ ('48000000-0000-0000-0000-000000000003'::uuid,'23000000-0000-0000-0000-000000000002'::uuid,'PRINCIPAL','41000000-0000-0000-0000-000000000002'::uuid,'holder','2025-09-01'::date,null::date,null::uuid),
+ ('48000000-0000-0000-0000-000000000004'::uuid,'23000000-0000-0000-0000-000000000002'::uuid,'CENSEUR','41000000-0000-0000-0000-000000000001'::uuid,'acting','2025-11-01'::date,'2025-11-30'::date,'41000000-0000-0000-0000-000000000002'::uuid)
+) as fixture(id,cycle_id,type_code,person_id,capacity,starts_on,ends_on,replaced_person_id)
+join public.cycle_responsibility_types responsibility_type
+  on responsibility_type.institution_id='20000000-0000-0000-0000-000000000001'
+ and responsibility_type.code=fixture.type_code;
+
+-- Generation history covers completed, partial, published, validation and
+-- blocked states. Snapshots expose formula metadata and ranking in previews.
+insert into public.bulletin_generation_batches (
+  id,institution_id,academic_year_id,period_id,scope_type,scope_ids,options,status,
+  total_count,generated_count,warning_count,blocked_count,initiated_by,completed_at
+) values
+ ('49000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','46000000-0000-0000-0000-000000000001','class',array['30000000-0000-0000-0000-000000000001'::uuid],'{"ranking":true,"appreciations":true}','completed',3,3,0,0,'10000000-0000-0000-0000-000000000001',now()),
+ ('49000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','46000000-0000-0000-0000-000000000004','class',array['30000000-0000-0000-0000-000000000002'::uuid],'{"ranking":true,"appreciations":true}','partial',3,2,0,1,'10000000-0000-0000-0000-000000000001',now());
+
+insert into public.bulletin_versions (
+  id,institution_id,academic_year_id,period_id,enrollment_id,student_id,class_id,
+  batch_id,version,status,snapshot,validated_by,validated_at,published_by,published_at
+) values
+ ('49100000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','46000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000001','31000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001',1,'published','{"student_name":"Aminata Diallo","general_average":15.25,"rank":1,"class_size":3,"formula":{"version":2,"scope":"cycle","expression":"(INTERRO + DEVOIR * 2 + COMPO * 2) / 5"}}','10000000-0000-0000-0000-000000000001',now(),'10000000-0000-0000-0000-000000000001',now()),
+ ('49100000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','46000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000005','31000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001',1,'validated','{"student_name":"Fatoumata Barry","general_average":14.00,"rank":2,"class_size":3,"formula":{"version":2,"scope":"cycle","expression":"(INTERRO + DEVOIR * 2 + COMPO * 2) / 5"}}','10000000-0000-0000-0000-000000000001',now(),null,null),
+ ('49100000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','46000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000006','31000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001',1,'pending_validation','{"student_name":"Mamadou Soumah","general_average":9.75,"rank":3,"class_size":3,"formula":{"version":2,"scope":"cycle","expression":"(INTERRO + DEVOIR * 2 + COMPO * 2) / 5"}}',null,null,null,null);
+
+insert into public.bulletin_generation_items (
+  id,institution_id,batch_id,enrollment_id,student_id,class_id,status,issue_code,
+  message,bulletin_version_id
+) values
+ ('49200000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000001','31000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','generated',null,null,'49100000-0000-0000-0000-000000000001'),
+ ('49200000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000005','31000000-0000-0000-0000-000000000005','30000000-0000-0000-0000-000000000001','generated',null,null,'49100000-0000-0000-0000-000000000002'),
+ ('49200000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000001','33000000-0000-0000-0000-000000000006','31000000-0000-0000-0000-000000000006','30000000-0000-0000-0000-000000000001','generated',null,null,'49100000-0000-0000-0000-000000000003'),
+ ('49200000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000002','33000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000008','30000000-0000-0000-0000-000000000002','blocked','postponed_result','Composition de remplacement non saisie',null);
+
 commit;
