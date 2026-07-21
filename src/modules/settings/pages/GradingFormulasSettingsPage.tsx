@@ -36,8 +36,8 @@ type Token =
   | { kind: "number"; value: number; position: number }
   | { kind: "variable"; value: string; position: number }
   | { kind: "operator"; value: "+" | "-" | "*" | "/"; position: number }
-  | { kind: "left"; position: number }
-  | { kind: "right"; position: number };
+  | { kind: "left"; value?: never; position: number }
+  | { kind: "right"; value?: never; position: number };
 
 const emptyDraft: FormulaDraft = {
   name: "",
