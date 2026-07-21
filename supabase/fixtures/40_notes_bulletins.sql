@@ -80,7 +80,10 @@ from (values
  ('45000000-0000-0000-0000-000000000006'::uuid,'30000000-0000-0000-0000-000000000002'::uuid,'42000000-0000-0000-0000-000000000002'::uuid,'43000000-0000-0000-0000-000000000002'::uuid,'41000000-0000-0000-0000-000000000002'::uuid,'Compréhension de texte','DEVOIR-2','2025-11-12'::date,'23000000-0000-0000-0000-000000000002'::uuid)
 ) as v(id,class_id,subject_id,type_id,teacher_id,label,code,note_date,cycle_id)
 join public.academic_periods p on p.academic_year_id='25000000-0000-0000-0000-000000000002' and p.cycle_id=v.cycle_id and p.sequence=1;
-insert into public.note_results (institution_id,note_id,student_id,value,status,comment) values
+insert into public.note_results (institution_id,note_id,student_id,value,status,comment)
+select fixture.institution_id::uuid,fixture.note_id::uuid,fixture.student_id::uuid,
+       fixture.value::numeric,fixture.status::public.note_result_status,fixture.comment
+from (values
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000001','31000000-0000-0000-0000-000000000001',16,null,'Très bonne maîtrise'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000003','31000000-0000-0000-0000-000000000001',13.5,null,'Raisonnement juste, calcul à consolider'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000004','31000000-0000-0000-0000-000000000001',null,'absent','Absence justifiée'),
@@ -96,7 +99,10 @@ insert into public.note_results (institution_id,note_id,student_id,value,status,
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000005','31000000-0000-0000-0000-000000000007',16,null,'Maîtrise solide'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000006','31000000-0000-0000-0000-000000000007',14.5,null,null),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000002','31000000-0000-0000-0000-000000000008',8,null,'Production incomplète'),
- ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000005','31000000-0000-0000-0000-000000000008',null,'absent','Absence justifiée');
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000005','31000000-0000-0000-0000-000000000008',null,'absent','Absence justifiée')
+) as fixture(institution_id,note_id,student_id,value,status,comment)
+join public.gradebook_notes note on note.id=fixture.note_id::uuid
+where note.institution_id=fixture.institution_id::uuid;
 insert into public.subject_appreciations (institution_id,academic_year_id,period_id,class_id,subject_id,student_id,appreciation,author_id)
 select '20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002',p.id,'30000000-0000-0000-0000-000000000001','42000000-0000-0000-0000-000000000001','31000000-0000-0000-0000-000000000001','Ensemble solide, poursuivre les efforts de rédaction.','41000000-0000-0000-0000-000000000001' from public.academic_periods p where p.academic_year_id='25000000-0000-0000-0000-000000000002' and p.cycle_id='23000000-0000-0000-0000-000000000001' and p.sequence=1;
 insert into public.subject_appreciations (institution_id,academic_year_id,period_id,class_id,subject_id,student_id,appreciation,author_id)
@@ -149,13 +155,19 @@ join public.assessment_types assessment_type
   on assessment_type.academic_year_id='25000000-0000-0000-0000-000000000002'
  and assessment_type.code='COMPO';
 
-insert into public.note_results (institution_id,note_id,student_id,value,status,comment) values
+insert into public.note_results (institution_id,note_id,student_id,value,status,comment)
+select fixture.institution_id::uuid,fixture.note_id::uuid,fixture.student_id::uuid,
+       fixture.value::numeric,fixture.status::public.note_result_status,fixture.comment
+from (values
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000007','31000000-0000-0000-0000-000000000001',15.5,null,'Très bon ensemble'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000007','31000000-0000-0000-0000-000000000005',14,null,'Résultats solides'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000007','31000000-0000-0000-0000-000000000006',10,null,'Progrès attendus en calcul'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000002',12.5,null,'Expression correcte'),
  ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000007',16.5,null,'Excellente copie'),
- ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000008',null,'postponed','Composition de remplacement à programmer');
+ ('20000000-0000-0000-0000-000000000001','45000000-0000-0000-0000-000000000008','31000000-0000-0000-0000-000000000008',null,'postponed','Composition de remplacement à programmer')
+) as fixture(institution_id,note_id,student_id,value,status,comment)
+join public.gradebook_notes note on note.id=fixture.note_id::uuid
+where note.institution_id=fixture.institution_id::uuid;
 
 -- Two immutable formula series, including a second version and a level override,
 -- exercise cycle fallback, level priority, history and reactivation screens.
