@@ -169,6 +169,26 @@ export async function setWorkEntryStatus(
     .eq("id", id);
   fail(error);
 }
+export async function createWorkEntry(input: {
+  institution_id: string;
+  employee_id: string;
+  work_type_item_id?: string;
+  work_date: string;
+  minutes: number;
+  quantity?: number;
+  rate?: number;
+  status: WorkEntry["status"];
+  notes?: string;
+}) {
+  const { error } = await supabase.from("work_entries" as never).insert({
+    ...input,
+    work_type_item_id: input.work_type_item_id || null,
+    quantity: input.quantity ?? 1,
+    rate: input.rate ?? null,
+    notes: input.notes || null,
+  } as never);
+  fail(error);
+}
 export async function listLeaveRequests(
   institutionId: string,
 ): Promise<LeaveRequest[]> {
@@ -188,6 +208,22 @@ export async function setLeaveStatus(
     .from("leave_requests" as never)
     .update({ status } as never)
     .eq("id", id);
+  fail(error);
+}
+export async function createLeaveRequest(input: {
+  institution_id: string;
+  employee_id: string;
+  leave_type_item_id?: string;
+  starts_on: string;
+  ends_on: string;
+  reason?: string;
+  status: LeaveRequest["status"];
+}) {
+  const { error } = await supabase.from("leave_requests" as never).insert({
+    ...input,
+    leave_type_item_id: input.leave_type_item_id || null,
+    reason: input.reason || null,
+  } as never);
   fail(error);
 }
 export async function listPayrollPeriods(
@@ -211,6 +247,20 @@ export async function listPayrollEntries(
     .order("created_at");
   fail(error);
   return (data ?? []) as PayrollEntry[];
+}
+export async function createPayrollPeriod(input: {
+  institution_id: string;
+  name: string;
+  starts_on: string;
+  ends_on: string;
+}) {
+  const { data, error } = await supabase
+    .from("payroll_periods" as never)
+    .insert({ ...input, status: "draft" } as never)
+    .select("*")
+    .single();
+  fail(error);
+  return data as PayrollPeriod;
 }
 export async function calculatePayroll(periodId: string) {
   const { error } = await supabase.rpc(
@@ -249,5 +299,24 @@ export async function updatePersonnelCatalogItem(
     .from("personnel_catalog_items" as never)
     .update(changes as never)
     .eq("id", id);
+  fail(error);
+}
+export async function createPersonnelCatalogItem(input: {
+  institution_id: string;
+  category: string;
+  code: string;
+  default_label: string;
+}) {
+  const { error } = await supabase
+    .from("personnel_catalog_items" as never)
+    .insert({
+      ...input,
+      code: input.code
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "_"),
+      is_system: false,
+      is_active: true,
+    } as never);
   fail(error);
 }

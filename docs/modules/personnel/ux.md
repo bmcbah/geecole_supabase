@@ -31,11 +31,30 @@ des états explicites de chargement ou d'absence de résultat. Le clic sur une l
 
 ## Présences et heures
 
-La page permet la saisie groupée par date. Une heure planifiée n'est jamais payable directement :
-elle doit être marquée effectuée puis validée. Les corrections conservent leur auteur et leur motif.
+La page reprend le standard visuel des listes Élèves et Frais : header d'action, indicateurs,
+toolbar de filtres, DataTable dense et états vides explicites. Elle permet la saisie d'une activité
+réalisée ou prévue avec employé, type d'activité, date, durée, taux spécifique facultatif et note.
+Une heure planifiée n'est jamais payable directement : elle doit être marquée effectuée puis validée.
+Les corrections conservent leur auteur et leur motif.
+
+## Congés et absences
+
+La page propose les demandes à traiter, les demandes approuvées et le volume total. Une nouvelle
+demande choisit l'employé, le type, la période, le motif et peut être enregistrée en brouillon ou
+soumise. Les demandes soumises peuvent être approuvées ou refusées depuis le tableau.
 
 ## Paie
 
 La page présente la période, les anomalies et le registre. Les actions sont : ouvrir, calculer,
 contrôler, valider, enregistrer un paiement, générer les bulletins et clôturer. Une période clôturée
 est immuable ; les corrections passent par une régularisation ultérieure.
+
+L'ouverture d'une période demande un libellé et des bornes. Le registre distingue fixe, variable,
+gains, retenues, net, payé et reste. Le bouton disponible dépend strictement de l'état de la période.
+
+## Paramétrage Personnel
+
+`Paramètres > Personnel` présente une navigation latérale compacte par catalogue. Chaque catalogue
+permet de rechercher, activer ou désactiver une valeur GeEcole, définir un libellé local sans modifier
+la valeur source et ajouter une valeur propre à l'établissement. Les catégories couvertes sont les
+fonctions, contrats, activités, primes, retenues, avances, congés et sanctions.

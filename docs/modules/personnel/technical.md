@@ -21,3 +21,8 @@ un lot distinct prévu par `PER-008`.
 La route `/personnel/employes/:employeeId` charge la fiche et ses relations sous RLS. La création
 initiale peut enregistrer la fonction principale et un contrat actif ; l'accès GeEcole n'est jamais
 créé implicitement.
+
+Les écritures des pages Présences, Congés, Paie et Catalogues passent exclusivement par
+`personnel.service.ts` et restent limitées par `institution_id` et les politiques RLS. Les valeurs
+locales des catalogues sont créées avec `is_system = false`; le renommage d'une valeur système
+alimente uniquement `local_label`.

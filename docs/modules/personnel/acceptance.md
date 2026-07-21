@@ -15,3 +15,8 @@ Un enseignant peut être affecté sans compte. Un compte désactivé ne supprime
 - Le matricule est généré sans saisie manuelle et deux créations concurrentes ne peuvent pas recevoir le même numéro.
 - La création d'une fiche peut inclure une fonction principale et un contrat initial facultatif.
 - Le clic sur un employé ouvre une fiche structurée sans créer automatiquement de compte d'accès.
+- Un administrateur peut saisir une activité réalisée ou prévue, puis valider uniquement une activité effectuée.
+- Un administrateur peut créer une demande de congé en brouillon ou soumise puis prendre une décision.
+- Une période de paie peut être ouverte, calculée, validée et clôturée uniquement selon le workflow autorisé.
+- Chaque catalogue Personnel permet l'activation, le renommage local et l'ajout d'une valeur d'établissement.
+- Les listes Personnel utilisent les mêmes conventions de toolbar, DataTable, filtres et états vides que les modules Élèves et Frais.
