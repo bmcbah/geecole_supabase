@@ -252,7 +252,7 @@ export function LeaveRequestsPage() {
         header="Nouvelle demande"
         visible={open}
         modal
-        className="w-[min(96vw,42rem)]"
+        className="personnel-form-dialog w-[min(96vw,42rem)]"
         onHide={() => setOpen(false)}
       >
         <div className="grid gap-4 md:grid-cols-2">

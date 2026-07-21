@@ -372,7 +372,7 @@ export function WorkEntriesPage() {
         header="Saisir une activité"
         visible={open}
         modal
-        className="w-[min(96vw,42rem)]"
+        className="personnel-form-dialog w-[min(96vw,42rem)]"
         onHide={() => setOpen(false)}
       >
         <div className="grid gap-4 md:grid-cols-2">
@@ -477,7 +477,7 @@ export function WorkEntriesPage() {
         header="Proposer les heures d’un enseignant"
         visible={proposalOpen}
         modal
-        className="w-[min(96vw,42rem)]"
+        className="personnel-form-dialog w-[min(96vw,42rem)]"
         onHide={() => setProposalOpen(false)}
       >
         <Message

@@ -64,12 +64,22 @@
   align-items: start !important;
 }
 
-.space-y-4 > header + section:has(article) article > div:first-child > span:first-child {
+.space-y-4
+  > header
+  + section:has(article)
+  article
+  > div:first-child
+  > span:first-child {
   padding-top: 0 !important;
   line-height: 1rem !important;
 }
 
-.space-y-4 > header + section:has(article) article > div:first-child > span:last-child {
+.space-y-4
+  > header
+  + section:has(article)
+  article
+  > div:first-child
+  > span:last-child {
   width: 2rem !important;
   height: 2rem !important;
   justify-self: end !important;
@@ -90,18 +100,26 @@
 }
 
 /* Les panneaux de filtres avancés des pages financières restent dans la toolbar avec une marge homogène. */
-.space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+.space-y-4
+  > section.overflow-hidden.rounded-2xl
+  > div.border-t.border-emerald-100 {
   margin: 0 1rem 1rem;
   padding: 1.25rem !important;
   border: 1px solid rgb(209 250 229);
   border-radius: 0.75rem;
 }
 
-.space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 > div:first-child {
+.space-y-4
+  > section.overflow-hidden.rounded-2xl
+  > div.border-t.border-emerald-100
+  > div:first-child {
   margin-bottom: 1rem !important;
 }
 
-.space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 > div:last-child {
+.space-y-4
+  > section.overflow-hidden.rounded-2xl
+  > div.border-t.border-emerald-100
+  > div:last-child {
   gap: 1rem !important;
 }
 
@@ -111,7 +129,9 @@ section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
 }
 
 /* Le panneau avancé de la liste élèves reste à l'intérieur de la toolbar avec une respiration identique aux pages financières. */
-.medium-controls section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+.medium-controls
+  section.overflow-hidden.rounded-2xl
+  > div.border-t.border-emerald-100 {
   margin: 0 1rem 1rem;
   border: 1px solid rgb(209 250 229);
   border-radius: 0.75rem;
@@ -135,7 +155,9 @@ section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
     min-height: 100px !important;
   }
 
-  .space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+  .space-y-4
+    > section.overflow-hidden.rounded-2xl
+    > div.border-t.border-emerald-100 {
     margin: 0 0.75rem 0.75rem;
     padding: 1rem !important;
   }
@@ -190,6 +212,40 @@ section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
 
 .personnel-form-dialog .p-steps .p-menuitem-link {
   background: transparent;
+}
+
+.personnel-profile-tabs .p-tabview-nav {
+  padding: 0 1rem;
+  border-color: rgb(226 232 240);
+}
+
+.personnel-profile-tabs .p-tabview-nav-link {
+  padding: 1rem;
+  font-weight: 600;
+}
+
+.personnel-profile-tabs .p-tabview-panels {
+  padding: 1.25rem;
+}
+
+.personnel-form-dialog .p-dialog-footer,
+.personnel-form-dialog .dialog-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: white;
+  border-top: 1px solid rgb(226 232 240);
+}
+
+@media (max-width: 680px) {
+  .personnel-profile-tabs .p-tabview-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .personnel-profile-tabs .p-tabview-nav-link {
+    white-space: nowrap;
+  }
 }
 
 .personnel-profile-tabs .p-tabview-nav {

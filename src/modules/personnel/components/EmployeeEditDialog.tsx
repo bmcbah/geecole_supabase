@@ -7,6 +7,11 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { Message } from "primereact/message";
 import type { Employee } from "../domain/personnel";
 import { updateEmployee } from "../services/personnel.service";
+import {
+  isPastOrToday,
+  isValidEmail,
+  isValidGuineaPhone,
+} from "../utils/personnel-validation";
 
 export function EmployeeEditDialog({
   employee,
@@ -36,6 +41,18 @@ export function EmployeeEditDialog({
     try {
       if (!form.first_name.trim() || !form.last_name.trim())
         throw new Error("Le prénom et le nom sont obligatoires.");
+      if (!isPastOrToday(form.birth_date || ""))
+        throw new Error("La date de naissance ne peut pas être future.");
+      if (
+        ![form.phone, form.secondary_phone, form.emergency_contact_phone].every(
+          (value) => isValidGuineaPhone(value || ""),
+        )
+      )
+        throw new Error(
+          "Vérifiez les numéros : format attendu 6XX XX XX XX ou +224 6XX XX XX XX.",
+        );
+      if (!isValidEmail(form.email || ""))
+        throw new Error("L’adresse e-mail n’est pas valide.");
       await updateEmployee(employee.id, {
         first_name: form.first_name,
         last_name: form.last_name,

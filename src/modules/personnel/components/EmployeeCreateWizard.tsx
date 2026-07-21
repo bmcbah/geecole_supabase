@@ -13,6 +13,11 @@ import type {
   CreateEmployeeInput,
 } from "../services/personnel.service";
 import { createEmployee } from "../services/personnel.service";
+import {
+  isPastOrToday,
+  isValidEmail,
+  isValidGuineaPhone,
+} from "../utils/personnel-validation";
 
 type Props = {
   visible: boolean;
@@ -88,7 +93,13 @@ export function EmployeeCreateWizard({
             form.first_name.trim() && form.last_name.trim() && form.hired_on,
           )
         : active === 1
-          ? Boolean(form.phone.trim() || form.email.trim())
+          ? Boolean(
+              (form.phone.trim() || form.email.trim()) &&
+                isValidGuineaPhone(form.phone) &&
+                isValidGuineaPhone(form.secondary_phone) &&
+                isValidGuineaPhone(form.emergency_contact_phone) &&
+                isValidEmail(form.email),
+            )
           : active === 2
             ? Boolean(form.function_item_id)
             : true,
@@ -104,6 +115,18 @@ export function EmployeeCreateWizard({
     setSaving(true);
     setFailure("");
     try {
+      if (!isPastOrToday(form.birth_date))
+        throw new Error("La date de naissance ne peut pas être future.");
+      if (!isValidGuineaPhone(form.phone))
+        throw new Error(
+          "Le téléphone principal n’est pas un numéro guinéen valide.",
+        );
+      if (!isValidGuineaPhone(form.secondary_phone))
+        throw new Error("Le téléphone secondaire n’est pas valide.");
+      if (!isValidGuineaPhone(form.emergency_contact_phone))
+        throw new Error("Le téléphone d’urgence n’est pas valide.");
+      if (!isValidEmail(form.email))
+        throw new Error("L’adresse e-mail n’est pas valide.");
       if (
         ["hourly", "mixed"].includes(form.compensation_mode) &&
         (form.hourly_rate <= 0 || form.weekly_hours <= 0)
@@ -241,19 +264,43 @@ export function EmployeeCreateWizard({
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Téléphone principal *">
+            <Field
+              label="Téléphone principal"
+              error={
+                form.phone && !isValidGuineaPhone(form.phone)
+                  ? "Format attendu : 6XX XX XX XX ou +224 6XX XX XX XX"
+                  : undefined
+              }
+            >
               <InputText
                 value={form.phone}
+                placeholder="Ex. 622 12 34 56"
+                invalid={Boolean(form.phone && !isValidGuineaPhone(form.phone))}
                 onChange={(e) => set("phone", e.target.value)}
               />
             </Field>
-            <Field label="Téléphone secondaire">
+            <Field
+              label="Téléphone secondaire"
+              error={
+                form.secondary_phone &&
+                !isValidGuineaPhone(form.secondary_phone)
+                  ? "Numéro guinéen invalide"
+                  : undefined
+              }
+            >
               <InputText
                 value={form.secondary_phone}
                 onChange={(e) => set("secondary_phone", e.target.value)}
               />
             </Field>
-            <Field label="E-mail">
+            <Field
+              label="E-mail"
+              error={
+                form.email && !isValidEmail(form.email)
+                  ? "Adresse e-mail invalide"
+                  : undefined
+              }
+            >
               <InputText
                 type="email"
                 value={form.email}
@@ -272,7 +319,15 @@ export function EmployeeCreateWizard({
                 onChange={(e) => set("emergency_contact_name", e.target.value)}
               />
             </Field>
-            <Field label="Téléphone d’urgence">
+            <Field
+              label="Téléphone d’urgence"
+              error={
+                form.emergency_contact_phone &&
+                !isValidGuineaPhone(form.emergency_contact_phone)
+                  ? "Numéro guinéen invalide"
+                  : undefined
+              }
+            >
               <InputText
                 value={form.emergency_contact_phone}
                 onChange={(e) => set("emergency_contact_phone", e.target.value)}
@@ -452,11 +507,20 @@ export function EmployeeCreateWizard({
     </Dialog>
   );
 }
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  children,
+  error,
+}: {
+  label: string;
+  children: ReactNode;
+  error?: string;
+}) {
   return (
     <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
       {label}
       <span className="[&>*]:w-full">{children}</span>
+      {error && <small className="font-normal text-red-600">{error}</small>}
     </label>
   );
 }

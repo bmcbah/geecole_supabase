@@ -15,7 +15,9 @@ export type NavigationDivider = {
 };
 
 export type NavigationEntry =
-  NavigationLink | NavigationTitle | NavigationDivider;
+  | NavigationLink
+  | NavigationTitle
+  | NavigationDivider;
 
 export type NavigationGroup = {
   label: string;
@@ -56,18 +58,23 @@ export const navigation: NavigationGroup[] = [
     icon: "pi-id-card",
     match: "/personnel",
     items: [
+      { type: "title", label: "Pilotage" },
       {
         type: "link",
         label: "Vue d’ensemble",
         icon: "pi-chart-bar",
         to: "/personnel",
       },
+      { type: "divider" },
+      { type: "title", label: "Dossiers" },
       {
         type: "link",
         label: "Employés",
         icon: "pi-users",
         to: "/personnel/employes",
       },
+      { type: "divider" },
+      { type: "title", label: "Gestion RH" },
       {
         type: "link",
         label: "Présences et heures",
@@ -92,6 +99,8 @@ export const navigation: NavigationGroup[] = [
         icon: "pi-exclamation-triangle",
         to: "/personnel/sanctions",
       },
+      { type: "divider" },
+      { type: "title", label: "Rémunération" },
       {
         type: "link",
         label: "Paie",

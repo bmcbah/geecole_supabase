@@ -227,7 +227,7 @@ export function PersonnelCatalogSettings({
         header={editing ? `Renommer : ${editing.default_label}` : addLabel}
         visible={open}
         modal
-        className="w-[min(96vw,36rem)]"
+        className="personnel-form-dialog w-[min(96vw,36rem)]"
         onHide={() => setOpen(false)}
       >
         <div className="grid gap-4">

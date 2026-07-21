@@ -21,6 +21,7 @@ import {
   listPayrollEntries,
   listPayrollPeriods,
   transitionPayroll,
+  transitionPayrollEntries,
 } from "../services/personnel.service";
 const money = (n: number) => `${Number(n).toLocaleString("fr-GN")} GNF`;
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -31,6 +32,7 @@ export function PayrollPage() {
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
   const [periodId, setPeriodId] = useState<string>();
   const [entries, setEntries] = useState<PayrollEntry[]>([]);
+  const [selected, setSelected] = useState<PayrollEntry[]>([]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
@@ -52,6 +54,7 @@ export function PayrollPage() {
   );
   useEffect(() => {
     void loadEntries();
+    setSelected([]);
   }, [loadEntries]);
   const total = useMemo(
     () => entries.reduce((s, x) => s + x.net_amount, 0),
@@ -65,6 +68,9 @@ export function PayrollPage() {
   const anomalies = entries.filter(
     (x) => x.net_amount < 0 || x.net_amount === 0,
   ).length;
+  const allEntriesValidated =
+    entries.length > 0 &&
+    entries.every((entry) => entry.status === "validated");
   const run = async (action: "calculate" | "validate" | "close") => {
     if (!periodId) return;
     setBusy(true);
@@ -114,6 +120,36 @@ export function PayrollPage() {
       notify({
         severity: "error",
         summary: "Création impossible",
+        detail: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const reviewEntries = async (
+    targets: PayrollEntry[],
+    status: "calculated" | "validated",
+  ) => {
+    if (!targets.length) return;
+    setBusy(true);
+    try {
+      await transitionPayrollEntries(
+        targets.map((entry) => entry.id),
+        status,
+      );
+      await loadEntries();
+      setSelected([]);
+      notify({
+        severity: "success",
+        summary:
+          status === "validated"
+            ? `${targets.length} bulletin(s) validé(s)`
+            : `${targets.length} bulletin(s) remis en contrôle`,
+      });
+    } catch (error) {
+      notify({
+        severity: "error",
+        summary: "Mise à jour impossible",
         detail: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -170,9 +206,15 @@ export function PayrollPage() {
               )}{" "}
               {period.status === "calculated" && (
                 <Button
-                  label="Valider"
+                  label="Valider la période"
                   icon="pi pi-check"
                   loading={busy}
+                  disabled={!allEntriesValidated}
+                  tooltip={
+                    !allEntriesValidated
+                      ? "Validez d’abord chaque bulletin"
+                      : undefined
+                  }
                   onClick={() => void run("validate")}
                 />
               )}{" "}
@@ -270,9 +312,64 @@ export function PayrollPage() {
           <SettingsTablePanel
             dataTable={
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {period.status === "calculated" && (
+                  <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-sm text-slate-600">
+                      {selected.length
+                        ? `${selected.length} bulletin(s) sélectionné(s)`
+                        : "Sélectionnez les bulletins à contrôler"}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        label="Invalider"
+                        icon="pi pi-undo"
+                        size="small"
+                        outlined
+                        severity="secondary"
+                        disabled={
+                          !selected.some(
+                            (entry) => entry.status === "validated",
+                          )
+                        }
+                        loading={busy}
+                        onClick={() =>
+                          void reviewEntries(
+                            selected.filter(
+                              (entry) => entry.status === "validated",
+                            ),
+                            "calculated",
+                          )
+                        }
+                      />
+                      <Button
+                        label="Valider la sélection"
+                        icon="pi pi-check"
+                        size="small"
+                        disabled={
+                          !selected.some(
+                            (entry) => entry.status === "calculated",
+                          )
+                        }
+                        loading={busy}
+                        onClick={() =>
+                          void reviewEntries(
+                            selected.filter(
+                              (entry) => entry.status === "calculated",
+                            ),
+                            "validated",
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
                 <DataTable
                   value={entries}
                   dataKey="id"
+                  selection={selected}
+                  onSelectionChange={(event) =>
+                    setSelected(event.value as PayrollEntry[])
+                  }
                   paginator={entries.length > 10}
                   rows={10}
                   stripedRows
@@ -289,6 +386,12 @@ export function PayrollPage() {
                     )
                   }
                 >
+                  {period.status === "calculated" && (
+                    <Column
+                      selectionMode="multiple"
+                      headerStyle={{ width: "3rem" }}
+                    />
+                  )}
                   <Column
                     header="Employé"
                     body={(x: PayrollEntry) => (
@@ -301,6 +404,53 @@ export function PayrollPage() {
                         <small className="block text-slate-400">
                           {x.employee?.employee_number}
                         </small>
+                      </div>
+                    )}
+                  />
+                  <Column
+                    header="Contrôle"
+                    body={(x: PayrollEntry) => (
+                      <div className="flex items-center gap-2">
+                        <Tag
+                          value={
+                            x.status === "validated" ? "Validé" : "À contrôler"
+                          }
+                          severity={
+                            x.status === "validated" ? "success" : "warning"
+                          }
+                        />
+                        {period.status === "calculated" && (
+                          <Button
+                            icon={
+                              x.status === "validated"
+                                ? "pi pi-undo"
+                                : "pi pi-check"
+                            }
+                            aria-label={
+                              x.status === "validated"
+                                ? "Invalider ce bulletin"
+                                : "Valider ce bulletin"
+                            }
+                            tooltip={
+                              x.status === "validated"
+                                ? "Remettre en contrôle"
+                                : "Valider"
+                            }
+                            rounded
+                            text
+                            size="small"
+                            loading={busy}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void reviewEntries(
+                                [x],
+                                x.status === "validated"
+                                  ? "calculated"
+                                  : "validated",
+                              );
+                            }}
+                          />
+                        )}
                       </div>
                     )}
                   />
@@ -379,7 +529,7 @@ export function PayrollPage() {
         header="Ouvrir une période de paie"
         visible={open}
         modal
-        className="w-[min(96vw,38rem)]"
+        className="personnel-form-dialog w-[min(96vw,38rem)]"
         onHide={() => setOpen(false)}
       >
         <div className="grid gap-4">

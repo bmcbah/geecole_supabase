@@ -45,7 +45,10 @@ export function PersonnelDashboardPage() {
         }
       />
       {error && <Message severity="error" text={error} />}
-      <section aria-label="Raccourcis du module" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section
+        aria-label="Raccourcis du module"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+      >
         {data
           ? [
               ["Effectif actif", data.activeEmployees, "/personnel/employes"],
@@ -77,68 +80,76 @@ export function PersonnelDashboardPage() {
             ))}
       </section>
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(20rem,.75fr)]">
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="font-semibold text-slate-900">Priorités</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Échéances et demandes classées par date.
-          </p>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {data?.alerts.length === 0 && (
-            <div className="px-5 py-10 text-center text-sm text-slate-500">
-              Aucune alerte dans les seuils configurés.
-            </div>
-          )}
-          {data?.alerts.map((alert) => (
-            <button
-              key={`${alert.alert_type}-${alert.employee_id}-${alert.due_on}`}
-              className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-slate-50"
-              onClick={() =>
-                navigate(
-                  alert.alert_type === "leave_pending"
-                    ? alertRoute[alert.alert_type]
-                    : `/personnel/employes/${alert.employee_id}`,
-                )
-              }
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-700">
-                <i className="pi pi-bell" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <strong className="block truncate text-sm text-slate-900">
-                  {alert.title}
-                </strong>
-                <span className="text-sm text-slate-500">{alert.detail}</span>
-              </span>
-              <time className="text-xs font-medium text-slate-500">
-                {new Date(`${alert.due_on}T00:00:00`).toLocaleDateString(
-                  "fr-FR",
-                )}
-              </time>
-              <i className="pi pi-chevron-right text-slate-400" />
-            </button>
-          ))}
-        </div>
-      </section>
-      <aside className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-        <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Accès rapides</span>
-        <h2 className="mb-4 mt-1 text-lg font-semibold">Continuer mon travail</h2>
-        <div className="space-y-2">
-          {[
-            ["Consulter les employés", "pi-users", "/personnel/employes"],
-            ["Valider les heures", "pi-clock", "/personnel/heures"],
-            ["Traiter les congés", "pi-calendar-minus", "/personnel/conges"],
-            ["Préparer la paie", "pi-wallet", "/personnel/paie"],
-          ].map(([label, icon, route]) => (
-            <button key={route} className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left text-sm transition hover:border-emerald-400/50 hover:bg-white/10" onClick={() => navigate(route)}>
-              <i className={`pi ${icon} text-emerald-300`} />
-              <span className="flex-1">{label}</span>
-              <i className="pi pi-chevron-right text-xs text-slate-500" />
-            </button>
-          ))}
-        </div>
-      </aside>
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <h2 className="font-semibold text-slate-900">Priorités</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Échéances et demandes classées par date.
+            </p>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {data?.alerts.length === 0 && (
+              <div className="px-5 py-10 text-center text-sm text-slate-500">
+                Aucune alerte dans les seuils configurés.
+              </div>
+            )}
+            {data?.alerts.map((alert) => (
+              <button
+                key={`${alert.alert_type}-${alert.employee_id}-${alert.due_on}`}
+                className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-slate-50"
+                onClick={() =>
+                  navigate(
+                    alert.alert_type === "leave_pending"
+                      ? alertRoute[alert.alert_type]
+                      : `/personnel/employes/${alert.employee_id}`,
+                  )
+                }
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-700">
+                  <i className="pi pi-bell" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm text-slate-900">
+                    {alert.title}
+                  </strong>
+                  <span className="text-sm text-slate-500">{alert.detail}</span>
+                </span>
+                <time className="text-xs font-medium text-slate-500">
+                  {new Date(`${alert.due_on}T00:00:00`).toLocaleDateString(
+                    "fr-FR",
+                  )}
+                </time>
+                <i className="pi pi-chevron-right text-slate-400" />
+              </button>
+            ))}
+          </div>
+        </section>
+        <aside className="rounded-2xl border border-teal-200 bg-teal-50/70 p-5 shadow-sm">
+          <span className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+            Accès rapides
+          </span>
+          <h2 className="mb-4 mt-1 text-lg font-semibold text-slate-950">
+            Continuer mon travail
+          </h2>
+          <div className="space-y-2">
+            {[
+              ["Consulter les employés", "pi-users", "/personnel/employes"],
+              ["Valider les heures", "pi-clock", "/personnel/heures"],
+              ["Traiter les congés", "pi-calendar-minus", "/personnel/conges"],
+              ["Préparer la paie", "pi-wallet", "/personnel/paie"],
+            ].map(([label, icon, route]) => (
+              <button
+                key={route}
+                className="flex w-full items-center gap-3 rounded-xl border border-teal-100 bg-white px-3 py-3 text-left text-sm text-slate-700 shadow-sm transition hover:border-teal-300 hover:text-teal-800"
+                onClick={() => navigate(route)}
+              >
+                <i className={`pi ${icon} text-teal-600`} />
+                <span className="flex-1">{label}</span>
+                <i className="pi pi-chevron-right text-xs text-teal-500" />
+              </button>
+            ))}
+          </div>
+        </aside>
       </div>
     </div>
   );

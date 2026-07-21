@@ -644,6 +644,16 @@ export async function transitionPayroll(
   );
   fail(error);
 }
+export async function transitionPayrollEntries(
+  entryIds: string[],
+  status: "calculated" | "validated",
+) {
+  const { error } = await supabase.rpc(
+    "transition_payroll_entries" as never,
+    { target_entry_ids: entryIds, new_status: status } as never,
+  );
+  fail(error);
+}
 export async function listPersonnelCatalog(
   institutionId: string,
 ): Promise<CatalogItem[]> {

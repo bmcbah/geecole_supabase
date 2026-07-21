@@ -58,8 +58,13 @@ export function EmployeeContractDialog({
     setBusy(true);
     setFailure("");
     try {
+      if (!form.type) throw new Error("Le type de contrat est obligatoire.");
       if (!form.starts || !amountOk)
         throw new Error("Complétez la date et la rémunération du contrat.");
+      if (form.ends && form.ends < form.starts)
+        throw new Error(
+          "La date de fin doit être postérieure à la date de début.",
+        );
       await createEmployeeContract({
         institution_id: institutionId,
         employee_id: employeeId,
@@ -95,7 +100,7 @@ export function EmployeeContractDialog({
         Le contrat peut être préparé en brouillon puis activé après contrôle.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Type de contrat">
+        <Field label="Type de contrat *">
           <Dropdown
             value={form.type}
             showClear
