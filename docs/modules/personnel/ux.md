@@ -1,5 +1,19 @@
 # Personnel — UX
 
+## Tableau de bord opérationnel
+
+L'entrée du module est un tableau de bord orienté actions. Il présente l'effectif actif, les congés à décider, les heures à valider, les avances en cours et les périodes de paie ouvertes. La liste « À traiter » ouvre directement la fiche ou la page de travail concernée pour les contrats et documents expirants et les congés soumis.
+
+## Parcours validés à finaliser
+
+- La fiche Personnel guide la sortie et les transitions de contrats sans modification destructive de l'historique.
+- Les avances présentent leur décision, leur décaissement, leur échéancier et leur solde.
+- La préparation de paie affiche une checklist d'anomalies avant calcul et validation.
+- La liste des bulletins permet les actions collectives, l'export du registre et la génération PDF/ZIP.
+- Les réglages Personnel sont séparés des catalogues et regroupent matricule, paie, arrondis et alertes.
+
+Les écrans de sécurité, profils et autorisations ne font pas partie de ce parcours tant que leur cadrage n'est pas validé.
+
 ## Navigation
 
 - Employés

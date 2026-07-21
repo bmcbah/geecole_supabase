@@ -7,6 +7,7 @@ import type {
   PayrollEntry,
   PayrollEntryDetail,
   PayrollPeriod,
+  PersonnelDashboard,
   WorkEntry,
 } from "../domain/personnel";
 export type CatalogItem = {
@@ -23,6 +24,57 @@ export type CatalogItem = {
 const fail = (error: { message: string } | null) => {
   if (error) throw new Error(error.message);
 };
+
+export async function getPersonnelDashboard(
+  institutionId: string,
+): Promise<PersonnelDashboard> {
+  const [employees, leaves, work, advances, payroll, alerts] =
+    await Promise.all([
+      supabase
+        .from("employees" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("institution_id", institutionId)
+        .eq("status", "active"),
+      supabase
+        .from("leave_requests" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("institution_id", institutionId)
+        .eq("status", "submitted"),
+      supabase
+        .from("work_entries" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("institution_id", institutionId)
+        .eq("status", "completed"),
+      supabase
+        .from("salary_advances" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("institution_id", institutionId)
+        .in("status", ["approved", "paid"]),
+      supabase
+        .from("payroll_periods" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("institution_id", institutionId)
+        .neq("status", "closed")
+        .neq("status", "cancelled"),
+      supabase
+        .from("personnel_operational_alerts" as never)
+        .select("*")
+        .eq("institution_id", institutionId)
+        .order("due_on")
+        .limit(20),
+    ]);
+  [employees, leaves, work, advances, payroll, alerts].forEach((result) =>
+    fail(result.error),
+  );
+  return {
+    activeEmployees: employees.count ?? 0,
+    pendingLeaves: leaves.count ?? 0,
+    workEntriesToValidate: work.count ?? 0,
+    activeAdvances: advances.count ?? 0,
+    openPayrollPeriods: payroll.count ?? 0,
+    alerts: (alerts.data ?? []) as PersonnelDashboard["alerts"],
+  };
+}
 
 export async function listEmployees(
   institutionId: string,

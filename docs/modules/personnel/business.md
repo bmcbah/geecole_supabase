@@ -94,3 +94,25 @@ Lors de sa sortie, sa fiche est conservée, son état est mis à jour et ses fon
 Seul un membre du personnel disposant d'une fonction active de type Enseignant peut recevoir une affectation pédagogique.
 
 La présence d'un compte utilisateur n'est pas obligatoire pour recevoir cette affectation.
+
+## PER-014 — Workflows RH validés
+
+Les contrats suivent le cycle brouillon, actif, terminé ou résilié. Un contrat actif déjà utilisé en paie n'est jamais réécrit : une évolution crée un avenant ou un renouvellement lié au contrat précédent. Une sortie clôture les fonctions et contrats en cours sans supprimer l'historique.
+
+Une avance suit les états demandée, approuvée ou refusée, décaissée puis soldée. Elle peut porter un échéancier modifiable avant intégration à une paie. Les sanctions suivent brouillon, notifiée, contestée, clôturée ou annulée et conservent les décisions et justificatifs.
+
+Les congés, absences et retards acceptent une durée en jours, demi-journées ou heures, un justificatif, une décision et un impact sur la paie configurable. Les chevauchements doivent être signalés.
+
+## PER-015 — Paie collective et corrections
+
+La préparation d'une période affiche les contrats manquants ou expirés, les heures non validées, les anomalies et les entrées/sorties. Les bulletins sont consultables individuellement et exportables en PDF ou ZIP par période. Les paiements peuvent être partiels ou groupés avec une référence de lot.
+
+Après clôture, la période et ses bulletins sont immuables. Une correction ultérieure est une régularisation sur une période ouverte, explicitement typée `gain` ou `retenue` et liée à sa période d'origine.
+
+## PER-016 — Paramétrage avancé
+
+L'établissement configure le format du matricule, sa modifiabilité, les modes et fréquences de paiement, l'arrondi, les documents obligatoires, les seuils d'alerte, les types d'absence et leur impact, ainsi que la présentation du bulletin. La devise du périmètre actuel est le franc guinéen (GNF).
+
+## PER-017 — Sécurité reportée
+
+La matrice des profils, capacités et autorisations fines fera l'objet d'un cadrage séparé. Les protections existantes restent provisoires et ne doivent pas être présentées comme le modèle cible.

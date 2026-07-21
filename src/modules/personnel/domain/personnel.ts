@@ -166,6 +166,21 @@ export type PayrollPayment = {
   reference: string | null;
   created_at: string;
 };
+export type PersonnelAlert = {
+  employee_id: string;
+  alert_type: "contract_expiring" | "document_expiring" | "leave_pending";
+  due_on: string;
+  title: string;
+  detail: string;
+};
+export type PersonnelDashboard = {
+  activeEmployees: number;
+  pendingLeaves: number;
+  workEntriesToValidate: number;
+  activeAdvances: number;
+  openPayrollPeriods: number;
+  alerts: PersonnelAlert[];
+};
 export type PayrollEntryDetail = PayrollEntry & {
   institution_id: string;
   contract_id: string | null;

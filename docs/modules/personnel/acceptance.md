@@ -29,3 +29,14 @@ Un enseignant peut être affecté sans compte. Un compte désactivé ne supprime
 - [ ] Un document PDF ou image de 10 Mo maximum peut être déposé depuis la fiche.
 - [ ] Une prime ou retenue modifie immédiatement la composition et le net du bulletin calculé.
 - [ ] Un paiement partiel met à jour le payé, le reste et le statut sans pouvoir dépasser le net.
+- [ ] La sortie d'un employé clôture atomiquement ses fonctions et contrats actifs sans supprimer son historique.
+- [ ] Un contrat actif évolue par avenant ou renouvellement lié au contrat précédent.
+- [ ] Une avance suit un workflow contrôlé et peut produire un échéancier de remboursement.
+- [ ] Un congé peut être exprimé en jour, demi-journée ou heure et les chevauchements sont signalés.
+- [ ] La préparation de paie liste les anomalies actionnables avant validation.
+- [ ] Une période clôturée et ses bulletins refusent toute modification ou suppression.
+- [ ] Une régularisation indique gain ou retenue et référence la période d'origine.
+- [ ] Les bulletins d'une période sont exportables individuellement et collectivement.
+- [ ] Le tableau de bord remonte contrats et documents expirants, congés, heures et paie à traiter.
+- [ ] Le format du matricule, les arrondis, seuils et modes de paiement sont paramétrables.
+- [ ] Les profils et autorisations fines restent hors de ce lot et sont identifiés comme dette de sécurité.

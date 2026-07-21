@@ -1,5 +1,13 @@
 # Personnel — Technique
 
+## Extension workflows RH et paie
+
+La migration `20260721220000_complete_personnel_workflows.sql` ajoute un paramétrage par établissement, les relations d'avenant/renouvellement, les échéanciers d'avances, l'audit fonctionnel et la vue d'alertes opérationnelles. Les transitions de sortie, contrat et avance passent par des fonctions transactionnelles. Un trigger interdit toute mutation d'une ligne de paie appartenant à une période clôturée.
+
+Les régularisations portent un effet explicite `gain` ou `deduction` et peuvent référencer la période d'origine. Les paramètres actuels imposent la devise GNF et permettent le préfixe/année/longueur du matricule, l'arrondi, les seuils d'alerte et le mode de paiement par défaut.
+
+La vue `personnel_operational_alerts` est `security_invoker` afin de conserver les politiques RLS des tables sources. Ce lot ne définit pas la future matrice de capacités et ne remplace pas le cadrage sécurité.
+
 Une personne peut exister comme membre du personnel avant d’avoir un compte utilisateur. Les rôles applicatifs et les fonctions RH sont distincts.
 
 Les données sont isolées par `institution_id` et protégées par RLS. Les fonctions métier sont issues

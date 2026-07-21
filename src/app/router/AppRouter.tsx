@@ -65,6 +65,11 @@ const EmployeesPage = lazy(() =>
     default: module.EmployeesPage,
   })),
 );
+const PersonnelDashboardPage = lazy(() =>
+  import("../../modules/personnel/pages/PersonnelDashboardPage").then(
+    (module) => ({ default: module.PersonnelDashboardPage }),
+  ),
+);
 const EmployeeProfilePage = lazy(() =>
   import("../../modules/personnel/pages/EmployeeProfilePage").then(
     (module) => ({ default: module.EmployeeProfilePage }),
@@ -198,6 +203,7 @@ export function AppRouter() {
               path="/gestion-financiere/encaissements"
               element={<FinancialPaymentsPage />}
             />
+            <Route path="/personnel" element={<PersonnelDashboardPage />} />
             <Route path="/personnel/employes" element={<EmployeesPage />} />
             <Route
               path="/personnel/employes/:employeeId"

@@ -33,6 +33,12 @@ export const navigation: NavigationGroup[] = [
     items: [
       {
         type: "link",
+        label: "Tableau de bord",
+        icon: "pi-chart-bar",
+        to: "/personnel",
+      },
+      {
+        type: "link",
         label: "Élèves",
         icon: "pi-users",
         to: "/scolarite/eleves",
