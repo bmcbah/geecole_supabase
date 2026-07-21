@@ -50,6 +50,8 @@ Le découpage en modules organise le catalogue de permissions. Il ne remplace pa
 13. Un module désactivé reste inaccessible par appel direct.
 14. Une permission ne permet jamais de contourner implicitement une règle métier.
 15. Toute modification sensible des accès est auditée.
+16. Un accès transversal aux résultats d’une classe est désactivé par défaut et ne peut être activé que par un paramètre explicite de l’établissement.
+17. Les erreurs techniques PostgreSQL, PostgREST et serveur ne sont jamais exposées au client en production.
 
 ## 3. Vocabulaire
 
@@ -167,6 +169,7 @@ L’interface peut masquer une action avant l’appel. La base répète toujours
 - `Direction` ne donne pas automatiquement la gestion des profils d’accès.
 - `Administration` ne donne pas automatiquement les validations métier sensibles.
 - `Enseignant principal` complète `Enseignant` sans étendre les droits de ce dernier à toute la classe pour toutes les ressources.
+- L’option d’établissement autorisant la lecture des autres cours d’une classe n’accorde jamais de droit d’écriture sur ces cours.
 
 ## 6. Propriétaire de l’établissement
 
@@ -270,7 +273,29 @@ La V1 ne met pas en place un moteur général de séparation des tâches. Les in
 
 Une table générique de périmètres ne remplace jamais ces relations.
 
-### 9.2 Périmètres explicites
+### 9.2 Lecture transversale des cours d’une classe
+
+Par défaut, un enseignant consulte uniquement les évaluations, résultats et appréciations des cours auxquels il est affecté.
+
+L’établissement peut activer le paramètre fonctionnel suivant :
+
+```text
+Autoriser les enseignants à consulter les autres cours de leurs classes
+```
+
+Cette option est désactivée par défaut. Lorsqu’elle est activée :
+
+- l’enseignant obtient `notes.class_overview.read` et, si l’établissement autorise le détail, `notes.class_results.read` ;
+- le périmètre est limité aux classes et à l’année scolaire pour lesquelles il possède au moins une affectation pédagogique active ;
+- l’accès est strictement en lecture seule ;
+- aucune création ou modification d’évaluation, résultat ou appréciation d’un autre cours n’est autorisée ;
+- les classes sans affectation active, les autres établissements et les années non autorisées restent inaccessibles ;
+- la désactivation du paramètre retire immédiatement cet accès transversal ;
+- l’interface indique clairement que les informations consultées proviennent d’autres cours.
+
+L’`Enseignant principal` conserve les permissions propres à sa classe principale. Le paramètre d’établissement ne transforme pas un enseignant standard en Enseignant principal.
+
+### 9.3 Périmètres explicites
 
 Les délégations et périmètres exceptionnels utilisent des références explicites :
 
@@ -540,7 +565,10 @@ Chaque lot met à jour ensemble le code, les tests et la documentation du module
 - cumul de profils sans fuite de périmètre entre affectations ;
 - Owner limité à son établissement ;
 - protection du dernier Owner ;
-- enseignant limité à ses cours ;
+- enseignant limité à ses cours lorsque l’option transversale est désactivée ;
+- enseignant limité en lecture aux autres cours de ses classes lorsque l’option est activée ;
+- refus de lecture d’une autre classe, année ou établissement malgré l’option ;
+- impossibilité de modifier les données d’un autre cours ;
 - enseignant principal limité à sa classe et aux permissions de ce profil ;
 - parent limité aux élèves liés ;
 - élève limité à son propre dossier ;
@@ -593,6 +621,7 @@ Ces écarts justifient une migration progressive. Ils ne doivent pas être corri
 - `docs/architecture/rls.md` : invariants RLS transversaux ;
 - `docs/modules/notes/permissions.md` : permissions du module Notes ;
 - `docs/modules/bulletins/permissions.md` : permissions du module Bulletins ;
+- `docs/architecture/security.md` : exigences de sécurité applicative, gestion des erreurs et validation avant production ;
 - les futurs documents de permissions de Scolarité, Finances, Personnel et Paramétrage.
 
 En cas d’écart, ce document fixe les principes transversaux ; le document du module fixe le détail de ses actions métier sans pouvoir réduire l’isolation, l’audit ou les contrôles de délégation définis ici.
