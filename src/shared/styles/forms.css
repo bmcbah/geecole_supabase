@@ -8,6 +8,40 @@
   width: min(94vw, 760px);
 }
 
+.personnel-form-dialog .p-dialog-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid rgb(226 232 240);
+}
+
+.personnel-form-dialog .p-dialog-content {
+  padding: 1.25rem 1.5rem 1.5rem;
+  background: rgb(248 250 252 / 0.55);
+}
+
+.personnel-form-dialog .p-inputtext,
+.personnel-form-dialog .p-dropdown,
+.personnel-form-dialog .p-inputnumber,
+.personnel-form-dialog .p-inputnumber-input,
+.personnel-form-dialog .p-inputtextarea {
+  width: 100%;
+}
+
+.personnel-profile-tabs .p-tabview-nav {
+  padding-inline: 0.75rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.personnel-profile-tabs .p-tabview-nav-link {
+  white-space: nowrap;
+  padding: 1rem 0.85rem;
+  font-weight: 600;
+}
+
+.personnel-profile-tabs .p-tabview-panels {
+  padding: 1.25rem;
+}
+
 .form-grid .p-inputtext,
 .form-grid .p-inputnumber,
 .form-grid .p-inputnumber-input,
