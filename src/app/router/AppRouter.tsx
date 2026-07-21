@@ -70,9 +70,19 @@ const PedagogicalAssignmentsPage = lazy(() =>
     (module) => ({ default: module.PedagogicalAssignmentsPage }),
   ),
 );
-const NotesOperationsPage = lazy(() =>
-  import("../../modules/notes/pages/NotesOperationsPage").then((module) => ({
-    default: module.NotesOperationsPage,
+const PostponedResultsPage = lazy(() =>
+  import("../../modules/notes/pages/PostponedResultsPage").then((module) => ({
+    default: module.PostponedResultsPage,
+  })),
+);
+const AppreciationsPage = lazy(() =>
+  import("../../modules/notes/pages/AppreciationsPage").then((module) => ({
+    default: module.AppreciationsPage,
+  })),
+);
+const AverageControlPage = lazy(() =>
+  import("../../modules/notes/pages/AverageControlPage").then((module) => ({
+    default: module.AverageControlPage,
   })),
 );
 const AcademicPeriodsManagementPage = lazy(() =>
@@ -167,15 +177,15 @@ export function AppRouter() {
             />
             <Route
               path="/notes-bulletins/resultats-reportes"
-              element={<NotesOperationsPage />}
+              element={<PostponedResultsPage />}
             />
             <Route
               path="/notes-bulletins/appreciations"
-              element={<NotesOperationsPage />}
+              element={<AppreciationsPage />}
             />
             <Route
               path="/notes-bulletins/controle-moyennes"
-              element={<NotesOperationsPage />}
+              element={<AverageControlPage />}
             />
             <Route
               path="/notes-bulletins/generations"
