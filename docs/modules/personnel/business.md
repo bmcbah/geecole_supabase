@@ -68,6 +68,15 @@ L'évaluation professionnelle du personnel est exclue du périmètre actuel.
 
 Ces fonctionnalités devront être découpées en lots fonctionnels distincts lors du cadrage détaillé.
 
+### Extension validée — paie scolaire simplifiée
+
+La rémunération peut être fixe, horaire, à la séance, forfaitaire ou mixte. Le module calcule un
+brut et un net à payer à partir du contrat, des heures validées, primes, retenues et remboursements
+d'avances. Il suit les paiements partiels et produit un bulletin de rémunération.
+
+Les heures planifiées ne sont jamais payables sans validation. Une période clôturée est immuable.
+La comptabilité générale, les obligations sociales et fiscales et la paie réglementaire restent exclues.
+
 ## PER-011 — Documents administratifs
 
 Les documents exigés pour le personnel sont paramétrables par établissement, selon le même principe que les documents demandés pour les élèves.
@@ -86,14 +95,32 @@ Seul un membre du personnel disposant d'une fonction active de type Enseignant p
 
 La présence d'un compte utilisateur n'est pas obligatoire pour recevoir cette affectation.
 
-## PER-014 — Responsabilités de cycle
+## PER-014 — Workflows RH validés
 
-La fonction professionnelle, la responsabilité exercée sur un cycle et les permissions applicatives sont trois notions distinctes.
+Les contrats suivent le cycle brouillon, actif, terminé ou résilié. Un contrat actif déjà utilisé en paie n'est jamais réécrit : une évolution crée un avenant ou un renouvellement lié au contrat précédent. Une sortie clôture les fonctions et contrats en cours sans supprimer l'historique.
 
-Une personne ne devient pas automatiquement censeur, principal, proviseur ou directeur parce qu'elle est responsable d'un cycle. Le cumul est autorisé uniquement au moyen d'affectations explicites.
+Une avance suit les états demandée, approuvée ou refusée, décaissée puis soldée. Elle peut porter un échéancier modifiable avant intégration à une paie. Les sanctions suivent brouillon, notifiée, contestée, clôturée ou annulée et conservent les décisions et justificatifs.
 
-Chaque responsabilité de cycle est historisée par établissement, année scolaire, cycle, personne, type de responsabilité, qualité (titulaire, intérimaire ou adjoint), dates de validité et état.
+Les congés, absences et retards acceptent une durée en jours, demi-journées ou heures, un justificatif, une décision et un impact sur la paie configurable. Les chevauchements doivent être signalés.
 
-Un intérim désigne obligatoirement la personne remplacée. Une seule personne titulaire active est autorisée pour un même type de responsabilité et un même cycle ; les adjoints restent possibles.
+## PER-015 — Paie collective et corrections
 
-GeeCole fournit des intitulés guinéens par défaut — responsable de cycle, responsable pédagogique, censeur, principal, proviseur et directeur des études — que l'établissement peut compléter dans son catalogue.
+La préparation d'une période affiche les contrats manquants ou expirés, les heures non validées, les anomalies et les entrées/sorties. Les bulletins sont consultables individuellement et exportables en PDF ou ZIP par période. Les paiements peuvent être partiels ou groupés avec une référence de lot.
+
+Après clôture, la période et ses bulletins sont immuables. Une correction ultérieure est une régularisation sur une période ouverte, explicitement typée `gain` ou `retenue` et liée à sa période d'origine.
+
+## PER-016 — Paramétrage avancé
+
+L'établissement configure le format du matricule, sa modifiabilité, les modes et fréquences de paiement, l'arrondi, les documents obligatoires, les seuils d'alerte, les types d'absence et leur impact, ainsi que la présentation du bulletin. La devise du périmètre actuel est le franc guinéen (GNF).
+
+## PER-017 — Sécurité reportée
+
+La matrice des profils, capacités et autorisations fines fera l'objet d'un cadrage séparé. Les protections existantes restent provisoires et ne doivent pas être présentées comme le modèle cible.
+
+## PER-018 — Contrat explicite
+
+Le contrat porte la base de rémunération utilisée par la paie. Un contrat horaire exige un taux horaire de base et des heures hebdomadaires prévues. Un contrat fixe avec heures exige le salaire fixe, le taux horaire de base et les heures hebdomadaires prévues. Le taux du contrat ne doit pas être remplacé implicitement par un taux défini ailleurs sur la fiche.
+
+## PER-019 — Responsabilités de cycle
+
+La fonction professionnelle, la responsabilité exercée sur un cycle et les permissions applicatives sont trois notions distinctes. Chaque responsabilité est historisée par établissement, année scolaire, cycle, personne, type, qualité, dates de validité et état. Un intérim désigne la personne remplacée ; une seule personne titulaire active est autorisée pour un même type et un même cycle, tandis que les adjoints restent possibles.
