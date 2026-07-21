@@ -127,7 +127,7 @@ export async function getEmployeeProfile(
   const { data, error } = await supabase
     .from("employees" as never)
     .select(
-      "*, functions:employee_functions(*,function_item:personnel_catalog_items(default_label,local_label)), contracts:employee_contracts(*,contract_type:personnel_catalog_items(default_label,local_label)), leave_requests(*), work_entries(*), sanctions:employee_sanctions(*), advances:salary_advances(*)",
+      "*, functions:employee_functions(*,function_item:personnel_catalog_items(default_label,local_label)), contracts:employee_contracts(*,contract_type:personnel_catalog_items(default_label,local_label)), leave_requests(*), work_entries(*), sanctions:employee_sanctions(*), advances:salary_advances(*), documents:employee_documents(*,document_type:personnel_catalog_items(default_label,local_label))",
     )
     .eq("institution_id", institutionId)
     .eq("id", employeeId)
@@ -144,6 +144,155 @@ export async function updateEmployee(
     .update(changes as never)
     .eq("id", employeeId);
   fail(error);
+}
+export async function createEmployeeFunction(input: {
+  institution_id: string;
+  employee_id: string;
+  function_item_id: string;
+  is_primary: boolean;
+  responsibility?: string;
+  starts_on: string;
+}) {
+  const { error } = await supabase.from("employee_functions" as never).insert({
+    ...input,
+    responsibility: input.responsibility || null,
+    is_active: true,
+  } as never);
+  fail(error);
+}
+export async function createEmployeeContract(input: {
+  institution_id: string;
+  employee_id: string;
+  contract_type_item_id?: string;
+  reference?: string;
+  starts_on: string;
+  ends_on?: string;
+  status: "draft" | "active";
+  compensation_mode: CompensationMode;
+  fixed_amount: number;
+  hourly_rate: number;
+  session_rate: number;
+  weekly_hours?: number;
+  payment_method?: string;
+}) {
+  const { error } = await supabase.from("employee_contracts" as never).insert({
+    ...input,
+    contract_type_item_id: input.contract_type_item_id || null,
+    reference: input.reference || null,
+    ends_on: input.ends_on || null,
+    weekly_hours: input.weekly_hours || null,
+    payment_method: input.payment_method || null,
+  } as never);
+  fail(error);
+}
+export async function createSalaryAdvance(input: {
+  institution_id: string;
+  employee_id: string;
+  advance_type_item_id?: string;
+  amount_requested: number;
+  requested_on: string;
+  reason?: string;
+}) {
+  const { error } = await supabase.from("salary_advances" as never).insert({
+    ...input,
+    advance_type_item_id: input.advance_type_item_id || null,
+    reason: input.reason || null,
+    status: "requested",
+  } as never);
+  fail(error);
+}
+export async function createEmployeeSanction(input: {
+  institution_id: string;
+  employee_id: string;
+  sanction_type_item_id?: string;
+  incident_on: string;
+  reason: string;
+  description?: string;
+  decision?: string;
+  status: "draft" | "notified";
+}) {
+  const { error } = await supabase.from("employee_sanctions" as never).insert({
+    ...input,
+    sanction_type_item_id: input.sanction_type_item_id || null,
+    description: input.description || null,
+    decision: input.decision || null,
+  } as never);
+  fail(error);
+}
+export async function createPayrollAdjustment(input: {
+  institution_id: string;
+  payroll_entry_id: string;
+  kind: "gain" | "deduction" | "regularization";
+  catalog_item_id?: string;
+  label: string;
+  amount: number;
+  notes?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "add_payroll_adjustment" as never,
+    {
+      target_entry_id: input.payroll_entry_id,
+      adjustment_kind: input.kind,
+      adjustment_label: input.label,
+      adjustment_amount: input.amount,
+      target_catalog_item_id: input.catalog_item_id || null,
+      adjustment_notes: input.notes || null,
+    } as never,
+  );
+  fail(error);
+}
+export async function createPayrollPayment(input: {
+  institution_id: string;
+  payroll_entry_id: string;
+  amount: number;
+  paid_on: string;
+  method: string;
+  reference?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "record_payroll_payment" as never,
+    {
+      target_entry_id: input.payroll_entry_id,
+      payment_amount: input.amount,
+      payment_date: input.paid_on,
+      payment_method: input.method,
+      payment_reference: input.reference || null,
+    } as never,
+  );
+  fail(error);
+}
+export async function createEmployeeDocument(input: {
+  institution_id: string;
+  employee_id: string;
+  document_type_item_id?: string;
+  name: string;
+  file_path: string;
+  issued_on?: string;
+  expires_on?: string;
+  notes?: string;
+}) {
+  const { error } = await supabase.from("employee_documents" as never).insert({
+    ...input,
+    document_type_item_id: input.document_type_item_id || null,
+    issued_on: input.issued_on || null,
+    expires_on: input.expires_on || null,
+    notes: input.notes || null,
+  } as never);
+  fail(error);
+}
+export async function uploadPersonnelDocument(path: string, file: File) {
+  const { data, error } = await supabase.storage
+    .from("school-admin")
+    .upload(path, file, { upsert: true });
+  fail(error);
+  return data!.path;
+}
+export async function openPersonnelDocument(path: string) {
+  const { data, error } = await supabase.storage
+    .from("school-admin")
+    .createSignedUrl(path, 3600);
+  fail(error);
+  window.open(data!.signedUrl, "_blank", "noopener,noreferrer");
 }
 export async function listWorkEntries(
   institutionId: string,

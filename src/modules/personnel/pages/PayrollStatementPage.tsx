@@ -9,6 +9,12 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import type { PayrollEntryDetail } from "../domain/personnel";
 import { payrollStatusLabels } from "../domain/personnel";
 import { getPayrollEntryDetail } from "../services/personnel.service";
+import {
+  listPersonnelCatalog,
+  type CatalogItem,
+} from "../services/personnel.service";
+import { PayrollAdjustmentDialog } from "../components/PayrollAdjustmentDialog";
+import { PayrollPaymentDialog } from "../components/PayrollPaymentDialog";
 
 const money = (value: number) => `${Number(value).toLocaleString("fr-GN")} GNF`;
 const date = (value: string) =>
@@ -29,6 +35,8 @@ export function PayrollStatementPage() {
   const [statement, setStatement] = useState<PayrollEntryDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [failure, setFailure] = useState("");
+  const [catalogs, setCatalogs] = useState<CatalogItem[]>([]);
+  const [dialog, setDialog] = useState<"adjustment" | "payment" | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +57,9 @@ export function PayrollStatementPage() {
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    void listPersonnelCatalog(institutionId).then(setCatalogs);
+  }, [institutionId]);
 
   const hours = useMemo(
     () =>
@@ -116,6 +127,25 @@ export function PayrollStatementPage() {
                 icon="pi pi-print"
                 onClick={() => window.print()}
               />
+              {statement.status === "calculated" && (
+                <Button
+                  label="Ajouter une rubrique"
+                  icon="pi pi-plus"
+                  severity="secondary"
+                  outlined
+                  onClick={() => setDialog("adjustment")}
+                />
+              )}
+              {(["validated", "partially_paid"] as string[]).includes(
+                statement.status,
+              ) &&
+                balance > 0 && (
+                  <Button
+                    label="Enregistrer un paiement"
+                    icon="pi pi-wallet"
+                    onClick={() => setDialog("payment")}
+                  />
+                )}
             </div>
           }
         />
@@ -393,6 +423,22 @@ export function PayrollStatementPage() {
           réglementaire ou une déclaration sociale.
         </footer>
       </main>
+      <PayrollAdjustmentDialog
+        visible={dialog === "adjustment"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+        institutionId={institutionId}
+        entryId={statement.id}
+        catalogs={catalogs}
+      />
+      <PayrollPaymentDialog
+        visible={dialog === "payment"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+        institutionId={institutionId}
+        entryId={statement.id}
+        balance={balance}
+      />
     </div>
   );
 }

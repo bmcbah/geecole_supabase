@@ -22,3 +22,10 @@ Un enseignant peut être affecté sans compte. Un compte désactivé ne supprime
 - Chaque catalogue possède sa propre route, sa page et un bouton d'ajout nommé selon son domaine.
 - L'ajout depuis une page crée toujours la valeur dans le catalogue affiché, sans sélection globale du type.
 - Les listes Personnel utilisent les mêmes conventions de toolbar, DataTable, filtres et états vides que les modules Élèves et Frais.
+
+- [ ] La fiche peut être modifiée sans modifier le matricule automatique.
+- [ ] Une fonction principale supplémentaire respecte l'unicité en base et affiche l'erreur utile.
+- [ ] Un contrat actif supplémentaire est refusé tant que le contrat actif courant n'est pas clos.
+- [ ] Un document PDF ou image de 10 Mo maximum peut être déposé depuis la fiche.
+- [ ] Une prime ou retenue modifie immédiatement la composition et le net du bulletin calculé.
+- [ ] Un paiement partiel met à jour le payé, le reste et le statut sans pouvoir dépasser le net.

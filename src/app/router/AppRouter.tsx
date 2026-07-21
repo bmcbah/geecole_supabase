@@ -130,6 +130,11 @@ const SanctionTypesSettingsPage = lazy(() =>
     (module) => ({ default: module.SanctionTypesSettingsPage }),
   ),
 );
+const DocumentTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/DocumentTypesSettingsPage").then(
+    (module) => ({ default: module.DocumentTypesSettingsPage }),
+  ),
+);
 
 export function AppRouter() {
   return (
@@ -236,6 +241,10 @@ export function AppRouter() {
             <Route
               path="/parametrage/personnel/sanctions"
               element={<SanctionTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/documents"
+              element={<DocumentTypesSettingsPage />}
             />
             <Route
               path="/parametrage/catalogues-personnel"

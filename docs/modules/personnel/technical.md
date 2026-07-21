@@ -31,3 +31,14 @@ Chaque route métier et chaque catalogue de paramétrage possède son propre fic
 éléments strictement techniques et identiques (chargement, tableau, activation et renommage) sont
 partagés dans `PersonnelCatalogSettings`, tandis que le titre, l'aide et l'action d'ajout restent
 définis dans chaque page.
+
+## Écritures issues des formulaires
+
+Les formulaires de fiche écrivent dans `employees`, `employee_functions`, `employee_contracts`,
+`salary_advances`, `employee_sanctions` et `employee_documents`. Les fichiers sont déposés dans le
+bucket privé `school-admin`, sous le préfixe de l'établissement et du salarié.
+
+Les ajustements et paiements de paie passent respectivement par `add_payroll_adjustment` et
+`record_payroll_payment`. Ces RPC verrouillent la ligne du bulletin, contrôlent son état et mettent
+à jour les agrégats dans la même transaction. Un ajustement n'est possible qu'à l'état `calculated`
+et un paiement uniquement après validation.

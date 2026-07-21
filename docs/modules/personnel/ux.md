@@ -63,3 +63,16 @@ l'activation et du renommage.
 Chaque page permet d'activer ou désactiver une valeur GeEcole, de définir un libellé local sans
 modifier la valeur source et d'ajouter une valeur propre à l'établissement. Les pages couvertes sont
 les fonctions, contrats, activités, primes, retenues, avances, congés et sanctions.
+
+## Formulaires de la fiche
+
+La modification de l'identité et des coordonnées, l'ajout d'une fonction, d'un contrat, d'une
+avance, d'une sanction ou d'un document utilisent chacun un formulaire dédié. Les actions sont
+placées dans l'onglet concerné et rechargent la fiche après succès. Un formulaire ne doit pas
+fermer ni perdre les données saisies lorsqu'une validation échoue.
+
+Le dépôt documentaire accepte les images et PDF jusqu'à 10 Mo. Les types de documents possèdent
+leur propre page de paramétrage et leur propre bouton d'ajout.
+
+Depuis un bulletin calculé, l'utilisateur peut ajouter une prime ou une retenue. Depuis un bulletin
+validé, il peut enregistrer un paiement partiel ou total sans dépasser le reste à payer.

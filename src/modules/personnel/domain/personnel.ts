@@ -61,6 +61,16 @@ export type EmployeeProfile = Employee & {
   work_entries: WorkEntry[];
   sanctions: EmployeeSanction[];
   advances: SalaryAdvance[];
+  documents: EmployeeDocument[];
+};
+export type EmployeeDocument = {
+  id: string;
+  name: string;
+  file_path: string;
+  issued_on: string | null;
+  expires_on: string | null;
+  notes: string | null;
+  document_type?: { default_label: string; local_label: string | null };
 };
 export type EmployeeSanction = {
   id: string;

@@ -9,6 +9,17 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import type { EmployeeProfile } from "../domain/personnel";
 import { employeeStatusLabels } from "../domain/personnel";
 import { getEmployeeProfile } from "../services/personnel.service";
+import {
+  listPersonnelCatalog,
+  openPersonnelDocument,
+  type CatalogItem,
+} from "../services/personnel.service";
+import { EmployeeEditDialog } from "../components/EmployeeEditDialog";
+import { EmployeeFunctionDialog } from "../components/EmployeeFunctionDialog";
+import { EmployeeContractDialog } from "../components/EmployeeContractDialog";
+import { SalaryAdvanceDialog } from "../components/SalaryAdvanceDialog";
+import { EmployeeSanctionDialog } from "../components/EmployeeSanctionDialog";
+import { EmployeeDocumentDialog } from "../components/EmployeeDocumentDialog";
 
 const money = (value: number) =>
   new Intl.NumberFormat("fr-GN", {
@@ -30,6 +41,16 @@ export function EmployeeProfilePage() {
   const { employeeId = "" } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<EmployeeProfile | null>();
+  const [catalogs, setCatalogs] = useState<CatalogItem[]>([]);
+  const [dialog, setDialog] = useState<
+    | "edit"
+    | "function"
+    | "contract"
+    | "document"
+    | "advance"
+    | "sanction"
+    | null
+  >(null);
   const load = useCallback(
     async () => setProfile(await getEmployeeProfile(institutionId, employeeId)),
     [employeeId, institutionId],
@@ -37,6 +58,9 @@ export function EmployeeProfilePage() {
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    void listPersonnelCatalog(institutionId).then(setCatalogs);
+  }, [institutionId]);
   const activeFunction = profile?.functions.find(
     (x) => x.is_primary && x.is_active,
   );
@@ -93,6 +117,13 @@ export function EmployeeProfilePage() {
           onClick={() => void navigate("/personnel/employes")}
         />
         <div className="flex flex-wrap gap-2">
+          <Button
+            label="Modifier"
+            icon="pi pi-pencil"
+            severity="secondary"
+            outlined
+            onClick={() => setDialog("edit")}
+          />
           <Button
             label="Voir les heures"
             icon="pi pi-clock"
@@ -264,7 +295,11 @@ export function EmployeeProfilePage() {
             </div>
           </TabPanel>
           <TabPanel header={`Emploi (${profile.functions.length})`}>
-            <PanelHeader title="Fonctions" action="Ajouter une fonction" />
+            <PanelHeader
+              title="Fonctions"
+              action="Ajouter une fonction"
+              onAction={() => setDialog("function")}
+            />
             <div className="divide-y divide-slate-100">
               {profile.functions.map((item) => (
                 <div
@@ -296,6 +331,7 @@ export function EmployeeProfilePage() {
             <PanelHeader
               title="Contrats et rémunération"
               action="Ajouter un contrat"
+              onAction={() => setDialog("contract")}
             />
             <div className="divide-y divide-slate-100">
               {profile.contracts.map((item) => (
@@ -347,26 +383,22 @@ export function EmployeeProfilePage() {
               <ActivityList
                 title="Dernières activités"
                 empty="Aucune activité enregistrée."
-                items={profile.work_entries
-                  .slice(0, 5)
-                  .map((item) => ({
-                    id: item.id,
-                    title: `${date(item.work_date)} · ${Math.floor(item.minutes / 60)} h ${item.minutes % 60} min`,
-                    detail: item.notes || "Activité sans commentaire",
-                    status: item.status,
-                  }))}
+                items={profile.work_entries.slice(0, 5).map((item) => ({
+                  id: item.id,
+                  title: `${date(item.work_date)} · ${Math.floor(item.minutes / 60)} h ${item.minutes % 60} min`,
+                  detail: item.notes || "Activité sans commentaire",
+                  status: item.status,
+                }))}
               />
               <ActivityList
                 title="Congés et absences"
                 empty="Aucune demande enregistrée."
-                items={profile.leave_requests
-                  .slice(0, 5)
-                  .map((item) => ({
-                    id: item.id,
-                    title: `${date(item.starts_on)} → ${date(item.ends_on)}`,
-                    detail: item.reason || "Sans motif",
-                    status: item.status,
-                  }))}
+                items={profile.leave_requests.slice(0, 5).map((item) => ({
+                  id: item.id,
+                  title: `${date(item.starts_on)} → ${date(item.ends_on)}`,
+                  detail: item.reason || "Sans motif",
+                  status: item.status,
+                }))}
               />
             </div>
           </TabPanel>
@@ -374,11 +406,54 @@ export function EmployeeProfilePage() {
             <PanelHeader
               title="Documents administratifs"
               action="Ajouter un document"
+              onAction={() => setDialog("document")}
             />
-            <Empty text="Le dépôt documentaire sera disponible après configuration des types de documents obligatoires." />
+            {profile.documents.length ? (
+              <div className="divide-y divide-slate-100">
+                {profile.documents.map((item) => (
+                  <div
+                    key={item.id}
+                    className="grid gap-2 py-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center"
+                  >
+                    <div>
+                      <strong className="block text-sm text-slate-900">
+                        {item.name}
+                      </strong>
+                      <small className="text-slate-500">
+                        {catalogLabel(item.document_type)}
+                      </small>
+                    </div>
+                    <span className="text-sm text-slate-600">
+                      Émis le {date(item.issued_on)}
+                    </span>
+                    <Tag
+                      value={
+                        item.expires_on
+                          ? `Expire le ${date(item.expires_on)}`
+                          : "Sans expiration"
+                      }
+                      severity={item.expires_on ? "warning" : "success"}
+                    />
+                    <Button
+                      label="Ouvrir"
+                      icon="pi pi-external-link"
+                      text
+                      size="small"
+                      onClick={() => void openPersonnelDocument(item.file_path)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Empty text="Aucun document administratif déposé." />
+            )}
           </TabPanel>
           <TabPanel header={`Avances (${profile.advances.length})`}>
-            <PanelHeader title="Avances sur salaire" action="Nouvelle avance" />
+            <PanelHeader
+              title="Avances sur salaire"
+              action="Nouvelle avance"
+              onAction={() => setDialog("advance")}
+            />
             {profile.advances.length ? (
               profile.advances.map((item) => (
                 <div
@@ -401,6 +476,7 @@ export function EmployeeProfilePage() {
             <PanelHeader
               title="Dossier disciplinaire confidentiel"
               action="Nouvelle sanction"
+              onAction={() => setDialog("sanction")}
             />
             {profile.sanctions.length ? (
               profile.sanctions.map((item) => (
@@ -438,6 +514,52 @@ export function EmployeeProfilePage() {
           </TabPanel>
         </TabView>
       </section>
+      <EmployeeEditDialog
+        employee={profile}
+        visible={dialog === "edit"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
+      <EmployeeFunctionDialog
+        institutionId={institutionId}
+        employeeId={profile.id}
+        catalogs={catalogs}
+        visible={dialog === "function"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
+      <EmployeeContractDialog
+        institutionId={institutionId}
+        employeeId={profile.id}
+        catalogs={catalogs}
+        visible={dialog === "contract"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
+      <EmployeeDocumentDialog
+        institutionId={institutionId}
+        employeeId={profile.id}
+        catalogs={catalogs}
+        visible={dialog === "document"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
+      <SalaryAdvanceDialog
+        institutionId={institutionId}
+        employeeId={profile.id}
+        catalogs={catalogs}
+        visible={dialog === "advance"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
+      <EmployeeSanctionDialog
+        institutionId={institutionId}
+        employeeId={profile.id}
+        catalogs={catalogs}
+        visible={dialog === "sanction"}
+        onHide={() => setDialog(null)}
+        onSaved={load}
+      />
     </div>
   );
 }
@@ -530,7 +652,15 @@ function ActivityList({
     </section>
   );
 }
-function PanelHeader({ title, action }: { title: string; action?: string }) {
+function PanelHeader({
+  title,
+  action,
+  onAction,
+}: {
+  title: string;
+  action?: string;
+  onAction?: () => void;
+}) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
       <h3 className="font-semibold text-slate-900">{title}</h3>
@@ -540,7 +670,7 @@ function PanelHeader({ title, action }: { title: string; action?: string }) {
           icon="pi pi-plus"
           size="small"
           outlined
-          disabled
+          onClick={onAction}
         />
       )}
     </div>

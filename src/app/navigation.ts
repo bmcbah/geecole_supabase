@@ -196,6 +196,12 @@ export const navigation: NavigationGroup[] = [
         icon: "pi-exclamation-triangle",
         to: "/parametrage/personnel/sanctions",
       },
+      {
+        type: "link",
+        label: "Types de documents",
+        icon: "pi-file",
+        to: "/parametrage/personnel/documents",
+      },
       { type: "divider" },
       { type: "title", label: "Organisation scolaire" },
       {
