@@ -1180,3 +1180,42 @@ input {
   margin-top: 0.35rem;
   color: var(--text-color-secondary);
 }
+
+/* Cahier des notes: arbre dense avec repères hiérarchiques visibles. */
+.gradebook-tree .p-tree-container {
+  padding: 0;
+}
+.gradebook-tree .p-treenode-content {
+  min-height: 1.75rem;
+  gap: 0.2rem;
+  padding: 0.15rem 0.2rem;
+  border-radius: 0.3rem;
+}
+.gradebook-tree .p-treenode-label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gradebook-tree .p-tree-toggler {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 1.15rem;
+  border: 1px solid var(--surface-300);
+  border-radius: 0.2rem;
+  background: var(--surface-0);
+}
+.gradebook-tree .p-tree-toggler-icon {
+  font-size: 0.55rem;
+}
+.gradebook-tree .p-treenode-icon {
+  margin-right: 0.15rem;
+  font-size: 0.7rem;
+}
+.gradebook-tree .p-treenode-children {
+  margin-left: 0.55rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--surface-300);
+}
