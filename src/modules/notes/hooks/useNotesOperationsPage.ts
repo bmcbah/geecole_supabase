@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   listOperationsContext,
@@ -20,11 +20,27 @@ export function useNotesOperationsPage(mode: OperationsMode) {
   const [pageSize, setPageSize] = useState(10);
   const [query, setQuery] = useState("");
   const [classId, setClassId] = useState("");
+  const [cycleId, setCycleId] = useState("");
+  const [levelId, setLevelId] = useState("");
   const [periodId, setPeriodId] = useState("");
   const [state, setState] = useState("");
   const [advanced, setAdvanced] = useState(false);
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
-  const [periods, setPeriods] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<
+    Array<{ id: string; name: string; academic_year_level_id: string }>
+  >([]);
+  const [periods, setPeriods] = useState<
+    Array<{
+      id: string;
+      name: string;
+      cycle_id: string;
+      cycleName: string;
+      status: string;
+    }>
+  >([]);
+  const [cycles, setCycles] = useState<Array<{ id: string; name: string }>>([]);
+  const [levels, setLevels] = useState<
+    Array<{ id: string; cycle_id: string; level_name_snapshot: string }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,6 +55,8 @@ export function useNotesOperationsPage(mode: OperationsMode) {
           rows: pageSize,
           search: query,
           classId,
+          cycleId,
+          levelId,
           periodId,
           state,
         }),
@@ -48,6 +66,8 @@ export function useNotesOperationsPage(mode: OperationsMode) {
       setTotal(page.total);
       setClasses(context.classes);
       setPeriods(context.periods);
+      setCycles(context.cycles);
+      setLevels(context.levels);
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -59,10 +79,12 @@ export function useNotesOperationsPage(mode: OperationsMode) {
     }
   }, [
     classId,
+    cycleId,
     first,
     mode,
     pageSize,
     periodId,
+    levelId,
     query,
     session.institutionId,
     session.yearId,
@@ -77,6 +99,8 @@ export function useNotesOperationsPage(mode: OperationsMode) {
   const reset = () => {
     setQuery("");
     setClassId("");
+    setCycleId("");
+    setLevelId("");
     setPeriodId("");
     setState("");
     setFirst(0);
@@ -94,14 +118,42 @@ export function useNotesOperationsPage(mode: OperationsMode) {
     setQuery,
     classId,
     setClassId,
+    cycleId,
+    setCycleId: (value: string) => {
+      setCycleId(value);
+      setLevelId("");
+      setClassId("");
+      setPeriodId("");
+      setFirst(0);
+    },
+    levelId,
+    setLevelId: (value: string) => {
+      setLevelId(value);
+      setClassId("");
+      setFirst(0);
+    },
     periodId,
     setPeriodId,
     state,
     setState,
     advanced,
     setAdvanced,
-    classes,
-    periods,
+    classes: useMemo(
+      () =>
+        classes.filter(
+          (item) => !levelId || item.academic_year_level_id === levelId,
+        ),
+      [classes, levelId],
+    ),
+    periods: useMemo(
+      () => periods.filter((item) => !cycleId || item.cycle_id === cycleId),
+      [cycleId, periods],
+    ),
+    cycles,
+    levels: useMemo(
+      () => levels.filter((level) => !cycleId || level.cycle_id === cycleId),
+      [cycleId, levels],
+    ),
     loading,
     error,
     setError,

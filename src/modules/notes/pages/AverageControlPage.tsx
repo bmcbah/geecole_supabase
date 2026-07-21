@@ -29,13 +29,23 @@ export function AverageControlPage() {
       status={page.state}
       advanced={page.advanced}
       classId={page.classId}
+      cycleId={page.cycleId}
+      levelId={page.levelId}
       periodId={page.periodId}
       classOptions={page.classes.map((item) => ({
         label: item.name,
         value: item.id,
       }))}
       periodOptions={page.periods.map((item) => ({
+        label: page.cycleId ? item.name : `${item.cycleName} — ${item.name}`,
+        value: item.id,
+      }))}
+      cycleOptions={page.cycles.map((item) => ({
         label: item.name,
+        value: item.id,
+      }))}
+      levelOptions={page.levels.map((item) => ({
+        label: item.level_name_snapshot,
         value: item.id,
       }))}
       statusOptions={[
@@ -57,6 +67,8 @@ export function AverageControlPage() {
         page.setFirst(0);
         page.setClassId(next);
       }}
+      onCycle={page.setCycleId}
+      onLevel={page.setLevelId}
       onPeriod={(next) => {
         page.setFirst(0);
         page.setPeriodId(next);

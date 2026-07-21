@@ -185,7 +185,7 @@ export type VersionedFormulaListItem = {
   name: string;
   code: string;
   version: number;
-  rules: { weights: Record<string, number>; rounding: number };
+  rules: { expression: string; rounding: number };
   assignmentId: string | null;
   scopeType: "cycle" | "level" | null;
   scopeId: string | null;
@@ -249,7 +249,7 @@ export async function createGradingFormulaVersion(input: {
   name: string;
   code: string;
   seriesId?: string;
-  weights: Record<string, number>;
+  expression: string;
   rounding: number;
   scopeType: "cycle" | "level";
   scopeId: string;
@@ -284,7 +284,7 @@ export async function createGradingFormulaVersion(input: {
       academic_year_id: input.yearId,
       series_id: seriesId,
       version: (existing?.[0]?.version ?? 0) + 1,
-      rules: { weights: input.weights, rounding: input.rounding },
+      rules: { expression: input.expression.trim(), rounding: input.rounding },
     })
     .select("id")
     .single();

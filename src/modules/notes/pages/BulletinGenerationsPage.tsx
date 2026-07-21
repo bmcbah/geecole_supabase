@@ -31,14 +31,6 @@ const emptyContext: Context = {
   classes: [],
   students: [],
 };
-const scopeOptions: { label: string; value: GenerationScope }[] = [
-  { label: "Toute l’école", value: "school" },
-  { label: "Un cycle", value: "cycle" },
-  { label: "Un niveau", value: "level" },
-  { label: "Une classe", value: "class" },
-  { label: "Un élève", value: "student" },
-];
-
 export function BulletinGenerationsPage() {
   const { institutionId, yearId, year } = useAcademicSession();
   const [items, setItems] = useState<BulletinBatchRow[]>([]);
@@ -56,8 +48,10 @@ export function BulletinGenerationsPage() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [periodId, setPeriodId] = useState("");
-  const [scope, setScope] = useState<GenerationScope>("school");
-  const [scopeId, setScopeId] = useState("");
+  const [cycleId, setCycleId] = useState("");
+  const [levelId, setLevelId] = useState("");
+  const [classId, setClassId] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [details, setDetails] = useState<BulletinGenerationItem[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -113,48 +107,37 @@ export function BulletinGenerationsPage() {
       [query, status, periodFilter, dateFrom, dateTo].filter(Boolean).length,
     [dateFrom, dateTo, periodFilter, query, status],
   );
-  const selectedPeriod = context.periods.find((item) => item.id === periodId);
+  const compatiblePeriods = context.periods.filter(
+    (item) => item.cycle_id === cycleId,
+  );
   const compatibleLevels = context.levels.filter(
-    (item) => !selectedPeriod || item.cycle_id === selectedPeriod.cycle_id,
+    (item) => item.cycle_id === cycleId,
   );
-  const compatibleClasses = context.classes.filter((item) =>
-    compatibleLevels.some((level) => level.id === item.academic_year_level_id),
+  const compatibleClasses = context.classes.filter(
+    (item) => item.academic_year_level_id === levelId,
   );
-  const compatibleStudents = context.students.filter((item) =>
-    compatibleClasses.some((schoolClass) => schoolClass.id === item.classId),
+  const compatibleStudents = context.students.filter(
+    (item) => item.classId === classId,
   );
-  const scopeValues =
-    scope === "cycle"
-      ? context.cycles
-          .filter(
-            (item) => !selectedPeriod || item.id === selectedPeriod.cycle_id,
-          )
-          .map((item) => ({ label: item.name, value: item.id }))
-      : scope === "level"
-        ? compatibleLevels.map((item) => ({
-            label: item.level_name_snapshot,
-            value: item.id,
-          }))
-        : scope === "class"
-          ? compatibleClasses.map((item) => ({
-              label: item.name,
-              value: item.id,
-            }))
-          : scope === "student"
-            ? compatibleStudents.map((item) => ({
-                label: `${item.name} · ${item.matricule}`,
-                value: item.id,
-              }))
-            : [];
+  const scope: GenerationScope = studentId
+    ? "student"
+    : classId
+      ? "class"
+      : levelId
+        ? "level"
+        : "cycle";
+  const scopeId = studentId || classId || levelId || cycleId;
 
   function resetGeneration() {
     setPeriodId("");
-    setScope("school");
-    setScopeId("");
+    setCycleId("");
+    setLevelId("");
+    setClassId("");
+    setStudentId("");
     setOpen(true);
   }
   async function submit() {
-    if (!yearId || !periodId || (scope !== "school" && !scopeId)) return;
+    if (!yearId || !periodId || !scopeId) return;
     setLoading(true);
     setError("");
     try {
@@ -163,7 +146,7 @@ export function BulletinGenerationsPage() {
         yearId,
         periodId,
         scope,
-        scopeId: scope === "school" ? undefined : scopeId,
+        scopeId,
       });
       setNotice(
         `${result.generated} bulletin(s) généré(s), ${result.blocked} bloqué(s). Ouvrez le détail du lot pour corriger les blocages.`,
@@ -343,56 +326,105 @@ export function BulletinGenerationsPage() {
         <div className="space-y-4">
           <Message
             severity="info"
-            text="Choisissez d’abord la période : les périmètres proposés seront limités à son cycle."
+            text="Choisissez le cycle puis affinez si nécessaire jusqu’au niveau, à la classe ou à l’élève. La période ouverte est proposée automatiquement."
           />
-          <Field label="Période *">
+          <Field label="Cycle *">
             <Dropdown
-              value={periodId}
-              options={context.periods.map((period) => ({
-                label: period.label,
-                value: period.id,
+              value={cycleId}
+              options={context.cycles.map((cycle) => ({
+                label: cycle.name,
+                value: cycle.id,
               }))}
               filter
               onChange={(event) => {
-                setPeriodId(String(event.value));
-                setScopeId("");
+                const nextCycle = String(event.value);
+                setCycleId(nextCycle);
+                setLevelId("");
+                setClassId("");
+                setStudentId("");
+                setPeriodId(
+                  context.periods.find(
+                    (period) =>
+                      period.cycle_id === nextCycle && period.status === "open",
+                  )?.id ?? "",
+                );
               }}
               className="w-full"
-              placeholder="Choisir le cycle et la période"
+              placeholder="Choisir un cycle"
             />
           </Field>
-          <Field label="Périmètre *">
-            <Dropdown
-              value={scope}
-              options={scopeOptions}
-              disabled={!periodId}
-              onChange={(event) => {
-                setScope(event.value as GenerationScope);
-                setScopeId("");
-              }}
-              className="w-full"
-            />
-          </Field>
-          {scope !== "school" ? (
-            <Field
-              label={`${scopeOptions.find((item) => item.value === scope)?.label ?? "Sélection"} *`}
-            >
+          {cycleId ? (
+            <Field label="Niveau (facultatif)">
               <Dropdown
-                value={scopeId}
-                options={scopeValues}
+                value={levelId}
+                options={compatibleLevels.map((item) => ({
+                  label: item.level_name_snapshot,
+                  value: item.id,
+                }))}
+                showClear
                 filter
-                disabled={!periodId}
-                onChange={(event) => setScopeId(String(event.value))}
+                onChange={(event) => {
+                  setLevelId(String(event.value ?? ""));
+                  setClassId("");
+                  setStudentId("");
+                }}
                 className="w-full"
-                placeholder="Sélectionner"
               />
             </Field>
-          ) : (
+          ) : null}
+          {levelId ? (
+            <Field label="Classe (facultatif)">
+              <Dropdown
+                value={classId}
+                options={compatibleClasses.map((item) => ({
+                  label: item.name,
+                  value: item.id,
+                }))}
+                showClear
+                filter
+                onChange={(event) => {
+                  setClassId(String(event.value ?? ""));
+                  setStudentId("");
+                }}
+                className="w-full"
+              />
+            </Field>
+          ) : null}
+          {classId ? (
+            <Field label="Élève (facultatif)">
+              <Dropdown
+                value={studentId}
+                options={compatibleStudents.map((item) => ({
+                  label: `${item.name} · ${item.matricule}`,
+                  value: item.id,
+                }))}
+                showClear
+                filter
+                onChange={(event) => setStudentId(String(event.value ?? ""))}
+                className="w-full"
+              />
+            </Field>
+          ) : null}
+          {cycleId ? (
+            <Field label="Période *">
+              <Dropdown
+                value={periodId}
+                options={compatiblePeriods.map((period) => ({
+                  label: period.name,
+                  value: period.id,
+                }))}
+                onChange={(event) => setPeriodId(String(event.value))}
+                className="w-full"
+                placeholder="Choisir une période"
+              />
+            </Field>
+          ) : null}
+          {cycleId ? (
             <Message
-              severity="warn"
-              text="Tous les élèves compatibles avec cette période seront contrôlés. Les bulletins incomplets seront bloqués individuellement."
+              severity="secondary"
+              text={`Périmètre retenu : ${scope === "cycle" ? "tout le cycle" : scope === "level" ? "tout le niveau" : scope === "class" ? "toute la classe" : "un élève"}.`}
             />
-          )}
+          ) : null}
           <div className="flex justify-end gap-2">
             <Button
               label="Annuler"
@@ -404,7 +436,7 @@ export function BulletinGenerationsPage() {
               label="Lancer la génération"
               icon="pi pi-play"
               loading={loading}
-              disabled={!periodId || (scope !== "school" && !scopeId)}
+              disabled={!periodId || !scopeId}
               onClick={() => void submit()}
             />
           </div>

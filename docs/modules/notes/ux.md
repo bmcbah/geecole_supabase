@@ -15,6 +15,10 @@ dans le module Paramétrage.
 
 Les pages et données visibles dépendent des permissions.
 
+## Filtres des opérations
+
+Les pages Rattrapages, Appréciations et Contrôle des moyennes affichent en permanence les filtres principaux `Cycle → Niveau → Période`. Le niveau dépend du cycle. Si un cycle est sélectionné, la liste des périodes ne contient que ses périodes ; sinon chaque période est libellée `Cycle — Période` afin d'éviter toute ambiguïté. La classe et les statuts restent des filtres secondaires.
+
 ## Gestion opérationnelle des périodes
 
 L'ouverture et la clôture des saisies sont réalisées dans une page dédiée,

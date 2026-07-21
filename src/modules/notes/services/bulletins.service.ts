@@ -64,7 +64,7 @@ export async function listGenerationContext(
     await Promise.all([
       supabase
         .from("academic_periods")
-        .select("id,name,cycle_id,sequence")
+        .select("id,name,cycle_id,sequence,status")
         .eq("institution_id", institutionId)
         .eq("academic_year_id", yearId)
         .order("sequence"),
@@ -470,6 +470,7 @@ export async function generateBulletins(input: {
     if (appreciations.error) throw appreciations.error;
     if (assessmentTypes.error) throw assessmentTypes.error;
     const missingFormulaTypes = new Set<string>();
+    const formulaErrors = new Set<string>();
     const subjectLines = subjectIds.map((subjectId) => {
       const subjectNotes = (notes ?? []).filter(
         (note) => note.subject_id === subjectId,
@@ -493,6 +494,7 @@ export async function generateBulletins(input: {
       calculation.missingTypeCodes.forEach((code) =>
         missingFormulaTypes.add(code),
       );
+      if (calculation.error) formulaErrors.add(calculation.error);
       const average = calculation.average;
       return {
         subject_id: subjectId,
@@ -521,7 +523,25 @@ export async function generateBulletins(input: {
           class_id: enrollment.classId,
           status: "blocked",
           issue_code: "FORMULA_TYPE_WEIGHT_MISSING",
-          message: `Le type de note ${missingFormulaType} n’a aucun poids dans la formule ${formula!.name} v${formula!.version}.`,
+          message: `La variable ${missingFormulaType} de la formule ${formula!.name} v${formula!.version} ne possède aucune note.`,
+        });
+      if (itemError) throw itemError;
+      continue;
+    }
+    const formulaError = [...formulaErrors][0];
+    if (formulaError) {
+      blocked += 1;
+      const { error: itemError } = await supabase
+        .from("bulletin_generation_items")
+        .insert({
+          institution_id: input.institutionId,
+          batch_id: batch.id,
+          enrollment_id: enrollment.id,
+          student_id: enrollment.student_id,
+          class_id: enrollment.classId,
+          status: "blocked",
+          issue_code: "FORMULA_INVALID",
+          message: `La formule ${formula!.name} v${formula!.version} est invalide : ${formulaError}.`,
         });
       if (itemError) throw itemError;
       continue;

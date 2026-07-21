@@ -51,14 +51,14 @@ create table public.grading_formula_versions (
   academic_year_id uuid not null,
   series_id uuid not null references public.grading_formula_series(id) on delete cascade,
   version integer not null check (version > 0),
-  rules jsonb not null default '{"weights":{},"rounding":2}'::jsonb,
+  rules jsonb not null default '{"expression":"","rounding":2}'::jsonb,
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   constraint grading_formula_versions_year_fk foreign key (academic_year_id,institution_id)
     references public.academic_years(id,institution_id) on delete cascade,
   constraint grading_formula_rules_shape check (
-    jsonb_typeof(rules)='object' and jsonb_typeof(coalesce(rules->'weights','{}'::jsonb))='object'
-    and coalesce(rules->'weights','{}'::jsonb) <> '{}'::jsonb
+    jsonb_typeof(rules)='object'
+    and length(trim(coalesce(rules->>'expression',''))) between 1 and 1000
     and coalesce((rules->>'rounding')::integer,2) between 0 and 4
   ),
   unique(series_id,version)
@@ -95,7 +95,7 @@ for each row execute function public.prevent_formula_version_mutation();
 
 create or replace function public.validate_grading_formula_data()
 returns trigger language plpgsql set search_path='' as $$
-declare invalid_weight boolean; expected_institution uuid; expected_year uuid; scope_institution uuid; scope_year uuid;
+declare expected_institution uuid; expected_year uuid; scope_institution uuid; scope_year uuid;
 begin
   if tg_table_name='grading_formula_versions' then
     select institution_id,academic_year_id into expected_institution,expected_year
@@ -103,9 +103,6 @@ begin
     if expected_institution is distinct from new.institution_id or expected_year is distinct from new.academic_year_id then
       raise exception 'formula_series_context_mismatch';
     end if;
-    select exists(select 1 from jsonb_each_text(new.rules->'weights') where value !~ '^[0-9]+([.][0-9]+)?$' or value::numeric <= 0)
-      into invalid_weight;
-    if invalid_weight then raise exception 'formula_weights_must_be_positive'; end if;
   else
     select institution_id,academic_year_id into expected_institution,expected_year
     from public.grading_formula_versions where id=new.formula_version_id;

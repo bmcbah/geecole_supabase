@@ -56,6 +56,8 @@ export type OperationsFilters = {
   rows: number;
   search?: string;
   classId?: string;
+  cycleId?: string;
+  levelId?: string;
   periodId?: string;
   state?: string;
 };
@@ -102,23 +104,46 @@ export async function listOperationsContext(
   institutionId: string,
   yearId: string,
 ) {
-  const [classes, periods] = await Promise.all([
+  const [classes, periods, cycles, levels] = await Promise.all([
     supabase
       .from("school_classes")
-      .select("id,name")
+      .select("id,name,academic_year_level_id")
       .eq("institution_id", institutionId)
       .eq("academic_year_id", yearId)
       .order("name"),
     supabase
       .from("academic_periods")
-      .select("id,name")
+      .select("id,name,cycle_id,sequence,status")
       .eq("institution_id", institutionId)
       .eq("academic_year_id", yearId)
       .order("sequence"),
+    supabase
+      .from("academic_cycles")
+      .select("id,name")
+      .eq("institution_id", institutionId)
+      .eq("is_active", true)
+      .order("sort_order"),
+    supabase
+      .from("academic_year_levels")
+      .select("id,cycle_id,level_name_snapshot")
+      .eq("institution_id", institutionId)
+      .eq("academic_year_id", yearId)
+      .eq("is_active", true)
+      .order("sort_order"),
   ]);
-  if (classes.error) throw classes.error;
-  if (periods.error) throw periods.error;
-  return { classes: classes.data ?? [], periods: periods.data ?? [] };
+  for (const result of [classes, periods, cycles, levels])
+    if (result.error) throw result.error;
+  return {
+    classes: classes.data ?? [],
+    cycles: cycles.data ?? [],
+    levels: levels.data ?? [],
+    periods: (periods.data ?? []).map((period) => ({
+      ...period,
+      cycleName:
+        cycles.data?.find((cycle) => cycle.id === period.cycle_id)?.name ??
+        "Cycle",
+    })),
+  };
 }
 
 export async function listOperationsPage(
@@ -127,6 +152,16 @@ export async function listOperationsPage(
   mode: OperationsMode,
   filters: OperationsFilters,
 ): Promise<OperationsPage> {
+  const context = await listOperationsContext(institutionId, yearId);
+  const allowedLevelIds = context.levels
+    .filter((level) => !filters.cycleId || level.cycle_id === filters.cycleId)
+    .filter((level) => !filters.levelId || level.id === filters.levelId)
+    .map((level) => level.id);
+  const allowedClassIds = context.classes
+    .filter((schoolClass) =>
+      allowedLevelIds.includes(schoolClass.academic_year_level_id),
+    )
+    .map((schoolClass) => schoolClass.id);
   let studentIds: string[] | undefined;
   if (filters.search?.trim()) {
     const term = filters.search.trim();
@@ -148,6 +183,8 @@ export async function listOperationsPage(
       (item) =>
         (!studentIds || studentIds.includes(item.studentId)) &&
         (!filters.classId || item.classId === filters.classId) &&
+        ((!filters.cycleId && !filters.levelId) ||
+          allowedClassIds.includes(item.classId)) &&
         (!filters.periodId || item.periodId === filters.periodId) &&
         (!filters.state ||
           (filters.state === "complete"
@@ -167,6 +204,8 @@ export async function listOperationsPage(
       .eq("academic_year_id", yearId);
     if (filters.classId)
       notesQuery = notesQuery.eq("class_id", filters.classId);
+    else if (filters.cycleId || filters.levelId)
+      notesQuery = notesQuery.in("class_id", allowedClassIds);
     if (filters.periodId)
       notesQuery = notesQuery.eq("period_id", filters.periodId);
     const { data: notes, error: notesError } = await notesQuery;
@@ -194,6 +233,8 @@ export async function listOperationsPage(
   const rows = all.filter(
     (item) =>
       (!filters.classId || item.classId === filters.classId) &&
+      ((!filters.cycleId && !filters.levelId) ||
+        allowedClassIds.includes(item.classId)) &&
       (!filters.periodId || item.periodId === filters.periodId) &&
       (!filters.state || item.state === filters.state) &&
       (!term ||
@@ -518,7 +559,12 @@ export async function listAverageControls(
         const anomalies = [
           ...(!formula ? ["Aucune formule applicable"] : []),
           ...(calculation.missingTypeCodes.length
-            ? [`Poids absent pour : ${calculation.missingTypeCodes.join(", ")}`]
+            ? [
+                `Note absente pour les variables : ${calculation.missingTypeCodes.join(", ")}`,
+              ]
+            : []),
+          ...(calculation.error
+            ? [`Formule invalide : ${calculation.error}`]
             : []),
           ...(courseNotes.length ? [] : ["Aucune évaluation créée"]),
           ...(postponedCount
@@ -539,7 +585,7 @@ export async function listAverageControls(
             ? `${formula.name} v${formula.version}`
             : "Formule manquante",
           formulaExpression: formula
-            ? `Pondération par type (${formula.source === "level" ? "niveau" : "cycle"})`
+            ? `${formula.rules.expression} (${formula.source === "level" ? "niveau" : "cycle"})`
             : "Aucune affectation active au niveau ou au cycle",
           notesCount: courseNotes.length,
           expectedResults,

@@ -21,6 +21,7 @@ import {
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { useToast } from "../../../shared/components/toast-context";
+import { calculateCourseAverage } from "../../notes/domain/grading-formula";
 
 type Option = { label: string; value: string };
 
@@ -114,13 +115,13 @@ export function GradingFormulasSettingsPage() {
         options: levels,
         visibleWhen: (values) => values.scope_type === "level",
       },
-      { key: "rounding", label: "Décimales", type: "number", required: true },
-      ...types.map<EntityField>((type) => ({
-        key: `weight_${type.code}`,
-        label: `Poids — ${type.name}`,
-        type: "number",
+      {
+        key: "expression",
+        label: `Expression (${types.map((type) => type.code).join(", ")})`,
+        type: "textarea",
         required: true,
-      })),
+      },
+      { key: "rounding", label: "Décimales", type: "number", required: true },
     ],
     [cycles, levels, types],
   );
@@ -133,12 +134,7 @@ export function GradingFormulasSettingsPage() {
       cycle_id: editing?.scopeType === "cycle" ? editing.scopeId : "",
       level_id: editing?.scopeType === "level" ? editing.scopeId : "",
       rounding: editing?.rules.rounding ?? 2,
-      ...Object.fromEntries(
-        types.map((type) => [
-          `weight_${type.code}`,
-          editing?.rules.weights[type.code] ?? 1,
-        ]),
-      ),
+      expression: editing?.rules.expression ?? "",
     }),
     [editing, types],
   );
@@ -149,6 +145,23 @@ export function GradingFormulasSettingsPage() {
     const scopeId = String(
       values[scopeType === "cycle" ? "cycle_id" : "level_id"] ?? "",
     );
+    const expression = String(values.expression ?? "").trim();
+    const validation = calculateCourseAverage(
+      types.map((type) => ({
+        value: 10,
+        scale: 20,
+        assessmentTypeCode: type.code,
+      })),
+      { expression, rounding: Number(values.rounding) },
+    );
+    if (!expression || validation.error) {
+      notify({
+        severity: "error",
+        summary: "Formule invalide",
+        detail: validation.error ?? "Saisissez une expression.",
+      });
+      return;
+    }
     setSaving(true);
     try {
       await createGradingFormulaVersion({
@@ -160,12 +173,7 @@ export function GradingFormulasSettingsPage() {
         scopeType,
         scopeId,
         rounding: Number(values.rounding),
-        weights: Object.fromEntries(
-          types.map((type) => [
-            type.code,
-            Number(values[`weight_${type.code}`]),
-          ]),
-        ),
+        expression,
       });
       setEditing(undefined);
       await load();
@@ -223,7 +231,7 @@ export function GradingFormulasSettingsPage() {
         sectionHeader={
           <PageHeader
             title="Formules de calcul"
-            description="Versionnez la pondération des types de note et appliquez-la à un cycle ou à un niveau. Le niveau est prioritaire."
+            description="Versionnez une expression de calcul utilisant les types de note comme variables, puis appliquez-la à un cycle ou à un niveau."
             headingAs="h2"
             compact
           />
@@ -275,12 +283,10 @@ export function GradingFormulasSettingsPage() {
               }
             />
             <Column
-              header="Poids"
-              body={(row: VersionedFormulaListItem) =>
-                Object.entries(row.rules.weights)
-                  .map(([code, weight]) => `${code}×${weight}`)
-                  .join(" · ")
-              }
+              header="Expression"
+              body={(row: VersionedFormulaListItem) => (
+                <code className="text-xs">{row.rules.expression}</code>
+              )}
             />
             <Column
               header="Actions"

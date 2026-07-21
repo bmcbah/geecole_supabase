@@ -28,5 +28,5 @@
 - modifier une formule crée une nouvelle version sans altérer l'ancienne ;
 - un bulletin sans formule applicable est bloqué avec un motif explicite ;
 - le bulletin conserve le snapshot de la version utilisée ;
-- la moyenne matière respecte les poids des types de note ;
+- la moyenne matière respecte l'expression versionnée et les types de note utilisés comme variables ;
 - la moyenne générale respecte les coefficients des cours.
