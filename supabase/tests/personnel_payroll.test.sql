@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(13);
 select has_table('public','employees','employees exists');
 select has_table('public','employee_contracts','contracts exists');
 select has_table('public','work_entries','work entries exist');
@@ -10,6 +10,7 @@ select has_table('public','salary_advances','advances exist');
 select has_table('public','employee_sanctions','sanctions exist');
 select has_table('public','payroll_payments','payments exist');
 select col_is_unique('public','employees',array['institution_id','employee_number'],'employee number is unique per institution');
+select has_trigger('public','employees','employees_assign_number','employee number is generated in database');
 select policies_are('public','employee_sanctions',array['employee_sanctions_admin','employee_sanctions_select'],'sanctions policies are explicit');
 select policies_are('public','payroll_payments',array['payroll_payments_admin','payroll_payments_finance','payroll_payments_select'],'payroll payments policies are explicit');
 select * from finish();

@@ -16,6 +16,19 @@ La liste propose recherche, état, fonction, mode de rémunération et présence
 ouvre la fiche complète : informations, emploi, contrats, rémunérations, assiduité, documents,
 sanctions et accès. La création d'un accès reste une action explicite et séparée.
 
+La création utilise un parcours guidé en quatre étapes : identité, coordonnées, emploi et
+rémunération, puis vérification. Le matricule n'est pas demandé à l'utilisateur : il est généré à
+l'enregistrement. Le contrat initial reste facultatif afin de permettre la création d'un dossier
+administratif incomplet, clairement signalé dans la fiche.
+
+La fiche présente d'abord une synthèse utile (fonction principale, contrat actif, mode de
+rémunération et état du dossier), puis les onglets Informations, Emploi, Contrats, Assiduité,
+Documents, Avances, Sanctions et Accès. Les actions non disponibles ne doivent pas être présentées
+comme opérationnelles.
+
+La liste fournit également des indicateurs simples, des filtres réinitialisables, une pagination et
+des états explicites de chargement ou d'absence de résultat. Le clic sur une ligne ouvre la fiche.
+
 ## Présences et heures
 
 La page permet la saisie groupée par date. Une heure planifiée n'est jamais payable directement :

@@ -12,3 +12,12 @@ La clôture interdit toute mutation des lignes. Les paiements peuvent être part
 
 La création d'un utilisateur passe par une fonction backend privilégiée ; aucune clé `service_role`
 ne doit être exposée dans le client React.
+
+Le matricule est attribué par un trigger PostgreSQL avant insertion. Une transaction verrouille la
+séquence logique propre à l'établissement afin d'éviter que deux créations concurrentes reçoivent
+le même numéro. Le format initial est `PER-AAAA-NNNN`; sa personnalisation par établissement reste
+un lot distinct prévu par `PER-008`.
+
+La route `/personnel/employes/:employeeId` charge la fiche et ses relations sous RLS. La création
+initiale peut enregistrer la fonction principale et un contrat actif ; l'accès GeEcole n'est jamais
+créé implicitement.

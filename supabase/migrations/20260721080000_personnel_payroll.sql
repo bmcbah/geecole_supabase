@@ -112,6 +112,20 @@ create index employees_institution_status_idx on public.employees(institution_id
 create index work_entries_validation_idx on public.work_entries(institution_id, work_date, status);
 create index payroll_entries_period_idx on public.payroll_entries(period_id, status);
 
+create or replace function public.assign_employee_number()
+returns trigger language plpgsql set search_path = '' as $$
+declare next_number integer;
+begin
+  if new.employee_number is null or btrim(new.employee_number) = '' then
+    perform pg_advisory_xact_lock(hashtext(new.institution_id::text || ':employee-number'));
+    select coalesce(max(nullif(substring(employee_number from '([0-9]+)$'), '')::integer), 0) + 1
+      into next_number from public.employees where institution_id = new.institution_id;
+    new.employee_number := 'PER-' || extract(year from current_date)::integer || '-' || lpad(next_number::text, 4, '0');
+  end if;
+  return new;
+end $$;
+create trigger employees_assign_number before insert on public.employees for each row execute function public.assign_employee_number();
+
 create trigger employees_updated_at before update on public.employees for each row execute function public.set_updated_at();
 create trigger employee_contracts_updated_at before update on public.employee_contracts for each row execute function public.set_updated_at();
 
