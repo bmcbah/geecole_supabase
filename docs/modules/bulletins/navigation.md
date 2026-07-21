@@ -20,7 +20,6 @@ Les fonctionnalités métier sont :
 
 ```text
 Notes & Bulletins
-├── Vue d’ensemble
 ├── Cahiers de notes
 ├── Suivi pédagogique
 ├── Bulletins
@@ -37,8 +36,6 @@ Le TreeView sert à sélectionner le contexte. Il ne remplace pas la page de tra
 
 ```text
 Notes & Bulletins
-│
-├── Vue d’ensemble
 │
 ├── Cahiers de notes
 │   ├── Mes cours
@@ -60,7 +57,9 @@ Notes & Bulletins
 │   └── Historique
 │
 └── Configuration
+    ├── Gestion des périodes
     ├── Affectations pédagogiques
+    ├── Responsables de cycle
     ├── Types de note
     ├── Formules de calcul
     ├── Modèles de bulletin
@@ -273,10 +272,10 @@ Notes & Bulletins
 
 #### Page de travail
 
-| Élève | Classe | Cours | Note | Impact | Action |
-|---|---|---|---|---|---|
-| Fatou Sow | 7A | Mathématiques | Composition | Bulletin bloqué | Compléter |
-| Ali Touré | 7B | Français | Oral | Moyenne bloquée | Compléter |
+| Élève     | Classe | Cours         | Note        | Impact          | Action    |
+| --------- | ------ | ------------- | ----------- | --------------- | --------- |
+| Fatou Sow | 7A     | Mathématiques | Composition | Bulletin bloqué | Compléter |
+| Ali Touré | 7B     | Français      | Oral        | Moyenne bloquée | Compléter |
 
 L’enseignant voit uniquement ses cours. La supervision voit son périmètre.
 
@@ -352,11 +351,11 @@ Période
 → Élève
 ```
 
-| Matière | Moyenne | Coefficient | Contribution | État |
-|---|---:|---:|---:|---|
-| Mathématiques | 15 | 4 | 60 | Calculée |
-| Français | 12 | 3 | 36 | Calculée |
-| Histoire | — | 2 | — | Reporté |
+| Matière       | Moyenne | Coefficient | Contribution | État     |
+| ------------- | ------: | ----------: | -----------: | -------- |
+| Mathématiques |      15 |           4 |           60 | Calculée |
+| Français      |      12 |           3 |           36 | Calculée |
+| Histoire      |       — |           2 |            — | Reporté  |
 
 Actions :
 
@@ -388,10 +387,10 @@ Deux vues :
 
 Vue par cours :
 
-| Élève | Moyenne | Appréciation | État |
-|---|---:|---|---|
-| Awa Diallo | 15 | Bon travail | Complète |
-| Fatou Sow | 11 | — | Manquante |
+| Élève      | Moyenne | Appréciation | État      |
+| ---------- | ------: | ------------ | --------- |
+| Awa Diallo |      15 | Bon travail  | Complète  |
+| Fatou Sow  |      11 | —            | Manquante |
 
 Vue par élève : toutes les appréciations destinées au bulletin.
 
@@ -437,10 +436,10 @@ Notes & Bulletins
 
 #### Page de travail
 
-| Période | Périmètre | Élèves | Statut | Date | Actions |
-|---|---|---:|---|---|---|
-| Période 1 | Collège | 248 | Terminé | 15/12 | Voir rapport |
-| Période 1 | Primaire | 310 | Partiel | 16/12 | Reprendre |
+| Période   | Périmètre | Élèves | Statut  | Date  | Actions      |
+| --------- | --------- | -----: | ------- | ----- | ------------ |
+| Période 1 | Collège   |    248 | Terminé | 15/12 | Voir rapport |
+| Période 1 | Primaire  |    310 | Partiel | 16/12 | Reprendre    |
 
 Action principale :
 
@@ -682,11 +681,11 @@ Notes & Bulletins
 
 #### Page de travail
 
-| Type | Barème | Utilisé | Actif | Action |
-|---|---:|---|---|---|
-| Évaluation | /20 | Oui | Oui | Consulter |
-| Composition | /100 | Oui | Oui | Consulter |
-| Oral | /20 | Non | Oui | Modifier |
+| Type        | Barème | Utilisé | Actif | Action    |
+| ----------- | -----: | ------- | ----- | --------- |
+| Évaluation  |    /20 | Oui     | Oui   | Consulter |
+| Composition |   /100 | Oui     | Oui   | Consulter |
+| Oral        |    /20 | Non     | Oui   | Modifier  |
 
 Le barème devient immuable après la première utilisation.
 

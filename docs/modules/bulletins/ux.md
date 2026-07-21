@@ -36,20 +36,18 @@ Filtres : année, période, cycle, niveau, classe, statut et date.
 
 ## Assistant dynamique
 
-### Étape 1 — Contexte
+### Étape 1 — Périmètre
 
-- année scolaire ;
-- période.
+- cycle obligatoire ;
+- niveau facultatif ;
+- classe facultative après le niveau ;
+- élève facultatif après la classe.
 
-### Étape 2 — Périmètre
+Le périmètre « Toute l'école » n'est pas proposé, car les périodes diffèrent selon les cycles.
 
-- toute l’école ;
-- cycles ;
-- niveaux ;
-- classes ;
-- élèves.
+### Étape 2 — Période
 
-Le formulaire se met à jour selon le choix. La sélection d’un cycle révèle les niveaux puis les classes avec cases à cocher et compteurs.
+Après le choix du cycle, la période ouverte de ce cycle est présélectionnée. L'utilisateur peut la remplacer uniquement par une autre période du même cycle.
 
 ### Étape 3 — Contrôles
 
@@ -94,10 +92,10 @@ Résumé complet avant lancement.
 
 Résumé global puis liste par élève :
 
-| Élève | Classe | Résultat | Détail | Action |
-|---|---|---|---|---|
-| Awa Diallo | 7A | Généré | Aucun problème | Voir |
-| Fatou Sow | 7B | Bloqué | Résultat reporté en mathématiques | Ouvrir |
+| Élève      | Classe | Résultat | Détail                            | Action |
+| ---------- | ------ | -------- | --------------------------------- | ------ |
+| Awa Diallo | 7A     | Généré   | Aucun problème                    | Voir   |
+| Fatou Sow  | 7B     | Bloqué   | Résultat reporté en mathématiques | Ouvrir |
 
 Regroupement des problèmes :
 

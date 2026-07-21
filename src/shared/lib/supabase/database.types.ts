@@ -698,6 +698,7 @@ export interface Database {
           id: string;
           institution_id: string;
           academic_year_id: string;
+          catalog_id: string | null;
           name: string;
           code: string;
           weight: number;
@@ -709,6 +710,7 @@ export interface Database {
           id?: string;
           institution_id: string;
           academic_year_id: string;
+          catalog_id?: string | null;
           name: string;
           code: string;
           weight?: number;
@@ -717,6 +719,103 @@ export interface Database {
         };
         Update: Partial<
           Database["public"]["Tables"]["assessment_types"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      assessment_type_catalog: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          description: string | null;
+          default_scale: number;
+          sort_order: number;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          description?: string | null;
+          default_scale?: number;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["assessment_type_catalog"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      grading_formula_series: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          code: string;
+          name: string;
+          formula_type: "course_average";
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          code: string;
+          name: string;
+          formula_type?: "course_average";
+          description?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["grading_formula_series"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      grading_formula_versions: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          series_id: string;
+          version: number;
+          rules: Json;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          series_id: string;
+          version: number;
+          rules: Json;
+          created_by?: string | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      grading_formula_assignments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          formula_version_id: string;
+          cycle_id: string | null;
+          academic_year_level_id: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          formula_version_id: string;
+          cycle_id?: string | null;
+          academic_year_level_id?: string | null;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["grading_formula_assignments"]["Insert"]
         >;
         Relationships: [];
       };
@@ -928,9 +1027,454 @@ export interface Database {
         >;
         Relationships: [];
       };
+      pedagogical_assignments: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          class_id: string;
+          subject_id: string | null;
+          teacher_id: string;
+          role: string;
+          coefficient: number;
+          all_periods: boolean;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          class_id: string;
+          subject_id?: string | null;
+          teacher_id: string;
+          role?: string;
+          coefficient?: number;
+          all_periods?: boolean;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["pedagogical_assignments"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      pedagogical_assignment_periods: {
+        Row: { assignment_id: string; period_id: string };
+        Insert: { assignment_id: string; period_id: string };
+        Update: Partial<
+          Database["public"]["Tables"]["pedagogical_assignment_periods"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      gradebook_notes: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          class_id: string;
+          subject_id: string;
+          period_id: string;
+          note_type_id: string;
+          teacher_id: string;
+          label: string;
+          code: string;
+          note_date: string;
+          scale_snapshot: number;
+          internal_comment: string | null;
+          is_locked: boolean;
+          is_published: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          class_id: string;
+          subject_id: string;
+          period_id: string;
+          note_type_id: string;
+          teacher_id: string;
+          label: string;
+          code: string;
+          note_date?: string;
+          scale_snapshot?: number;
+          internal_comment?: string | null;
+          is_locked?: boolean;
+          is_published?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["gradebook_notes"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      note_results: {
+        Row: {
+          id: string;
+          institution_id: string;
+          note_id: string;
+          student_id: string;
+          value: number | null;
+          status: "absent" | "exempt" | "postponed" | null;
+          comment: string | null;
+          is_makeup: boolean;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          note_id: string;
+          student_id: string;
+          value?: number | null;
+          status?: "absent" | "exempt" | "postponed" | null;
+          comment?: string | null;
+          is_makeup?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["note_results"]["Insert"]>;
+        Relationships: [];
+      };
+      subject_appreciations: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          period_id: string;
+          class_id: string;
+          subject_id: string;
+          student_id: string;
+          appreciation: string;
+          author_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          period_id: string;
+          class_id: string;
+          subject_id: string;
+          student_id: string;
+          appreciation: string;
+          author_id?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["subject_appreciations"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      notes_audit_log: {
+        Row: {
+          id: number;
+          institution_id: string;
+          academic_year_id: string | null;
+          entity_type: string;
+          entity_id: string;
+          action: string;
+          before_data: Json | null;
+          after_data: Json | null;
+          actor_id: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      pedagogical_settings: {
+        Row: {
+          institution_id: string;
+          academic_year_id: string;
+          appreciations_required: boolean;
+          ranking_displayed: boolean;
+          coefficients_displayed: boolean;
+          average_decimal_places: number;
+          notifications_enabled: boolean;
+          multiple_teachers_enabled: boolean;
+          validation_roles: AppRole[];
+          publication_roles: AppRole[];
+          bulletin_title: string;
+          bulletin_orientation: string;
+          bulletin_show_rank: boolean;
+          bulletin_show_appreciations: boolean;
+          bulletin_teacher_signature_label: string;
+          bulletin_direction_signature_label: string;
+          bulletin_footer: string;
+          updated_at: string;
+        };
+        Insert: {
+          institution_id: string;
+          academic_year_id: string;
+          appreciations_required?: boolean;
+          ranking_displayed?: boolean;
+          coefficients_displayed?: boolean;
+          average_decimal_places?: number;
+          notifications_enabled?: boolean;
+          multiple_teachers_enabled?: boolean;
+          validation_roles?: AppRole[];
+          publication_roles?: AppRole[];
+          bulletin_title?: string;
+          bulletin_orientation?: string;
+          bulletin_show_rank?: boolean;
+          bulletin_show_appreciations?: boolean;
+          bulletin_teacher_signature_label?: string;
+          bulletin_direction_signature_label?: string;
+          bulletin_footer?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["pedagogical_settings"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      bulletin_generation_batches: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          period_id: string;
+          scope_type: string;
+          scope_ids: string[];
+          options: Json;
+          status: "running" | "completed" | "partial" | "failed";
+          total_count: number;
+          generated_count: number;
+          warning_count: number;
+          blocked_count: number;
+          initiated_by: string | null;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          period_id: string;
+          scope_type: string;
+          scope_ids?: string[];
+          options?: Json;
+          status?: "running" | "completed" | "partial" | "failed";
+          total_count?: number;
+          generated_count?: number;
+          warning_count?: number;
+          blocked_count?: number;
+          initiated_by?: string | null;
+          completed_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["bulletin_generation_batches"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      bulletin_versions: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          period_id: string;
+          enrollment_id: string;
+          student_id: string;
+          class_id: string;
+          batch_id: string;
+          version: number;
+          status:
+            | "generated"
+            | "pending_validation"
+            | "validated"
+            | "rejected"
+            | "published"
+            | "replaced";
+          snapshot: Json;
+          validation_comment: string | null;
+          validated_by: string | null;
+          validated_at: string | null;
+          published_by: string | null;
+          published_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          period_id: string;
+          enrollment_id: string;
+          student_id: string;
+          class_id: string;
+          batch_id: string;
+          version?: number;
+          status?:
+            | "generated"
+            | "pending_validation"
+            | "validated"
+            | "rejected"
+            | "published"
+            | "replaced";
+          snapshot?: Json;
+          validation_comment?: string | null;
+          validated_by?: string | null;
+          validated_at?: string | null;
+          published_by?: string | null;
+          published_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["bulletin_versions"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      bulletin_generation_items: {
+        Row: {
+          id: string;
+          institution_id: string;
+          batch_id: string;
+          enrollment_id: string;
+          student_id: string;
+          class_id: string | null;
+          status: "generated" | "warning" | "blocked";
+          issue_code: string | null;
+          message: string | null;
+          bulletin_version_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          batch_id: string;
+          enrollment_id: string;
+          student_id: string;
+          class_id?: string | null;
+          status: "generated" | "warning" | "blocked";
+          issue_code?: string | null;
+          message?: string | null;
+          bulletin_version_id?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["bulletin_generation_items"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      cycle_responsibility_types: {
+        Row: {
+          id: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          description: string | null;
+          can_validate_bulletins: boolean;
+          can_manage_periods: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          name: string;
+          code: string;
+          description?: string | null;
+          can_validate_bulletins?: boolean;
+          can_manage_periods?: boolean;
+          is_active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["cycle_responsibility_types"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      cycle_responsibilities: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          responsibility_type_id: string;
+          person_id: string;
+          capacity: "holder" | "acting" | "deputy";
+          starts_on: string;
+          ends_on: string | null;
+          replaced_person_id: string | null;
+          status: "draft" | "active" | "closed" | "archived";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          academic_year_id: string;
+          cycle_id: string;
+          responsibility_type_id: string;
+          person_id: string;
+          capacity?: "holder" | "acting" | "deputy";
+          starts_on: string;
+          ends_on?: string | null;
+          replaced_person_id?: string | null;
+          status?: "draft" | "active" | "closed" | "archived";
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["cycle_responsibilities"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      notes_average_controls: {
+        Row: {
+          id: string;
+          institution_id: string;
+          academic_year_id: string;
+          class_id: string;
+          class_name: string;
+          subject_name: string;
+          teacher_name: string;
+          coefficient: number;
+          notes_count: number;
+          postponed_count: number;
+          state: "ready" | "incomplete" | "not_started";
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
+      save_cycle_responsibility: {
+        Args: {
+          target_id: string | null;
+          target_institution_id: string;
+          target_year_id: string;
+          target_cycle_id: string;
+          target_type_id: string;
+          target_person_id: string;
+          target_capacity: string;
+          target_starts_on: string;
+          target_ends_on: string | null;
+          target_replaced_person_id: string | null;
+        };
+        Returns: string;
+      };
+      save_grading_formula_version: {
+        Args: {
+          target_institution_id: string;
+          target_year_id: string;
+          target_series_id: string | null;
+          formula_name: string;
+          formula_code: string;
+          formula_expression: string;
+          formula_rounding: number;
+          scope_type: "cycle" | "level";
+          scope_id: string;
+        };
+        Returns: string;
+      };
+      install_assessment_type_catalog: {
+        Args: { target_institution_id: string; target_year_id: string };
+        Returns: number;
+      };
+      change_academic_period_status: {
+        Args: { target_period_id: string; target_status: string };
+        Returns: void;
+      };
       change_enrollment_status: {
         Args: {
           target_enrollment_id: string;

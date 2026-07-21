@@ -8,11 +8,23 @@
 4. Notes par élève
 5. Suivi de saisie
 6. Contrôle des moyennes
-7. Types de note
-8. Formules de calcul
-9. Affectations pédagogiques
+7. Affectations pédagogiques
+
+Les types de note, les formules et les paramètres pédagogiques sont configurés
+dans le module Paramétrage.
 
 Les pages et données visibles dépendent des permissions.
+
+## Filtres des opérations
+
+Les pages Rattrapages, Appréciations et Contrôle des moyennes affichent en permanence les filtres principaux `Cycle → Niveau → Période`. Le niveau dépend du cycle. Si un cycle est sélectionné, la liste des périodes ne contient que ses périodes ; sinon chaque période est libellée `Cycle — Période` afin d'éviter toute ambiguïté. La classe et les statuts restent des filtres secondaires.
+
+## Gestion opérationnelle des périodes
+
+L'ouverture et la clôture des saisies sont réalisées dans une page dédiée,
+organisée par cycle et présentée sous forme de frise. Le cahier des notes ne
+permet pas de modifier l'état d'une période : il affiche seulement un indicateur
+compact `À venir`, `Saisies ouvertes` ou `Clôturée`.
 
 ## Tableau de bord
 
@@ -46,25 +58,22 @@ Une carte de cours affiche :
 - moyenne de classe ;
 - blocages.
 
-## Cahier de notes en TreeView
+## Cahier de notes en TreeView — page centrale
 
-Le cahier utilise un panneau latéral hiérarchique. Une grille globale de tous les cours serait illisible.
+Le cahier est la page principale de gestion de toutes les notes de l’école. Le
+parcours visible est : choisir un cours, saisir les résultats, compléter les
+appréciations, contrôler les moyennes puis générer les bulletins.
+
+Le cahier utilise des filtres globaux distincts du panneau hiérarchique. Le cycle,
+la période, le niveau et la classe sont sélectionnés sur une seule ligne hors du TreeView. Le TreeView conserve
+une seule recherche interne et affiche uniquement `Niveau → Classe → Cours`.
 
 ```text
-Année scolaire 2026–2027
-├── Période 1
-│   ├── Primaire
-│   │   └── CM1
-│   │       └── CM1-A
-│   │           ├── Mathématiques — E1
-│   │           └── Sport — E3
-│   └── Collège
-│       └── 7e année
-│           ├── 7A
-│           │   ├── Mathématiques — E1
-│           │   └── Français — E2
-│           └── 7B
-└── Période 2
+Filtres globaux : Cycle | Période | Niveau | Classe
+Recherche dans l’arbre : niveau, cours ou enseignant
+└── Niveau
+    └── Classe
+        └── Cours
 ```
 
 ### Adaptation par profil
@@ -76,8 +85,8 @@ Année scolaire 2026–2027
 
 ### Fonctions du TreeView
 
-- recherche par classe, matière ou enseignant ;
-- filtres année, période et statut ;
+- recherche unique par niveau, matière ou enseignant ;
+- filtres globaux cycle, période et classe hors du TreeView ;
 - badges d’état ;
 - compteurs d’anomalies ;
 - mémorisation du dernier cours ouvert ;
@@ -107,12 +116,9 @@ En-tête :
 - progression ;
 - alertes.
 
-Onglets :
-
-- Cahier
-- Appréciations
-- Moyennes
-- Historique
+La zone ne contient aucun onglet de navigation. Elle présente les actions du
+cours. Les moyennes, appréciations et historiques sont ouverts comme pages de
+travail dédiées ou comme actions contextuelles.
 
 ## Grille du cahier
 
@@ -143,6 +149,27 @@ Actions :
 - modifier libellé ou date ;
 - publier les notes ;
 - consulter l’historique.
+
+Le libellé affiché dans l’interface est **Journal des modifications**. Il sert à
+retracer les créations, changements et publications ; ce n’est pas une page de
+navigation.
+
+La **saisie en masse** accepte le collage de deux colonnes depuis un tableur :
+matricule et résultat. Les valeurs Absent, Dispensé et Reporté sont acceptées.
+
+Une **appréciation** est un commentaire pédagogique par élève et matière. Elle
+est saisie dans la dernière partie du cahier et reprise dans le bulletin.
+
+Un **rattrapage à compléter** est un résultat marqué Reporté. Tant qu’il n’est
+pas remplacé par une note ou un statut définitif, la moyenne et le bulletin de
+l’élève sont bloqués.
+
+Une seule période peut être ouverte par cycle. Son ouverture, sa clôture et sa
+réouverture se font **uniquement** dans la page **Gestion des périodes**. Le
+cahier affiche l’état en lecture seule et conditionne les actions de saisie.
+
+La période affichée est résolue automatiquement depuis le cycle de la classe ou
+du niveau. Le changement de cours recalcule les périodes disponibles.
 
 La grille utilise des colonnes figées et une navigation clavier.
 
@@ -201,6 +228,17 @@ Affiche sans modification directe :
 - coefficient ;
 - contribution à la moyenne générale ;
 - anomalies.
+
+Le contrôle est filtré par période et présente aussi les notes manquantes, les
+résultats reportés, les absences, les dispenses et la raison précise d’un
+blocage. Une ligne sans évaluation ou avec résultat reporté n’est jamais déclarée
+prête.
+
+## Appréciations
+
+La page présente tous les couples élève–matière attendus pour la période, y
+compris lorsqu’aucune appréciation n’a encore été saisie. Elle permet la création
+et la modification sur place et affiche un état de complétude.
 
 ## Navigation détaillée par profil
 

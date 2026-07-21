@@ -85,3 +85,15 @@ Lors de sa sortie, sa fiche est conservée, son état est mis à jour et ses fon
 Seul un membre du personnel disposant d'une fonction active de type Enseignant peut recevoir une affectation pédagogique.
 
 La présence d'un compte utilisateur n'est pas obligatoire pour recevoir cette affectation.
+
+## PER-014 — Responsabilités de cycle
+
+La fonction professionnelle, la responsabilité exercée sur un cycle et les permissions applicatives sont trois notions distinctes.
+
+Une personne ne devient pas automatiquement censeur, principal, proviseur ou directeur parce qu'elle est responsable d'un cycle. Le cumul est autorisé uniquement au moyen d'affectations explicites.
+
+Chaque responsabilité de cycle est historisée par établissement, année scolaire, cycle, personne, type de responsabilité, qualité (titulaire, intérimaire ou adjoint), dates de validité et état.
+
+Un intérim désigne obligatoirement la personne remplacée. Une seule personne titulaire active est autorisée pour un même type de responsabilité et un même cycle ; les adjoints restent possibles.
+
+GeeCole fournit des intitulés guinéens par défaut — responsable de cycle, responsable pédagogique, censeur, principal, proviseur et directeur des études — que l'établissement peut compléter dans son catalogue.

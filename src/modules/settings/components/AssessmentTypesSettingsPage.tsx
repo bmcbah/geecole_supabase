@@ -8,6 +8,7 @@ import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   deleteAssessmentType,
+  installRecommendedAssessmentTypes,
   listAssessmentTypes,
   saveAssessmentType,
 } from "../services/annual-settings.service";
@@ -27,7 +28,6 @@ type Assessment = Database["public"]["Tables"]["assessment_types"]["Row"];
 const fields: EntityField[] = [
   { key: "name", label: "Nom", required: true },
   { key: "code", label: "Code", required: true },
-  { key: "weight", label: "Poids", type: "number", required: true },
   { key: "scale", label: "Barème", type: "number", required: true },
   { key: "is_active", label: "Type actif", type: "boolean" },
 ];
@@ -36,10 +36,14 @@ export function AssessmentTypesSettingsPage() {
   const { institutionId, year } = useAcademicSession();
   const notify = useToast();
   const [items, setItems] = useState<Assessment[]>([]);
-  const [editing, setEditing] = useState<Assessment | null | undefined>(undefined);
+  const [editing, setEditing] = useState<Assessment | null | undefined>(
+    undefined,
+  );
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const editable = Boolean(year && !["closed", "archived"].includes(year.status));
+  const editable = Boolean(
+    year && !["closed", "archived"].includes(year.status),
+  );
 
   const load = useCallback(async () => {
     if (!year) return;
@@ -54,7 +58,6 @@ export function AssessmentTypesSettingsPage() {
     () => ({
       name: editing?.name ?? "",
       code: editing?.code ?? "",
-      weight: editing?.weight ?? 1,
       scale: editing?.scale ?? 20,
       is_active: editing?.is_active ?? true,
     }),
@@ -71,7 +74,7 @@ export function AssessmentTypesSettingsPage() {
         {
           name: String(values.name),
           code: String(values.code).toUpperCase(),
-          weight: Number(values.weight),
+          weight: 1,
           scale: Number(values.scale),
           is_active: Boolean(values.is_active),
         },
@@ -99,6 +102,19 @@ export function AssessmentTypesSettingsPage() {
       notify({ severity: "error", summary: "Suppression impossible" });
     }
   };
+  const installCatalog = async () => {
+    if (!year) return;
+    setSaving(true);
+    try {
+      await installRecommendedAssessmentTypes(institutionId, year.id);
+      await load();
+      notify({ severity: "success", summary: "Catalogue GeeCole ajouté" });
+    } catch {
+      notify({ severity: "error", summary: "Import du catalogue impossible" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!year) {
     return (
@@ -122,7 +138,7 @@ export function AssessmentTypesSettingsPage() {
         sectionHeader={
           <PageHeader
             title="Types de notes"
-            description="Définissez les catégories de notes, leur poids et leur barème."
+            description="Définissez les catégories de notes et leur barème. Le poids est porté par les formules."
             meta={
               <Tag
                 value={`${items.length} type${items.length > 1 ? "s" : ""}`}
@@ -145,13 +161,24 @@ export function AssessmentTypesSettingsPage() {
               />
             }
             end={
-              <Button
-                label="Nouveau type"
-                icon="pi pi-plus"
-                size="small"
-                disabled={!editable}
-                onClick={() => setEditing(null)}
-              />
+              <div className="flex gap-2">
+                <Button
+                  label="Catalogue GeeCole"
+                  icon="pi pi-download"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  disabled={!editable || saving}
+                  onClick={() => void installCatalog()}
+                />
+                <Button
+                  label="Nouveau type"
+                  icon="pi pi-plus"
+                  size="small"
+                  disabled={!editable}
+                  onClick={() => setEditing(null)}
+                />
+              </div>
             }
             className="min-h-0 rounded-none border-0 bg-transparent p-0"
           />
@@ -160,7 +187,7 @@ export function AssessmentTypesSettingsPage() {
           <DataTable
             value={items}
             globalFilter={search}
-            globalFilterFields={["name", "code", "weight", "scale", "is_active"]}
+            globalFilterFields={["name", "code", "scale", "is_active"]}
             dataKey="id"
             emptyMessage="Aucun type de note"
             stripedRows
@@ -169,7 +196,6 @@ export function AssessmentTypesSettingsPage() {
           >
             <Column field="name" header="Type" />
             <Column field="code" header="Code" />
-            <Column field="weight" header="Poids" />
             <Column field="scale" header="Barème" />
             <Column
               header="Statut"

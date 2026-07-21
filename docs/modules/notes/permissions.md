@@ -70,11 +70,13 @@ Dans son périmètre de supervision :
 ## Direction
 
 - vision globale dans l’établissement ;
+- ouvrir et clôturer les périodes de saisie selon son périmètre et ses permissions ;
 - contrôle des moyennes ;
 - accès aux bulletins selon permissions.
 
 ## Administration
 
+- ouvrir et clôturer les périodes de saisie si cette permission lui est déléguée ;
 - types de note ;
 - surcharges ;
 - profils et permissions délégables ;
