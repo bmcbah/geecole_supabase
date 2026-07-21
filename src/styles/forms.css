@@ -117,6 +117,12 @@ section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
   border-radius: 0.75rem;
 }
 
+/* Cahier des notes : aucun style additionnel sur le PageHeader principal. */
+.space-y-4.pb-6:has(.gradebook-tree) > header:first-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
 /* Cahier des notes : styles strictement limités au workspace qui contient le TreeView. */
 section:has(.gradebook-tree) {
   border-radius: 1rem !important;
