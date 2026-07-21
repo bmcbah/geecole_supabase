@@ -133,6 +133,10 @@ export function calculateCourseAverage(
     const missingTypeCodes = referenced.filter((code) => !(code in variables));
     if (missingTypeCodes.length) return { average: null, missingTypeCodes };
     const raw = evaluateExpression(rules.expression, variables);
+    if (raw < 0 || raw > 20)
+      throw new Error(
+        `Résultat hors barème : ${raw.toFixed(2)} / 20. Vérifiez les pondérations et le dénominateur.`,
+      );
     const precision = Math.min(4, Math.max(0, rules.rounding ?? 2));
     return { average: Number(raw.toFixed(precision)), missingTypeCodes: [] };
   } catch (cause) {
