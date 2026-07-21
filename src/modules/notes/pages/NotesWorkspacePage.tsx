@@ -306,6 +306,7 @@ function GradebookTree(props: {
   const [treeSearch, setTreeSearch] = useState("");
   const [cycleId, setCycleId] = useState("");
   const [periodId, setPeriodId] = useState("");
+  const [levelName, setLevelName] = useState("");
   const [classId, setClassId] = useState("");
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const cycles = useMemo(
@@ -328,9 +329,21 @@ function GradebookTree(props: {
         ...new Map(
           props.courses
             .filter((course) => !cycleId || course.cycleId === cycleId)
+            .filter((course) => !levelName || course.levelName === levelName)
             .map((course) => [course.classId, course]),
         ).values(),
       ].map((course) => ({ label: course.className, value: course.classId })),
+    [cycleId, levelName, props.courses],
+  );
+  const levels = useMemo(
+    () =>
+      [
+        ...new Set(
+          props.courses
+            .filter((course) => !cycleId || course.cycleId === cycleId)
+            .map((course) => course.levelName),
+        ),
+      ].map((level) => ({ label: level, value: level })),
     [cycleId, props.courses],
   );
   useEffect(() => {
@@ -365,6 +378,7 @@ function GradebookTree(props: {
         );
       return (
         (!cycleId || course.cycleId === cycleId) &&
+        (!levelName || course.levelName === levelName) &&
         (!classId || course.classId === classId) &&
         (!periodId ||
           !course.allowedPeriodIds.length ||
@@ -402,7 +416,14 @@ function GradebookTree(props: {
         };
       },
     );
-  }, [classId, cycleId, normalizedTreeSearch, periodId, props.courses]);
+  }, [
+    classId,
+    cycleId,
+    levelName,
+    normalizedTreeSearch,
+    periodId,
+    props.courses,
+  ]);
   const selectedKey =
     props.selectedCourse && periodId
       ? `${periodId}:course:${props.selectedCourse.assignmentId}`
@@ -441,78 +462,91 @@ function GradebookTree(props: {
     />
   );
   return (
-    <section className="min-h-[620px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-[max-content_minmax(0,1fr)]">
-      <aside className="hidden min-w-0 border-r border-slate-200 bg-slate-50/60 p-2.5 lg:block">
-        <div className="mb-2 grid gap-1.5">
-          <span className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            Filtres globaux
-          </span>
-          <Dropdown
-            value={cycleId}
-            options={cycles}
-            onChange={(event) => {
-              setCycleId(String(event.value));
-              setClassId("");
-            }}
-            className="h-8 w-full min-w-52 text-xs"
-            placeholder="Cycle"
-          />
-          <Dropdown
-            value={periodId}
-            options={availablePeriods.map((period) => ({
-              label: period.name,
-              value: period.id,
-            }))}
-            onChange={(event) => setPeriodId(String(event.value))}
-            className="h-8 w-full text-xs"
-            placeholder="Période"
-          />
-          <Dropdown
-            value={classId}
-            options={[{ label: "Toutes les classes", value: "" }, ...classes]}
-            onChange={(event) => setClassId(String(event.value))}
-            className="h-8 w-full text-xs"
-            placeholder="Classe"
-          />
-        </div>
-        <div className="border-t border-slate-200 pt-2">
-          <span className="mb-1 block px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            Recherche dans l’arbre
-          </span>
-          <span className="p-input-icon-left block">
-            <i className="pi pi-search" />
-            <InputText
-              value={treeSearch}
-              onChange={(e) => setTreeSearch(e.target.value)}
-              className="h-9 w-full pl-9 text-sm"
-              placeholder="Niveau, cours, enseignant…"
-            />
-          </span>
-        </div>
-        <div className="mb-2 mt-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          Niveau → Classe → Cours
-        </div>
-        {tree}
-      </aside>
-      <div className="min-w-0">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/60 p-2 lg:hidden">
-          <div className="min-w-0 text-xs">
-            <span className="block text-slate-500">Cours sélectionné</span>
-            <strong className="block truncate text-slate-800">
-              {props.selectedCourse
-                ? `${props.selectedCourse.subjectName} · ${props.selectedCourse.className}`
-                : "Aucun cours"}
-            </strong>
+    <section className="min-h-[620px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="hidden items-center gap-2 border-b border-slate-200 bg-white p-2 lg:flex">
+        <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          Contexte
+        </span>
+        <Dropdown
+          value={cycleId}
+          options={cycles}
+          onChange={(event) => {
+            setCycleId(String(event.value));
+            setLevelName("");
+            setClassId("");
+          }}
+          className="h-8 min-w-0 flex-1 text-xs"
+          placeholder="Cycle"
+        />
+        <Dropdown
+          value={periodId}
+          options={availablePeriods.map((period) => ({
+            label: period.name,
+            value: period.id,
+          }))}
+          onChange={(event) => setPeriodId(String(event.value))}
+          className="h-8 min-w-0 flex-1 text-xs"
+          placeholder="Période"
+        />
+        <Dropdown
+          value={levelName}
+          options={[{ label: "Tous les niveaux", value: "" }, ...levels]}
+          onChange={(event) => {
+            setLevelName(String(event.value));
+            setClassId("");
+          }}
+          className="h-8 min-w-0 flex-1 text-xs"
+          placeholder="Niveau"
+        />
+        <Dropdown
+          value={classId}
+          options={[{ label: "Toutes les classes", value: "" }, ...classes]}
+          onChange={(event) => setClassId(String(event.value))}
+          className="h-8 min-w-0 flex-1 text-xs"
+          placeholder="Classe"
+        />
+      </div>
+      <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)]">
+        <aside className="hidden min-w-0 border-r border-slate-200 bg-slate-50/60 p-2.5 lg:block">
+          <div className="border-t border-slate-200 pt-2">
+            <span className="mb-1 block px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Recherche dans l’arbre
+            </span>
+            <span className="p-input-icon-left block">
+              <i className="pi pi-search" />
+              <InputText
+                value={treeSearch}
+                onChange={(e) => setTreeSearch(e.target.value)}
+                className="h-9 w-full pl-9 text-sm"
+                placeholder="Niveau, cours, enseignant…"
+              />
+            </span>
           </div>
-          <Button
-            size="small"
-            label="Choisir"
-            icon="pi pi-sitemap"
-            outlined
-            onClick={() => setMobileTreeOpen(true)}
-          />
+          <div className="mb-2 mt-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Niveau → Classe → Cours
+          </div>
+          {tree}
+        </aside>
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/60 p-2 lg:hidden">
+            <div className="min-w-0 text-xs">
+              <span className="block text-slate-500">Cours sélectionné</span>
+              <strong className="block truncate text-slate-800">
+                {props.selectedCourse
+                  ? `${props.selectedCourse.subjectName} · ${props.selectedCourse.className}`
+                  : "Aucun cours"}
+              </strong>
+            </div>
+            <Button
+              size="small"
+              label="Choisir"
+              icon="pi pi-sitemap"
+              outlined
+              onClick={() => setMobileTreeOpen(true)}
+            />
+          </div>
+          {props.children}
         </div>
-        {props.children}
       </div>
       <Dialog
         header="Choisir le cours"
@@ -521,12 +555,13 @@ function GradebookTree(props: {
         className="w-[min(96vw,34rem)]"
         onHide={() => setMobileTreeOpen(false)}
       >
-        <div className="mb-3 grid gap-2 sm:grid-cols-3">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
           <Dropdown
             value={cycleId}
             options={cycles}
             onChange={(event) => {
               setCycleId(String(event.value));
+              setLevelName("");
               setClassId("");
             }}
             className="h-9 w-full text-xs"
@@ -541,6 +576,16 @@ function GradebookTree(props: {
             onChange={(event) => setPeriodId(String(event.value))}
             className="h-9 w-full text-xs"
             placeholder="Période"
+          />
+          <Dropdown
+            value={levelName}
+            options={[{ label: "Tous les niveaux", value: "" }, ...levels]}
+            onChange={(event) => {
+              setLevelName(String(event.value));
+              setClassId("");
+            }}
+            className="h-9 w-full text-xs"
+            placeholder="Niveau"
           />
           <Dropdown
             value={classId}
@@ -719,56 +764,26 @@ function Gradebook(props: {
             severity={props.period?.status === "open" ? "success" : "secondary"}
           />
         </div>
-        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <strong className="text-xs uppercase tracking-wide text-slate-600">
-              Outils du cahier
-            </strong>
-            <span className="text-xs text-slate-500">
-              Le pilotage des périodes est réservé à la page Gestion des
-              périodes
-            </span>
-          </div>
-          <div className="flex flex-col gap-2 xl:flex-row xl:items-end">
-            <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-              <Field label="Période du cycle">
-                <Dropdown
-                  value={props.period?.id}
-                  options={props.periods.map((p) => ({
-                    label: `${p.name}${p.status === "open" ? " · active" : ""}`,
-                    value: p.id,
-                  }))}
-                  onChange={(e) => props.onPeriod(String(e.value))}
-                  className="h-9 w-full text-sm"
-                />
-              </Field>
-              <Field label="Rechercher un élève">
-                <span className="p-input-icon-left block">
-                  <i className="pi pi-search" />
-                  <InputText
-                    value={studentQuery}
-                    onChange={(e) => setStudentQuery(e.target.value)}
-                    className="h-9 w-full pl-9 text-sm"
-                    placeholder="Nom ou matricule"
-                  />
-                </span>
-              </Field>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="small"
-                label="Ajouter une évaluation"
-                icon="pi pi-plus"
-                disabled={props.period?.status !== "open"}
-                onClick={props.onAdd}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/70 p-2">
+          <span className="p-input-icon-left min-w-48 flex-1">
+            <i className="pi pi-search" />
+            <InputText
+              value={studentQuery}
+              onChange={(e) => setStudentQuery(e.target.value)}
+              className="h-8 w-full pl-9 text-xs"
+              placeholder="Nom ou matricule"
+            />
+          </span>
           <Button
             size="small"
-            label="Saisie en masse"
+            label="Évaluation"
+            icon="pi pi-plus"
+            disabled={props.period?.status !== "open"}
+            onClick={props.onAdd}
+          />
+          <Button
+            size="small"
+            label="Saisie masse"
             icon="pi pi-table"
             severity="secondary"
             outlined
@@ -780,7 +795,7 @@ function Gradebook(props: {
           />
           <Button
             size="small"
-            label="Appliquer un statut"
+            label="Statut"
             icon="pi pi-check-square"
             severity="secondary"
             outlined
@@ -792,7 +807,7 @@ function Gradebook(props: {
           />
           <Button
             size="small"
-            label="Publier les évaluations"
+            label="Publier"
             icon="pi pi-send"
             severity="secondary"
             outlined
@@ -805,7 +820,7 @@ function Gradebook(props: {
           />
           <Button
             size="small"
-            label="Journal des modifications"
+            label="Journal"
             icon="pi pi-history"
             text
             disabled={!props.notes.length}
@@ -844,7 +859,7 @@ function Gradebook(props: {
                     }
                   />
                 </th>
-                <th className="sticky left-0 z-10 min-w-44 border-b border-r bg-slate-50 p-2">
+                <th className="sticky left-0 z-10 w-px whitespace-nowrap border-b border-r bg-slate-50 p-2">
                   Élève
                 </th>
                 {props.notes.map((note) => (
@@ -891,7 +906,7 @@ function Gradebook(props: {
                       }
                     />
                   </td>
-                  <td className="sticky left-0 z-10 border-b border-r bg-white p-2">
+                  <td className="sticky left-0 z-10 w-px whitespace-nowrap border-b border-r bg-white p-2">
                     <strong className="block">{student.name}</strong>
                     <span className="text-xs text-slate-400">
                       {student.matricule}

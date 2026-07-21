@@ -148,7 +148,7 @@ Notes & Bulletins
 #### Page de travail
 
 ```text
-Filtres globaux : Cycle → Période → Classe
+Filtres globaux : Cycle → Période → Niveau → Classe
 TreeView : Niveau → Classe → Cours
 ```
 

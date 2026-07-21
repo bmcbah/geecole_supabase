@@ -61,11 +61,11 @@ parcours visible est : choisir un cours, saisir les résultats, compléter les
 appréciations, contrôler les moyennes puis générer les bulletins.
 
 Le cahier utilise des filtres globaux distincts du panneau hiérarchique. Le cycle,
-la période et la classe sont sélectionnés hors du TreeView. Le TreeView conserve
+la période, le niveau et la classe sont sélectionnés sur une seule ligne hors du TreeView. Le TreeView conserve
 une seule recherche interne et affiche uniquement `Niveau → Classe → Cours`.
 
 ```text
-Filtres globaux : Cycle | Période | Classe
+Filtres globaux : Cycle | Période | Niveau | Classe
 Recherche dans l’arbre : niveau, cours ou enseignant
 └── Niveau
     └── Classe
