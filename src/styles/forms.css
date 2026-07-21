@@ -1,0 +1,378 @@
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+}
+
+.form-dialog-wide {
+  width: min(94vw, 760px);
+}
+
+.form-grid .p-inputtext,
+.form-grid .p-inputnumber,
+.form-grid .p-inputnumber-input,
+.form-grid .p-dropdown,
+.form-grid .p-multiselect,
+.form-grid .p-inputtextarea {
+  width: 100%;
+}
+
+.code-field-group {
+  display: flex;
+  width: 100%;
+}
+
+.code-field-group .p-inputtext {
+  min-width: 0;
+  flex: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.code-field-group .p-button {
+  flex: 0 0 auto;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Cartes financières compactes et strictement alignées. */
+.space-y-4 > header + section:has(article) {
+  padding: 0.875rem !important;
+}
+
+.space-y-4 > header + section:has(article) > div:first-child {
+  margin-bottom: 0.75rem !important;
+}
+
+.space-y-4 > header + section:has(article) > div:nth-child(2) {
+  align-items: stretch;
+  gap: 0.75rem !important;
+}
+
+.space-y-4 > header + section:has(article) article {
+  display: grid !important;
+  grid-template-rows: 2rem auto auto !important;
+  min-height: 104px !important;
+  height: 104px !important;
+  padding: 0.75rem !important;
+  border-radius: 0.75rem !important;
+}
+
+.space-y-4 > header + section:has(article) article > div:first-child {
+  min-height: 2rem !important;
+  height: 2rem !important;
+  align-items: start !important;
+}
+
+.space-y-4 > header + section:has(article) article > div:first-child > span:first-child {
+  padding-top: 0 !important;
+  line-height: 1rem !important;
+}
+
+.space-y-4 > header + section:has(article) article > div:first-child > span:last-child {
+  width: 2rem !important;
+  height: 2rem !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+.space-y-4 > header + section:has(article) article > strong {
+  align-self: end !important;
+  margin-top: 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.2rem !important;
+}
+
+.space-y-4 > header + section:has(article) article > span:last-child {
+  margin-top: 0.125rem !important;
+  font-size: 0.7rem !important;
+  line-height: 0.9rem !important;
+}
+
+/* Les panneaux de filtres avancés des pages financières restent dans la toolbar avec une marge homogène. */
+.space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+  margin: 0 1rem 1rem;
+  padding: 1.25rem !important;
+  border: 1px solid rgb(209 250 229);
+  border-radius: 0.75rem;
+}
+
+.space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 > div:first-child {
+  margin-bottom: 1rem !important;
+}
+
+.space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 > div:last-child {
+  gap: 1rem !important;
+}
+
+/* Les tableaux financiers restent bord à bord sans modifier le padding par défaut des autres SettingsTablePanel. */
+section:has(> div > div.rounded-xl > .p-datatable) > div:last-child {
+  padding: 0 !important;
+}
+
+/* Le panneau avancé de la liste élèves reste à l'intérieur de la toolbar avec une respiration identique aux pages financières. */
+.medium-controls section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+  margin: 0 1rem 1rem;
+  border: 1px solid rgb(209 250 229);
+  border-radius: 0.75rem;
+}
+
+/* Cahier des notes : aucun style additionnel sur le PageHeader principal. */
+.space-y-4.pb-6:has(.gradebook-tree) > header:first-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+/*
+ * Cahier des notes : la structure et les dimensions restent pilotées par les
+ * classes Tailwind du composant. Ces règles ne ciblent que le DOM interne
+ * généré par PrimeReact Tree et les cas responsive impossibles à exprimer
+ * directement sur ses sous-éléments.
+ */
+section:has(.gradebook-tree) {
+  width: 100%;
+  max-width: none;
+  border-radius: 0.75rem !important;
+  border-color: rgb(226 232 240);
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+section:has(.gradebook-tree) > div:first-child {
+  padding: 0.75rem !important;
+  background: transparent !important;
+}
+
+section:has(.gradebook-tree) > div:first-child > div {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+}
+
+section:has(.gradebook-tree) > div:first-child label,
+section:has(.gradebook-tree) > div:first-child .p-dropdown {
+  min-width: 0;
+  width: 100%;
+}
+
+section:has(.gradebook-tree) aside {
+  min-width: 0;
+  padding: 0.75rem !important;
+  background: transparent !important;
+}
+
+.gradebook-tree,
+.gradebook-tree .p-tree-container,
+.gradebook-tree .p-treenode,
+.gradebook-tree .p-treenode-content,
+.gradebook-tree .p-treenode-children {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+
+.gradebook-tree {
+  width: 100%;
+  overflow: hidden;
+}
+
+.gradebook-tree .p-tree-container {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.gradebook-tree .p-treenode {
+  width: 100%;
+  padding: 0;
+}
+
+.gradebook-tree .p-treenode-content {
+  display: flex;
+  width: 100%;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.375rem;
+  outline: 0;
+}
+
+.gradebook-tree .p-treenode-content:hover {
+  background: rgb(248 250 252);
+}
+
+.gradebook-tree .p-treenode-content.p-highlight {
+  color: rgb(6 95 70);
+  background: rgb(236 253 245);
+}
+
+.gradebook-tree .p-tree-toggler {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 1.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.gradebook-tree .p-treenode-icon {
+  width: 1rem;
+  flex: 0 0 1rem;
+  margin: 0;
+  color: rgb(100 116 139);
+  text-align: center;
+}
+
+.gradebook-tree .p-treenode-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.gradebook-tree .p-treenode-label > button {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 1.5rem;
+  overflow: hidden;
+  border: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  line-height: 1.25rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gradebook-tree .p-treenode-children {
+  width: 100%;
+  margin: 0;
+  padding-left: 0.625rem;
+}
+
+section:has(.gradebook-tree) header {
+  padding: 0.625rem 0.75rem !important;
+  background: transparent !important;
+}
+
+section:has(.gradebook-tree) header > div:first-child {
+  min-width: 0;
+  gap: 0.5rem !important;
+}
+
+section:has(.gradebook-tree) header h2,
+section:has(.gradebook-tree) header p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+section:has(.gradebook-tree) header h2 {
+  line-height: 1.25rem;
+}
+
+section:has(.gradebook-tree) header p {
+  margin-top: 0.125rem !important;
+  line-height: 1rem;
+}
+
+section:has(.gradebook-tree) header > div:last-child {
+  min-width: 0;
+  gap: 0.375rem !important;
+  margin-top: 0.5rem !important;
+  padding: 0.375rem !important;
+  border-radius: 0.5rem !important;
+  background: transparent !important;
+}
+
+section:has(.gradebook-tree) header > div:last-child .p-button {
+  height: 2rem;
+  flex: 0 0 auto;
+  padding: 0.375rem 0.625rem;
+  white-space: nowrap;
+}
+
+section:has(.gradebook-tree) table th,
+section:has(.gradebook-tree) table td {
+  padding-block: 0.4rem !important;
+}
+
+section:has(.gradebook-tree) table th:nth-child(2),
+section:has(.gradebook-tree) table td:nth-child(2) {
+  width: clamp(9rem, 12vw, 10.5rem) !important;
+  max-width: 10.5rem !important;
+}
+
+section:has(.gradebook-tree) table tbody tr:hover td,
+section:has(.gradebook-tree) table tbody tr:hover td:nth-child(2) {
+  background: rgb(248 250 252);
+}
+
+section:has(.gradebook-tree) table .p-inputtext {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  section:has(.gradebook-tree) > div:nth-child(2) {
+    grid-template-columns: clamp(18rem, 24vw, 22rem) minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 1279px) {
+  section:has(.gradebook-tree) header > div:last-child .p-button {
+    width: 2rem;
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  section:has(.gradebook-tree) header > div:last-child .p-button-label {
+    display: none;
+  }
+
+  section:has(.gradebook-tree) header > div:last-child .p-button-icon {
+    margin: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  section:has(.gradebook-tree) {
+    min-height: 0 !important;
+  }
+
+  section:has(.gradebook-tree) > div:first-child > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  section:has(.gradebook-tree) header > div:last-child {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid .field-wide {
+    grid-column: auto;
+  }
+
+  .space-y-4 > header + section:has(article) > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .space-y-4 > header + section:has(article) article {
+    height: auto !important;
+    min-height: 100px !important;
+  }
+
+  .space-y-4 > section.overflow-hidden.rounded-2xl > div.border-t.border-emerald-100 {
+    margin: 0 0.75rem 0.75rem;
+    padding: 1rem !important;
+  }
+
+  section:has(.gradebook-tree) > div:first-child > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -120,3 +120,7 @@ La matrice des profils, capacités et autorisations fines fera l'objet d'un cadr
 ## PER-018 — Contrat explicite
 
 Le contrat porte la base de rémunération utilisée par la paie. Un contrat horaire exige un taux horaire de base et des heures hebdomadaires prévues. Un contrat fixe avec heures exige le salaire fixe, le taux horaire de base et les heures hebdomadaires prévues. Le taux du contrat ne doit pas être remplacé implicitement par un taux défini ailleurs sur la fiche.
+
+## PER-019 — Responsabilités de cycle
+
+La fonction professionnelle, la responsabilité exercée sur un cycle et les permissions applicatives sont trois notions distinctes. Chaque responsabilité est historisée par établissement, année scolaire, cycle, personne, type, qualité, dates de validité et état. Un intérim désigne la personne remplacée ; une seule personne titulaire active est autorisée pour un même type et un même cycle, tandis que les adjoints restent possibles.

@@ -20,11 +20,17 @@ Les fonctionnalités métier sont :
 
 ```text
 Notes & Bulletins
-├── Vue d’ensemble
+├── Gestion des périodes
 ├── Cahiers de notes
-├── Suivi pédagogique
+├── Rattrapages à compléter
+├── Appréciations
+├── Contrôle des moyennes
+├── Générations
 ├── Bulletins
-└── Configuration
+├── Validation
+├── Publication
+├── Historique
+└── Affectations pédagogiques
 ```
 
 Les éléments visibles dépendent des permissions de l’utilisateur.
@@ -38,63 +44,45 @@ Le TreeView sert à sélectionner le contexte. Il ne remplace pas la page de tra
 ```text
 Notes & Bulletins
 │
-├── Vue d’ensemble
-│
+├── Gestion des périodes
 ├── Cahiers de notes
-│   ├── Mes cours
-│   ├── Tous les cahiers
-│   ├── Notes par élève
-│   └── Résultats reportés
-│
-├── Suivi pédagogique
-│   ├── Suivi de saisie
-│   ├── Contrôle des moyennes
-│   ├── Appréciations
-│   └── Anomalies et blocages
-│
+├── Rattrapages à compléter
+├── Appréciations
+├── Contrôle des moyennes
+├── Générations
 ├── Bulletins
-│   ├── Générations
-│   ├── Bulletins
-│   ├── Validation
-│   ├── Publication
-│   └── Historique
-│
-└── Configuration
-    ├── Affectations pédagogiques
-    ├── Types de note
-    ├── Formules de calcul
-    ├── Modèles de bulletin
-    └── Paramètres du module
+├── Validation
+├── Publication
+├── Historique
+└── Affectations pédagogiques
 ```
+
+Les types de note, les formules de calcul et les paramètres pédagogiques sont
+accessibles dans le module **Paramétrage**. Les modèles propres au rendu des
+bulletins restent dans le module Bulletins.
+
+La configuration des périodes (libellé, ordre et dates) reste dans Paramétrage.
+Leur pilotage opérationnel (ouverture et clôture des saisies) se fait uniquement
+dans **Notes & Bulletins → Gestion des périodes**.
+
+### Gestion des périodes
+
+La page présente l'année active et une frise distincte par cycle. Elle indique
+la période courante, les périodes à venir et clôturées, ainsi que leurs dates.
+Une seule période peut être ouverte simultanément pour un cycle.
+
+Les actions d'ouverture et de clôture sont réservées aux profils de direction
+autorisés. Le cahier affiche l'état de la période en lecture seule et ne porte
+aucune action de changement d'état.
 
 ---
 
-## 3. Vue d’ensemble
+## 3. Pages de travail
 
-### Navigation
-
-```text
-Notes & Bulletins
-→ Vue d’ensemble
-```
-
-### Page de travail enseignant
-
-- cours affectés ;
-- notes à compléter ;
-- résultats reportés ;
-- appréciations manquantes ;
-- période en cours ;
-- échéance de clôture.
-
-### Page de travail supervision
-
-- progression globale ;
-- classes prêtes ;
-- classes bloquées ;
-- enseignants en retard ;
-- bulletins à valider ;
-- générations récentes.
+Les pages génériques « Vue d’ensemble » et « Suivi pédagogique » sont retirées.
+Chaque entrée ouvre une page de travail normalisée : PageHeader, actions contextuelles,
+barre d’outils et DataTable. La génération est un workflow par lots avec portée,
+contrôles, blocages, validation, publication et historique des versions.
 
 ---
 
@@ -160,25 +148,19 @@ Notes & Bulletins
 #### Page de travail
 
 ```text
-Année
-→ Période
-→ Cycle
-→ Niveau
-→ Classe
-→ Cours
+Filtres globaux : Cycle → Période → Niveau → Classe
+TreeView : Niveau → Classe → Cours
 ```
 
 Exemple :
 
 ```text
-▼ 2026–2027
-  ▼ Période 1
-    ▼ Collège
-      ▼ 7e année
-        ▼ 7A
-          ● Mathématiques — E1
-          ● Français — E2
-          ● Histoire — E3
+Cycle : Collège | Période : Période 1 | Classe : Toutes
+▼ 7e année
+  ▼ 7A
+    ● Mathématiques — E1
+    ● Français — E2
+    ● Histoire — E3
 ```
 
 Badges de statut :
@@ -200,8 +182,8 @@ Badges de statut :
 │                  │ Mathématiques • 7A • Période 1          │
 │ Année            │ Enseignant E1 • Coefficient 4           │
 │  └ Période       ├─────────────────────────────────────────┤
-│    └ Cycle       │ [Cahier] [Moyennes] [Appréciations]    │
-│      └ Classe    │ [Historique]                            │
+│    └ Cycle       │ Actions du cours                        │
+│      └ Classe    │ Ajouter • Saisir • Statut • Publier     │
 │        └ Cours   ├─────────────────────────────────────────┤
 │                  │ Grille de travail                       │
 │                  │ Élève | DS1 | Oral | Composition | Moy. │
@@ -261,22 +243,22 @@ Actions selon permissions :
 
 ---
 
-### 4.5 Résultats reportés
+### 4.5 Rattrapages à compléter
 
 #### Navigation
 
 ```text
 Notes & Bulletins
 → Cahiers de notes
-→ Résultats reportés
+→ Rattrapages à compléter
 ```
 
 #### Page de travail
 
-| Élève | Classe | Cours | Note | Impact | Action |
-|---|---|---|---|---|---|
-| Fatou Sow | 7A | Mathématiques | Composition | Bulletin bloqué | Compléter |
-| Ali Touré | 7B | Français | Oral | Moyenne bloquée | Compléter |
+| Élève     | Classe | Cours         | Note        | Impact          | Action    |
+| --------- | ------ | ------------- | ----------- | --------------- | --------- |
+| Fatou Sow | 7A     | Mathématiques | Composition | Bulletin bloqué | Compléter |
+| Ali Touré | 7B     | Français      | Oral        | Moyenne bloquée | Compléter |
 
 L’enseignant voit uniquement ses cours. La supervision voit son périmètre.
 
@@ -352,11 +334,11 @@ Période
 → Élève
 ```
 
-| Matière | Moyenne | Coefficient | Contribution | État |
-|---|---:|---:|---:|---|
-| Mathématiques | 15 | 4 | 60 | Calculée |
-| Français | 12 | 3 | 36 | Calculée |
-| Histoire | — | 2 | — | Reporté |
+| Matière       | Moyenne | Coefficient | Contribution | État     |
+| ------------- | ------: | ----------: | -----------: | -------- |
+| Mathématiques |      15 |           4 |           60 | Calculée |
+| Français      |      12 |           3 |           36 | Calculée |
+| Histoire      |       — |           2 |            — | Reporté  |
 
 Actions :
 
@@ -388,10 +370,10 @@ Deux vues :
 
 Vue par cours :
 
-| Élève | Moyenne | Appréciation | État |
-|---|---:|---|---|
-| Awa Diallo | 15 | Bon travail | Complète |
-| Fatou Sow | 11 | — | Manquante |
+| Élève      | Moyenne | Appréciation | État      |
+| ---------- | ------: | ------------ | --------- |
+| Awa Diallo |      15 | Bon travail  | Complète  |
+| Fatou Sow  |      11 | —            | Manquante |
 
 Vue par élève : toutes les appréciations destinées au bulletin.
 
@@ -437,10 +419,10 @@ Notes & Bulletins
 
 #### Page de travail
 
-| Période | Périmètre | Élèves | Statut | Date | Actions |
-|---|---|---:|---|---|---|
-| Période 1 | Collège | 248 | Terminé | 15/12 | Voir rapport |
-| Période 1 | Primaire | 310 | Partiel | 16/12 | Reprendre |
+| Période   | Périmètre | Élèves | Statut  | Date  | Actions      |
+| --------- | --------- | -----: | ------- | ----- | ------------ |
+| Période 1 | Collège   |    248 | Terminé | 15/12 | Voir rapport |
+| Période 1 | Primaire  |    310 | Partiel | 16/12 | Reprendre    |
 
 Action principale :
 
@@ -635,7 +617,7 @@ Chaque version affiche :
 
 ---
 
-## 7. Configuration
+## 7. Affectations et paramétrage
 
 ### 7.1 Affectations pédagogiques
 
@@ -643,7 +625,6 @@ Chaque version affiche :
 
 ```text
 Notes & Bulletins
-→ Configuration
 → Affectations pédagogiques
 ```
 
@@ -675,18 +656,17 @@ Les enseignants spécialisés peuvent être affectés à certains cours.
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
+Paramétrage
 → Types de note
 ```
 
 #### Page de travail
 
-| Type | Barème | Utilisé | Actif | Action |
-|---|---:|---|---|---|
-| Évaluation | /20 | Oui | Oui | Consulter |
-| Composition | /100 | Oui | Oui | Consulter |
-| Oral | /20 | Non | Oui | Modifier |
+| Type        | Barème | Utilisé | Actif | Action    |
+| ----------- | -----: | ------- | ----- | --------- |
+| Évaluation  |    /20 | Oui     | Oui   | Consulter |
+| Composition |   /100 | Oui     | Oui   | Consulter |
+| Oral        |    /20 | Non     | Oui   | Modifier  |
 
 Le barème devient immuable après la première utilisation.
 
@@ -697,8 +677,7 @@ Le barème devient immuable après la première utilisation.
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
+Paramétrage
 → Formules de calcul
 ```
 
@@ -734,8 +713,7 @@ Héritée de : Cycle Collège
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
+Bulletins
 → Modèles de bulletin
 ```
 
@@ -756,9 +734,8 @@ Notes & Bulletins
 #### Navigation
 
 ```text
-Notes & Bulletins
-→ Configuration
-→ Paramètres
+Paramétrage
+→ Paramètres pédagogiques
 ```
 
 #### Page de travail
@@ -829,9 +806,7 @@ Notes & Bulletins
 │   ├── Générations
 │   ├── Bulletins
 │   └── Validation, si autorisée
-└── Configuration
-    ├── Affectations, si autorisées
-    └── Formules, si autorisées
+└── Affectations pédagogiques, si autorisées
 ```
 
 ### Direction
@@ -846,7 +821,7 @@ Notes & Bulletins
 │   ├── Validation
 │   ├── Publication
 │   └── Historique
-└── Configuration autorisée
+└── Affectations pédagogiques, si autorisées
 ```
 
 ### Administrateur
@@ -854,14 +829,12 @@ Notes & Bulletins
 ```text
 Notes & Bulletins
 ├── Vue d’ensemble technique
-├── Configuration
-│   ├── Affectations pédagogiques
-│   ├── Types de note
-│   ├── Formules
-│   ├── Modèles de bulletin
-│   └── Paramètres
+├── Affectations pédagogiques
 └── Audit et historique
 ```
+
+L'administrateur accède aux types de note, formules et paramètres pédagogiques
+depuis le module Paramétrage, selon ses permissions.
 
 L’administrateur ne reçoit pas automatiquement le droit de modifier les résultats pédagogiques.
 

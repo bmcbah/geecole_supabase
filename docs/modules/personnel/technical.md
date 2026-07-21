@@ -56,3 +56,5 @@ Les ajustements et paiements de paie passent respectivement par `add_payroll_adj
 `record_payroll_payment`. Ces RPC verrouillent la ligne du bulletin, contrôlent son état et mettent
 à jour les agrégats dans la même transaction. Un ajustement n'est possible qu'à l'état `calculated`
 et un paiement uniquement après validation.
+
+Les responsabilités annuelles sont portées par `cycle_responsibilities` et leur typologie configurable par `cycle_responsibility_types`. Elles référencent `people`, `academic_years` et `academic_cycles` afin de préserver l'historique, l'intérim, les adjoints et le cumul explicite.

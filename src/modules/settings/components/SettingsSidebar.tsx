@@ -23,6 +23,7 @@ const groups = [
     sections: [
       { path: "types-notes", icon: "pi-tags", label: "Types de notes" },
       { path: "formules-calcul", icon: "pi-percentage", label: "Formules de calcul" },
+      { path: "parametres-pedagogiques", icon: "pi-sliders-h", label: "Paramètres pédagogiques" },
     ],
   },
   {

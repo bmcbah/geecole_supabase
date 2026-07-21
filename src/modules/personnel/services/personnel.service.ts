@@ -675,7 +675,8 @@ export async function createPayrollPeriod(input: {
     .select("*")
     .single();
   fail(error);
-  return data as PayrollPeriod;
+  if (!data) throw new Error("payroll_period_creation_failed");
+  return data as unknown as PayrollPeriod;
 }
 export async function calculatePayroll(periodId: string) {
   const { error } = await supabase.rpc(

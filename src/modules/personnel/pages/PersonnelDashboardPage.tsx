@@ -100,7 +100,7 @@ export function PersonnelDashboardPage() {
                 onClick={() =>
                   navigate(
                     alert.alert_type === "leave_pending"
-                      ? alertRoute[alert.alert_type]
+                      ? (alertRoute[alert.alert_type] ?? "/personnel/conges")
                       : `/personnel/employes/${alert.employee_id}`,
                   )
                 }
@@ -132,12 +132,12 @@ export function PersonnelDashboardPage() {
             Continuer mon travail
           </h2>
           <div className="space-y-2">
-            {[
+            {([
               ["Consulter les employés", "pi-users", "/personnel/employes"],
               ["Valider les heures", "pi-clock", "/personnel/heures"],
               ["Traiter les congés", "pi-calendar-minus", "/personnel/conges"],
               ["Préparer la paie", "pi-wallet", "/personnel/paie"],
-            ].map(([label, icon, route]) => (
+            ] as const).map(([label, icon, route]) => (
               <button
                 key={route}
                 className="flex w-full items-center gap-3 rounded-xl border border-teal-100 bg-white px-3 py-3 text-left text-sm text-slate-700 shadow-sm transition hover:border-teal-300 hover:text-teal-800"

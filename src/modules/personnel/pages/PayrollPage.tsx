@@ -366,9 +366,10 @@ export function PayrollPage() {
                 <DataTable
                   value={entries}
                   dataKey="id"
+                  selectionMode="multiple"
                   selection={selected}
                   onSelectionChange={(event) =>
-                    setSelected(event.value as PayrollEntry[])
+                    setSelected(event.value)
                   }
                   paginator={entries.length > 10}
                   rows={10}

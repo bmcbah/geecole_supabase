@@ -90,6 +90,26 @@ export async function listAssessmentTypes(yearId: string) {
   if (error) throw error;
   return data;
 }
+export const recommendedAssessmentTypes = [
+  { name: "Interrogation", code: "INTERRO", scale: 20 },
+  { name: "Devoir surveillé", code: "DS", scale: 20 },
+  { name: "Devoir à domicile", code: "DM", scale: 20 },
+  { name: "Composition", code: "COMPO", scale: 20 },
+  { name: "Examen blanc", code: "EXAM-BLANC", scale: 20 },
+  { name: "Évaluation orale", code: "ORAL", scale: 20 },
+  { name: "Travaux pratiques", code: "TP", scale: 20 },
+  { name: "Projet", code: "PROJET", scale: 20 },
+] as const;
+export async function installRecommendedAssessmentTypes(
+  institutionId: string,
+  yearId: string,
+) {
+  const { error } = await supabase.rpc("install_assessment_type_catalog", {
+    target_institution_id: institutionId,
+    target_year_id: yearId,
+  });
+  if (error) throw error;
+}
 export async function saveAssessmentType(
   institutionId: string,
   yearId: string,
@@ -157,6 +177,124 @@ export async function deleteGradingFormula(id: string) {
     .delete()
     .eq("id", id);
   if (error) throw error;
+}
+
+export type VersionedFormulaListItem = {
+  seriesId: string;
+  versionId: string;
+  name: string;
+  code: string;
+  version: number;
+  rules: { expression: string; rounding: number };
+  assignmentId: string | null;
+  scopeType: "cycle" | "level" | null;
+  scopeId: string | null;
+};
+
+export async function listVersionedGradingFormulas(
+  yearId: string,
+): Promise<VersionedFormulaListItem[]> {
+  const [series, versions, assignments] = await Promise.all([
+    supabase
+      .from("grading_formula_series")
+      .select("*")
+      .eq("academic_year_id", yearId)
+      .order("name"),
+    supabase
+      .from("grading_formula_versions")
+      .select("*")
+      .eq("academic_year_id", yearId)
+      .order("version", { ascending: false }),
+    supabase
+      .from("grading_formula_assignments")
+      .select("*")
+      .eq("academic_year_id", yearId)
+      .order("created_at", { ascending: false }),
+  ]);
+  for (const result of [series, versions, assignments])
+    if (result.error) throw result.error;
+  return (series.data ?? []).flatMap((item) =>
+    (versions.data ?? [])
+      .filter((version) => version.series_id === item.id)
+      .map((version) => {
+        const formulaAssignments = (assignments.data ?? []).filter(
+          (entry) => entry.formula_version_id === version.id,
+        );
+        const assignment =
+          formulaAssignments.find((entry) => entry.is_active) ??
+          formulaAssignments[0];
+        return {
+          seriesId: item.id,
+          versionId: version.id,
+          name: item.name,
+          code: item.code,
+          version: version.version,
+          rules: version.rules as unknown as VersionedFormulaListItem["rules"],
+          assignmentId: assignment?.is_active ? assignment.id : null,
+          scopeType: assignment?.academic_year_level_id
+            ? "level"
+            : assignment?.cycle_id
+              ? "cycle"
+              : null,
+          scopeId:
+            assignment?.academic_year_level_id ?? assignment?.cycle_id ?? null,
+        };
+      }),
+  );
+}
+
+export async function createGradingFormulaVersion(input: {
+  institutionId: string;
+  yearId: string;
+  name: string;
+  code: string;
+  seriesId?: string;
+  expression: string;
+  rounding: number;
+  scopeType: "cycle" | "level";
+  scopeId: string;
+}) {
+  const { error } = await supabase.rpc("save_grading_formula_version", {
+    target_institution_id: input.institutionId,
+    target_year_id: input.yearId,
+    target_series_id: input.seriesId ?? null,
+    formula_name: input.name,
+    formula_code: input.code,
+    formula_expression: input.expression.trim(),
+    formula_rounding: input.rounding,
+    scope_type: input.scopeType,
+    scope_id: input.scopeId,
+  });
+  if (error) throw error;
+}
+
+export async function activateGradingFormulaVersion(input: {
+  institutionId: string;
+  yearId: string;
+  versionId: string;
+  scopeType: "cycle" | "level";
+  scopeId: string;
+}) {
+  const scopeColumn =
+    input.scopeType === "level" ? "academic_year_level_id" : "cycle_id";
+  const { error } = await supabase
+    .from("grading_formula_assignments")
+    .update({ is_active: false })
+    .eq("academic_year_id", input.yearId)
+    .eq(scopeColumn, input.scopeId)
+    .eq("is_active", true);
+  if (error) throw error;
+  const { error: insertError } = await supabase
+    .from("grading_formula_assignments")
+    .insert({
+      institution_id: input.institutionId,
+      academic_year_id: input.yearId,
+      formula_version_id: input.versionId,
+      cycle_id: input.scopeType === "cycle" ? input.scopeId : null,
+      academic_year_level_id:
+        input.scopeType === "level" ? input.scopeId : null,
+    });
+  if (insertError) throw insertError;
 }
 
 export async function listFinancialRules(yearId: string) {

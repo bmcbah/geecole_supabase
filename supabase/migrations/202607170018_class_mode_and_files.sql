@@ -1,9 +1,18 @@
 alter table public.institutions add column class_structure_mode text not null default 'levels_and_classes'
   check (class_structure_mode in ('levels_and_classes','classes_as_levels'));
 
-insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-values('school-admin','school-admin',false,10485760,array['image/jpeg','image/png','image/webp','application/pdf'])
-on conflict(id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'school-admin',
+  'school-admin',
+  false,
+  10485760,
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']::text[]
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
 
 create policy school_admin_select on storage.objects for select to authenticated using(
   bucket_id='school-admin' and public.is_active_member((storage.foldername(name))[1]::uuid)
