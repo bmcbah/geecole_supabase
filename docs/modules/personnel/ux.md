@@ -54,7 +54,12 @@ gains, retenues, net, payé et reste. Le bouton disponible dépend strictement d
 
 ## Paramétrage Personnel
 
-`Paramètres > Personnel` présente une navigation latérale compacte par catalogue. Chaque catalogue
-permet de rechercher, activer ou désactiver une valeur GeEcole, définir un libellé local sans modifier
-la valeur source et ajouter une valeur propre à l'établissement. Les catégories couvertes sont les
-fonctions, contrats, activités, primes, retenues, avances, congés et sanctions.
+`Paramètres > Personnel` donne accès à une page dédiée par catalogue. L'UX n'est pas pilotée par une
+page générique avec un sélecteur de type : chaque catalogue possède son titre, son texte d'aide, sa
+recherche et son bouton d'ajout explicite (`Ajouter une fonction`, `Ajouter un type de contrat`, etc.).
+Les composants techniques communs restent partagés afin d'éviter la duplication du chargement, de
+l'activation et du renommage.
+
+Chaque page permet d'activer ou désactiver une valeur GeEcole, de définir un libellé local sans
+modifier la valeur source et d'ajouter une valeur propre à l'établissement. Les pages couvertes sont
+les fonctions, contrats, activités, primes, retenues, avances, congés et sanctions.

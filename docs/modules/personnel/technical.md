@@ -26,3 +26,8 @@ Les écritures des pages Présences, Congés, Paie et Catalogues passent exclusi
 `personnel.service.ts` et restent limitées par `institution_id` et les politiques RLS. Les valeurs
 locales des catalogues sont créées avec `is_system = false`; le renommage d'une valeur système
 alimente uniquement `local_label`.
+
+Chaque route métier et chaque catalogue de paramétrage possède son propre fichier de page. Les
+éléments strictement techniques et identiques (chargement, tableau, activation et renommage) sont
+partagés dans `PersonnelCatalogSettings`, tandis que le titre, l'aide et l'action d'ajout restent
+définis dans chaque page.

@@ -85,9 +85,44 @@ const PayrollPage = lazy(() =>
     default: module.PayrollPage,
   })),
 );
-const PersonnelCatalogsPage = lazy(() =>
-  import("../../modules/personnel/pages/PersonnelCatalogsPage").then(
-    (module) => ({ default: module.PersonnelCatalogsPage }),
+const PersonnelFunctionsSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/PersonnelFunctionsSettingsPage").then(
+    (module) => ({ default: module.PersonnelFunctionsSettingsPage }),
+  ),
+);
+const ContractTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/ContractTypesSettingsPage").then(
+    (module) => ({ default: module.ContractTypesSettingsPage }),
+  ),
+);
+const WorkTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/WorkTypesSettingsPage").then(
+    (module) => ({ default: module.WorkTypesSettingsPage }),
+  ),
+);
+const BonusTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/BonusTypesSettingsPage").then(
+    (module) => ({ default: module.BonusTypesSettingsPage }),
+  ),
+);
+const DeductionTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/DeductionTypesSettingsPage").then(
+    (module) => ({ default: module.DeductionTypesSettingsPage }),
+  ),
+);
+const AdvanceTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/AdvanceTypesSettingsPage").then(
+    (module) => ({ default: module.AdvanceTypesSettingsPage }),
+  ),
+);
+const LeaveTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/LeaveTypesSettingsPage").then(
+    (module) => ({ default: module.LeaveTypesSettingsPage }),
+  ),
+);
+const SanctionTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/SanctionTypesSettingsPage").then(
+    (module) => ({ default: module.SanctionTypesSettingsPage }),
   ),
 );
 
@@ -162,8 +197,42 @@ export function AppRouter() {
             <Route path="/personnel/conges" element={<LeaveRequestsPage />} />
             <Route path="/personnel/paie" element={<PayrollPage />} />
             <Route
+              path="/parametrage/personnel/fonctions"
+              element={<PersonnelFunctionsSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/contrats"
+              element={<ContractTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/activites"
+              element={<WorkTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/primes"
+              element={<BonusTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/retenues"
+              element={<DeductionTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/avances"
+              element={<AdvanceTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/conges"
+              element={<LeaveTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/sanctions"
+              element={<SanctionTypesSettingsPage />}
+            />
+            <Route
               path="/parametrage/catalogues-personnel"
-              element={<PersonnelCatalogsPage />}
+              element={
+                <Navigate to="/parametrage/personnel/fonctions" replace />
+              }
             />
           </Route>
         </Route>
