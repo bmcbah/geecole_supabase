@@ -303,75 +303,109 @@ function GradebookTree(props: {
   onCourse: (course: CourseSummary, periodId: string) => void;
   children: React.ReactNode;
 }) {
-  const [filter, setFilter] = useState("");
+  const [treeSearch, setTreeSearch] = useState("");
+  const [cycleId, setCycleId] = useState("");
+  const [periodId, setPeriodId] = useState("");
+  const [classId, setClassId] = useState("");
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
-  const nodes = useMemo<TreeNode[]>(
+  const cycles = useMemo(
     () =>
-      props.periods
-        .map((period) => {
-          const courses = props.courses.filter(
-            (c) =>
-              c.cycleId === period.cycle_id &&
-              (!c.allowedPeriodIds.length ||
-                c.allowedPeriodIds.includes(period.id)),
-          );
-          const cycles = [...new Set(courses.map((c) => c.cycleName))];
-          return {
-            key: `period:${period.id}`,
-            label: period.name,
-            icon:
-              period.status === "open"
-                ? "pi pi-circle-fill text-emerald-500"
-                : "pi pi-calendar",
-            data: { kind: "period" },
-            children: cycles.map((cycle) => {
-              const cycleCourses = courses.filter((c) => c.cycleName === cycle);
-              const levels = [...new Set(cycleCourses.map((c) => c.levelName))];
-              return {
-                key: `${period.id}:cycle:${cycle}`,
-                label: cycle,
-                icon: "pi pi-sync",
-                children: levels.map((level) => ({
-                  key: `${period.id}:cycle:${cycle}:level:${level}`,
-                  label: level,
-                  icon: "pi pi-sitemap",
-                  children: [
-                    ...new Set(
-                      cycleCourses
-                        .filter((c) => c.levelName === level)
-                        .map((c) => c.classId),
-                    ),
-                  ].map((classId) => {
-                    const classCourses = cycleCourses.filter(
-                      (c) => c.classId === classId,
-                    );
-                    return {
-                      key: `${period.id}:class:${classId}`,
-                      label: classCourses[0]?.className,
-                      icon: "pi pi-users",
-                      children: classCourses.map((c) => ({
-                        key: `${period.id}:course:${c.assignmentId}`,
-                        label: c.subjectName,
-                        icon: "pi pi-book",
-                        data: {
-                          kind: "course",
-                          course: c,
-                          periodId: period.id,
-                        },
-                      })),
-                    };
-                  }),
-                })),
-              };
-            }),
-          };
-        })
-        .filter((n) => n.children?.length),
-    [props.courses, props.periods],
+      [
+        ...new Map(
+          props.courses.map((course) => [course.cycleId, course]),
+        ).values(),
+      ].map((course) => ({ label: course.cycleName, value: course.cycleId })),
+    [props.courses],
   );
+  const availablePeriods = useMemo(
+    () =>
+      props.periods.filter((period) => !cycleId || period.cycle_id === cycleId),
+    [cycleId, props.periods],
+  );
+  const classes = useMemo(
+    () =>
+      [
+        ...new Map(
+          props.courses
+            .filter((course) => !cycleId || course.cycleId === cycleId)
+            .map((course) => [course.classId, course]),
+        ).values(),
+      ].map((course) => ({ label: course.className, value: course.classId })),
+    [cycleId, props.courses],
+  );
+  useEffect(() => {
+    setCycleId(
+      (current) =>
+        current || props.selectedCourse?.cycleId || cycles[0]?.value || "",
+    );
+  }, [cycles, props.selectedCourse]);
+  useEffect(() => {
+    setPeriodId((current) => {
+      if (availablePeriods.some((period) => period.id === current))
+        return current;
+      return (
+        availablePeriods.find((period) => period.id === props.selectedPeriodId)
+          ?.id ??
+        availablePeriods.find((period) => period.status === "open")?.id ??
+        availablePeriods[0]?.id ??
+        ""
+      );
+    });
+  }, [availablePeriods, props.selectedPeriodId]);
+  useEffect(() => {
+    if (classes.some((item) => item.value === classId)) return;
+    setClassId("");
+  }, [classId, classes]);
+  const normalizedTreeSearch = treeSearch.trim().toLocaleLowerCase("fr");
+  const nodes = useMemo<TreeNode[]>(() => {
+    const filteredCourses = props.courses.filter((course) => {
+      const searchable =
+        `${course.levelName} ${course.className} ${course.subjectName} ${course.teacherName}`.toLocaleLowerCase(
+          "fr",
+        );
+      return (
+        (!cycleId || course.cycleId === cycleId) &&
+        (!classId || course.classId === classId) &&
+        (!periodId ||
+          !course.allowedPeriodIds.length ||
+          course.allowedPeriodIds.includes(periodId)) &&
+        (!normalizedTreeSearch || searchable.includes(normalizedTreeSearch))
+      );
+    });
+    return [...new Set(filteredCourses.map((course) => course.levelName))].map(
+      (level) => {
+        const levelCourses = filteredCourses.filter(
+          (course) => course.levelName === level,
+        );
+        return {
+          key: `level:${level}`,
+          label: level,
+          icon: "pi pi-sitemap",
+          children: [
+            ...new Set(levelCourses.map((course) => course.classId)),
+          ].map((currentClassId) => {
+            const classCourses = levelCourses.filter(
+              (course) => course.classId === currentClassId,
+            );
+            return {
+              key: `class:${currentClassId}`,
+              label: classCourses[0]?.className,
+              icon: "pi pi-users",
+              children: classCourses.map((course) => ({
+                key: `${periodId}:course:${course.assignmentId}`,
+                label: `${course.subjectName} · ${course.teacherName}`,
+                icon: "pi pi-book",
+                data: { kind: "course", course, periodId },
+              })),
+            };
+          }),
+        };
+      },
+    );
+  }, [classId, cycleId, normalizedTreeSearch, periodId, props.courses]);
   const selectedKey =
-    props.selectedCourse && props.selectedPeriodId
-      ? `${props.selectedPeriodId}:course:${props.selectedCourse.assignmentId}`
+    props.selectedCourse && periodId
+      ? `${periodId}:course:${props.selectedCourse.assignmentId}`
       : undefined;
   const selectNode = (key: string) => {
     const find = (list: TreeNode[]): TreeNode | undefined => {
@@ -398,9 +432,6 @@ function GradebookTree(props: {
   const tree = (
     <Tree
       value={nodes}
-      filter
-      filterBy="label"
-      filterValue={filter}
       selectionMode="single"
       selectionKeys={selectedKey}
       onSelectionChange={(e) => {
@@ -410,21 +441,56 @@ function GradebookTree(props: {
     />
   );
   return (
-    <section className="min-h-[620px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
-      <aside className="hidden border-r border-slate-200 bg-slate-50/60 p-2.5 lg:block">
-        <div className="mb-3">
+    <section className="min-h-[620px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-[max-content_minmax(0,1fr)]">
+      <aside className="hidden min-w-0 border-r border-slate-200 bg-slate-50/60 p-2.5 lg:block">
+        <div className="mb-2 grid gap-1.5">
+          <span className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Filtres globaux
+          </span>
+          <Dropdown
+            value={cycleId}
+            options={cycles}
+            onChange={(event) => {
+              setCycleId(String(event.value));
+              setClassId("");
+            }}
+            className="h-8 w-full min-w-52 text-xs"
+            placeholder="Cycle"
+          />
+          <Dropdown
+            value={periodId}
+            options={availablePeriods.map((period) => ({
+              label: period.name,
+              value: period.id,
+            }))}
+            onChange={(event) => setPeriodId(String(event.value))}
+            className="h-8 w-full text-xs"
+            placeholder="Période"
+          />
+          <Dropdown
+            value={classId}
+            options={[{ label: "Toutes les classes", value: "" }, ...classes]}
+            onChange={(event) => setClassId(String(event.value))}
+            className="h-8 w-full text-xs"
+            placeholder="Classe"
+          />
+        </div>
+        <div className="border-t border-slate-200 pt-2">
+          <span className="mb-1 block px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Recherche dans l’arbre
+          </span>
           <span className="p-input-icon-left block">
             <i className="pi pi-search" />
             <InputText
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={treeSearch}
+              onChange={(e) => setTreeSearch(e.target.value)}
               className="h-9 w-full pl-9 text-sm"
-              placeholder="Rechercher dans l’arbre"
+              placeholder="Niveau, cours, enseignant…"
             />
           </span>
         </div>
-        <div className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Période → Cycle → Niveau → Classe → Cours
+        <div className="mb-2 mt-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          Niveau → Classe → Cours
         </div>
         {tree}
       </aside>
@@ -455,11 +521,40 @@ function GradebookTree(props: {
         className="w-[min(96vw,34rem)]"
         onHide={() => setMobileTreeOpen(false)}
       >
+        <div className="mb-3 grid gap-2 sm:grid-cols-3">
+          <Dropdown
+            value={cycleId}
+            options={cycles}
+            onChange={(event) => {
+              setCycleId(String(event.value));
+              setClassId("");
+            }}
+            className="h-9 w-full text-xs"
+            placeholder="Cycle"
+          />
+          <Dropdown
+            value={periodId}
+            options={availablePeriods.map((period) => ({
+              label: period.name,
+              value: period.id,
+            }))}
+            onChange={(event) => setPeriodId(String(event.value))}
+            className="h-9 w-full text-xs"
+            placeholder="Période"
+          />
+          <Dropdown
+            value={classId}
+            options={[{ label: "Toutes les classes", value: "" }, ...classes]}
+            onChange={(event) => setClassId(String(event.value))}
+            className="h-9 w-full text-xs"
+            placeholder="Classe"
+          />
+        </div>
         <span className="p-input-icon-left mb-3 block">
           <i className="pi pi-search" />
           <InputText
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            value={treeSearch}
+            onChange={(e) => setTreeSearch(e.target.value)}
             className="h-9 w-full pl-9 text-sm"
             placeholder="Période, cycle, niveau, classe ou cours"
           />
@@ -557,6 +652,7 @@ function Gradebook(props: {
       .map((line) => line.split(/[\t;]/).map((v) => v.trim()))
       .filter((p) => p.length >= 2)
       .flatMap(([matricule, value]) => {
+        if (!matricule || !value) return [];
         const student = byMatricule.get(matricule.toLowerCase());
         return student ? [saveResult(bulkNote, student.studentId, value)] : [];
       });

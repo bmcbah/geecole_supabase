@@ -148,25 +148,19 @@ Notes & Bulletins
 #### Page de travail
 
 ```text
-Année
-→ Période
-→ Cycle
-→ Niveau
-→ Classe
-→ Cours
+Filtres globaux : Cycle → Période → Classe
+TreeView : Niveau → Classe → Cours
 ```
 
 Exemple :
 
 ```text
-▼ 2026–2027
-  ▼ Période 1
-    ▼ Collège
-      ▼ 7e année
-        ▼ 7A
-          ● Mathématiques — E1
-          ● Français — E2
-          ● Histoire — E3
+Cycle : Collège | Période : Période 1 | Classe : Toutes
+▼ 7e année
+  ▼ 7A
+    ● Mathématiques — E1
+    ● Français — E2
+    ● Histoire — E3
 ```
 
 Badges de statut :

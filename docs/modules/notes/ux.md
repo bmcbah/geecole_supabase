@@ -60,21 +60,16 @@ Le cahier est la page principale de gestion de toutes les notes de l’école. L
 parcours visible est : choisir un cours, saisir les résultats, compléter les
 appréciations, contrôler les moyennes puis générer les bulletins.
 
-Le cahier utilise un panneau latéral hiérarchique. Une grille globale de tous les cours serait illisible.
+Le cahier utilise des filtres globaux distincts du panneau hiérarchique. Le cycle,
+la période et la classe sont sélectionnés hors du TreeView. Le TreeView conserve
+une seule recherche interne et affiche uniquement `Niveau → Classe → Cours`.
 
 ```text
-Période active
-├── CM1
-│   │       └── CM1-A
-│   │           ├── Mathématiques — E1
-│   │           └── Sport — E3
-│   └── Collège
-│       └── 7e année
-│           ├── 7A
-│           │   ├── Mathématiques — E1
-│           │   └── Français — E2
-│           └── 7B
-└── Période 2
+Filtres globaux : Cycle | Période | Classe
+Recherche dans l’arbre : niveau, cours ou enseignant
+└── Niveau
+    └── Classe
+        └── Cours
 ```
 
 ### Adaptation par profil
@@ -86,8 +81,8 @@ Période active
 
 ### Fonctions du TreeView
 
-- recherche par classe, matière ou enseignant ;
-- filtres année, période et statut ;
+- recherche unique par niveau, matière ou enseignant ;
+- filtres globaux cycle, période et classe hors du TreeView ;
 - badges d’état ;
 - compteurs d’anomalies ;
 - mémorisation du dernier cours ouvert ;
