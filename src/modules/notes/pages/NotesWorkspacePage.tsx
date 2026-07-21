@@ -35,12 +35,14 @@ import {
   saveNoteResult,
   type CourseAuditEvent,
 } from "../services/notes.service";
+
 type Period = Database["public"]["Tables"]["academic_periods"]["Row"];
 type GradebookNote = Database["public"]["Tables"]["gradebook_notes"]["Row"];
 type NoteResult = Database["public"]["Tables"]["note_results"]["Row"];
 type NoteType = Database["public"]["Tables"]["assessment_types"]["Row"];
 type Appreciation =
   Database["public"]["Tables"]["subject_appreciations"]["Row"];
+
 export function NotesWorkspacePage() {
   const { institutionId, yearId, year } = useAcademicSession();
   const [courses, setCourses] = useState<CourseSummary[]>([]);
@@ -62,6 +64,7 @@ export function NotesWorkspacePage() {
     noteDate: new Date().toISOString().slice(0, 10),
     comment: "",
   });
+
   const loadFoundation = useCallback(async () => {
     if (!yearId) return;
     setLoading(true);
@@ -80,6 +83,7 @@ export function NotesWorkspacePage() {
       setLoading(false);
     }
   }, [institutionId, yearId]);
+
   const loadBook = useCallback(async () => {
     if (!course || !periodId || !yearId) {
       setStudents([]);
@@ -97,35 +101,39 @@ export function NotesWorkspacePage() {
       setStudents(studentRows);
       setNotes(noteRows);
       setAppreciations(appreciationRows);
-      setResults(await listNoteResults(noteRows.map((n) => n.id)));
+      setResults(await listNoteResults(noteRows.map((note) => note.id)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cahier indisponible.");
     }
   }, [course, institutionId, periodId, yearId]);
+
   useEffect(() => {
     void loadFoundation();
   }, [loadFoundation]);
+
   useEffect(() => {
     void loadBook();
   }, [loadBook]);
+
   useEffect(() => {
     if (!course) {
       setPeriodId("");
       return;
     }
     const available = periods.filter(
-      (p) =>
-        p.cycle_id === course.cycleId &&
+      (period) =>
+        period.cycle_id === course.cycleId &&
         (!course.allowedPeriodIds.length ||
-          course.allowedPeriodIds.includes(p.id)),
+          course.allowedPeriodIds.includes(period.id)),
     );
     setPeriodId((current) =>
-      available.some((p) => p.id === current)
+      available.some((period) => period.id === current)
         ? current
-        : ((available.find((p) => p.status === "open") ?? available[0])?.id ??
-          ""),
+        : ((available.find((period) => period.status === "open") ??
+            available[0])?.id ?? ""),
     );
   }, [course, periods]);
+
   async function addNote() {
     if (!course || !periodId || !yearId) return;
     const selectedType = types.find((type) => type.id === draft.noteTypeId);
@@ -157,22 +165,24 @@ export function NotesWorkspacePage() {
       setError(e instanceof Error ? e.message : "Création impossible.");
     }
   }
+
   if (!year)
     return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+
   if (loading)
     return (
       <div className="grid min-h-[50vh] place-items-center">
         <ProgressSpinner />
       </div>
     );
-  const selectedPeriod = periods.find((p) => p.id === periodId);
+
+  const selectedPeriod = periods.find((period) => period.id === periodId);
+
   return (
-    <div className="space-y-3 pb-6">
+    <div className="space-y-4 pb-6">
       <PageHeader
-        compact
-        eyebrow="Notes & Bulletins"
         title="Cahier des notes"
-        description={`Gérez toutes les évaluations de l’école · ${year.name}`}
+        description={`Gérez les évaluations, résultats et appréciations de l’année ${year.name}.`}
         meta={
           <Tag
             value={
@@ -186,21 +196,25 @@ export function NotesWorkspacePage() {
           />
         }
       />
+
       {error ? <Message severity="error" text={error} /> : null}
+
       <GradebookTree
         courses={courses}
         periods={periods}
         selectedCourse={course}
         selectedPeriodId={periodId}
-        onCourse={(c, p) => {
-          setCourse(c);
-          setPeriodId(p);
+        onCourse={(selectedCourse, selectedCoursePeriodId) => {
+          setCourse(selectedCourse);
+          setPeriodId(selectedCoursePeriodId);
         }}
       >
         <Gradebook
           course={course}
           period={selectedPeriod}
-          periods={periods.filter((p) => p.cycle_id === course?.cycleId)}
+          periods={periods.filter(
+            (period) => period.cycle_id === course?.cycleId,
+          )}
           onPeriod={setPeriodId}
           students={students}
           notes={notes}
@@ -213,6 +227,7 @@ export function NotesWorkspacePage() {
           onReload={loadBook}
         />
       </GradebookTree>
+
       <Dialog
         header="Ajouter une évaluation"
         visible={noteOpen}
@@ -228,12 +243,15 @@ export function NotesWorkspacePage() {
           <Field label="Type d’évaluation *">
             <Dropdown
               value={draft.noteTypeId}
-              options={types.map((t) => ({
-                label: `${t.name} · /${t.scale}`,
-                value: t.id,
+              options={types.map((type) => ({
+                label: `${type.name} · /${type.scale}`,
+                value: type.id,
               }))}
-              onChange={(e) =>
-                setDraft((v) => ({ ...v, noteTypeId: String(e.value) }))
+              onChange={(event) =>
+                setDraft((value) => ({
+                  ...value,
+                  noteTypeId: String(event.value),
+                }))
               }
               className="w-full"
               placeholder="Choisir le type"
@@ -242,8 +260,11 @@ export function NotesWorkspacePage() {
           <Field label="Nom de l’évaluation *">
             <InputText
               value={draft.label}
-              onChange={(e) =>
-                setDraft((v) => ({ ...v, label: e.target.value }))
+              onChange={(event) =>
+                setDraft((value) => ({
+                  ...value,
+                  label: event.target.value,
+                }))
               }
               className="w-full"
               placeholder="Calcul mental – semaine 3"
@@ -253,8 +274,11 @@ export function NotesWorkspacePage() {
             <InputText
               type="date"
               value={draft.noteDate}
-              onChange={(e) =>
-                setDraft((v) => ({ ...v, noteDate: e.target.value }))
+              onChange={(event) =>
+                setDraft((value) => ({
+                  ...value,
+                  noteDate: event.target.value,
+                }))
               }
               className="w-full"
             />
@@ -263,8 +287,11 @@ export function NotesWorkspacePage() {
             <Field label="Commentaire interne">
               <InputTextarea
                 value={draft.comment}
-                onChange={(e) =>
-                  setDraft((v) => ({ ...v, comment: e.target.value }))
+                onChange={(event) =>
+                  setDraft((value) => ({
+                    ...value,
+                    comment: event.target.value,
+                  }))
                 }
                 rows={3}
                 className="w-full"
@@ -306,6 +333,7 @@ function GradebookTree(props: {
   const [classId, setClassId] = useState("");
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
+
   const cycles = useMemo(
     () =>
       [
@@ -315,11 +343,27 @@ function GradebookTree(props: {
       ].map((course) => ({ label: course.cycleName, value: course.cycleId })),
     [props.courses],
   );
+
   const availablePeriods = useMemo(
     () =>
-      props.periods.filter((period) => !cycleId || period.cycle_id === cycleId),
+      props.periods.filter(
+        (period) => !cycleId || period.cycle_id === cycleId,
+      ),
     [cycleId, props.periods],
   );
+
+  const levels = useMemo(
+    () =>
+      [
+        ...new Set(
+          props.courses
+            .filter((course) => !cycleId || course.cycleId === cycleId)
+            .map((course) => course.levelName),
+        ),
+      ].map((level) => ({ label: level, value: level })),
+    [cycleId, props.courses],
+  );
+
   const classes = useMemo(
     () =>
       [
@@ -332,41 +376,36 @@ function GradebookTree(props: {
       ].map((course) => ({ label: course.className, value: course.classId })),
     [cycleId, levelName, props.courses],
   );
-  const levels = useMemo(
-    () =>
-      [
-        ...new Set(
-          props.courses
-            .filter((course) => !cycleId || course.cycleId === cycleId)
-            .map((course) => course.levelName),
-        ),
-      ].map((level) => ({ label: level, value: level })),
-    [cycleId, props.courses],
-  );
+
   useEffect(() => {
     setCycleId(
       (current) =>
         current || props.selectedCourse?.cycleId || cycles[0]?.value || "",
     );
   }, [cycles, props.selectedCourse]);
+
   useEffect(() => {
     setPeriodId((current) => {
       if (availablePeriods.some((period) => period.id === current))
         return current;
       return (
-        availablePeriods.find((period) => period.id === props.selectedPeriodId)
-          ?.id ??
+        availablePeriods.find(
+          (period) => period.id === props.selectedPeriodId,
+        )?.id ??
         availablePeriods.find((period) => period.status === "open")?.id ??
         availablePeriods[0]?.id ??
         ""
       );
     });
   }, [availablePeriods, props.selectedPeriodId]);
+
   useEffect(() => {
     if (classes.some((item) => item.value === classId)) return;
     setClassId("");
   }, [classId, classes]);
+
   const normalizedTreeSearch = treeSearch.trim().toLocaleLowerCase("fr");
+
   const nodes = useMemo<TreeNode[]>(() => {
     const filteredCourses = props.courses.filter((course) => {
       const searchable =
@@ -383,6 +422,7 @@ function GradebookTree(props: {
         (!normalizedTreeSearch || searchable.includes(normalizedTreeSearch))
       );
     });
+
     return [...new Set(filteredCourses.map((course) => course.levelName))].map(
       (level) => {
         const levelCourses = filteredCourses.filter(
@@ -421,10 +461,12 @@ function GradebookTree(props: {
     periodId,
     props.courses,
   ]);
+
   const selectedKey =
     props.selectedCourse && periodId
       ? `${periodId}:course:${props.selectedCourse.assignmentId}`
       : undefined;
+
   const expandableKeys = useMemo(() => {
     const keys: Record<string, boolean> = {};
     const visit = (items: TreeNode[]) => {
@@ -438,15 +480,18 @@ function GradebookTree(props: {
     visit(nodes);
     return keys;
   }, [nodes]);
+
+  const findNode = (key: string, items = nodes): TreeNode | undefined => {
+    for (const node of items) {
+      if (String(node.key) === key) return node;
+      const found = findNode(key, node.children ?? []);
+      if (found) return found;
+    }
+    return undefined;
+  };
+
   const selectNode = (key: string) => {
-    const find = (list: TreeNode[]): TreeNode | undefined => {
-      for (const node of list) {
-        if (node.key === key) return node;
-        const found = find(node.children ?? []);
-        if (found) return found;
-      }
-    };
-    const data: unknown = find(nodes)?.data;
+    const data: unknown = findNode(key)?.data;
     if (
       data &&
       typeof data === "object" &&
@@ -460,238 +505,264 @@ function GradebookTree(props: {
       setMobileTreeOpen(false);
     }
   };
+
   const activateNode = (node: TreeNode) => {
     const key = String(node.key ?? "");
     if (node.children?.length) {
-      setExpandedKeys((current) => ({ ...current, [key]: !current[key] }));
+      setExpandedKeys((current) => {
+        const next = { ...current };
+        if (next[key]) delete next[key];
+        else next[key] = true;
+        return next;
+      });
       return;
     }
     selectNode(key);
   };
+
   const tree = (
     <Tree
       value={nodes}
       expandedKeys={expandedKeys}
-      onToggle={(event) => setExpandedKeys(event.value)}
+      onToggle={(event) =>
+        setExpandedKeys(event.value as Record<string, boolean>)
+      }
       nodeTemplate={(node) => (
         <button
           type="button"
-          className="w-full bg-transparent p-0 text-left text-inherit"
-          onClick={() => activateNode(node)}
+          className="w-full border-0 bg-transparent p-0 text-left text-inherit shadow-none"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            activateNode(node);
+          }}
         >
           {String(node.label ?? "")}
         </button>
       )}
-      togglerTemplate={(_node, options) => (
-        <button
-          type="button"
-          className={options.containerClassName}
-          aria-label={options.expanded ? "Replier" : "Déplier"}
-          onClick={(event) => options.onClick(event)}
-        >
-          <i
-            className={`pi ${options.expanded ? "pi-minus" : "pi-plus"} ${options.iconClassName}`}
-          />
-        </button>
-      )}
       selectionMode="single"
       selectionKeys={selectedKey}
-      onSelectionChange={(e) => {
-        if (typeof e.value === "string") selectNode(e.value);
+      onSelectionChange={(event) => {
+        if (typeof event.value === "string") selectNode(event.value);
       }}
       className="gradebook-tree border-0 bg-transparent p-0 text-xs"
     />
   );
-  return (
-    <section className="min-h-[620px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="hidden items-center gap-2 border-b border-slate-200 bg-white p-2 lg:flex">
-        <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          Contexte
-        </span>
-        <Dropdown
-          value={cycleId}
-          options={cycles}
-          onChange={(event) => {
-            setCycleId(String(event.value));
-            setLevelName("");
-            setClassId("");
-          }}
-          className="h-8 min-w-0 flex-1 text-xs"
-          placeholder="Cycle"
-        />
-        <Dropdown
-          value={periodId}
-          options={availablePeriods.map((period) => ({
-            label: period.name,
-            value: period.id,
-          }))}
-          onChange={(event) => setPeriodId(String(event.value))}
-          className="h-8 min-w-0 flex-1 text-xs"
-          placeholder="Période"
-        />
-        <Dropdown
-          value={levelName}
-          options={[{ label: "Tous les niveaux", value: "" }, ...levels]}
-          onChange={(event) => {
-            setLevelName(String(event.value));
-            setClassId("");
-          }}
-          className="h-8 min-w-0 flex-1 text-xs"
-          placeholder="Niveau"
-        />
-        <Dropdown
-          value={classId}
-          options={[{ label: "Toutes les classes", value: "" }, ...classes]}
-          onChange={(event) => setClassId(String(event.value))}
-          className="h-8 min-w-0 flex-1 text-xs"
-          placeholder="Classe"
-        />
+
+  const contextToolbar = (
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="p-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Field label="Cycle">
+            <Dropdown
+              value={cycleId}
+              options={cycles}
+              onChange={(event) => {
+                setCycleId(String(event.value));
+                setLevelName("");
+                setClassId("");
+              }}
+              className="h-10 w-full"
+              placeholder="Cycle"
+            />
+          </Field>
+          <Field label="Période">
+            <Dropdown
+              value={periodId}
+              options={availablePeriods.map((period) => ({
+                label: period.name,
+                value: period.id,
+              }))}
+              onChange={(event) => setPeriodId(String(event.value))}
+              className="h-10 w-full"
+              placeholder="Période"
+            />
+          </Field>
+          <Field label="Niveau">
+            <Dropdown
+              value={levelName}
+              options={[{ label: "Tous les niveaux", value: "" }, ...levels]}
+              onChange={(event) => {
+                setLevelName(String(event.value));
+                setClassId("");
+              }}
+              className="h-10 w-full"
+              placeholder="Niveau"
+            />
+          </Field>
+          <Field label="Classe">
+            <Dropdown
+              value={classId}
+              options={[
+                { label: "Toutes les classes", value: "" },
+                ...classes,
+              ]}
+              onChange={(event) => setClassId(String(event.value))}
+              className="h-10 w-full"
+              placeholder="Classe"
+            />
+          </Field>
+        </div>
       </div>
-      <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)]">
-        <aside className="hidden min-w-0 border-r border-slate-200 bg-slate-50/60 p-2.5 lg:block">
-          <div className="border-t border-slate-200 pt-2">
-            <span className="mb-1 block px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              Recherche dans l’arbre
-            </span>
-            <span className="p-input-icon-left block">
-              <i className="pi pi-search" />
-              <InputText
-                value={treeSearch}
-                onChange={(e) => setTreeSearch(e.target.value)}
-                className="h-9 w-full pl-9 text-sm"
-                placeholder="Niveau, cours, enseignant…"
-              />
-            </span>
-          </div>
-          <div className="mb-1.5 mt-2 flex items-center justify-between gap-1 border-b border-slate-200 pb-1.5 pl-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Niveau → Classe → Cours
-            </span>
-            <span className="flex shrink-0 items-center gap-0.5">
-              <Button
-                type="button"
-                icon="pi pi-plus"
-                text
-                rounded
-                size="small"
-                aria-label="Déplier tout l’arbre"
-                tooltip="Déplier tout"
-                onClick={() => setExpandedKeys(expandableKeys)}
-                className="h-6 w-6 p-0"
-              />
-              <Button
-                type="button"
-                icon="pi pi-minus"
-                text
-                rounded
-                size="small"
-                aria-label="Replier tout l’arbre"
-                tooltip="Replier tout"
-                onClick={() => setExpandedKeys({})}
-                className="h-6 w-6 p-0"
-              />
-            </span>
-          </div>
-          {tree}
-        </aside>
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/60 p-2 lg:hidden">
-            <div className="min-w-0 text-xs">
-              <span className="block text-slate-500">Cours sélectionné</span>
-              <strong className="block truncate text-slate-800">
-                {props.selectedCourse
-                  ? `${props.selectedCourse.subjectName} · ${props.selectedCourse.className}`
-                  : "Aucun cours"}
-              </strong>
+    </section>
+  );
+
+  return (
+    <div className="space-y-4">
+      {contextToolbar}
+
+      <section className="min-h-[620px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)]">
+          <aside className="hidden min-w-0 border-r border-slate-200 bg-slate-50/60 p-2.5 lg:block">
+            <div>
+              <span className="mb-1 block px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Recherche dans l’arbre
+              </span>
+              <span className="p-input-icon-left block">
+                <i className="pi pi-search" />
+                <InputText
+                  value={treeSearch}
+                  onChange={(event) => setTreeSearch(event.target.value)}
+                  className="h-9 w-full pl-9 text-sm"
+                  placeholder="Niveau, cours, enseignant…"
+                />
+              </span>
             </div>
-            <Button
-              size="small"
-              label="Choisir"
-              icon="pi pi-sitemap"
-              outlined
-              onClick={() => setMobileTreeOpen(true)}
+            <div className="mb-1 mt-2 flex items-center justify-between gap-1 pb-1 pl-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Niveau → Classe → Cours
+              </span>
+              <span className="flex shrink-0 items-center gap-0.5">
+                <Button
+                  type="button"
+                  icon="pi pi-plus"
+                  text
+                  rounded
+                  size="small"
+                  aria-label="Déplier tout l’arbre"
+                  tooltip="Déplier tout"
+                  onClick={() => setExpandedKeys(expandableKeys)}
+                  className="h-6 w-6 p-0"
+                />
+                <Button
+                  type="button"
+                  icon="pi pi-minus"
+                  text
+                  rounded
+                  size="small"
+                  aria-label="Replier tout l’arbre"
+                  tooltip="Replier tout"
+                  onClick={() => setExpandedKeys({})}
+                  className="h-6 w-6 p-0"
+                />
+              </span>
+            </div>
+            {tree}
+          </aside>
+
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/60 p-2 lg:hidden">
+              <div className="min-w-0 text-xs">
+                <span className="block text-slate-500">Cours sélectionné</span>
+                <strong className="block truncate text-slate-800">
+                  {props.selectedCourse
+                    ? `${props.selectedCourse.subjectName} · ${props.selectedCourse.className}`
+                    : "Aucun cours"}
+                </strong>
+              </div>
+              <Button
+                size="small"
+                label="Choisir"
+                icon="pi pi-sitemap"
+                outlined
+                onClick={() => setMobileTreeOpen(true)}
+              />
+            </div>
+            {props.children}
+          </div>
+        </div>
+
+        <Dialog
+          header="Choisir le cours"
+          visible={mobileTreeOpen}
+          modal
+          className="w-[min(96vw,34rem)]"
+          onHide={() => setMobileTreeOpen(false)}
+        >
+          <div className="mb-3 grid gap-2 sm:grid-cols-2">
+            <Dropdown
+              value={cycleId}
+              options={cycles}
+              onChange={(event) => {
+                setCycleId(String(event.value));
+                setLevelName("");
+                setClassId("");
+              }}
+              className="h-9 w-full text-xs"
+              placeholder="Cycle"
+            />
+            <Dropdown
+              value={periodId}
+              options={availablePeriods.map((period) => ({
+                label: period.name,
+                value: period.id,
+              }))}
+              onChange={(event) => setPeriodId(String(event.value))}
+              className="h-9 w-full text-xs"
+              placeholder="Période"
+            />
+            <Dropdown
+              value={levelName}
+              options={[{ label: "Tous les niveaux", value: "" }, ...levels]}
+              onChange={(event) => {
+                setLevelName(String(event.value));
+                setClassId("");
+              }}
+              className="h-9 w-full text-xs"
+              placeholder="Niveau"
+            />
+            <Dropdown
+              value={classId}
+              options={[
+                { label: "Toutes les classes", value: "" },
+                ...classes,
+              ]}
+              onChange={(event) => setClassId(String(event.value))}
+              className="h-9 w-full text-xs"
+              placeholder="Classe"
             />
           </div>
-          {props.children}
-        </div>
-      </div>
-      <Dialog
-        header="Choisir le cours"
-        visible={mobileTreeOpen}
-        modal
-        className="w-[min(96vw,34rem)]"
-        onHide={() => setMobileTreeOpen(false)}
-      >
-        <div className="mb-3 grid gap-2 sm:grid-cols-2">
-          <Dropdown
-            value={cycleId}
-            options={cycles}
-            onChange={(event) => {
-              setCycleId(String(event.value));
-              setLevelName("");
-              setClassId("");
-            }}
-            className="h-9 w-full text-xs"
-            placeholder="Cycle"
-          />
-          <Dropdown
-            value={periodId}
-            options={availablePeriods.map((period) => ({
-              label: period.name,
-              value: period.id,
-            }))}
-            onChange={(event) => setPeriodId(String(event.value))}
-            className="h-9 w-full text-xs"
-            placeholder="Période"
-          />
-          <Dropdown
-            value={levelName}
-            options={[{ label: "Tous les niveaux", value: "" }, ...levels]}
-            onChange={(event) => {
-              setLevelName(String(event.value));
-              setClassId("");
-            }}
-            className="h-9 w-full text-xs"
-            placeholder="Niveau"
-          />
-          <Dropdown
-            value={classId}
-            options={[{ label: "Toutes les classes", value: "" }, ...classes]}
-            onChange={(event) => setClassId(String(event.value))}
-            className="h-9 w-full text-xs"
-            placeholder="Classe"
-          />
-        </div>
-        <span className="p-input-icon-left mb-3 block">
-          <i className="pi pi-search" />
-          <InputText
-            value={treeSearch}
-            onChange={(e) => setTreeSearch(e.target.value)}
-            className="h-9 w-full pl-9 text-sm"
-            placeholder="Période, cycle, niveau, classe ou cours"
-          />
-        </span>
-        <div className="mb-2 flex justify-end gap-1">
-          <Button
-            type="button"
-            label="Déplier tout"
-            icon="pi pi-plus"
-            text
-            size="small"
-            onClick={() => setExpandedKeys(expandableKeys)}
-          />
-          <Button
-            type="button"
-            label="Replier tout"
-            icon="pi pi-minus"
-            text
-            size="small"
-            onClick={() => setExpandedKeys({})}
-          />
-        </div>
-        {tree}
-      </Dialog>
-    </section>
+          <span className="p-input-icon-left mb-3 block">
+            <i className="pi pi-search" />
+            <InputText
+              value={treeSearch}
+              onChange={(event) => setTreeSearch(event.target.value)}
+              className="h-9 w-full pl-9 text-sm"
+              placeholder="Niveau, classe, cours ou enseignant"
+            />
+          </span>
+          <div className="mb-2 flex justify-end gap-1">
+            <Button
+              type="button"
+              label="Déplier tout"
+              icon="pi pi-plus"
+              text
+              size="small"
+              onClick={() => setExpandedKeys(expandableKeys)}
+            />
+            <Button
+              type="button"
+              label="Replier tout"
+              icon="pi pi-minus"
+              text
+              size="small"
+              onClick={() => setExpandedKeys({})}
+            />
+          </div>
+          {tree}
+        </Dialog>
+      </section>
+    </div>
   );
 }
 
@@ -716,39 +787,56 @@ function Gradebook(props: {
   const [bulkNote, setBulkNote] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [statusOpen, setStatusOpen] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState<NoteResultStatus>("absent");
+  const [bulkStatus, setBulkStatus] =
+    useState<NoteResultStatus>("absent");
   const [journalOpen, setJournalOpen] = useState(false);
   const [journal, setJournal] = useState<CourseAuditEvent[]>([]);
-  const visible = props.students.filter((s) =>
-    `${s.name} ${s.matricule}`
+
+  const visible = props.students.filter((student) =>
+    `${student.name} ${student.matricule}`
       .toLowerCase()
       .includes(studentQuery.toLowerCase()),
   );
+
   const resultFor = (noteId: string, studentId: string) =>
     props.results.find(
-      (r) => r.note_id === noteId && r.student_id === studentId,
+      (result) =>
+        result.note_id === noteId && result.student_id === studentId,
     );
+
   const typeFor = (note: GradebookNote) =>
-    props.types.find((t) => t.id === note.note_type_id);
+    props.types.find((type) => type.id === note.note_type_id);
+
   const score = (note: GradebookNote, studentId: string) => {
-    const r = resultFor(note.id, studentId);
-    return r?.value == null ? undefined : (r.value / note.scale_snapshot) * 20;
+    const result = resultFor(note.id, studentId);
+    return result?.value == null
+      ? undefined
+      : (result.value / note.scale_snapshot) * 20;
   };
+
   const average = (studentId: string, noteRows: GradebookNote[]) => {
     const values = noteRows
-      .map((n) => score(n, studentId))
-      .filter((v): v is number => v !== undefined);
+      .map((note) => score(note, studentId))
+      .filter((value): value is number => value !== undefined);
     return values.length
-      ? values.reduce((a, b) => a + b, 0) / values.length
+      ? values.reduce((total, value) => total + value, 0) / values.length
       : undefined;
   };
-  const usedTypes = props.types.filter((t) =>
-    props.notes.some((n) => n.note_type_id === t.id),
+
+  const usedTypes = props.types.filter((type) =>
+    props.notes.some((note) => note.note_type_id === type.id),
   );
+
   const appreciationFor = (studentId: string) =>
-    props.appreciations.find((a) => a.student_id === studentId)?.appreciation ??
-    "";
-  async function saveResult(noteId: string, studentId: string, raw: string) {
+    props.appreciations.find(
+      (appreciation) => appreciation.student_id === studentId,
+    )?.appreciation ?? "";
+
+  async function saveResult(
+    noteId: string,
+    studentId: string,
+    raw: string,
+  ) {
     if (!raw.trim()) return;
     const normalized = raw.trim().toLowerCase();
     const status =
@@ -770,25 +858,29 @@ function Gradebook(props: {
     });
     await props.onReload();
   }
+
   async function pasteBulk() {
     if (!bulkNote) return;
     const byMatricule = new Map(
-      props.students.map((s) => [s.matricule.toLowerCase(), s]),
+      props.students.map((student) => [student.matricule.toLowerCase(), student]),
     );
     const tasks = bulkText
       .split(/\r?\n/)
-      .map((line) => line.split(/[\t;]/).map((v) => v.trim()))
-      .filter((p) => p.length >= 2)
+      .map((line) => line.split(/[\t;]/).map((value) => value.trim()))
+      .filter((parts) => parts.length >= 2)
       .flatMap(([matricule, value]) => {
         if (!matricule || !value) return [];
         const student = byMatricule.get(matricule.toLowerCase());
-        return student ? [saveResult(bulkNote, student.studentId, value)] : [];
+        return student
+          ? [saveResult(bulkNote, student.studentId, value)]
+          : [];
       });
     await Promise.all(tasks);
     setBulkOpen(false);
     setBulkText("");
     await props.onReload();
   }
+
   async function applyStatus() {
     if (!bulkNote) return;
     await Promise.all(
@@ -805,6 +897,7 @@ function Gradebook(props: {
     setSelected([]);
     await props.onReload();
   }
+
   async function saveAppreciation(studentId: string, value: string) {
     if (!props.course || !props.period || value.trim().length < 2) return;
     await saveCourseAppreciation({
@@ -817,6 +910,7 @@ function Gradebook(props: {
     });
     await props.onReload();
   }
+
   if (!props.course)
     return (
       <Empty
@@ -824,15 +918,16 @@ function Gradebook(props: {
         detail="Dépliez l’arbre puis sélectionnez une matière."
       />
     );
+
   return (
     <>
-      <header className="border-b border-slate-200 p-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <header className="border-b border-slate-200 px-3 py-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h2 className="m-0 text-base font-semibold text-slate-950">
+            <h2 className="m-0 text-base font-semibold leading-5 text-slate-950">
               {props.course.subjectName} · {props.course.className}
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mb-0 mt-0.5 text-xs leading-4 text-slate-500">
               {props.course.cycleName} · {props.course.levelName} ·{" "}
               {props.course.teacherName} · coefficient{" "}
               {props.course.coefficient}
@@ -844,15 +939,18 @@ function Gradebook(props: {
                 ? "Période active"
                 : "Période fermée"
             }
-            severity={props.period?.status === "open" ? "success" : "secondary"}
+            severity={
+              props.period?.status === "open" ? "success" : "secondary"
+            }
           />
         </div>
-        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/70 p-2">
+
+        <div className="mt-2 flex items-center gap-1.5 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/70 p-1.5">
           <span className="p-input-icon-left min-w-48 flex-1">
             <i className="pi pi-search" />
             <InputText
               value={studentQuery}
-              onChange={(e) => setStudentQuery(e.target.value)}
+              onChange={(event) => setStudentQuery(event.target.value)}
               className="h-8 w-full pl-9 text-xs"
               placeholder="Nom ou matricule"
             />
@@ -896,7 +994,7 @@ function Gradebook(props: {
             outlined
             disabled={!props.notes.length}
             onClick={() =>
-              void publishCourseNotes(props.notes.map((n) => n.id)).then(
+              void publishCourseNotes(props.notes.map((note) => note.id)).then(
                 props.onReload,
               )
             }
@@ -920,6 +1018,7 @@ function Gradebook(props: {
           />
         </div>
       </header>
+
       {!props.students.length ? (
         <Empty
           title="Aucun élève"
@@ -939,7 +1038,7 @@ function Gradebook(props: {
                       setSelected(
                         selected.length === visible.length
                           ? []
-                          : visible.map((s) => s.studentId),
+                          : visible.map((student) => student.studentId),
                       )
                     }
                   />
@@ -949,9 +1048,7 @@ function Gradebook(props: {
                 </th>
                 {props.notes.map((note) => (
                   <th key={note.id} className="min-w-28 border-b p-2">
-                    <strong className="block text-slate-800">
-                      {note.label}
-                    </strong>
+                    <strong className="block text-slate-800">{note.label}</strong>
                     <span className="block text-[11px] font-semibold text-emerald-700">
                       {typeFor(note)?.name ?? "Évaluation"}
                     </span>
@@ -972,7 +1069,9 @@ function Gradebook(props: {
                 <th className="min-w-24 border-b bg-emerald-50 p-2">
                   Moyenne /20
                 </th>
-                <th className="min-w-52 border-b p-2">Appréciation du cours</th>
+                <th className="min-w-52 border-b p-2">
+                  Appréciation du cours
+                </th>
                 <th className="border-b p-2">État</th>
               </tr>
             </thead>
@@ -983,10 +1082,10 @@ function Gradebook(props: {
                     <Checkbox
                       checked={selected.includes(student.studentId)}
                       onChange={() =>
-                        setSelected((v) =>
-                          v.includes(student.studentId)
-                            ? v.filter((id) => id !== student.studentId)
-                            : [...v, student.studentId],
+                        setSelected((value) =>
+                          value.includes(student.studentId)
+                            ? value.filter((id) => id !== student.studentId)
+                            : [...value, student.studentId],
                         )
                       }
                     />
@@ -1014,12 +1113,12 @@ function Gradebook(props: {
                           }
                           className="h-8 w-20 text-xs"
                           placeholder={`0–${note.scale_snapshot}`}
-                          onBlur={(e) => {
-                            if (e.target.value !== shown)
+                          onBlur={(event) => {
+                            if (event.target.value !== shown)
                               void saveResult(
                                 note.id,
                                 student.studentId,
-                                e.target.value,
+                                event.target.value,
                               );
                           }}
                         />
@@ -1034,7 +1133,9 @@ function Gradebook(props: {
                       {formatAverage(
                         average(
                           student.studentId,
-                          props.notes.filter((n) => n.note_type_id === type.id),
+                          props.notes.filter(
+                            (note) => note.note_type_id === type.id,
+                          ),
                         ),
                       )}
                     </td>
@@ -1049,13 +1150,14 @@ function Gradebook(props: {
                       disabled={props.period?.status !== "open"}
                       className="h-8 w-full text-xs"
                       placeholder="Progrès, points forts, conseils…"
-                      onBlur={(e) => {
+                      onBlur={(event) => {
                         if (
-                          e.target.value !== appreciationFor(student.studentId)
+                          event.target.value !==
+                          appreciationFor(student.studentId)
                         )
                           void saveAppreciation(
                             student.studentId,
-                            e.target.value,
+                            event.target.value,
                           );
                       }}
                     />
@@ -1063,15 +1165,15 @@ function Gradebook(props: {
                   <td className="border-b p-2">
                     <Tag
                       value={
-                        props.notes.every((n) =>
-                          resultFor(n.id, student.studentId),
+                        props.notes.every((note) =>
+                          resultFor(note.id, student.studentId),
                         )
                           ? "Complet"
                           : "À compléter"
                       }
                       severity={
-                        props.notes.every((n) =>
-                          resultFor(n.id, student.studentId),
+                        props.notes.every((note) =>
+                          resultFor(note.id, student.studentId),
                         )
                           ? "success"
                           : "secondary"
@@ -1084,6 +1186,7 @@ function Gradebook(props: {
           </table>
         </div>
       )}
+
       <Dialog
         header="Saisie en masse"
         visible={bulkOpen}
@@ -1099,18 +1202,18 @@ function Gradebook(props: {
           <Field label="Évaluation">
             <Dropdown
               value={bulkNote}
-              options={props.notes.map((n) => ({
-                label: `${n.label} · ${typeFor(n)?.name ?? "Évaluation"}`,
-                value: n.id,
+              options={props.notes.map((note) => ({
+                label: `${note.label} · ${typeFor(note)?.name ?? "Évaluation"}`,
+                value: note.id,
               }))}
-              onChange={(e) => setBulkNote(String(e.value))}
+              onChange={(event) => setBulkNote(String(event.value))}
               className="w-full"
             />
           </Field>
           <Field label="Données à coller">
             <InputTextarea
               value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
+              onChange={(event) => setBulkText(event.target.value)}
               rows={10}
               className="w-full font-mono"
               placeholder={"EL-2025-00001\t16\nEL-2025-00002\tAbsent"}
@@ -1132,6 +1235,7 @@ function Gradebook(props: {
           />
         </div>
       </Dialog>
+
       <Dialog
         header="Appliquer un statut"
         visible={statusOpen}
@@ -1147,11 +1251,11 @@ function Gradebook(props: {
           <Field label="Évaluation">
             <Dropdown
               value={bulkNote}
-              options={props.notes.map((n) => ({
-                label: n.label,
-                value: n.id,
+              options={props.notes.map((note) => ({
+                label: note.label,
+                value: note.id,
               }))}
-              onChange={(e) => setBulkNote(String(e.value))}
+              onChange={(event) => setBulkNote(String(event.value))}
               className="w-full"
             />
           </Field>
@@ -1161,7 +1265,9 @@ function Gradebook(props: {
               options={Object.entries(noteResultStatusLabels).map(
                 ([value, label]) => ({ value, label }),
               )}
-              onChange={(e) => setBulkStatus(e.value as NoteResultStatus)}
+              onChange={(event) =>
+                setBulkStatus(event.value as NoteResultStatus)
+              }
               className="w-full"
             />
           </Field>
@@ -1170,6 +1276,7 @@ function Gradebook(props: {
           <Button label="Appliquer" onClick={() => void applyStatus()} />
         </div>
       </Dialog>
+
       <Dialog
         header="Journal des modifications"
         visible={journalOpen}
@@ -1204,6 +1311,7 @@ function Gradebook(props: {
     </>
   );
 }
+
 function auditActionLabel(action: string) {
   return (
     (
@@ -1215,6 +1323,7 @@ function auditActionLabel(action: string) {
     )[action] ?? action
   );
 }
+
 function auditEntityLabel(entity: string) {
   return (
     (
@@ -1226,6 +1335,7 @@ function auditEntityLabel(entity: string) {
     )[entity] ?? entity
   );
 }
+
 function AuditChanges({ before, after }: { before: unknown; after: unknown }) {
   const previous =
     before && typeof before === "object" && !Array.isArray(before)
@@ -1271,6 +1381,7 @@ function AuditChanges({ before, after }: { before: unknown; after: unknown }) {
     </div>
   );
 }
+
 function Field({
   label,
   children,
@@ -1287,6 +1398,7 @@ function Field({
     </label>
   );
 }
+
 function formatAverage(value?: number) {
   return value === undefined
     ? "—"
@@ -1295,6 +1407,7 @@ function formatAverage(value?: number) {
         maximumFractionDigits: 2,
       });
 }
+
 function Empty({ title, detail }: { title: string; detail: string }) {
   return (
     <div className="grid min-h-64 place-items-center p-8 text-center">
