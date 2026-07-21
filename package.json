@@ -16,6 +16,7 @@
     "supabase:reset": "supabase db reset",
     "supabase:fixtures": "bash scripts/load-fixtures.sh",
     "supabase:contracts": "bash scripts/check-supabase-contracts.sh",
+    "supabase:security": "bash scripts/check-sql-security.sh",
     "supabase:test": "supabase test db",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

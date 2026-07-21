@@ -188,26 +188,32 @@ alter table public.fee_types enable row level security;
 alter table public.fee_schedules enable row level security;
 alter table public.fee_schedule_items enable row level security;
 
-create policy "fee_types_authenticated_access"
-on public.fee_types
-for all
-to authenticated
-using (true)
-with check (true);
+create policy fee_types_select_member
+on public.fee_types for select to authenticated
+using (public.is_active_member(institution_id));
 
-create policy "fee_schedules_authenticated_access"
-on public.fee_schedules
-for all
-to authenticated
-using (true)
-with check (true);
+create policy fee_types_manage_finance
+on public.fee_types for all to authenticated
+using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
+with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
 
-create policy "fee_schedule_items_authenticated_access"
-on public.fee_schedule_items
-for all
-to authenticated
-using (true)
-with check (true);
+create policy fee_schedules_select_member
+on public.fee_schedules for select to authenticated
+using (public.is_active_member(institution_id));
+
+create policy fee_schedules_manage_finance
+on public.fee_schedules for all to authenticated
+using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
+with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
+
+create policy fee_schedule_items_select_member
+on public.fee_schedule_items for select to authenticated
+using (public.is_active_member(institution_id));
+
+create policy fee_schedule_items_manage_finance
+on public.fee_schedule_items for all to authenticated
+using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
+with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
 
 comment on table public.fee_types is 'Catalogue permanent des types de frais d’un établissement.';
 comment on table public.fee_schedules is 'Grille tarifaire unique d’un établissement pour une année scolaire.';
@@ -300,13 +306,44 @@ create index payment_plan_installments_plan_idx on public.payment_plan_installme
 alter table public.payment_plans enable row level security;
 alter table public.payment_plan_installments enable row level security;
 
-create policy "payment_plans_authenticated_access"
-on public.payment_plans for all to authenticated
-using (true) with check (true);
+create policy payment_plans_select_member
+on public.payment_plans for select to authenticated
+using (public.is_active_member(institution_id));
 
-create policy "payment_plan_installments_authenticated_access"
+create policy payment_plans_manage_finance
+on public.payment_plans for all to authenticated
+using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
+with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
+
+create policy payment_plan_installments_select_member
+on public.payment_plan_installments for select to authenticated
+using (
+  exists (
+    select 1
+    from public.payment_plans plan
+    where plan.id = payment_plan_installments.payment_plan_id
+      and public.is_active_member(plan.institution_id)
+  )
+);
+
+create policy payment_plan_installments_manage_finance
 on public.payment_plan_installments for all to authenticated
-using (true) with check (true);
+using (
+  exists (
+    select 1
+    from public.payment_plans plan
+    where plan.id = payment_plan_installments.payment_plan_id
+      and public.has_institution_role(plan.institution_id, array['owner','admin','finance']::public.app_role[])
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.payment_plans plan
+    where plan.id = payment_plan_installments.payment_plan_id
+      and public.has_institution_role(plan.institution_id, array['owner','admin','finance']::public.app_role[])
+  )
+);
 
 comment on table public.payment_plans is 'Modèles annuels de répartition des frais scolaires.';
 comment on table public.payment_plan_installments is 'Échéances en pourcentage associées à un plan de paiement.';
@@ -2352,4 +2389,3 @@ begin
   end loop;
 end
 $$;
-
