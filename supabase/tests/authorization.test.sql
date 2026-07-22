@@ -1,5 +1,5 @@
 begin;
-select plan(49);
+select plan(48);
 
 select hasnt_column('public','memberships','role','le rôle unique a été retiré des appartenances');
 select has_column('public','memberships','is_owner','la propriété est un invariant séparé');
