@@ -56,6 +56,35 @@ const mapInstallment = (row: any): FinancialInstallment => ({
   balanceAmount: Number(row.balance_amount),
 });
 
+async function enrichWithFinancialResponsibles(accounts: FinancialAccount[]) {
+  if (!accounts.length) return accounts;
+  const studentIds = [...new Set(accounts.map((account) => account.studentId))];
+  const { data: links, error: linkError } = await db
+    .from("student_guardians")
+    .select("student_id,guardian_id,is_financial_responsible,is_primary_contact")
+    .in("student_id", studentIds)
+    .eq("is_financial_responsible", true);
+  if (linkError) throw linkError;
+
+  const guardianIds = [...new Set((links ?? []).map((link: any) => link.guardian_id))];
+  const { data: guardians, error: guardianError } = guardianIds.length
+    ? await db.from("guardians").select("id,first_name,last_name,primary_phone").in("id", guardianIds)
+    : { data: [], error: null };
+  if (guardianError) throw guardianError;
+
+  return accounts.map((account) => {
+    const studentLinks = (links ?? []).filter((link: any) => link.student_id === account.studentId);
+    const preferredLink = studentLinks.find((link: any) => link.is_primary_contact) ?? studentLinks[0];
+    const guardian = (guardians ?? []).find((item: any) => item.id === preferredLink?.guardian_id);
+    return {
+      ...account,
+      financialResponsibleId: guardian?.id ?? null,
+      financialResponsibleName: guardian ? `${guardian.first_name} ${guardian.last_name}`.trim() : null,
+      financialResponsiblePhone: guardian?.primary_phone ?? null,
+    };
+  });
+}
+
 export type FinancialAccountPageRequest = {
   first: number;
   rows: number;
@@ -128,7 +157,8 @@ export async function listFinancialAccountsPage(
 
   const { data, error, count } = await query;
   if (error) throw error;
-  return { rows: (data ?? []).map(mapAccount), total: count ?? 0 };
+  const rows = await enrichWithFinancialResponsibles((data ?? []).map(mapAccount));
+  return { rows, total: count ?? 0 };
 }
 
 export async function listFinancialAccounts(
@@ -151,9 +181,10 @@ export async function getFinancialAccount(accountId: string): Promise<FinancialA
     (left: FinancialInstallment, right: FinancialInstallment) =>
       left.dueDate.localeCompare(right.dueDate) || left.sequence - right.sequence,
   );
+  const [account] = await enrichWithFinancialResponsibles([mapAccount(data)]);
 
   return {
-    ...mapAccount(data),
+    ...account,
     items: (data.items ?? []).map((row: any) => {
       const item = mapItem(row);
       return { ...item, installments: installments.filter((installment: FinancialInstallment) => installment.itemId === item.id) };
