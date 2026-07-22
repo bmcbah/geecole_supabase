@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/components/auth-context";
 import {
+  getMyAuthorizationSummary,
   getMyInstitutions,
-  getMyMembership,
 } from "../../institutions/services/institution.service";
 import type { Institution } from "../../institutions/types/institution";
 import { listAcademicYears } from "../../settings/services/settings.service";
@@ -52,11 +52,15 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
     setLoading(true);
     void Promise.all([
       listAcademicYears(institutionId),
-      getMyMembership(institutionId, user.id),
+      getMyAuthorizationSummary(institutionId),
     ])
-      .then(([data, membership]) => {
+      .then(([data, authorization]) => {
         setYears(data);
-        const allowed = !["parent", "student"].includes(membership.role);
+        const allowed =
+          authorization.isOwner ||
+          authorization.profiles.some(
+            (profile) => !["parent", "student"].includes(profile.code),
+          );
         setCanChangeYear(allowed);
         const stored = localStorage.getItem(yearKey(institutionId));
         const defaultYear =

@@ -15,6 +15,9 @@ begin
   where schemaname = 'public'
     and tablename not in (
       'cycle_catalog',
+      'permissions',
+      'access_profile_templates',
+      'access_profile_template_permissions',
       'grade_level_catalog',
       'subject_catalog',
       'subject_catalog_cycles',

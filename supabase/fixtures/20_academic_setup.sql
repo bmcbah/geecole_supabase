@@ -15,11 +15,23 @@ insert into public.institutions (
     'Quartier Bordo, Kankan', 'GNF', 'Africa/Conakry', 'fr-GN', 'classes_as_levels'
   );
 
-insert into public.memberships (id, institution_id, user_id, role, status) values
-  ('21000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'owner', 'active'),
-  ('21000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 'admin', 'active'),
-  ('21000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'secretary', 'active'),
-  ('21000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000004', 'owner', 'active');
+select public.install_standard_access_profiles(id) from public.institutions;
+
+insert into public.memberships (id, institution_id, user_id, is_owner, status) values
+  ('21000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', true, 'active'),
+  ('21000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', false, 'active'),
+  ('21000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', false, 'active'),
+  ('21000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000004', true, 'active');
+
+insert into public.membership_access_profiles(membership_id,access_profile_id,is_active)
+select membership.id,profile.id,true
+from (values
+  ('21000000-0000-0000-0000-000000000002'::uuid,'administration'),
+  ('21000000-0000-0000-0000-000000000003'::uuid,'secretariat')
+) requested(membership_id,profile_code)
+join public.memberships membership on membership.id=requested.membership_id
+join public.access_profiles profile
+  on profile.institution_id=membership.institution_id and profile.code=requested.profile_code;
 
 insert into public.academic_cycles (
   id, institution_id, name, code, sort_order, is_active, period_system, period_count,

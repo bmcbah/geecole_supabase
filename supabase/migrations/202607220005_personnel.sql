@@ -486,12 +486,12 @@ begin
 end $$;
 
 create or replace function public.create_employee_access_invitation(
-  target_employee_id uuid, assigned_role public.app_role default 'teacher'
+  target_employee_id uuid, target_access_profile_id uuid default null
 ) returns text language plpgsql security definer set search_path='' as $$
-declare employee_row public.employees%rowtype; person_id uuid; raw_token text;
+declare employee_row public.employees%rowtype; person_id uuid; raw_token text; selected_profile_id uuid;
 begin
   select * into employee_row from public.employees where id=target_employee_id for update;
-  if not found or not public.has_institution_role(employee_row.institution_id,array['owner','admin']::public.app_role[]) then
+  if not found or not public.has_permission(employee_row.institution_id,'settings.access.manage') then
     raise exception 'permission_denied';
   end if;
   if nullif(lower(trim(employee_row.email)),'') is null then raise exception 'employee_email_required'; end if;
@@ -502,9 +502,17 @@ begin
     values(employee_row.institution_id,employee_row.first_name,employee_row.last_name,lower(employee_row.email),employee_row.phone,'active')
     returning id into person_id;
   end if;
-  insert into public.person_roles(institution_id,person_id,role)
-    values(employee_row.institution_id,person_id,assigned_role)
-    on conflict(person_id,role) do nothing;
+  selected_profile_id := target_access_profile_id;
+  if selected_profile_id is null then
+    select id into selected_profile_id from public.access_profiles
+    where institution_id=employee_row.institution_id and code='teacher' and is_active;
+  end if;
+  if selected_profile_id is null or not public.can_delegate_access_profile(selected_profile_id) then
+    raise exception 'access_profile_not_delegable';
+  end if;
+  insert into public.person_access_profiles(institution_id,person_id,access_profile_id,assigned_by)
+    values(employee_row.institution_id,person_id,selected_profile_id,(select auth.uid()))
+    on conflict(person_id,access_profile_id) do nothing;
   raw_token:=public.create_person_invitation(person_id);
   return raw_token;
 end $$;
@@ -538,12 +546,12 @@ begin
   return count_entries;
 end $$;
 
-revoke all on function public.set_employee_hourly_rate(uuid,numeric,date,text),public.create_employee_access_invitation(uuid,public.app_role) from public;
-grant execute on function public.set_employee_hourly_rate(uuid,numeric,date,text),public.create_employee_access_invitation(uuid,public.app_role) to authenticated;
+revoke all on function public.set_employee_hourly_rate(uuid,numeric,date,text),public.create_employee_access_invitation(uuid,uuid) from public;
+grant execute on function public.set_employee_hourly_rate(uuid,numeric,date,text),public.create_employee_access_invitation(uuid,uuid) to authenticated;
 
 create or replace function public.accept_person_invitation(raw_token text)
 returns uuid language plpgsql security definer set search_path = '' as $$
-declare invitation public.person_invitations; assigned_role public.app_role; saved_membership_id uuid;
+declare invitation public.person_invitations; saved_membership_id uuid;
 begin
   if (select auth.uid()) is null then raise exception 'authentication_required'; end if;
   select * into invitation from public.person_invitations
@@ -551,13 +559,22 @@ begin
   if invitation.id is null then raise exception 'invalid_or_expired_invitation'; end if;
   if lower(coalesce((select auth.jwt()->>'email'),''))<>lower(invitation.email) then raise exception 'invitation_email_mismatch'; end if;
   update public.people set auth_user_id=(select auth.uid()) where id=invitation.person_id and auth_user_id is null;
-  select role into assigned_role from public.person_roles where person_id=invitation.person_id
-  order by case role::text when 'owner' then 1 when 'admin' then 2 when 'secretary' then 3 when 'finance' then 4 when 'teacher' then 5 else 6 end limit 1;
-  if assigned_role is null then raise exception 'person_role_required'; end if;
-  insert into public.memberships(institution_id,user_id,role)
-  values(invitation.institution_id,(select auth.uid()),assigned_role)
-  on conflict(institution_id,user_id) do update set status='active',role=excluded.role
+  if not exists(select 1 from public.person_access_profiles where person_id=invitation.person_id) then
+    raise exception 'person_access_profile_required';
+  end if;
+  insert into public.memberships(institution_id,user_id,status,created_by)
+  values(invitation.institution_id,(select auth.uid()),'active',null)
+  on conflict(institution_id,user_id) do update set status='active'
   returning id into saved_membership_id;
+  insert into public.membership_access_profiles(
+    membership_id,access_profile_id,is_active,valid_from,valid_until,assigned_by
+  )
+  select saved_membership_id,person_profile.access_profile_id,true,person_profile.valid_from,
+    person_profile.valid_until,person_profile.assigned_by
+  from public.person_access_profiles person_profile
+  where person_profile.person_id=invitation.person_id
+  on conflict(membership_id,access_profile_id) do update
+    set is_active=true,valid_from=excluded.valid_from,valid_until=excluded.valid_until;
   update public.employees set membership_id=saved_membership_id
   where institution_id=invitation.institution_id and lower(email)=lower(invitation.email) and membership_id is null;
   update public.person_invitations set status='accepted',accepted_at=now() where id=invitation.id;
@@ -1120,91 +1137,10 @@ before insert or update of first_name,last_name,email,phone,status,person_id
 on public.employees
 for each row execute function public.sync_employee_person();
 
-create or replace function public.sync_employee_teacher_role(target_employee_id uuid)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  employee_row public.employees%rowtype;
-  is_teacher boolean;
-begin
-  select * into employee_row from public.employees where id = target_employee_id;
-  if employee_row.id is null or employee_row.person_id is null then return; end if;
-
-  select exists(
-    select 1
-    from public.employee_functions function_assignment
-    join public.personnel_catalog_items catalog
-      on catalog.id = function_assignment.function_item_id
-    where function_assignment.employee_id = employee_row.id
-      and function_assignment.is_active
-      and (function_assignment.ends_on is null or function_assignment.ends_on >= current_date)
-      and upper(catalog.code) = 'TEACHER'
-  ) and employee_row.status = 'active' into is_teacher;
-
-  if is_teacher then
-    insert into public.person_roles(institution_id,person_id,role)
-    values(employee_row.institution_id,employee_row.person_id,'teacher')
-    on conflict(person_id,role) do nothing;
-  else
-    delete from public.person_roles
-    where institution_id = employee_row.institution_id
-      and person_id = employee_row.person_id
-      and role = 'teacher';
-  end if;
-end;
-$$;
-
-create or replace function public.sync_employee_teacher_role_trigger()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  perform public.sync_employee_teacher_role(
-    case when tg_op = 'DELETE' then old.employee_id else new.employee_id end
-  );
-  return case when tg_op = 'DELETE' then old else new end;
-end;
-$$;
-
-drop trigger if exists employee_functions_sync_teacher_role on public.employee_functions;
-create trigger employee_functions_sync_teacher_role
-after insert or update or delete on public.employee_functions
-for each row execute function public.sync_employee_teacher_role_trigger();
-
-create or replace function public.sync_employee_status_teacher_role_trigger()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  perform public.sync_employee_teacher_role(new.id);
-  return new;
-end;
-$$;
-
-drop trigger if exists employees_sync_teacher_role_after_status on public.employees;
-create trigger employees_sync_teacher_role_after_status
-after insert or update of status on public.employees
-for each row execute function public.sync_employee_status_teacher_role_trigger();
-
--- Backfill existing personnel records and their teacher eligibility.
+-- Une fonction contractuelle Personnel ne crée jamais automatiquement un profil d'accès.
+-- Les affectations applicatives passent exclusivement par les RPC d'autorisation.
 update public.employees
 set first_name = first_name;
-
-do $$
-declare employee_id uuid;
-begin
-  for employee_id in select id from public.employees loop
-    perform public.sync_employee_teacher_role(employee_id);
-  end loop;
-end;
-$$;
 
 comment on column public.employees.person_id is
   'Identité applicative stable utilisée par les affectations pédagogiques, même sans compte utilisateur.';

@@ -1,7 +1,7 @@
 begin;
 select plan(13);
 select ok(to_regclass('public.people') is not null, 'table personnes présente');
-select ok(to_regclass('public.person_roles') is not null, 'table rôles présente');
+select ok(to_regclass('public.person_access_profiles') is not null, 'table profils d’accès des personnes présente');
 select ok(to_regclass('public.person_invitations') is not null, 'table invitations présente');
 select ok(to_regclass('public.academic_periods') is not null, 'table périodes présente');
 select ok(exists(select 1 from information_schema.columns where table_schema='public' and table_name='academic_cycles' and column_name='period_system'), 'organisation des périodes présente');

@@ -14,11 +14,11 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import {
   deletePerson,
   invitePerson,
+  listAccessProfiles,
   listPeople,
   listPersonInvitations,
   savePerson,
 } from "../services/annual-settings.service";
-import type { AppRole } from "../../../shared/lib/supabase/database.types";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
@@ -26,18 +26,7 @@ import { useToast } from "../../../shared/components/toast-context";
 
 type Person = Awaited<ReturnType<typeof listPeople>>[number];
 type Invitation = Awaited<ReturnType<typeof listPersonInvitations>>[number];
-
-const roleOptions: { label: string; value: AppRole }[] = [
-  { label: "Élève", value: "student" },
-  { label: "Parent", value: "parent" },
-  { label: "Enseignant", value: "teacher" },
-  { label: "Secrétariat", value: "secretary" },
-  { label: "Finance", value: "finance" },
-  { label: "Administrateur", value: "admin" },
-];
-
-const roleLabel = (role: AppRole) =>
-  roleOptions.find((item) => item.value === role)?.label ?? role;
+type AccessProfile = Awaited<ReturnType<typeof listAccessProfiles>>[number];
 
 const emptyForm = {
   firstName: "",
@@ -45,7 +34,7 @@ const emptyForm = {
   email: "",
   phone: "",
   status: "active" as "active" | "inactive",
-  roles: ["student"] as AppRole[],
+  accessProfileIds: [] as string[],
 };
 
 export function PeopleAccessPanel() {
@@ -53,6 +42,7 @@ export function PeopleAccessPanel() {
   const notify = useToast();
   const [people, setPeople] = useState<Person[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [accessProfiles, setAccessProfiles] = useState<AccessProfile[]>([]);
   const [editing, setEditing] = useState<Person | null | undefined>(undefined);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -62,12 +52,14 @@ export function PeopleAccessPanel() {
 
   const load = useCallback(async () => {
     if (!institutionId) return;
-    const [persons, invites] = await Promise.all([
+    const [persons, invites, profiles] = await Promise.all([
       listPeople(institutionId),
       listPersonInvitations(institutionId),
+      listAccessProfiles(institutionId),
     ]);
     setPeople(persons);
     setInvitations(invites);
+    setAccessProfiles(profiles);
   }, [institutionId]);
 
   useEffect(() => {
@@ -84,14 +76,23 @@ export function PeopleAccessPanel() {
             email: person.email ?? "",
             phone: person.phone ?? "",
             status: person.status === "inactive" ? "inactive" : "active",
-            roles: person.roles,
+            accessProfileIds: person.access_profiles.map((profile) => profile.id),
           }
-        : emptyForm,
+        : {
+            ...emptyForm,
+            accessProfileIds: accessProfiles
+              .filter((profile) => profile.code === "student")
+              .map((profile) => profile.id),
+          },
     );
   };
 
   const submit = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim() || form.roles.length === 0)
+    if (
+      !form.firstName.trim() ||
+      !form.lastName.trim() ||
+      form.accessProfileIds.length === 0
+    )
       return;
     setSaving(true);
     try {
@@ -147,8 +148,8 @@ export function PeopleAccessPanel() {
         person.email,
         person.phone,
         person.status,
-        ...person.roles,
-        ...person.roles.map(roleLabel),
+        ...person.access_profiles.map((profile) => profile.code),
+        ...person.access_profiles.map((profile) => profile.name),
       ].some((value) =>
         String(value ?? "").toLocaleLowerCase("fr").includes(query),
       ),
@@ -233,13 +234,13 @@ export function PeopleAccessPanel() {
                 <Column field="phone" header="Téléphone" />
                 <Column field="email" header="E-mail" />
                 <Column
-                  header="Rôles"
+                  header="Profils d’accès"
                   body={(row: Person) => (
                     <div className="flex flex-wrap gap-1">
-                      {row.roles.map((role) => (
+                      {row.access_profiles.map((profile) => (
                         <Tag
-                          key={role}
-                          value={roleLabel(role)}
+                          key={profile.id}
+                          value={profile.name}
                           severity="secondary"
                         />
                       ))}
@@ -409,18 +410,18 @@ export function PeopleAccessPanel() {
               />
             </div>
             <div className="field">
-              <label htmlFor="person-roles">Rôles</label>
+              <label htmlFor="person-access-profiles">Profils d’accès</label>
               <MultiSelect
-                inputId="person-roles"
-                value={form.roles}
-                options={roleOptions}
-                optionLabel="label"
-                optionValue="value"
+                inputId="person-access-profiles"
+                value={form.accessProfileIds}
+                options={accessProfiles}
+                optionLabel="name"
+                optionValue="id"
                 display="chip"
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    roles: event.value as AppRole[],
+                    accessProfileIds: event.value as string[],
                   }))
                 }
               />

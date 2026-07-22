@@ -324,8 +324,15 @@ export async function listAssignmentOptions(
   institutionId: string,
   yearId: string,
 ) {
-  const [classes, levels, subjects, people, roles, periods] = await Promise.all(
-    [
+  const [
+    classes,
+    levels,
+    subjects,
+    people,
+    personAccessProfiles,
+    accessProfiles,
+    periods,
+  ] = await Promise.all([
       supabase
         .from("school_classes")
         .select("id,name,academic_year_level_id")
@@ -351,21 +358,43 @@ export async function listAssignmentOptions(
         .eq("status", "active")
         .order("last_name"),
       supabase
-        .from("person_roles")
-        .select("person_id")
+        .from("person_access_profiles")
+        .select("person_id,access_profile_id")
         .eq("institution_id", institutionId)
-        .eq("role", "teacher"),
+        .lte("valid_from", new Date().toISOString().slice(0, 10)),
+      supabase
+        .from("access_profiles")
+        .select("id,code")
+        .eq("institution_id", institutionId)
+        .eq("is_active", true)
+        .in("code", ["teacher", "homeroom_teacher"]),
       supabase
         .from("academic_periods")
         .select("id,name,cycle_id")
         .eq("institution_id", institutionId)
         .eq("academic_year_id", yearId)
         .order("sequence"),
-    ],
-  );
-  for (const result of [classes, levels, subjects, people, roles, periods])
+    ]);
+  for (const result of [
+    classes,
+    levels,
+    subjects,
+    people,
+    personAccessProfiles,
+    accessProfiles,
+    periods,
+  ])
     if (result.error) throw result.error;
-  const teacherIds = new Set(roles.data?.map((role) => role.person_id));
+  const teacherProfileIds = new Set(
+    accessProfiles.data?.map((profile) => profile.id),
+  );
+  const teacherIds = new Set(
+    personAccessProfiles.data
+      ?.filter((assignment) =>
+        teacherProfileIds.has(assignment.access_profile_id),
+      )
+      .map((assignment) => assignment.person_id),
+  );
   return {
     classes: (classes.data ?? []).map((item) => ({
       ...item,

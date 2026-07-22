@@ -1,5 +1,4 @@
 import { supabase } from "../../../shared/lib/supabase/client";
-import type { Database } from "../../../shared/lib/supabase/database.types";
 
 export async function listSubjects(institutionId: string) {
   const { data, error } = await supabase
@@ -434,39 +433,67 @@ export async function listInstitutionMembers(institutionId: string) {
 export async function updateMembership(
   id: string,
   input: {
-    role: "owner" | "admin" | "secretary" | "teacher" | "finance";
     status: "active" | "suspended";
+    reason?: string;
   },
 ) {
-  const { error } = await supabase
-    .from("memberships")
-    .update(input)
-    .eq("id", id);
+  const { error } = await supabase.rpc("set_membership_status" as never, {
+    target_membership_id: id,
+    next_status: input.status,
+    status_reason: input.reason ?? null,
+  } as never);
   if (error) throw error;
 }
 
 export async function listPeople(institutionId: string) {
-  const [{ data: people, error }, { data: roles, error: rolesError }] =
-    await Promise.all([
+  const [
+    { data: people, error },
+    { data: assignments, error: assignmentsError },
+    { data: accessProfiles, error: accessProfilesError },
+  ] = await Promise.all([
       supabase
         .from("people")
         .select("*")
         .eq("institution_id", institutionId)
         .order("last_name"),
       supabase
-        .from("person_roles")
+        .from("person_access_profiles")
         .select("*")
         .eq("institution_id", institutionId),
+      supabase
+        .from("access_profiles")
+        .select("*")
+        .eq("institution_id", institutionId)
+        .eq("is_active", true)
+        .order("name"),
     ]);
   if (error) throw error;
-  if (rolesError) throw rolesError;
+  if (assignmentsError) throw assignmentsError;
+  if (accessProfilesError) throw accessProfilesError;
   return people.map((person) => ({
     ...person,
-    roles: roles
-      .filter((role) => role.person_id === person.id)
-      .map((role) => role.role),
+    access_profiles: assignments
+      .filter((assignment) => assignment.person_id === person.id)
+      .map((assignment) =>
+        accessProfiles.find(
+          (profile) => profile.id === assignment.access_profile_id,
+        ),
+      )
+      .filter((profile) => profile !== undefined),
   }));
 }
+
+export async function listAccessProfiles(institutionId: string) {
+  const { data, error } = await supabase
+    .from("access_profiles")
+    .select("*")
+    .eq("institution_id", institutionId)
+    .eq("is_active", true)
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
 export async function savePerson(
   institutionId: string,
   input: {
@@ -476,7 +503,7 @@ export async function savePerson(
     email: string;
     phone: string;
     status: string;
-    roles: Database["public"]["Enums"]["app_role"][];
+    accessProfileIds: string[];
   },
 ) {
   const { data, error } = await supabase.rpc("save_person", {
@@ -487,13 +514,16 @@ export async function savePerson(
     person_email: input.email,
     person_phone: input.phone,
     person_status: input.status,
-    assigned_roles: input.roles,
+    assigned_access_profile_ids: input.accessProfileIds,
   });
   if (error) throw error;
   return data;
 }
 export async function deletePerson(id: string) {
-  const { error } = await supabase.from("people").delete().eq("id", id);
+  const { error } = await supabase.rpc("delete_person", {
+    target_person_id: id,
+    deletion_reason: null,
+  });
   if (error) throw error;
 }
 export async function invitePerson(id: string) {

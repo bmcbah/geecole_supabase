@@ -578,17 +578,25 @@ export interface Database {
           id: string;
           institution_id: string;
           user_id: string;
-          role: AppRole;
+          is_owner: boolean;
           status: "active" | "suspended";
+          valid_from: string;
+          valid_until: string | null;
+          created_by: string | null;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
+          id?: string;
           institution_id: string;
           user_id: string;
-          role: AppRole;
+          is_owner?: boolean;
           status?: "active" | "suspended";
+          valid_from?: string;
+          valid_until?: string | null;
+          created_by?: string | null;
         };
-        Update: { role?: AppRole; status?: "active" | "suspended" };
+        Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>;
         Relationships: [
           {
             foreignKeyName: "memberships_institution_id_fkey";
@@ -598,6 +606,93 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      permissions: {
+        Row: {
+          id: string;
+          code: string;
+          module: string;
+          resource: string;
+          action: string;
+          label: string;
+          description: string;
+          sensitivity: "standard" | "sensitive" | "system";
+          is_assignable: boolean;
+          is_active: boolean;
+          requires_delegation: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["permissions"]["Row"], "id" | "created_at"> & { id?: string };
+        Update: Partial<Database["public"]["Tables"]["permissions"]["Insert"]>;
+        Relationships: [];
+      };
+      access_profiles: {
+        Row: {
+          id: string;
+          institution_id: string;
+          source_template_id: string | null;
+          source_template_version: number | null;
+          code: string;
+          name: string;
+          description: string;
+          is_standard: boolean;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id: string;
+          source_template_id?: string | null;
+          source_template_version?: number | null;
+          code: string;
+          name: string;
+          description?: string;
+          is_standard?: boolean;
+          is_active?: boolean;
+          created_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["access_profiles"]["Insert"]>;
+        Relationships: [];
+      };
+      access_profile_permissions: {
+        Row: {
+          access_profile_id: string;
+          permission_id: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          access_profile_id: string;
+          permission_id: string;
+          created_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["access_profile_permissions"]["Insert"]>;
+        Relationships: [];
+      };
+      membership_access_profiles: {
+        Row: {
+          id: string;
+          membership_id: string;
+          access_profile_id: string;
+          is_active: boolean;
+          valid_from: string;
+          valid_until: string | null;
+          assigned_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          membership_id: string;
+          access_profile_id: string;
+          is_active?: boolean;
+          valid_from?: string;
+          valid_until?: string | null;
+          assigned_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["membership_access_profiles"]["Insert"]>;
+        Relationships: [];
       };
       grade_levels: {
         Row: {
@@ -954,21 +1049,27 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["people"]["Insert"]>;
         Relationships: [];
       };
-      person_roles: {
+      person_access_profiles: {
         Row: {
           id: string;
           institution_id: string;
           person_id: string;
-          role: AppRole;
+          access_profile_id: string;
+          valid_from: string;
+          valid_until: string | null;
+          assigned_by: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           institution_id: string;
           person_id: string;
-          role: AppRole;
+          access_profile_id: string;
+          valid_from?: string;
+          valid_until?: string | null;
+          assigned_by?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["person_roles"]["Insert"]>;
+        Update: Partial<Database["public"]["Tables"]["person_access_profiles"]["Insert"]>;
         Relationships: [];
       };
       person_invitations: {
@@ -1603,9 +1704,17 @@ export interface Database {
           person_email: string;
           person_phone: string;
           person_status: string;
-          assigned_roles: AppRole[];
+          assigned_access_profile_ids: string[];
         };
         Returns: string;
+      };
+      delete_person: {
+        Args: { target_person_id: string; deletion_reason?: string | null };
+        Returns: undefined;
+      };
+      get_my_authorization_summary: {
+        Args: { target_institution_id: string };
+        Returns: Json;
       };
       sync_academic_year_periods: {
         Args: { target_year_id: string; target_cycle_id: string };

@@ -289,14 +289,28 @@ export async function setEmployeeHourlyRate(input: {
 
 export async function createEmployeeAccessInvitation(
   employeeId: string,
-  role: "teacher" | "admin" | "secretary" | "finance",
+  accessProfileId: string,
 ) {
   const { data, error } = await supabase.rpc(
     "create_employee_access_invitation" as never,
-    { target_employee_id: employeeId, assigned_role: role } as never,
+    {
+      target_employee_id: employeeId,
+      target_access_profile_id: accessProfileId,
+    } as never,
   );
   fail(error);
   return String(data);
+}
+
+export async function listEmployeeAccessProfiles(institutionId: string) {
+  const { data, error } = await supabase
+    .from("access_profiles")
+    .select("id,name,description")
+    .eq("institution_id", institutionId)
+    .eq("is_active", true)
+    .order("name");
+  fail(error);
+  return data ?? [];
 }
 
 export async function createProposedWorkEntries(input: {

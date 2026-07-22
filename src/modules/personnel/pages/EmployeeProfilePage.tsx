@@ -402,6 +402,7 @@ export function EmployeeProfilePage() {
       />
       <EmployeeAccessDialog
         employeeId={profile.id}
+        institutionId={institutionId}
         email={profile.email}
         visible={dialog === "access"}
         onHide={() => setDialog(null)}

@@ -1,34 +1,49 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
-import type { DropdownChangeEvent } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
-import { createEmployeeAccessInvitation } from "../services/personnel.service";
+import {
+  createEmployeeAccessInvitation,
+  listEmployeeAccessProfiles,
+} from "../services/personnel.service";
 
 export function EmployeeAccessDialog({
   employeeId,
+  institutionId,
   email,
   visible,
   onHide,
 }: {
   employeeId: string;
+  institutionId: string;
   email: string | null;
   visible: boolean;
   onHide: () => void;
 }) {
-  const [role, setRole] = useState<
-    "teacher" | "admin" | "secretary" | "finance"
-  >("teacher");
+  const [accessProfiles, setAccessProfiles] = useState<
+    Awaited<ReturnType<typeof listEmployeeAccessProfiles>>
+  >([]);
+  const [accessProfileId, setAccessProfileId] = useState("");
   const [link, setLink] = useState("");
   const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!visible) return;
+    void listEmployeeAccessProfiles(institutionId).then((profiles) => {
+      setAccessProfiles(profiles);
+      setAccessProfileId((current) => current || profiles[0]?.id || "");
+    });
+  }, [institutionId, visible]);
   const create = async () => {
     setBusy(true);
     setFailure("");
     try {
-      const token = await createEmployeeAccessInvitation(employeeId, role);
+      const token = await createEmployeeAccessInvitation(
+        employeeId,
+        accessProfileId,
+      );
       setLink(`${window.location.origin}/invitation?token=${token}`);
     } catch (error) {
       setFailure(
@@ -48,21 +63,16 @@ export function EmployeeAccessDialog({
       <p className="mt-0 text-sm text-slate-600">
         L’accès est créé par invitation pour{" "}
         <strong>{email || "adresse e-mail manquante"}</strong>. La fonction RH
-        et le rôle applicatif restent distincts.
+        et le profil d’accès restent distincts.
       </p>
       <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
-        <span>Rôle applicatif *</span>
+        <span>Profil d’accès *</span>
         <Dropdown
-          value={role}
-          options={[
-            { label: "Enseignant", value: "teacher" },
-            { label: "Administrateur", value: "admin" },
-            { label: "Secrétariat", value: "secretary" },
-            { label: "Finance", value: "finance" },
-          ]}
-          onChange={(e: DropdownChangeEvent) =>
-            setRole(e.value as "teacher" | "admin" | "secretary" | "finance")
-          }
+          value={accessProfileId}
+          options={accessProfiles}
+          optionLabel="name"
+          optionValue="id"
+          onChange={(event) => setAccessProfileId(String(event.value))}
         />
       </label>
       {link && (
@@ -91,7 +101,7 @@ export function EmployeeAccessDialog({
           label="Créer l’invitation"
           icon="pi pi-send"
           loading={busy}
-          disabled={!email}
+          disabled={!email || !accessProfileId}
           onClick={() => void create()}
         />
       </div>

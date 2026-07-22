@@ -23,9 +23,14 @@ on conflict (academic_year_id, cycle_id, sequence) do nothing;
 insert into public.people (id,institution_id,first_name,last_name,email,phone) values
  ('41000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Moussa','Condé','moussa.conde@geecole.local','+224 620 20 20 01'),
  ('41000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','Nènè','Sylla','nene.sylla@geecole.local','+224 620 20 20 02');
-insert into public.person_roles (institution_id,person_id,role) values
- ('20000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000001','teacher'),
- ('20000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000002','teacher');
+insert into public.person_access_profiles (institution_id,person_id,access_profile_id)
+select '20000000-0000-0000-0000-000000000001',person_id,profile.id
+from (values
+ ('41000000-0000-0000-0000-000000000001'::uuid),
+ ('41000000-0000-0000-0000-000000000002'::uuid)
+) requested(person_id)
+join public.access_profiles profile
+  on profile.institution_id='20000000-0000-0000-0000-000000000001' and profile.code='teacher';
 
 insert into public.subjects (id,institution_id,catalog_id,name,code)
 select value.id,'20000000-0000-0000-0000-000000000001',catalog.id,catalog.name,catalog.code

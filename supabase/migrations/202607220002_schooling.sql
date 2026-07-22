@@ -575,6 +575,105 @@ create table public.school_classes (
   updated_at timestamptz not null default now(),
   unique (institution_id, academic_year_id, code)
 );
+alter table public.school_classes
+  add constraint school_classes_id_institution_unique unique(id,institution_id);
+
+alter table public.access_scope_assignments
+  add constraint access_scopes_academic_year_fk
+    foreign key(academic_year_id,institution_id) references public.academic_years(id,institution_id) on delete cascade,
+  add constraint access_scopes_cycle_fk
+    foreign key(cycle_id,institution_id) references public.academic_cycles(id,institution_id) on delete cascade,
+  add constraint access_scopes_level_fk
+    foreign key(level_id,institution_id) references public.grade_levels(id,institution_id) on delete cascade,
+  add constraint access_scopes_class_fk
+    foreign key(class_id,institution_id) references public.school_classes(id,institution_id) on delete cascade;
+
+create or replace function public.validate_access_scope_assignment()
+returns trigger language plpgsql security definer set search_path='' as $$
+declare membership_institution_id uuid; target_year_id uuid;
+begin
+  select membership.institution_id into membership_institution_id
+  from public.membership_access_profiles membership_profile
+  join public.memberships membership on membership.id=membership_profile.membership_id
+  where membership_profile.id=new.membership_profile_id;
+  if membership_institution_id is null or membership_institution_id<>new.institution_id then
+    raise exception 'access_scope_institution_mismatch';
+  end if;
+  if new.class_id is not null then
+    select academic_year_id into target_year_id from public.school_classes where id=new.class_id;
+    if new.academic_year_id is not null and target_year_id<>new.academic_year_id then
+      raise exception 'access_scope_academic_year_mismatch';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger access_scope_assignments_validate
+before insert or update on public.access_scope_assignments
+for each row execute function public.validate_access_scope_assignment();
+
+revoke all on function public.validate_access_scope_assignment() from public;
+
+create or replace function public.assign_access_scope(
+  target_membership_profile_id uuid,
+  target_academic_year_id uuid default null,
+  target_cycle_id uuid default null,
+  target_level_id uuid default null,
+  target_class_id uuid default null,
+  scope_valid_from date default current_date,
+  scope_valid_until date default null
+)
+returns uuid language plpgsql security definer set search_path='' as $$
+declare target_institution_id uuid; target_access_profile_id uuid; scope_id uuid;
+begin
+  select membership.institution_id,membership_profile.access_profile_id
+    into target_institution_id,target_access_profile_id
+  from public.membership_access_profiles membership_profile
+  join public.memberships membership on membership.id=membership_profile.membership_id
+  where membership_profile.id=target_membership_profile_id;
+  if target_institution_id is null then raise exception 'membership_access_profile_not_found'; end if;
+  if not public.can_delegate_access_profile(target_access_profile_id) then raise exception 'access_profile_not_delegable'; end if;
+  if num_nonnulls(target_cycle_id,target_level_id,target_class_id)>1 then raise exception 'access_scope_target_invalid'; end if;
+  if scope_valid_until is not null and scope_valid_until<scope_valid_from then raise exception 'invalid_access_period'; end if;
+  insert into public.access_scope_assignments(
+    institution_id,membership_profile_id,academic_year_id,cycle_id,level_id,class_id,
+    valid_from,valid_until,created_by
+  ) values(
+    target_institution_id,target_membership_profile_id,target_academic_year_id,target_cycle_id,
+    target_level_id,target_class_id,scope_valid_from,scope_valid_until,(select auth.uid())
+  ) returning id into scope_id;
+  perform public.write_access_audit(
+    target_institution_id,'access_scope.assigned','access_scope',scope_id,null,
+    jsonb_build_object('membershipProfileId',target_membership_profile_id,'academicYearId',target_academic_year_id,
+      'cycleId',target_cycle_id,'levelId',target_level_id,'classId',target_class_id,
+      'validFrom',scope_valid_from,'validUntil',scope_valid_until),null
+  );
+  return scope_id;
+end;
+$$;
+
+create or replace function public.revoke_access_scope(target_scope_id uuid,revocation_reason text)
+returns void language plpgsql security definer set search_path='' as $$
+declare scope_row public.access_scope_assignments; target_access_profile_id uuid;
+begin
+  select * into scope_row from public.access_scope_assignments where id=target_scope_id for update;
+  if scope_row.id is null then raise exception 'access_scope_not_found'; end if;
+  select access_profile_id into target_access_profile_id
+  from public.membership_access_profiles where id=scope_row.membership_profile_id;
+  if not public.can_delegate_access_profile(target_access_profile_id) then raise exception 'access_profile_not_delegable'; end if;
+  perform public.write_access_audit(
+    scope_row.institution_id,'access_scope.revoked','access_scope',scope_row.id,
+    to_jsonb(scope_row)-'created_by',null,revocation_reason
+  );
+  delete from public.access_scope_assignments where id=scope_row.id;
+end;
+$$;
+
+revoke all on function public.assign_access_scope(uuid,uuid,uuid,uuid,uuid,date,date) from public;
+grant execute on function public.assign_access_scope(uuid,uuid,uuid,uuid,uuid,date,date) to authenticated;
+revoke all on function public.revoke_access_scope(uuid,text) from public;
+grant execute on function public.revoke_access_scope(uuid,text) to authenticated;
 create table public.class_assignments (
   id uuid primary key default extensions.gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,

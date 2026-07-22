@@ -36,3 +36,29 @@ export async function getMyMembership(institutionId: string, userId: string) {
   if (error) throw error;
   return data;
 }
+
+export interface AuthorizationSummary {
+  institutionId: string;
+  membershipId: string;
+  isOwner: boolean;
+  status: "active" | "suspended";
+  profiles: Array<{
+    id: string;
+    code: string;
+    name: string;
+    validFrom: string;
+    validUntil: string | null;
+  }>;
+  permissions: string[];
+}
+
+export async function getMyAuthorizationSummary(institutionId: string) {
+  const { data, error } = await supabase.rpc("get_my_authorization_summary", {
+    target_institution_id: institutionId,
+  });
+  if (error) throw error;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("authorization_summary_unavailable");
+  }
+  return data as unknown as AuthorizationSummary;
+}
