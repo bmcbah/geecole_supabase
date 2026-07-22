@@ -18,7 +18,7 @@ const FinancialAccountDetailPage = lazy(() => import("../../modules/financial-ma
 const FinancialPaymentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })));
 const FinancialDashboardPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialDashboardPage })));
 const FinancialInstallmentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialInstallmentsPage })));
-const FinancialFamiliesPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialFamiliesPage })));
+const FinancialFamiliesPage = lazy(() => import("../../modules/financial-management/pages/FinancialFamiliesWorkspacePage").then((module) => ({ default: module.FinancialFamiliesWorkspacePage })));
 const EmployeesPage = lazy(() => import("../../modules/personnel/pages/EmployeesPage").then((module) => ({ default: module.EmployeesPage })));
 const PersonnelDashboardPage = lazy(() => import("../../modules/personnel/pages/PersonnelDashboardPage").then((module) => ({ default: module.PersonnelDashboardPage })));
 const EmployeeProfilePage = lazy(() => import("../../modules/personnel/pages/EmployeeProfilePage").then((module) => ({ default: module.EmployeeProfilePage })));
