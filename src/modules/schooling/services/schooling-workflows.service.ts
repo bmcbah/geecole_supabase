@@ -34,7 +34,7 @@ export async function listEnrollmentWorkflows(institutionId: string, academicYea
     .select(`
       id,status,admission_date,level_name_snapshot,cycle_name_snapshot,cancellation_reason,
       student:students!inner(id,matricule,first_name,last_name,birth_date),
-      assignment:class_assignments(class_id,class_name_snapshot)
+      assignment:class_assignments(class_id,class_name_snapshot,ends_on)
     `)
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
@@ -43,10 +43,9 @@ export async function listEnrollmentWorkflows(institutionId: string, academicYea
   return (data ?? []).map((row: any) => ({
     ...row,
     student: Array.isArray(row.student) ? row.student[0] : row.student,
-    assignment: (row.assignment ?? []).map((item: any) => ({
-      class_id: item.class_id,
-      class_name: item.class_name_snapshot ?? "Classe",
-    })),
+    assignment: (row.assignment ?? [])
+      .filter((item: any) => !item.ends_on)
+      .map((item: any) => ({ class_id: item.class_id, class_name: item.class_name_snapshot ?? "Classe" })),
   })) as EnrollmentWorkflowRow[];
 }
 
@@ -87,10 +86,16 @@ export async function listAttendance(institutionId: string, academicYearId: stri
     .eq("academic_year_id", academicYearId)
     .order("attendance_date", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: any) => ({
-    ...row,
-    enrollment: Array.isArray(row.enrollment) ? row.enrollment[0] : row.enrollment,
-  })) as AttendanceRow[];
+  return (data ?? []).map((row: any) => {
+    const enrollment = Array.isArray(row.enrollment) ? row.enrollment[0] : row.enrollment;
+    return {
+      ...row,
+      enrollment: {
+        ...enrollment,
+        student: Array.isArray(enrollment?.student) ? enrollment.student[0] : enrollment?.student,
+      },
+    };
+  }) as AttendanceRow[];
 }
 
 export async function createAttendance(input: {
