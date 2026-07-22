@@ -14,6 +14,7 @@ const yearKey = (institutionId: string) => `geecole.year.${institutionId}`;
 
 export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   const { user } = useAuth();
+  const userId = user?.id ?? "";
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institutionId, setInstitutionIdState] = useState("");
   const [years, setYears] = useState<AcademicYear[]>([]);
@@ -23,7 +24,13 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   const [canChangeYear, setCanChangeYear] = useState(true);
 
   const loadInstitutions = useCallback(async () => {
-    if (!user) return;
+    if (!userId) {
+      setInstitutions([]);
+      setInstitutionIdState("");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setFailure("");
     try {
@@ -38,23 +45,45 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [userId]);
+
   useEffect(() => {
-    void loadInstitutions();
+    let cancelled = false;
+
+    void loadInstitutions().catch(() => {
+      if (!cancelled) {
+        setFailure("Impossible de charger le contexte de l’établissement.");
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadInstitutions]);
+
   useEffect(() => {
-    if (!institutionId || !user) {
+    let cancelled = false;
+
+    if (!institutionId || !userId) {
       setYears([]);
       setYearIdState("");
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
+
     localStorage.setItem(institutionKey, institutionId);
     setLoading(true);
+    setFailure("");
+
     void Promise.all([
       listAcademicYears(institutionId),
-      getMyMembership(institutionId, user.id),
+      getMyMembership(institutionId, userId),
     ])
       .then(([data, membership]) => {
+        if (cancelled) return;
+
         setYears(data);
         const allowed = !["parent", "student"].includes(membership.role);
         setCanChangeYear(allowed);
@@ -66,16 +95,34 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
           data[0];
         setYearIdState(defaultYear?.id ?? "");
       })
-      .catch(() => setFailure("Impossible de charger les années scolaires."))
-      .finally(() => setLoading(false));
-  }, [institutionId, user]);
+      .catch(() => {
+        if (!cancelled) {
+          setFailure("Impossible de charger les années scolaires.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  const setInstitutionId = (id: string) => setInstitutionIdState(id);
-  const setYearId = (id: string) => {
-    if (!canChangeYear) return;
-    setYearIdState(id);
-    if (institutionId) localStorage.setItem(yearKey(institutionId), id);
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [institutionId, userId]);
+
+  const setInstitutionId = useCallback(
+    (id: string) => setInstitutionIdState((current) => (current === id ? current : id)),
+    [],
+  );
+
+  const setYearId = useCallback(
+    (id: string) => {
+      if (!canChangeYear) return;
+      setYearIdState((current) => (current === id ? current : id));
+      if (institutionId) localStorage.setItem(yearKey(institutionId), id);
+    },
+    [canChangeYear, institutionId],
+  );
+
   const institution = useMemo(
     () => institutions.find((item) => item.id === institutionId) ?? null,
     [institutionId, institutions],
@@ -88,23 +135,39 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
     await loadInstitutions();
   }, [loadInstitutions]);
 
+  const value = useMemo(
+    () => ({
+      institutions,
+      institution,
+      institutionId,
+      years,
+      year,
+      yearId,
+      loading,
+      failure,
+      canChangeYear,
+      setInstitutionId,
+      setYearId,
+      refresh,
+    }),
+    [
+      institutions,
+      institution,
+      institutionId,
+      years,
+      year,
+      yearId,
+      loading,
+      failure,
+      canChangeYear,
+      setInstitutionId,
+      setYearId,
+      refresh,
+    ],
+  );
+
   return (
-    <AcademicSessionContext.Provider
-      value={{
-        institutions,
-        institution,
-        institutionId,
-        years,
-        year,
-        yearId,
-        loading,
-        failure,
-        canChangeYear,
-        setInstitutionId,
-        setYearId,
-        refresh,
-      }}
-    >
+    <AcademicSessionContext.Provider value={value}>
       {children}
     </AcademicSessionContext.Provider>
   );
