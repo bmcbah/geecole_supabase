@@ -15,11 +15,10 @@ const ReenrollmentPage = lazy(() => import("../../modules/schooling/pages/Reenro
 const BatchReenrollmentPage = lazy(() => import("../../modules/schooling/pages/BatchReenrollmentPage").then((module) => ({ default: module.BatchReenrollmentPage })));
 const FinancialAccountsPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountsWorkspacePage").then((module) => ({ default: module.FinancialAccountsWorkspacePage })));
 const FinancialAccountDetailPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountDetailPage").then((module) => ({ default: module.FinancialAccountDetailPage })));
+const FinancialPaymentFlowPage = lazy(() => import("../../modules/financial-management/pages/FinancialPaymentFlowPage").then((module) => ({ default: module.FinancialPaymentFlowPage })));
 const FinancialPaymentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })));
-const FinancialWorkdayPage = lazy(() => import("../../modules/financial-management/pages/FinancialWorkdayPage").then((module) => ({ default: module.FinancialWorkdayPage })));
 const FinancialDashboardPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialDashboardPage })));
 const FinancialInstallmentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialInstallmentsPage })));
-const FinancialFamiliesPage = lazy(() => import("../../modules/financial-management/pages/FinancialFamiliesWorkspacePage").then((module) => ({ default: module.FinancialFamiliesWorkspacePage })));
 const EmployeesPage = lazy(() => import("../../modules/personnel/pages/EmployeesPage").then((module) => ({ default: module.EmployeesPage })));
 const PersonnelDashboardPage = lazy(() => import("../../modules/personnel/pages/PersonnelDashboardPage").then((module) => ({ default: module.PersonnelDashboardPage })));
 const EmployeeProfilePage = lazy(() => import("../../modules/personnel/pages/EmployeeProfilePage").then((module) => ({ default: module.EmployeeProfilePage })));
@@ -36,7 +35,7 @@ const BonusTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/
 const DeductionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/DeductionTypesSettingsPage").then((module) => ({ default: module.DeductionTypesSettingsPage })));
 const AdvanceTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/AdvanceTypesSettingsPage").then((module) => ({ default: module.AdvanceTypesSettingsPage })));
 const LeaveTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/LeaveTypesSettingsPage").then((module) => ({ default: module.LeaveTypesSettingsPage })));
-const SanctionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/SanctionTypesSettingsPage").then((module) => ({ default: module.SanctionTypesSettingsPage })));
+const SanctionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/PersonnelSanctionsSettingsPage").then((module) => ({ default: module.PersonnelSanctionsSettingsPage })));
 const DocumentTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/DocumentTypesSettingsPage").then((module) => ({ default: module.DocumentTypesSettingsPage })));
 const NotesWorkspacePage = lazy(() => import("../../modules/notes/pages/NotesWorkspacePage").then((module) => ({ default: module.NotesWorkspacePage })));
 const PedagogicalAssignmentsPage = lazy(() => import("../../modules/notes/pages/PedagogicalAssignmentsPage").then((module) => ({ default: module.PedagogicalAssignmentsPage })));
@@ -65,13 +64,14 @@ export function AppRouter() {
             <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
             <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
             <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
-            <Route path="/gestion-financiere" element={<Navigate to="/gestion-financiere/travail" replace />} />
-            <Route path="/gestion-financiere/travail" element={<FinancialWorkdayPage />} />
+            <Route path="/gestion-financiere" element={<Navigate to="/gestion-financiere/dossiers" replace />} />
+            <Route path="/gestion-financiere/travail" element={<Navigate to="/gestion-financiere/dossiers" replace />} />
+            <Route path="/gestion-financiere/familles" element={<Navigate to="/gestion-financiere/dossiers" replace />} />
             <Route path="/gestion-financiere/pilotage" element={<FinancialDashboardPage />} />
             <Route path="/gestion-financiere/echeances" element={<FinancialInstallmentsPage />} />
-            <Route path="/gestion-financiere/familles" element={<FinancialFamiliesPage />} />
             <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
             <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
+            <Route path="/gestion-financiere/dossiers/:accountId/encaissement" element={<FinancialPaymentFlowPage />} />
             <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
             <Route path="/personnel" element={<PersonnelDashboardPage />} />
             <Route path="/personnel/employes" element={<EmployeesPage />} />
