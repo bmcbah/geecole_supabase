@@ -411,8 +411,9 @@ $$;
 
 create or replace function public.validate_payment_plan_installment_total()
 returns trigger language plpgsql security definer set search_path='' as $$
-declare target_plan_id uuid:=coalesce(new.payment_plan_id,old.payment_plan_id); total_percentage numeric;
+declare target_plan_id uuid; total_percentage numeric;
 begin
+  target_plan_id:=case when tg_op='DELETE' then old.payment_plan_id else new.payment_plan_id end;
   select coalesce(sum(percentage),0) into total_percentage
   from public.payment_plan_installments where payment_plan_id=target_plan_id;
   if total_percentage>100.001 then raise exception 'payment_plan_percentage_exceeds_100'; end if;
@@ -2403,12 +2404,16 @@ $$;
 create or replace function public.audit_finance_configuration_mutation()
 returns trigger language plpgsql security definer set search_path='' as $$
 declare
-  previous_value jsonb:=case when tg_op='INSERT' then null else to_jsonb(old) end;
-  next_value jsonb:=case when tg_op='DELETE' then null else to_jsonb(new) end;
-  source_value jsonb:=coalesce(next_value,previous_value);
+  previous_value jsonb;
+  next_value jsonb;
+  source_value jsonb;
   target_institution_id uuid;
-  target_id uuid:=(source_value->>'id')::uuid;
+  target_id uuid;
 begin
+  previous_value:=case when tg_op='INSERT' then null else to_jsonb(old) end;
+  next_value:=case when tg_op='DELETE' then null else to_jsonb(new) end;
+  source_value:=coalesce(next_value,previous_value);
+  target_id:=(source_value->>'id')::uuid;
   if tg_table_name='payment_plan_installments' then
     select institution_id into target_institution_id
     from public.payment_plans where id=(source_value->>'payment_plan_id')::uuid;
