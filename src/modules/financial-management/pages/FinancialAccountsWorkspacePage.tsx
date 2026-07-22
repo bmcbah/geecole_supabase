@@ -11,6 +11,7 @@ import { ProgressSpinner } from "primereact/progressspinner";
 import { SelectButton } from "primereact/selectbutton";
 import { Tag } from "primereact/tag";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
+import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { useToast } from "../../../shared/components/toast-context";
 import { financialAccountStatusLabels, type FinancialAccount } from "../domain/financial-account";
@@ -49,6 +50,7 @@ export function FinancialAccountsWorkspacePage() {
   const [cycle, setCycle] = useState("");
   const [balanceState, setBalanceState] = useState<"" | "settled" | "outstanding">("");
   const [viewMode, setViewMode] = useState<"students" | "families">("students");
+  const [advanced, setAdvanced] = useState(false);
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(25);
   const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray>();
@@ -135,9 +137,8 @@ export function FinancialAccountsWorkspacePage() {
     settled: visibleAccounts.filter((account) => account.balanceAmount <= 0).length,
   }), [visibleAccounts]);
 
-  const resetFilters = () => {
-    setSearch(""); setStatus(""); setLevel(""); setCycle(""); setBalanceState(""); setFirst(0);
-  };
+  const activeFilterCount = [status, level, cycle, balanceState, viewMode === "families" ? viewMode : ""].filter(Boolean).length;
+  const resetFilters = () => { setSearch(""); setStatus(""); setLevel(""); setCycle(""); setBalanceState(""); setViewMode("students"); setFirst(0); };
 
   const handleGenerateUnit = async () => {
     if (!enrollmentId) return;
@@ -194,29 +195,35 @@ export function FinancialAccountsWorkspacePage() {
 
   if (!year) return <Message severity="warn" text="Sélectionnez une année scolaire." />;
 
+  const cards = [
+    { label: "Net à payer", value: formatAmount(summary.total), hint: "Dossiers visibles", icon: "pi-file" },
+    { label: "Déjà encaissé", value: formatAmount(summary.paid), hint: "Paiements comptabilisés", icon: "pi-wallet" },
+    { label: "Reste à payer", value: formatAmount(summary.balance), hint: "Solde à recouvrer", icon: "pi-chart-line" },
+    { label: "Dossiers soldés", value: `${summary.settled} / ${visibleAccounts.length}`, hint: "Sur la sélection", icon: "pi-check-circle" },
+  ];
+
   return (
     <div className="space-y-4 pb-8">
       <PageHeader title="Dossiers financiers" description={`Rechercher, comprendre et traiter la situation financière des élèves pour ${year.name}.`} actions={<div className="flex gap-2"><Button label="Générer un dossier" icon="pi pi-plus" severity="secondary" outlined disabled={!enrollments.length} onClick={() => setGenerationDialogOpen(true)} /><Button label="Générer / réappliquer" icon="pi pi-refresh" onClick={() => setGlobalDialogOpen(true)} /></div>} />
 
-      <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="flex min-w-max items-end gap-2">
-          <label className="w-[340px]"><span className="mb-1 block text-xs font-semibold text-slate-600">Recherche</span><span className="p-input-icon-left block"><i className="pi pi-search" /><InputText value={search} className={`${controlClass} w-full pl-9`} placeholder="Élève, matricule, responsable ou téléphone" onChange={(event) => { setFirst(0); setSearch(event.target.value); }} /></span></label>
-          <label className="w-44"><span className="mb-1 block text-xs font-semibold text-slate-600">Situation</span><Dropdown value={balanceState} className={`${controlClass} w-full`} options={[{ label: "Toutes", value: "" }, { label: "À payer", value: "outstanding" }, { label: "Soldées", value: "settled" }]} onChange={(event) => { setFirst(0); setBalanceState(event.value); }} /></label>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 className="m-0 text-base font-semibold text-slate-950">Vue financière</h2><p className="mt-1 text-sm text-slate-500">Synthèse des dossiers actuellement affichés.</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{year.name}</span></div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{cards.map((card) => <article key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{card.label}</span><MetricIcon icon={card.icon} /></div><strong className="mt-4 block text-xl font-bold tracking-tight text-slate-950">{card.value}</strong><span className="mt-1 block text-xs text-slate-500">{card.hint}</span></article>)}</div>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto p-4"><div className="flex min-w-max items-end gap-2">
+          <label className="w-[360px]"><span className="mb-1 block text-xs font-semibold text-slate-600">Recherche</span><span className="p-input-icon-left block"><i className="pi pi-search" /><InputText value={search} className={`${controlClass} w-full pl-9`} placeholder="Élève, matricule, responsable ou téléphone" onChange={(event) => { setFirst(0); setSearch(event.target.value); }} /></span></label>
+          <label className="w-48"><span className="mb-1 block text-xs font-semibold text-slate-600">Situation</span><Dropdown value={balanceState} className={`${controlClass} w-full`} options={[{ label: "Toutes les situations", value: "" }, { label: "Reste à payer", value: "outstanding" }, { label: "Dossiers soldés", value: "settled" }]} onChange={(event) => { setFirst(0); setBalanceState(event.value); }} /></label>
+          <Button label={advanced ? "Masquer" : "Plus de filtres"} icon="pi pi-sliders-h" severity="secondary" outlined badge={activeFilterCount ? String(activeFilterCount) : undefined} onClick={() => setAdvanced((value) => !value)} />
+          {search || activeFilterCount ? <Button label="Réinitialiser" icon="pi pi-filter-slash" severity="secondary" text onClick={resetFilters} /> : null}
+        </div></div>
+        {advanced ? <div className="border-t border-emerald-100 bg-emerald-50/35 p-4"><div className="flex min-w-max items-end gap-2 overflow-x-auto">
           <label className="w-44"><span className="mb-1 block text-xs font-semibold text-slate-600">Statut</span><Dropdown value={status} className={`${controlClass} w-full`} options={[{ label: "Tous", value: "" }, ...Object.entries(financialAccountStatusLabels).map(([value, label]) => ({ value, label }))]} onChange={(event) => { setFirst(0); setStatus(String(event.value)); }} /></label>
           <label className="w-44"><span className="mb-1 block text-xs font-semibold text-slate-600">Cycle</span><Dropdown value={cycle} className={`${controlClass} w-full`} options={cycleOptions} onChange={(event) => { setFirst(0); setCycle(String(event.value)); }} /></label>
           <label className="w-44"><span className="mb-1 block text-xs font-semibold text-slate-600">Niveau</span><Dropdown value={level} className={`${controlClass} w-full`} options={levelOptions} onChange={(event) => { setFirst(0); setLevel(String(event.value)); }} /></label>
           <label><span className="mb-1 block text-xs font-semibold text-slate-600">Affichage</span><SelectButton value={viewMode} options={[{ label: "Élèves", value: "students" }, { label: "Regrouper les fratries", value: "families" }]} optionLabel="label" optionValue="value" allowEmpty={false} onChange={(event) => { setFirst(0); setViewMode(event.value); }} /></label>
-          <Button label="Réinitialiser" icon="pi pi-filter-slash" severity="secondary" text onClick={resetFilters} />
-        </div>
-      </section>
-
-      <section className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:grid-cols-4">
-        {[
-          ["Net à payer", formatAmount(summary.total)],
-          ["Déjà encaissé", formatAmount(summary.paid)],
-          ["Reste à payer", formatAmount(summary.balance)],
-          ["Dossiers soldés", `${summary.settled} / ${visibleAccounts.length}`],
-        ].map(([label, value], index) => <div key={label} className={`p-4 ${index ? "border-t border-slate-200 sm:border-l sm:border-t-0" : ""}`}><span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><strong className="mt-2 block text-xl text-slate-950">{value}</strong></div>)}
+        </div></div> : null}
       </section>
 
       {failure ? <Message severity="error" text={failure} /> : null}
@@ -235,28 +242,14 @@ export function FinancialAccountsWorkspacePage() {
           </DataTable>
         ) : (
           <DataTable value={families} dataKey="id" expandedRows={expandedRows} onRowToggle={(event) => setExpandedRows(event.data)} rowExpansionTemplate={(family: FamilyGroup) => <div className="border-y border-emerald-100 bg-emerald-50/30 p-3">{accountTable(family.accounts, true)}</div>} className="text-sm" tableStyle={{ minWidth: "1050px" }} emptyMessage="Aucune fratrie ne correspond aux filtres.">
-            <Column expander style={{ width: "3rem" }} />
-            <Column header="Responsable financier" body={(row: FamilyGroup) => <div><strong className="text-slate-950">{row.responsibleName}</strong><span className="mt-1 block text-xs text-slate-500">{row.responsiblePhone || "Téléphone absent"}</span></div>} />
-            <Column header="Enfants" body={(row: FamilyGroup) => <Tag value={`${row.accounts.length} enfant${row.accounts.length > 1 ? "s" : ""}`} severity="info" />} />
-            <Column header="Net à payer" body={(row: FamilyGroup) => <strong>{formatAmount(row.totalAmount)}</strong>} />
-            <Column header="Payé" body={(row: FamilyGroup) => <span className="font-semibold text-emerald-700">{formatAmount(row.paidAmount)}</span>} />
-            <Column header="Reste" body={(row: FamilyGroup) => <strong className={row.balanceAmount > 0 ? "text-orange-700" : "text-emerald-700"}>{formatAmount(row.balanceAmount)}</strong>} />
-            <Column header="Situation" body={(row: FamilyGroup) => <Tag value={row.balanceAmount <= 0 ? "Famille soldée" : "Paiement attendu"} severity={row.balanceAmount <= 0 ? "success" : "warning"} />} />
+            <Column expander style={{ width: "3rem" }} /><Column header="Responsable financier" body={(row: FamilyGroup) => <div><strong className="text-slate-950">{row.responsibleName}</strong><span className="mt-1 block text-xs text-slate-500">{row.responsiblePhone || "Téléphone absent"}</span></div>} /><Column header="Enfants" body={(row: FamilyGroup) => <Tag value={`${row.accounts.length} enfant${row.accounts.length > 1 ? "s" : ""}`} severity="info" />} /><Column header="Net à payer" body={(row: FamilyGroup) => <strong>{formatAmount(row.totalAmount)}</strong>} /><Column header="Payé" body={(row: FamilyGroup) => <span className="font-semibold text-emerald-700">{formatAmount(row.paidAmount)}</span>} /><Column header="Reste" body={(row: FamilyGroup) => <strong className={row.balanceAmount > 0 ? "text-orange-700" : "text-emerald-700"}>{formatAmount(row.balanceAmount)}</strong>} /><Column header="Situation" body={(row: FamilyGroup) => <Tag value={row.balanceAmount <= 0 ? "Famille soldée" : "Paiement attendu"} severity={row.balanceAmount <= 0 ? "success" : "warning"} />} />
           </DataTable>
         )}
       </section>
 
-      <Dialog header="Générer un dossier financier" visible={generationDialogOpen} modal className="w-[min(94vw,34rem)]" onHide={() => setGenerationDialogOpen(false)}>
-        <div className="space-y-4"><Dropdown value={enrollmentId} options={enrollmentOptions} filter className="w-full" placeholder="Sélectionner un élève inscrit" onChange={(event) => setEnrollmentId(event.value)} /><div className="flex justify-end gap-2"><Button label="Annuler" severity="secondary" outlined onClick={() => setGenerationDialogOpen(false)} /><Button label="Générer" loading={generating} disabled={!enrollmentId} onClick={() => void handleGenerateUnit()} /></div></div>
-      </Dialog>
-
-      <Dialog header="Générer et réappliquer les frais" visible={globalDialogOpen} modal className="w-[min(94vw,38rem)]" onHide={() => setGlobalDialogOpen(false)}>
-        <div className="space-y-4"><Message severity="info" text="Les dossiers absents seront créés. Les dossiers déjà payés seront conservés pour protéger l’historique financier." /><div className="flex justify-end gap-2"><Button label="Annuler" severity="secondary" outlined onClick={() => setGlobalDialogOpen(false)} /><Button label="Lancer" icon="pi pi-refresh" loading={generating} onClick={() => void handleGenerateAll()} /></div></div>
-      </Dialog>
-
-      <Dialog header="Rapport de génération" visible={Boolean(generationResult)} modal maximizable className="w-[min(96vw,70rem)]" onHide={() => setGenerationResult(undefined)}>
-        {generationResult ? <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-4">{[["Créés", generationResult.generated], ["Régénérés", generationResult.regenerated], ["Conservés", generationResult.skippedPaid], ["Erreurs", generationResult.failed]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-200 p-4"><span className="text-xs text-slate-500">{label}</span><strong className="mt-2 block text-2xl">{value}</strong></div>)}</div>{generationResult.errors.length ? <DataTable value={generationResult.errors} paginator rows={10}><Column field="studentName" header="Élève" /><Column field="levelName" header="Niveau" /><Column field="message" header="Problème" /><Column field="hint" header="Correction attendue" /></DataTable> : <Message severity="success" text="Tous les dossiers ont été traités sans erreur." />}</div> : null}
-      </Dialog>
+      <Dialog header="Générer un dossier financier" visible={generationDialogOpen} modal className="w-[min(94vw,34rem)]" onHide={() => setGenerationDialogOpen(false)}><div className="space-y-4"><Dropdown value={enrollmentId} options={enrollmentOptions} filter className="w-full" placeholder="Sélectionner un élève inscrit" onChange={(event) => setEnrollmentId(event.value)} /><div className="flex justify-end gap-2"><Button label="Annuler" severity="secondary" outlined onClick={() => setGenerationDialogOpen(false)} /><Button label="Générer" loading={generating} disabled={!enrollmentId} onClick={() => void handleGenerateUnit()} /></div></div></Dialog>
+      <Dialog header="Générer et réappliquer les frais" visible={globalDialogOpen} modal className="w-[min(94vw,38rem)]" onHide={() => setGlobalDialogOpen(false)}><div className="space-y-4"><Message severity="info" text="Les dossiers absents seront créés. Les dossiers déjà payés seront conservés pour protéger l’historique financier." /><div className="flex justify-end gap-2"><Button label="Annuler" severity="secondary" outlined onClick={() => setGlobalDialogOpen(false)} /><Button label="Lancer" icon="pi pi-refresh" loading={generating} onClick={() => void handleGenerateAll()} /></div></div></Dialog>
+      <Dialog header="Rapport de génération" visible={Boolean(generationResult)} modal maximizable className="w-[min(96vw,70rem)]" onHide={() => setGenerationResult(undefined)}>{generationResult ? <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-4">{[["Créés", generationResult.generated], ["Régénérés", generationResult.regenerated], ["Conservés", generationResult.skippedPaid], ["Erreurs", generationResult.failed]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-200 p-4"><span className="text-xs text-slate-500">{label}</span><strong className="mt-2 block text-2xl">{value}</strong></div>)}</div>{generationResult.errors.length ? <DataTable value={generationResult.errors} paginator rows={10}><Column field="studentName" header="Élève" /><Column field="levelName" header="Niveau" /><Column field="message" header="Problème" /><Column field="hint" header="Correction attendue" /></DataTable> : <Message severity="success" text="Tous les dossiers ont été traités sans erreur." />}</div> : null}</Dialog>
     </div>
   );
 }
