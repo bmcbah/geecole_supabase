@@ -23,6 +23,7 @@ import { PageHeader } from "../../../shared/components/layout/PageHeader";
 import { SettingsTablePanel } from "../../../shared/components/layout/SettingsTablePanel";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
+import { AccessProfilesPanel } from "./AccessProfilesPanel";
 
 type Person = Awaited<ReturnType<typeof listPeople>>[number];
 type Invitation = Awaited<ReturnType<typeof listPersonInvitations>>[number];
@@ -76,7 +77,9 @@ export function PeopleAccessPanel() {
             email: person.email ?? "",
             phone: person.phone ?? "",
             status: person.status === "inactive" ? "inactive" : "active",
-            accessProfileIds: person.access_profiles.map((profile) => profile.id),
+            accessProfileIds: person.access_profiles.map(
+              (profile) => profile.id,
+            ),
           }
         : {
             ...emptyForm,
@@ -151,7 +154,9 @@ export function PeopleAccessPanel() {
         ...person.access_profiles.map((profile) => profile.code),
         ...person.access_profiles.map((profile) => profile.name),
       ].some((value) =>
-        String(value ?? "").toLocaleLowerCase("fr").includes(query),
+        String(value ?? "")
+          .toLocaleLowerCase("fr")
+          .includes(query),
       ),
     );
   }, [people, peopleSearch]);
@@ -168,7 +173,9 @@ export function PeopleAccessPanel() {
         person?.first_name,
         person?.last_name,
       ].some((value) =>
-        String(value ?? "").toLocaleLowerCase("fr").includes(query),
+        String(value ?? "")
+          .toLocaleLowerCase("fr")
+          .includes(query),
       );
     });
   }, [invitationSearch, invitations, people]);
@@ -321,7 +328,9 @@ export function PeopleAccessPanel() {
                 <Column
                   header="Personne"
                   body={(row: Invitation) => {
-                    const person = people.find((item) => item.id === row.person_id);
+                    const person = people.find(
+                      (item) => item.id === row.person_id,
+                    );
                     return person
                       ? `${person.first_name} ${person.last_name}`
                       : "Personne supprimée";
@@ -351,6 +360,9 @@ export function PeopleAccessPanel() {
               </DataTable>
             }
           />
+        </TabPanel>
+        <TabPanel header="Profils d’accès" leftIcon="pi pi-shield mr-2">
+          <AccessProfilesPanel institutionId={institutionId} onChanged={load} />
         </TabPanel>
       </TabView>
 
@@ -395,7 +407,10 @@ export function PeopleAccessPanel() {
                 id="person-phone"
                 value={form.phone}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, phone: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    phone: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -405,7 +420,10 @@ export function PeopleAccessPanel() {
                 id="person-email"
                 value={form.email}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, email: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
                 }
               />
             </div>

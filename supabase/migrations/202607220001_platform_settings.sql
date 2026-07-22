@@ -53,10 +53,40 @@ create table public.memberships (
 create index memberships_user_id_idx on public.memberships(user_id);
 create index memberships_institution_status_idx on public.memberships(institution_id, status);
 
+create table public.module_catalog (
+  code text primary key check (code ~ '^[a-z][a-z0-9_]*$'),
+  name text not null,
+  description text not null default '',
+  is_mandatory boolean not null default false,
+  is_active boolean not null default true,
+  sort_order smallint not null default 0
+);
+
+insert into public.module_catalog(code,name,is_mandatory,sort_order) values
+  ('settings','Paramétrage',true,10),
+  ('schooling','Scolarité',false,20),
+  ('notes','Notes et évaluations',false,30),
+  ('bulletins','Bulletins et classements',false,40),
+  ('finance','Frais scolaires',false,50),
+  ('personnel','Personnel',false,60),
+  ('documents','Documents',false,70),
+  ('attendance','Assiduité',false,80),
+  ('agenda','Agenda',false,90),
+  ('audit','Audit',true,100);
+
+create table public.institution_modules (
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  module_code text not null references public.module_catalog(code) on delete restrict,
+  is_enabled boolean not null default true,
+  updated_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now(),
+  primary key(institution_id,module_code)
+);
+
 create table public.permissions (
   id uuid primary key default extensions.gen_random_uuid(),
   code text not null unique check (code ~ '^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$'),
-  module text not null,
+  module text not null references public.module_catalog(code) on delete restrict,
   resource text not null,
   action text not null,
   label text not null,
@@ -111,6 +141,13 @@ create table public.access_profile_permissions (
   primary key (access_profile_id, permission_id)
 );
 
+create table public.access_profile_permission_delegations (
+  access_profile_id uuid not null references public.access_profiles(id) on delete cascade,
+  permission_id uuid not null references public.permissions(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  primary key(access_profile_id,permission_id)
+);
+
 create table public.membership_access_profiles (
   id uuid primary key default extensions.gen_random_uuid(),
   membership_id uuid not null references public.memberships(id) on delete cascade,
@@ -156,8 +193,10 @@ create table public.access_audit_events (
 );
 
 create index permissions_code_idx on public.permissions(code);
+create index institution_modules_enabled_idx on public.institution_modules(institution_id,is_enabled,module_code);
 create index access_profiles_institution_active_idx on public.access_profiles(institution_id, is_active);
 create index access_profile_permissions_profile_idx on public.access_profile_permissions(access_profile_id, permission_id);
+create index access_profile_delegations_profile_idx on public.access_profile_permission_delegations(access_profile_id,permission_id);
 create index membership_access_profiles_active_idx on public.membership_access_profiles(membership_id, is_active, valid_from, valid_until);
 create index access_scope_assignments_profile_idx on public.access_scope_assignments(membership_profile_id, academic_year_id, valid_from, valid_until);
 create index access_audit_events_institution_date_idx on public.access_audit_events(institution_id, occurred_at desc);
@@ -167,6 +206,7 @@ insert into public.permissions (code, module, resource, action, label, sensitivi
   ('settings.institution.manage', 'settings', 'institution', 'manage', 'Gérer l’établissement', 'sensitive', true),
   ('settings.access.read', 'settings', 'access', 'read', 'Consulter les accès', 'sensitive', false),
   ('settings.access.manage', 'settings', 'access', 'manage', 'Gérer les accès', 'sensitive', true),
+  ('settings.modules.manage', 'settings', 'modules', 'manage', 'Activer les modules', 'sensitive', true),
   ('settings.catalog.read', 'settings', 'catalog', 'read', 'Consulter les catalogues', 'standard', false),
   ('settings.catalog.manage', 'settings', 'catalog', 'manage', 'Gérer les catalogues locaux', 'standard', false),
   ('settings.academic.read', 'settings', 'academic', 'read', 'Consulter le paramétrage scolaire', 'standard', false),
@@ -245,6 +285,7 @@ with template_permissions(template_code, permission_code) as (
   values
     ('administration', 'settings.institution.read'), ('administration', 'settings.institution.manage'),
     ('administration', 'settings.access.read'), ('administration', 'settings.access.manage'),
+    ('administration', 'settings.modules.manage'),
     ('administration', 'settings.catalog.read'), ('administration', 'settings.catalog.manage'),
     ('administration', 'settings.academic.read'), ('administration', 'settings.academic.manage'),
     ('direction', 'settings.institution.read'), ('direction', 'settings.academic.read'),
@@ -348,8 +389,19 @@ $$;
 
 create or replace function public.has_permission(target_institution_id uuid, permission_code text)
 returns boolean language sql stable security definer set search_path = '' as $$
-  select public.is_institution_owner(target_institution_id)
-    or exists (
+  select exists (
+    select 1
+    from public.permissions requested_permission
+    join public.module_catalog module on module.code=requested_permission.module and module.is_active
+    join public.institution_modules institution_module
+      on institution_module.institution_id=target_institution_id
+      and institution_module.module_code=module.code
+      and institution_module.is_enabled
+    where requested_permission.code=permission_code
+      and requested_permission.is_active
+      and (
+        public.is_institution_owner(target_institution_id)
+        or exists (
       select 1
       from public.memberships membership
       join public.membership_access_profiles assignment on assignment.membership_id = membership.id
@@ -366,14 +418,21 @@ returns boolean language sql stable security definer set search_path = '' as $$
         and assignment.is_active
         and assignment.valid_from <= current_date
         and (assignment.valid_until is null or assignment.valid_until >= current_date)
-        and permission.code = permission_code
-    );
+            and permission.code = permission_code
+        )
+      )
+  );
 $$;
 
 create or replace function public.install_standard_access_profiles(target_institution_id uuid)
 returns integer language plpgsql security definer set search_path = '' as $$
 declare installed_count integer;
 begin
+  insert into public.institution_modules(institution_id,module_code,is_enabled,updated_by)
+  select target_institution_id,module.code,true,(select auth.uid())
+  from public.module_catalog module where module.is_active
+  on conflict(institution_id,module_code) do nothing;
+
   insert into public.access_profiles (
     institution_id, source_template_id, source_template_version, code, name,
     description, is_standard, created_by
@@ -391,6 +450,18 @@ begin
   join public.access_profile_template_permissions template_permission
     on template_permission.template_id = profile.source_template_id
   where profile.institution_id = target_institution_id and profile.is_standard
+  on conflict do nothing;
+
+  insert into public.access_profile_permission_delegations(access_profile_id,permission_id)
+  select profile.id,permission.id
+  from public.access_profiles profile
+  cross join public.permissions permission
+  where profile.institution_id=target_institution_id
+    and profile.code='administration'
+    and profile.is_standard
+    and permission.is_active
+    and permission.is_assignable
+    and not permission.requires_delegation
   on conflict do nothing;
 
   return installed_count;
@@ -482,15 +553,19 @@ $$;
 
 create or replace function public.protect_last_institution_owner()
 returns trigger language plpgsql security definer set search_path = '' as $$
-declare remaining_owners integer;
+declare remaining_owners integer; owner_access_removed boolean := false;
 begin
-  if old.is_owner and (
-    tg_op = 'DELETE'
-    or not new.is_owner
-    or new.status <> 'active'
-    or new.valid_from > current_date
-    or (new.valid_until is not null and new.valid_until < current_date)
-  ) then
+  if old.is_owner then
+    if tg_op = 'DELETE' then
+      owner_access_removed := true;
+    else
+      owner_access_removed := not new.is_owner
+        or new.status <> 'active'
+        or new.valid_from > current_date
+        or (new.valid_until is not null and new.valid_until < current_date);
+    end if;
+  end if;
+  if owner_access_removed then
     select count(*) into remaining_owners
     from public.memberships membership
     where membership.institution_id = old.institution_id
@@ -503,7 +578,8 @@ begin
       raise exception 'last_owner_protected';
     end if;
   end if;
-  return case when tg_op = 'DELETE' then old else new end;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
 end;
 $$;
 
@@ -544,11 +620,14 @@ revoke all on function public.prevent_standard_profile_mutation() from public;
 alter table public.profiles enable row level security;
 alter table public.institutions enable row level security;
 alter table public.memberships enable row level security;
+alter table public.module_catalog enable row level security;
+alter table public.institution_modules enable row level security;
 alter table public.permissions enable row level security;
 alter table public.access_profile_templates enable row level security;
 alter table public.access_profile_template_permissions enable row level security;
 alter table public.access_profiles enable row level security;
 alter table public.access_profile_permissions enable row level security;
+alter table public.access_profile_permission_delegations enable row level security;
 alter table public.membership_access_profiles enable row level security;
 alter table public.access_scope_assignments enable row level security;
 alter table public.access_audit_events enable row level security;
@@ -563,14 +642,19 @@ with check (public.has_permission(id, 'settings.institution.manage'));
 
 create policy memberships_select_authorized on public.memberships for select to authenticated
 using (user_id = (select auth.uid()) or public.has_permission(institution_id, 'settings.access.read'));
+create policy module_catalog_select_authenticated on public.module_catalog for select to authenticated using (is_active);
+create policy institution_modules_select_member on public.institution_modules for select to authenticated
+using (public.is_active_member(institution_id));
 create policy permissions_select_authenticated on public.permissions for select to authenticated using (is_active);
 create policy access_profile_templates_select_authenticated on public.access_profile_templates for select to authenticated using (is_active);
 create policy access_profile_template_permissions_select_authenticated on public.access_profile_template_permissions
 for select to authenticated using (
   exists (
     select 1 from public.access_profile_templates template
-    join public.permissions permission on permission.id = permission_id
-    where template.id = template_id and template.is_active and permission.is_active
+    join public.permissions permission
+      on permission.id = public.access_profile_template_permissions.permission_id
+    where template.id = public.access_profile_template_permissions.template_id
+      and template.is_active and permission.is_active
   )
 );
 create policy access_profiles_select_authorized on public.access_profiles for select to authenticated
@@ -578,13 +662,19 @@ using (public.has_permission(institution_id, 'settings.access.read'));
 create policy access_profile_permissions_select_authorized on public.access_profile_permissions for select to authenticated
 using (exists (
   select 1 from public.access_profiles profile
-  where profile.id = access_profile_id
+  where profile.id = public.access_profile_permissions.access_profile_id
     and public.has_permission(profile.institution_id, 'settings.access.read')
+));
+create policy access_profile_permission_delegations_select_authorized on public.access_profile_permission_delegations for select to authenticated
+using (exists (
+  select 1 from public.access_profiles profile
+  where profile.id=public.access_profile_permission_delegations.access_profile_id
+    and public.has_permission(profile.institution_id,'settings.access.read')
 ));
 create policy membership_access_profiles_select_authorized on public.membership_access_profiles for select to authenticated
 using (exists (
   select 1 from public.memberships membership
-  where membership.id = membership_id
+  where membership.id = public.membership_access_profiles.membership_id
     and (membership.user_id = (select auth.uid()) or public.has_permission(membership.institution_id, 'settings.access.read'))
 ));
 create policy access_scope_assignments_select_authorized on public.access_scope_assignments for select to authenticated
@@ -592,18 +682,45 @@ using (public.has_permission(institution_id, 'settings.access.read'));
 create policy access_audit_events_select_authorized on public.access_audit_events for select to authenticated
 using (public.has_permission(institution_id, 'audit.events.read'));
 
-grant select on public.permissions, public.access_profile_templates,
+grant select on public.module_catalog, public.institution_modules,
+  public.permissions, public.access_profile_templates,
   public.access_profile_template_permissions, public.access_profiles,
-  public.access_profile_permissions, public.membership_access_profiles,
+  public.access_profile_permissions, public.access_profile_permission_delegations,
+  public.membership_access_profiles,
   public.access_scope_assignments, public.access_audit_events to authenticated;
-revoke insert, update, delete on public.memberships, public.access_profiles,
-  public.access_profile_permissions, public.membership_access_profiles,
+revoke insert, update, delete on public.memberships, public.institution_modules,
+  public.access_profiles,
+  public.access_profile_permissions, public.access_profile_permission_delegations,
+  public.membership_access_profiles,
   public.access_scope_assignments, public.access_audit_events from authenticated;
 
 create or replace function public.is_recently_authenticated(max_age interval default interval '10 minutes')
 returns boolean language sql stable set search_path = '' as $$
   select coalesce(((select auth.jwt()) ->> 'iat')::bigint, 0)
     >= extract(epoch from now() - max_age)::bigint;
+$$;
+
+create or replace function public.can_delegate_permission(target_institution_id uuid,permission_code text)
+returns boolean language sql stable security definer set search_path='' as $$
+  select public.is_institution_owner(target_institution_id)
+    or exists(
+      select 1
+      from public.memberships membership
+      join public.membership_access_profiles assignment on assignment.membership_id=membership.id
+      join public.access_profiles profile on profile.id=assignment.access_profile_id
+      join public.access_profile_permission_delegations delegation on delegation.access_profile_id=profile.id
+      join public.permissions permission on permission.id=delegation.permission_id
+      where membership.institution_id=target_institution_id
+        and membership.user_id=(select auth.uid())
+        and membership.status='active'
+        and membership.valid_from<=current_date
+        and (membership.valid_until is null or membership.valid_until>=current_date)
+        and assignment.is_active and profile.is_active
+        and assignment.valid_from<=current_date
+        and (assignment.valid_until is null or assignment.valid_until>=current_date)
+        and permission.code=permission_code
+        and permission.is_assignable
+    );
 $$;
 
 create or replace function public.can_delegate_access_profile(target_access_profile_id uuid)
@@ -623,13 +740,31 @@ returns boolean language sql stable security definer set search_path = '' as $$
             where profile_permission.access_profile_id = profile.id
               and (
                 not permission.is_assignable
-                or permission.requires_delegation
-                or not public.has_permission(profile.institution_id, permission.code)
+                or not public.can_delegate_permission(profile.institution_id, permission.code)
               )
           )
         )
       )
   );
+$$;
+
+create or replace function public.list_delegable_permissions(target_institution_id uuid)
+returns table(
+  id uuid,code text,module text,resource text,action text,label text,description text,
+  sensitivity text,is_assignable boolean,is_active boolean,requires_delegation boolean,created_at timestamptz
+)
+language plpgsql stable security definer set search_path='' as $$
+begin
+  if not public.has_permission(target_institution_id,'settings.access.manage') then raise exception 'permission_denied'; end if;
+  return query
+  select permission.id,permission.code,permission.module,permission.resource,permission.action,
+    permission.label,permission.description,permission.sensitivity,permission.is_assignable,
+    permission.is_active,permission.requires_delegation,permission.created_at
+  from public.permissions permission
+  where permission.is_active and permission.is_assignable
+    and public.can_delegate_permission(target_institution_id,permission.code)
+  order by permission.module,permission.label;
+end;
 $$;
 
 create or replace function public.create_custom_access_profile(
@@ -661,9 +796,7 @@ begin
     left join public.permissions permission on permission.code = requested.code
     where permission.id is null
       or not permission.is_assignable
-      or (permission.requires_delegation and not public.is_institution_owner(target_institution_id))
-      or (not public.is_institution_owner(target_institution_id)
-        and not public.has_permission(target_institution_id, permission.code))
+      or not public.can_delegate_permission(target_institution_id, permission.code)
   ) then
     raise exception 'permission_not_delegable';
   end if;
@@ -730,15 +863,61 @@ begin
 end;
 $$;
 
+create or replace function public.update_custom_access_profile(
+  target_access_profile_id uuid,
+  profile_name text,
+  profile_description text,
+  permission_codes text[],
+  profile_active boolean default true
+)
+returns void language plpgsql security definer set search_path='' as $$
+declare target_profile public.access_profiles; previous_value jsonb; permission_code text;
+begin
+  select * into target_profile from public.access_profiles where id=target_access_profile_id for update;
+  if target_profile.id is null then raise exception 'access_profile_not_found'; end if;
+  if target_profile.is_standard then raise exception 'standard_access_profile_is_immutable'; end if;
+  if not public.has_permission(target_profile.institution_id,'settings.access.manage')
+    or not public.can_delegate_access_profile(target_profile.id) then raise exception 'access_profile_not_delegable'; end if;
+  if char_length(trim(profile_name))<2 then raise exception 'access_profile_name_required'; end if;
+  if coalesce(array_length(permission_codes,1),0)=0 then raise exception 'access_profile_permission_required'; end if;
+  foreach permission_code in array permission_codes loop
+    if not exists(
+      select 1 from public.permissions permission
+      where permission.code=permission_code and permission.is_active and permission.is_assignable
+    ) or not public.can_delegate_permission(target_profile.institution_id,permission_code) then
+      raise exception 'permission_not_delegable';
+    end if;
+  end loop;
+  previous_value:=jsonb_build_object(
+    'name',target_profile.name,'description',target_profile.description,'isActive',target_profile.is_active,
+    'permissions',(select coalesce(jsonb_agg(permission.code),'[]'::jsonb)
+      from public.access_profile_permissions profile_permission
+      join public.permissions permission on permission.id=profile_permission.permission_id
+      where profile_permission.access_profile_id=target_profile.id)
+  );
+  update public.access_profiles set name=trim(profile_name),description=coalesce(trim(profile_description),''),
+    is_active=profile_active where id=target_profile.id;
+  delete from public.access_profile_permissions where access_profile_id=target_profile.id;
+  insert into public.access_profile_permissions(access_profile_id,permission_id,created_by)
+  select target_profile.id,permission.id,(select auth.uid())
+  from public.permissions permission where permission.code=any(permission_codes);
+  perform public.write_access_audit(
+    target_profile.institution_id,'access_profile.updated','access_profile',target_profile.id,previous_value,
+    jsonb_build_object('name',trim(profile_name),'description',coalesce(trim(profile_description),''),
+      'isActive',profile_active,'permissions',permission_codes),null
+  );
+end;
+$$;
+
 create or replace function public.revoke_membership_access_profile(
   target_assignment_id uuid,
   revocation_reason text
 )
 returns void language plpgsql security definer set search_path = '' as $$
-declare assignment public.membership_access_profiles; target_institution_id uuid;
+declare assignment record;
 begin
   select membership_profile.*, membership.institution_id
-    into assignment, target_institution_id
+    into assignment
   from public.membership_access_profiles membership_profile
   join public.memberships membership on membership.id = membership_profile.membership_id
   where membership_profile.id = target_assignment_id;
@@ -746,7 +925,7 @@ begin
   if not public.can_delegate_access_profile(assignment.access_profile_id) then raise exception 'access_profile_not_delegable'; end if;
   update public.membership_access_profiles set is_active = false where id = assignment.id;
   perform public.write_access_audit(
-    target_institution_id, 'membership_profile.revoked', 'membership_access_profile', assignment.id,
+    assignment.institution_id, 'membership_profile.revoked', 'membership_access_profile', assignment.id,
     jsonb_build_object('isActive', true), jsonb_build_object('isActive', false), revocation_reason
   );
 end;
@@ -864,10 +1043,42 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     and (membership.valid_until is null or membership.valid_until >= current_date);
 $$;
 
+create or replace function public.set_institution_module_enabled(
+  target_institution_id uuid,
+  target_module_code text,
+  target_enabled boolean,
+  change_reason text default null
+)
+returns void language plpgsql security definer set search_path='' as $$
+declare module_row public.module_catalog; previous_enabled boolean;
+begin
+  if not public.has_permission(target_institution_id,'settings.modules.manage') then raise exception 'permission_denied'; end if;
+  select * into module_row from public.module_catalog where code=target_module_code and is_active;
+  if module_row.code is null then raise exception 'module_not_found'; end if;
+  if module_row.is_mandatory and not target_enabled then raise exception 'mandatory_module_cannot_be_disabled'; end if;
+  select is_enabled into previous_enabled from public.institution_modules
+  where institution_id=target_institution_id and module_code=target_module_code for update;
+  if previous_enabled is null then raise exception 'institution_module_not_found'; end if;
+  update public.institution_modules
+  set is_enabled=target_enabled,updated_by=(select auth.uid()),updated_at=now()
+  where institution_id=target_institution_id and module_code=target_module_code;
+  perform public.write_access_audit(
+    target_institution_id,'institution_module.changed','institution_module',null,
+    jsonb_build_object('module',target_module_code,'enabled',previous_enabled),
+    jsonb_build_object('module',target_module_code,'enabled',target_enabled),change_reason
+  );
+end;
+$$;
+
 revoke all on function public.is_recently_authenticated(interval) from public;
+revoke all on function public.can_delegate_permission(uuid,text) from public;
+revoke all on function public.list_delegable_permissions(uuid) from public;
+grant execute on function public.list_delegable_permissions(uuid) to authenticated;
 revoke all on function public.can_delegate_access_profile(uuid) from public;
 revoke all on function public.create_custom_access_profile(uuid, text, text, text[], uuid) from public;
 grant execute on function public.create_custom_access_profile(uuid, text, text, text[], uuid) to authenticated;
+revoke all on function public.update_custom_access_profile(uuid,text,text,text[],boolean) from public;
+grant execute on function public.update_custom_access_profile(uuid,text,text,text[],boolean) to authenticated;
 revoke all on function public.assign_membership_access_profile(uuid, uuid, date, date) from public;
 grant execute on function public.assign_membership_access_profile(uuid, uuid, date, date) to authenticated;
 revoke all on function public.revoke_membership_access_profile(uuid, text) from public;
@@ -880,6 +1091,7 @@ revoke all on function public.remove_membership(uuid, text) from public;
 grant execute on function public.remove_membership(uuid, text) to authenticated;
 revoke all on function public.get_my_authorization_summary(uuid) from public;
 grant execute on function public.get_my_authorization_summary(uuid) to authenticated;
+revoke all on function public.set_institution_module_enabled(uuid,text,boolean,text) from public;
 
 
 -- -----------------------------------------------------------------------------
@@ -1609,6 +1821,30 @@ begin
 end;
 $$;
 
+create or replace function public.list_teacher_candidates(target_institution_id uuid)
+returns table(id uuid,first_name text,last_name text)
+language plpgsql stable security definer set search_path='' as $$
+begin
+  if not (
+    public.has_permission(target_institution_id,'schooling.classes.manage')
+    or public.has_permission(target_institution_id,'settings.academic.manage')
+  ) then raise exception 'permission_denied'; end if;
+  return query
+  select distinct person.id,person.first_name,person.last_name
+  from public.people person
+  join public.person_access_profiles person_profile on person_profile.person_id=person.id
+  join public.access_profiles profile on profile.id=person_profile.access_profile_id
+  where person.institution_id=target_institution_id
+    and person.status='active'
+    and profile.institution_id=target_institution_id
+    and profile.code in('teacher','homeroom_teacher')
+    and profile.is_active
+    and person_profile.valid_from<=current_date
+    and (person_profile.valid_until is null or person_profile.valid_until>=current_date)
+  order by person.last_name,person.first_name;
+end;
+$$;
+
 do $$ declare table_name text; begin
   foreach table_name in array array['people','person_access_profiles','person_invitations','academic_periods'] loop
     execute format('alter table public.%I enable row level security', table_name);
@@ -1637,6 +1873,8 @@ revoke all on function public.accept_person_invitation(text) from public;
 grant execute on function public.accept_person_invitation(text) to authenticated;
 revoke all on function public.delete_person(uuid, text) from public;
 grant execute on function public.delete_person(uuid, text) to authenticated;
+revoke all on function public.list_teacher_candidates(uuid) from public;
+grant execute on function public.list_teacher_candidates(uuid) to authenticated;
 
 
 -- -----------------------------------------------------------------------------

@@ -622,8 +622,52 @@ export interface Database {
           requires_delegation: boolean;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["permissions"]["Row"], "id" | "created_at"> & { id?: string };
+        Insert: Omit<
+          Database["public"]["Tables"]["permissions"]["Row"],
+          "id" | "created_at"
+        > & { id?: string };
         Update: Partial<Database["public"]["Tables"]["permissions"]["Insert"]>;
+        Relationships: [];
+      };
+      module_catalog: {
+        Row: {
+          code: string;
+          name: string;
+          description: string;
+          is_mandatory: boolean;
+          is_active: boolean;
+          sort_order: number;
+        };
+        Insert: {
+          code: string;
+          name: string;
+          description?: string;
+          is_mandatory?: boolean;
+          is_active?: boolean;
+          sort_order?: number;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["module_catalog"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      institution_modules: {
+        Row: {
+          institution_id: string;
+          module_code: string;
+          is_enabled: boolean;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          institution_id: string;
+          module_code: string;
+          is_enabled?: boolean;
+          updated_by?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["institution_modules"]["Insert"]
+        >;
         Relationships: [];
       };
       access_profiles: {
@@ -653,7 +697,9 @@ export interface Database {
           is_active?: boolean;
           created_by?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["access_profiles"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["access_profiles"]["Insert"]
+        >;
         Relationships: [];
       };
       access_profile_permissions: {
@@ -668,7 +714,9 @@ export interface Database {
           permission_id: string;
           created_by?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["access_profile_permissions"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["access_profile_permissions"]["Insert"]
+        >;
         Relationships: [];
       };
       membership_access_profiles: {
@@ -691,7 +739,9 @@ export interface Database {
           valid_until?: string | null;
           assigned_by?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["membership_access_profiles"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["membership_access_profiles"]["Insert"]
+        >;
         Relationships: [];
       };
       grade_levels: {
@@ -1069,7 +1119,9 @@ export interface Database {
           valid_until?: string | null;
           assigned_by?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["person_access_profiles"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["person_access_profiles"]["Insert"]
+        >;
         Relationships: [];
       };
       person_invitations: {
@@ -1715,6 +1767,43 @@ export interface Database {
       get_my_authorization_summary: {
         Args: { target_institution_id: string };
         Returns: Json;
+      };
+      list_teacher_candidates: {
+        Args: { target_institution_id: string };
+        Returns: Array<{ id: string; first_name: string; last_name: string }>;
+      };
+      set_institution_module_enabled: {
+        Args: {
+          target_institution_id: string;
+          target_module_code: string;
+          target_enabled: boolean;
+          change_reason?: string | null;
+        };
+        Returns: undefined;
+      };
+      create_custom_access_profile: {
+        Args: {
+          target_institution_id: string;
+          profile_name: string;
+          profile_description: string;
+          permission_codes: string[];
+          source_profile_id?: string | null;
+        };
+        Returns: string;
+      };
+      update_custom_access_profile: {
+        Args: {
+          target_access_profile_id: string;
+          profile_name: string;
+          profile_description: string;
+          permission_codes: string[];
+          profile_active?: boolean;
+        };
+        Returns: undefined;
+      };
+      list_delegable_permissions: {
+        Args: { target_institution_id: string };
+        Returns: Array<Database["public"]["Tables"]["permissions"]["Row"]>;
       };
       sync_academic_year_periods: {
         Args: { target_year_id: string; target_cycle_id: string };

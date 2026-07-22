@@ -437,11 +437,14 @@ export async function updateMembership(
     reason?: string;
   },
 ) {
-  const { error } = await supabase.rpc("set_membership_status" as never, {
-    target_membership_id: id,
-    next_status: input.status,
-    status_reason: input.reason ?? null,
-  } as never);
+  const { error } = await supabase.rpc(
+    "set_membership_status" as never,
+    {
+      target_membership_id: id,
+      next_status: input.status,
+      status_reason: input.reason ?? null,
+    } as never,
+  );
   if (error) throw error;
 }
 
@@ -451,22 +454,22 @@ export async function listPeople(institutionId: string) {
     { data: assignments, error: assignmentsError },
     { data: accessProfiles, error: accessProfilesError },
   ] = await Promise.all([
-      supabase
-        .from("people")
-        .select("*")
-        .eq("institution_id", institutionId)
-        .order("last_name"),
-      supabase
-        .from("person_access_profiles")
-        .select("*")
-        .eq("institution_id", institutionId),
-      supabase
-        .from("access_profiles")
-        .select("*")
-        .eq("institution_id", institutionId)
-        .eq("is_active", true)
-        .order("name"),
-    ]);
+    supabase
+      .from("people")
+      .select("*")
+      .eq("institution_id", institutionId)
+      .order("last_name"),
+    supabase
+      .from("person_access_profiles")
+      .select("*")
+      .eq("institution_id", institutionId),
+    supabase
+      .from("access_profiles")
+      .select("*")
+      .eq("institution_id", institutionId)
+      .eq("is_active", true)
+      .order("name"),
+  ]);
   if (error) throw error;
   if (assignmentsError) throw assignmentsError;
   if (accessProfilesError) throw accessProfilesError;

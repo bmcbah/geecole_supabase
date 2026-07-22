@@ -1,5 +1,5 @@
 begin;
-select plan(36);
+select plan(44);
 
 select hasnt_column('public','memberships','role','le rôle unique a été retiré des appartenances');
 select has_column('public','memberships','is_owner','la propriété est un invariant séparé');
@@ -9,6 +9,9 @@ select has_table('public','access_profiles','profils locaux présents');
 select has_table('public','membership_access_profiles','cumul de profils présent');
 select has_table('public','access_scope_assignments','périmètres explicites présents');
 select has_table('public','access_audit_events','audit des accès présent');
+select has_table('public','module_catalog','catalogue des modules présent');
+select has_table('public','institution_modules','activation des modules par établissement présente');
+select has_table('public','access_profile_permission_delegations','délégations explicites présentes');
 
 select has_function('public','has_permission',array['uuid','text'],'contrôle de permission présent');
 select has_function('public','create_custom_access_profile',array['uuid','text','text','text[]','uuid'],'création contrôlée de profil présente');
@@ -17,6 +20,8 @@ select has_function('public','set_membership_owner',array['uuid','boolean','text
 select has_function('public','set_membership_status',array['uuid','membership_status','text'],'suspension contrôlée présente');
 select has_function('public','remove_membership',array['uuid','text'],'révocation contrôlée présente');
 select has_function('public','get_my_authorization_summary',array['uuid'],'résumé frontend présent');
+select has_function('public','can_delegate_permission',array['uuid','text'],'contrôle de délégation présent');
+select has_function('public','set_institution_module_enabled',array['uuid','text','boolean','text'],'activation contrôlée des modules présente');
 
 select has_trigger('public','memberships','memberships_protect_last_owner','dernier propriétaire protégé');
 select has_trigger('public','access_audit_events','access_audit_events_immutable','audit immuable protégé');
@@ -32,6 +37,17 @@ select ok(not has_table_privilege('authenticated','public.access_audit_events','
 select ok(not has_table_privilege('authenticated','public.access_audit_events','DELETE'),'aucune suppression directe de l’audit');
 
 select is((select count(*)::integer from public.access_profile_templates),11,'onze profils standards GeEcole');
+select ok((select is_mandatory from public.module_catalog where code='settings'),'le paramétrage ne peut pas être désactivé');
+select ok(not exists(
+  select 1 from public.permissions permission
+  where permission.code='bulletins.reports.publish'
+    and not permission.requires_delegation
+),'la publication des bulletins exige une délégation sensible');
+select ok(exists(
+  select 1 from public.permissions permission
+  where permission.code='schooling.students.update'
+    and permission.is_assignable and not permission.requires_delegation
+),'la gestion courante des élèves reste délégable');
 select ok(exists(
   select 1 from public.access_profile_templates template
   join public.access_profile_template_permissions template_permission on template_permission.template_id=template.id
