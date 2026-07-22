@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(21);
 
 select has_column('public','students','auth_user_id','un élève peut être lié à son compte');
 select has_column('public','guardians','auth_user_id','un responsable peut être lié à son compte');
@@ -12,6 +12,8 @@ select has_function('public','has_active_pedagogical_assignment',array['uuid','u
 select has_function('public','has_permission_for_school_scope',array['uuid','text','uuid','uuid','uuid'],'permission scolarité bornée au périmètre');
 select has_function('public','has_permission_for_student',array['uuid','text'],'écriture élève bornée au périmètre');
 select has_function('public','has_permission_for_guardian',array['uuid','text'],'écriture responsable bornée au périmètre');
+select has_function('public','validate_student_guardian_institution',array[]::text[],'contrôle interétablissement des liens responsables');
+select has_trigger('public','student_guardians','student_guardians_same_institution','l’intégrité du lien est imposée à chaque écriture');
 select ok((select prosecdef from pg_catalog.pg_proc where oid='public.can_read_student(uuid)'::regprocedure),'lecture élève en SECURITY DEFINER');
 select ok((select proconfig @> array['search_path=""'] from pg_catalog.pg_proc where oid='public.can_read_student(uuid)'::regprocedure),'search_path lecture élève verrouillé');
 select function_privs_are('public','can_read_student',array['uuid'],'authenticated',array['EXECUTE']);

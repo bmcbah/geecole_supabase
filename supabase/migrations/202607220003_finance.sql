@@ -222,30 +222,57 @@ alter table public.fee_schedule_items enable row level security;
 
 create policy fee_types_select_member
 on public.fee_types for select to authenticated
-using (public.is_active_member(institution_id));
+using (
+  public.has_permission(institution_id,'finance.pricing.read')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.read',null,null,null)
+);
 
 create policy fee_types_manage_finance
 on public.fee_types for all to authenticated
-using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
-with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
+using (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',null,null,null)
+)
+with check (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',null,null,null)
+);
 
 create policy fee_schedules_select_member
 on public.fee_schedules for select to authenticated
-using (public.is_active_member(institution_id));
+using (
+  public.has_permission(institution_id,'finance.pricing.read')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.read',academic_year_id,null,null)
+);
 
 create policy fee_schedules_manage_finance
 on public.fee_schedules for all to authenticated
-using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
-with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
+using (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',academic_year_id,null,null)
+)
+with check (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',academic_year_id,null,null)
+);
 
 create policy fee_schedule_items_select_member
 on public.fee_schedule_items for select to authenticated
-using (public.is_active_member(institution_id));
+using (
+  public.has_permission(institution_id,'finance.pricing.read')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.read',academic_year_id,null,null)
+);
 
 create policy fee_schedule_items_manage_finance
 on public.fee_schedule_items for all to authenticated
-using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
-with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
+using (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',academic_year_id,null,null)
+)
+with check (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',academic_year_id,null,null)
+);
 
 comment on table public.fee_types is 'Catalogue permanent des types de frais d’un établissement.';
 comment on table public.fee_schedules is 'Grille tarifaire unique d’un établissement pour une année scolaire.';
@@ -286,7 +313,8 @@ create or replace function public.install_fee_type_catalog(target_institution_id
 returns integer language plpgsql security definer set search_path='' as $$
 declare inserted_count integer;
 begin
-  if not public.has_institution_role(target_institution_id,array['owner','admin','finance']::public.app_role[]) then
+  if not public.has_permission(target_institution_id,'finance.pricing.manage')
+    or not public.has_permission_for_school_scope(target_institution_id,'finance.pricing.manage',null,null,null) then
     raise exception 'permission_denied';
   end if;
   insert into public.fee_types(institution_id,catalog_id,name,code,description,is_active)
@@ -358,12 +386,21 @@ alter table public.payment_plan_installments enable row level security;
 
 create policy payment_plans_select_member
 on public.payment_plans for select to authenticated
-using (public.is_active_member(institution_id));
+using (
+  public.has_permission(institution_id,'finance.pricing.read')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.read',academic_year_id,null,null)
+);
 
 create policy payment_plans_manage_finance
 on public.payment_plans for all to authenticated
-using (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]))
-with check (public.has_institution_role(institution_id, array['owner','admin','finance']::public.app_role[]));
+using (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',academic_year_id,null,null)
+)
+with check (
+  public.has_permission(institution_id,'finance.pricing.manage')
+  and public.has_permission_for_school_scope(institution_id,'finance.pricing.manage',academic_year_id,null,null)
+);
 
 create policy payment_plan_installments_select_member
 on public.payment_plan_installments for select to authenticated
@@ -372,7 +409,8 @@ using (
     select 1
     from public.payment_plans plan
     where plan.id = payment_plan_installments.payment_plan_id
-      and public.is_active_member(plan.institution_id)
+      and public.has_permission(plan.institution_id,'finance.pricing.read')
+      and public.has_permission_for_school_scope(plan.institution_id,'finance.pricing.read',plan.academic_year_id,null,null)
   )
 );
 
@@ -383,7 +421,8 @@ using (
     select 1
     from public.payment_plans plan
     where plan.id = payment_plan_installments.payment_plan_id
-      and public.has_institution_role(plan.institution_id, array['owner','admin','finance']::public.app_role[])
+      and public.has_permission(plan.institution_id,'finance.pricing.manage')
+      and public.has_permission_for_school_scope(plan.institution_id,'finance.pricing.manage',plan.academic_year_id,null,null)
   )
 )
 with check (
@@ -391,7 +430,8 @@ with check (
     select 1
     from public.payment_plans plan
     where plan.id = payment_plan_installments.payment_plan_id
-      and public.has_institution_role(plan.institution_id, array['owner','admin','finance']::public.app_role[])
+      and public.has_permission(plan.institution_id,'finance.pricing.manage')
+      and public.has_permission_for_school_scope(plan.institution_id,'finance.pricing.manage',plan.academic_year_id,null,null)
   )
 );
 
@@ -498,35 +538,151 @@ for each row execute function public.protect_financial_snapshot();
 create trigger protect_student_financial_installments_snapshot before update or delete on public.student_financial_installments
 for each row execute function public.protect_financial_snapshot();
 
+create or replace function public.finance_profile_scope_allows_account(
+  target_membership_profile_id uuid,target_financial_account_id uuid
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.student_financial_accounts account
+    join public.enrollments enrollment on enrollment.id=account.enrollment_id
+    join public.academic_year_levels annual_level on annual_level.id=enrollment.academic_year_level_id
+    left join public.class_assignments class_assignment
+      on class_assignment.enrollment_id=enrollment.id and class_assignment.ends_on is null
+    where account.id=target_financial_account_id
+      and (
+        not exists(
+          select 1 from public.access_scope_assignments scope
+          where scope.membership_profile_id=target_membership_profile_id
+        )
+        or exists(
+          select 1 from public.access_scope_assignments scope
+          where scope.membership_profile_id=target_membership_profile_id
+            and scope.institution_id=account.institution_id
+            and scope.valid_from<=current_date
+            and (scope.valid_until is null or scope.valid_until>=current_date)
+            and (scope.academic_year_id is null or scope.academic_year_id=account.academic_year_id)
+            and (scope.cycle_id is null or scope.cycle_id=annual_level.cycle_id)
+            and (scope.level_id is null or scope.level_id=annual_level.level_id)
+            and (scope.class_id is null or scope.class_id=class_assignment.class_id)
+        )
+      )
+  );
+$$;
+
+create or replace function public.has_finance_permission_for_account(
+  target_financial_account_id uuid,permission_code text
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.student_financial_accounts account
+    where account.id=target_financial_account_id
+      and public.is_active_member(account.institution_id)
+      and public.is_module_enabled(account.institution_id,'finance')
+      and (
+        public.is_institution_owner(account.institution_id)
+        or exists(
+          select 1
+          from public.memberships membership
+          join public.membership_access_profiles membership_profile on membership_profile.membership_id=membership.id
+          join public.access_profiles profile on profile.id=membership_profile.access_profile_id
+          left join public.access_profile_templates template on template.id=profile.source_template_id
+          join public.access_profile_permissions profile_permission on profile_permission.access_profile_id=profile.id
+          join public.permissions permission on permission.id=profile_permission.permission_id
+          where membership.institution_id=account.institution_id
+            and membership.user_id=(select auth.uid())
+            and membership.status='active'
+            and membership.valid_from<=current_date
+            and (membership.valid_until is null or membership.valid_until>=current_date)
+            and membership_profile.is_active and profile.is_active
+            and profile.institution_id=account.institution_id
+            and membership_profile.valid_from<=current_date
+            and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
+            and coalesce(template.code,profile.code) not in('parent','student')
+            and permission.code=$2 and permission.is_active
+            and public.finance_profile_scope_allows_account(membership_profile.id,account.id)
+        )
+      )
+  );
+$$;
+
+create or replace function public.can_read_financial_account(target_financial_account_id uuid)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.student_financial_accounts account
+    join public.students student on student.id=account.student_id
+    left join public.student_guardians student_guardian on student_guardian.student_id=student.id
+    left join public.guardians guardian
+      on guardian.id=student_guardian.guardian_id
+      and guardian.institution_id=account.institution_id
+    where account.id=target_financial_account_id
+      and (
+        public.has_finance_permission_for_account(account.id,'finance.accounts.read')
+        or (
+          public.has_permission(account.institution_id,'finance.accounts.read')
+          and (student.auth_user_id=(select auth.uid()) or guardian.auth_user_id=(select auth.uid()))
+        )
+      )
+  );
+$$;
+
+create or replace function public.can_generate_student_financial_account(target_enrollment_id uuid)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.enrollments enrollment
+    where enrollment.id=target_enrollment_id
+      and public.is_module_enabled(enrollment.institution_id,'finance')
+      and (
+        (
+          public.has_permission(enrollment.institution_id,'finance.accounts.manage')
+          and public.has_permission_for_school_scope(
+            enrollment.institution_id,'finance.accounts.manage',enrollment.academic_year_id,
+            enrollment.academic_year_level_id,null
+          )
+        )
+        or public.has_permission_for_student(enrollment.student_id,'schooling.enrollments.validate')
+      )
+  );
+$$;
+
+revoke all on function public.finance_profile_scope_allows_account(uuid,uuid) from public;
+revoke all on function public.has_finance_permission_for_account(uuid,text) from public;
+revoke all on function public.can_read_financial_account(uuid) from public;
+revoke all on function public.can_generate_student_financial_account(uuid) from public;
+grant execute on function public.can_read_financial_account(uuid) to authenticated;
+
 alter table public.student_financial_accounts enable row level security;
 alter table public.student_financial_items enable row level security;
 alter table public.student_financial_installments enable row level security;
 
 create policy student_financial_accounts_select_member on public.student_financial_accounts for select to authenticated
-using (public.is_active_member(institution_id));
+using (public.can_read_financial_account(id));
 create policy student_financial_accounts_manage_authorized on public.student_financial_accounts for all to authenticated
-using (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]))
-with check (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+using (public.has_finance_permission_for_account(id,'finance.accounts.manage'))
+with check (public.has_finance_permission_for_account(id,'finance.accounts.manage'));
 
 create policy student_financial_items_select_member on public.student_financial_items for select to authenticated
-using (public.is_active_member(institution_id));
+using (public.can_read_financial_account(financial_account_id));
 create policy student_financial_items_insert_authorized on public.student_financial_items for insert to authenticated
-with check (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+with check (public.has_finance_permission_for_account(financial_account_id,'finance.accounts.manage'));
 
 create policy student_financial_installments_select_member on public.student_financial_installments for select to authenticated
 using (exists (
   select 1 from public.student_financial_accounts account
-  where account.id = financial_account_id and public.is_active_member(account.institution_id)
+  where account.id = financial_account_id and public.can_read_financial_account(account.id)
 ));
 create policy student_financial_installments_insert_authorized on public.student_financial_installments for insert to authenticated
 with check (exists (
   select 1 from public.student_financial_accounts account
   where account.id = financial_account_id
-    and public.has_institution_role(account.institution_id, array['owner','admin','secretary']::public.app_role[])
+    and public.has_finance_permission_for_account(account.id,'finance.accounts.manage')
 ));
 
-grant select, insert, update on public.student_financial_accounts to authenticated;
-grant select, insert on public.student_financial_items, public.student_financial_installments to authenticated;
+grant select on public.student_financial_accounts,public.student_financial_items,public.student_financial_installments to authenticated;
+revoke insert,update,delete on public.student_financial_accounts,public.student_financial_items,public.student_financial_installments from authenticated;
 revoke all on public.student_financial_accounts, public.student_financial_items, public.student_financial_installments from anon;
 
 comment on table public.student_financial_accounts is 'Dossier financier annuel et figé d’un élève, créé depuis une inscription.';
@@ -585,10 +741,7 @@ begin
   select * into selected_enrollment from public.enrollments where id = target_enrollment_id;
   if selected_enrollment.id is null then raise exception 'enrollment_not_found'; end if;
 
-  if not public.has_institution_role(
-    selected_enrollment.institution_id,
-    array['owner','admin','secretary']::public.app_role[]
-  ) then raise exception 'permission_denied'; end if;
+  if not public.can_generate_student_financial_account(selected_enrollment.id) then raise exception 'permission_denied'; end if;
 
   if selected_enrollment.status <> 'confirmed' then raise exception 'confirmed_enrollment_required'; end if;
 
@@ -787,12 +940,14 @@ alter table public.financial_payments enable row level security;
 alter table public.financial_payment_allocations enable row level security;
 
 create policy financial_payments_select_member on public.financial_payments for select to authenticated
-using (public.is_active_member(institution_id));
+using (public.has_permission(institution_id,'finance.payments.read') and public.can_read_financial_account(financial_account_id));
 
 create policy financial_payment_allocations_select_member on public.financial_payment_allocations for select to authenticated
 using (exists (
   select 1 from public.financial_payments payment
-  where payment.id = payment_id and public.is_active_member(payment.institution_id)
+  where payment.id = payment_id
+    and public.has_permission(payment.institution_id,'finance.payments.read')
+    and public.can_read_financial_account(payment.financial_account_id)
 ));
 
 grant select on public.financial_payments, public.financial_payment_allocations to authenticated;
@@ -823,7 +978,7 @@ begin
   for update;
 
   if selected_account.id is null then raise exception 'financial_account_not_found'; end if;
-  if not public.has_institution_role(selected_account.institution_id, array['owner','admin','secretary']::public.app_role[]) then
+  if not public.has_finance_permission_for_account(selected_account.id,'finance.payments.collect') then
     raise exception 'permission_denied';
   end if;
   if selected_account.status not in ('active', 'draft') then raise exception 'financial_account_not_payable'; end if;
@@ -873,6 +1028,10 @@ begin
       end
   where id = selected_account.id;
 
+  perform public.write_access_audit(
+    selected_account.institution_id,'finance.payment.posted','financial_payment',payment_id,
+    null,jsonb_build_object('accountId',selected_account.id,'amount',target_amount,'method',target_method,'paymentDate',target_payment_date),null
+  );
   return payment_id;
 end;
 $$;
@@ -912,10 +1071,7 @@ begin
   where id = selected_payment.financial_account_id
   for update;
 
-  if not public.has_institution_role(
-    selected_payment.institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then
+  if not public.has_finance_permission_for_account(selected_account.id,'finance.payments.cancel') then
     raise exception 'permission_denied';
   end if;
 
@@ -948,6 +1104,11 @@ begin
       cancellation_reason = trim(target_reason)
   where id = selected_payment.id;
 
+  perform public.write_access_audit(
+    selected_payment.institution_id,'finance.payment.cancelled','financial_payment',selected_payment.id,
+    jsonb_build_object('status','posted','amount',selected_payment.amount),
+    jsonb_build_object('status','cancelled','amount',selected_payment.amount),target_reason
+  );
   return selected_payment.id;
 end;
 $$;
@@ -1024,10 +1185,7 @@ begin
 
   if selected_enrollment.id is null then raise exception 'enrollment_not_found'; end if;
 
-  if not public.has_institution_role(
-    selected_enrollment.institution_id,
-    array['owner','admin','secretary']::public.app_role[]
-  ) then raise exception 'permission_denied'; end if;
+  if not public.can_generate_student_financial_account(selected_enrollment.id) then raise exception 'permission_denied'; end if;
 
   if selected_enrollment.status <> 'confirmed' then
     raise exception 'confirmed_enrollment_required';
@@ -1232,6 +1390,10 @@ begin
     end loop;
   end loop;
 
+  perform public.write_access_audit(
+    selected_enrollment.institution_id,'finance.account.generated','student_financial_account',new_account_id,
+    null,jsonb_build_object('enrollmentId',selected_enrollment.id,'academicYearId',selected_enrollment.academic_year_id,'amount',total_fees),null
+  );
   return new_account_id;
 end;
 $$;
@@ -1270,7 +1432,7 @@ begin
   for update;
 
   if selected_account.id is null then raise exception 'financial_account_not_found'; end if;
-  if not public.has_institution_role(selected_account.institution_id, array['owner','admin','secretary']::public.app_role[]) then
+  if not public.has_finance_permission_for_account(selected_account.id,'finance.payments.collect') then
     raise exception 'permission_denied';
   end if;
   if selected_account.status not in ('active', 'draft') then raise exception 'financial_account_not_payable'; end if;
@@ -1332,6 +1494,10 @@ begin
       end
   where id = selected_account.id;
 
+  perform public.write_access_audit(
+    selected_account.institution_id,'finance.payment.posted','financial_payment',payment_id,
+    null,jsonb_build_object('accountId',selected_account.id,'amount',target_amount,'method',target_method,'paymentDate',target_payment_date),null
+  );
   return payment_id;
 end;
 $$;
@@ -1625,10 +1791,7 @@ begin
   from public.student_financial_accounts
   where id = selected_item.financial_account_id;
 
-  if not public.has_institution_role(
-    selected_item.institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then raise exception 'permission_denied'; end if;
+  if not public.has_finance_permission_for_account(selected_account.id,'finance.benefits.manage') then raise exception 'permission_denied'; end if;
 
   if selected_account.status not in ('active', 'draft') then
     raise exception 'financial_account_not_adjustable';
@@ -1707,10 +1870,7 @@ begin
   if selected_adjustment.status = 'cancelled' then raise exception 'financial_adjustment_already_cancelled'; end if;
   if length(trim(coalesce(target_reason, ''))) = 0 then raise exception 'cancellation_reason_required'; end if;
 
-  if not public.has_institution_role(
-    selected_adjustment.institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then raise exception 'permission_denied'; end if;
+  if not public.has_finance_permission_for_account(selected_adjustment.financial_account_id,'finance.benefits.manage') then raise exception 'permission_denied'; end if;
 
   update public.student_financial_adjustments
   set status = 'cancelled',
@@ -1720,6 +1880,11 @@ begin
   where id = selected_adjustment.id;
 
   perform public.recalculate_financial_item_after_adjustment(selected_adjustment.financial_item_id);
+  perform public.write_access_audit(
+    selected_adjustment.institution_id,'finance.benefit.cancelled','student_financial_adjustment',selected_adjustment.id,
+    jsonb_build_object('status','active','amount',selected_adjustment.calculated_amount),
+    jsonb_build_object('status','cancelled','amount',selected_adjustment.calculated_amount),target_reason
+  );
 end;
 $$;
 
@@ -1728,16 +1893,25 @@ alter table public.student_financial_adjustments enable row level security;
 
 create policy financial_benefit_templates_read
   on public.financial_benefit_templates for select to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+  using (
+    public.has_permission(institution_id,'finance.benefits.read')
+    and public.has_permission_for_school_scope(institution_id,'finance.benefits.read',null,null,null)
+  );
 
 create policy financial_benefit_templates_manage
   on public.financial_benefit_templates for all to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]))
-  with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
+  using (
+    public.has_permission(institution_id,'finance.benefits.manage')
+    and public.has_permission_for_school_scope(institution_id,'finance.benefits.manage',null,null,null)
+  )
+  with check (
+    public.has_permission(institution_id,'finance.benefits.manage')
+    and public.has_permission_for_school_scope(institution_id,'finance.benefits.manage',null,null,null)
+  );
 
 create policy student_financial_adjustments_read
   on public.student_financial_adjustments for select to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+  using (public.has_finance_permission_for_account(financial_account_id,'finance.benefits.read'));
 
 revoke all on function public.recalculate_financial_item_after_adjustment(uuid) from public;
 revoke all on function public.grant_student_financial_benefit(uuid, uuid, numeric, text, text) from public;
@@ -2017,10 +2191,7 @@ begin
     raise exception 'financial_account_not_found';
   end if;
 
-  if not public.has_institution_role(
-    selected_item.institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then
+  if not public.has_finance_permission_for_account(selected_account.id,'finance.benefits.manage') then
     raise exception 'permission_denied';
   end if;
 
@@ -2130,6 +2301,10 @@ begin
   ) returning id into adjustment_id;
 
   perform public.recalculate_financial_item_after_adjustment(selected_item.id);
+  perform public.write_access_audit(
+    selected_item.institution_id,'finance.benefit.granted','student_financial_adjustment',adjustment_id,
+    null,jsonb_build_object('accountId',selected_account.id,'financialItemId',selected_item.id,'amount',benefit_amount),target_reason
+  );
   return adjustment_id;
 end;
 $$;
@@ -2177,6 +2352,49 @@ begin
 end
 $$;
 
+create or replace function public.audit_finance_configuration_mutation()
+returns trigger language plpgsql security definer set search_path='' as $$
+declare
+  previous_value jsonb:=case when tg_op='INSERT' then null else to_jsonb(old) end;
+  next_value jsonb:=case when tg_op='DELETE' then null else to_jsonb(new) end;
+  source_value jsonb:=coalesce(next_value,previous_value);
+  target_institution_id uuid;
+  target_id uuid:=(source_value->>'id')::uuid;
+begin
+  if tg_table_name='payment_plan_installments' then
+    select institution_id into target_institution_id
+    from public.payment_plans where id=(source_value->>'payment_plan_id')::uuid;
+  else
+    target_institution_id:=(source_value->>'institution_id')::uuid;
+  end if;
+  if target_institution_id is null and tg_table_name='payment_plan_installments' and tg_op='DELETE' then
+    return old;
+  end if;
+  if target_institution_id is null then raise exception 'finance_audit_institution_missing'; end if;
+  perform public.write_access_audit(
+    target_institution_id,'finance.configuration.'||lower(tg_op),
+    tg_table_name,target_id,previous_value,next_value,null
+  );
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+create trigger fee_types_audit after insert or update or delete on public.fee_types
+for each row execute function public.audit_finance_configuration_mutation();
+create trigger fee_schedules_audit after insert or update or delete on public.fee_schedules
+for each row execute function public.audit_finance_configuration_mutation();
+create trigger fee_schedule_items_audit after insert or update or delete on public.fee_schedule_items
+for each row execute function public.audit_finance_configuration_mutation();
+create trigger payment_plans_audit after insert or update or delete on public.payment_plans
+for each row execute function public.audit_finance_configuration_mutation();
+create trigger payment_plan_installments_audit after insert or update or delete on public.payment_plan_installments
+for each row execute function public.audit_finance_configuration_mutation();
+create trigger financial_benefit_templates_audit after insert or update or delete on public.financial_benefit_templates
+for each row execute function public.audit_finance_configuration_mutation();
+
+revoke all on function public.audit_finance_configuration_mutation() from public;
+
 create or replace function public.reapply_all_student_financial_accounts(
   target_institution_id uuid,
   target_academic_year_id uuid
@@ -2193,10 +2411,8 @@ declare
   skipped_paid_count integer := 0;
   failed_count integer := 0;
 begin
-  if not public.has_institution_role(
-    target_institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then
+  if not public.has_permission(target_institution_id,'finance.accounts.manage')
+    or not public.has_permission_for_school_scope(target_institution_id,'finance.accounts.manage',target_academic_year_id,null,null) then
     raise exception 'permission_denied';
   end if;
 
@@ -2251,6 +2467,36 @@ grant execute on function public.reapply_all_student_financial_accounts(uuid, uu
 -- Source consolidée : 20260718235900_add_detailed_financial_generation_errors.sql
 -- -----------------------------------------------------------------------------
 
+create or replace function public.build_financial_generation_public_error(
+  target_enrollment_id uuid,
+  target_student_id uuid,
+  target_student_name text,
+  target_matricule text,
+  target_level_name text,
+  target_cycle_name text,
+  target_correlation_id uuid
+) returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select pg_catalog.jsonb_build_object(
+    'enrollmentId', target_enrollment_id,
+    'studentId', target_student_id,
+    'studentName', target_student_name,
+    'matricule', target_matricule,
+    'levelName', target_level_name,
+    'cycleName', target_cycle_name,
+    'code', 'FINANCE_ACCOUNT_GENERATION_FAILED',
+    'debugMessage', 'Le dossier financier n’a pas pu être généré.',
+    'correlationId', target_correlation_id
+  );
+$$;
+
+revoke all on function public.build_financial_generation_public_error(
+  uuid,uuid,text,text,text,text,uuid
+) from public;
+
 create or replace function public.reapply_all_student_financial_accounts(
   target_institution_id uuid,
   target_academic_year_id uuid
@@ -2272,11 +2518,10 @@ declare
   error_hint text;
   error_context text;
   error_sqlstate text;
+  error_correlation_id uuid;
 begin
-  if not public.has_institution_role(
-    target_institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then
+  if not public.has_permission(target_institution_id,'finance.accounts.manage')
+    or not public.has_permission_for_school_scope(target_institution_id,'finance.accounts.manage',target_academic_year_id,null,null) then
     raise exception 'permission_denied';
   end if;
 
@@ -2326,19 +2571,35 @@ begin
         error_sqlstate = returned_sqlstate;
 
       failed_count := failed_count + 1;
-      error_list := error_list || jsonb_build_array(jsonb_build_object(
-        'enrollmentId', enrollment_record.id,
-        'studentId', enrollment_record.student_id,
-        'studentName', enrollment_record.student_name,
-        'matricule', enrollment_record.matricule,
-        'levelName', enrollment_record.level_name_snapshot,
-        'cycleName', enrollment_record.cycle_name_snapshot,
-        'code', error_sqlstate,
-        'message', error_message,
-        'detail', nullif(error_detail, ''),
-        'hint', nullif(error_hint, ''),
-        'context', nullif(error_context, '')
-      ));
+      error_correlation_id := extensions.gen_random_uuid();
+
+      insert into public.access_audit_events(
+        institution_id,actor_user_id,action,target_type,target_id,
+        old_value,new_value,reason,correlation_id
+      ) values (
+        target_institution_id,(select auth.uid()),'finance.account_generation.failed',
+        'enrollment',enrollment_record.id,null,
+        pg_catalog.jsonb_build_object(
+          'sqlstate',error_sqlstate,
+          'message',error_message,
+          'detail',nullif(error_detail,''),
+          'hint',nullif(error_hint,''),
+          'context',nullif(error_context,'')
+        ),
+        'batch_reapply_failure',error_correlation_id
+      );
+
+      error_list := error_list || pg_catalog.jsonb_build_array(
+        public.build_financial_generation_public_error(
+          enrollment_record.id,
+          enrollment_record.student_id,
+          enrollment_record.student_name,
+          enrollment_record.matricule,
+          enrollment_record.level_name_snapshot,
+          enrollment_record.cycle_name_snapshot,
+          error_correlation_id
+        )
+      );
     end;
   end loop;
 

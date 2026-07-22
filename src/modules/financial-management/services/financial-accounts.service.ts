@@ -76,10 +76,8 @@ export type FinancialGenerationError = {
   levelName?: string | null;
   cycleName?: string | null;
   code: string;
-  message: string;
-  detail?: string | null;
-  hint?: string | null;
-  context?: string | null;
+  debugMessage: string;
+  correlationId: string;
 };
 
 export type FinancialGenerationResult = {
@@ -195,21 +193,19 @@ export async function reapplyAllFinancialAccounts(
   return {
     generated: Number(result?.generated ?? 0),
     regenerated: Number(result?.regenerated ?? 0),
-    skippedPaid: Number(result?.skipped_paid ?? 0),
+    skippedPaid: Number(result?.skippedPaid ?? result?.skipped_paid ?? 0),
     failed: Number(result?.failed ?? 0),
     errors: Array.isArray(result?.errors)
       ? result.errors.map((item: any) => ({
-          enrollmentId: String(item.enrollment_id ?? ""),
-          studentId: String(item.student_id ?? ""),
-          studentName: String(item.student_name ?? "Élève inconnu"),
+          enrollmentId: String(item.enrollmentId ?? item.enrollment_id ?? ""),
+          studentId: String(item.studentId ?? item.student_id ?? ""),
+          studentName: String(item.studentName ?? item.student_name ?? "Élève inconnu"),
           matricule: item.matricule ?? null,
-          levelName: item.level_name ?? null,
-          cycleName: item.cycle_name ?? null,
+          levelName: item.levelName ?? item.level_name ?? null,
+          cycleName: item.cycleName ?? item.cycle_name ?? null,
           code: String(item.code ?? "UNKNOWN"),
-          message: String(item.message ?? "Erreur inconnue"),
-          detail: item.detail ?? null,
-          hint: item.hint ?? null,
-          context: item.context ?? null,
+          debugMessage: String(item.debugMessage ?? "Erreur de génération"),
+          correlationId: String(item.correlationId ?? ""),
         }))
       : [],
   };

@@ -38,6 +38,14 @@ report_matches \
   'Ancienne table person_roles détectée :' \
   'create\s+table\s+public\.person_roles\b'
 
+legacy_module_roles="$(rg -n 'has_institution_role' \
+  supabase/migrations/202607220002_schooling.sql \
+  supabase/migrations/202607220003_finance.sql || true)"
+if [[ -n "$legacy_module_roles" ]]; then
+  printf 'Ancien contrôle par rôle détecté dans un module migré :\n%s\n' "$legacy_module_roles" >&2
+  failures=1
+fi
+
 membership_write_grants="$({
   perl -0777 -ne '
     while (/grant\s+[^;]+;/ig) {

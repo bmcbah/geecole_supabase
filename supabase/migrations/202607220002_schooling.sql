@@ -66,6 +66,36 @@ create table public.student_guardians (
   primary key (student_id, guardian_id)
 );
 
+create or replace function public.validate_student_guardian_institution()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  student_institution_id uuid;
+  guardian_institution_id uuid;
+begin
+  select institution_id into student_institution_id
+  from public.students where id=new.student_id;
+  select institution_id into guardian_institution_id
+  from public.guardians where id=new.guardian_id;
+
+  if student_institution_id is null
+    or guardian_institution_id is null
+    or student_institution_id<>guardian_institution_id then
+    raise exception 'guardian_student_institution_mismatch';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger student_guardians_same_institution
+before insert or update of student_id,guardian_id on public.student_guardians
+for each row execute function public.validate_student_guardian_institution();
+
+revoke all on function public.validate_student_guardian_institution() from public;
+
 create table public.enrollments (
   id uuid primary key default extensions.gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,
@@ -744,7 +774,6 @@ returns boolean language sql stable security definer set search_path='' as $$
   select not exists(
     select 1 from public.access_scope_assignments scope
     where scope.membership_profile_id=target_membership_profile_id
-      and scope.valid_from<=current_date and (scope.valid_until is null or scope.valid_until>=current_date)
   ) or exists(
     select 1
     from public.access_scope_assignments scope
@@ -781,20 +810,20 @@ returns boolean language sql stable security definer set search_path='' as $$
           and membership.valid_from<=current_date
           and (membership.valid_until is null or membership.valid_until>=current_date)
           and membership_profile.is_active and profile.is_active
+          and profile.institution_id=target_institution_id
           and membership_profile.valid_from<=current_date
           and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
-          and permission.code=$2
+          and permission.code=$2 and permission.is_active
           and (
             not exists(
               select 1 from public.access_scope_assignments scope
               where scope.membership_profile_id=membership_profile.id
-                and scope.valid_from<=current_date
-                and (scope.valid_until is null or scope.valid_until>=current_date)
             )
             or exists(
               select 1
               from public.access_scope_assignments scope
               where scope.membership_profile_id=membership_profile.id
+                and scope.institution_id=target_institution_id
                 and scope.valid_from<=current_date
                 and (scope.valid_until is null or scope.valid_until>=current_date)
                 and (scope.academic_year_id is null or scope.academic_year_id=target_academic_year_id)
@@ -852,7 +881,11 @@ returns boolean language sql stable security definer set search_path='' as $$
       and (
         public.has_permission_for_school_scope(guardian.institution_id,permission_code,null,null,null)
         or exists(
-          select 1 from public.student_guardians student_guardian
+          select 1
+          from public.student_guardians student_guardian
+          join public.students student
+            on student.id=student_guardian.student_id
+            and student.institution_id=guardian.institution_id
           where student_guardian.guardian_id=guardian.id
             and public.has_permission_for_student(student_guardian.student_id,permission_code)
         )
@@ -880,9 +913,10 @@ begin
       and membership.valid_from<=current_date
       and (membership.valid_until is null or membership.valid_until>=current_date)
       and membership_profile.is_active and profile.is_active
+      and profile.institution_id=class_row.institution_id
       and membership_profile.valid_from<=current_date
       and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
-      and permission.code='schooling.classes.read'
+      and permission.code='schooling.classes.read' and permission.is_active
       and profile.code not in('teacher','homeroom_teacher','parent','student')
       and public.access_profile_scope_allows_class(membership_profile.id,class_row.id)
   ) then return true; end if;
@@ -894,7 +928,9 @@ begin
     join public.enrollments enrollment on enrollment.id=class_assignment.enrollment_id
     join public.students student on student.id=enrollment.student_id
     left join public.student_guardians student_guardian on student_guardian.student_id=student.id
-    left join public.guardians guardian on guardian.id=student_guardian.guardian_id
+    left join public.guardians guardian
+      on guardian.id=student_guardian.guardian_id
+      and guardian.institution_id=class_row.institution_id
     where public.has_permission(class_row.institution_id,'schooling.classes.read')
       and class_assignment.class_id=class_row.id and class_assignment.ends_on is null
       and (student.auth_user_id=(select auth.uid()) or guardian.auth_user_id=(select auth.uid()))
@@ -914,7 +950,9 @@ begin
     and public.has_permission(student_row.institution_id,'schooling.students.read') then return true; end if;
   if exists(
     select 1 from public.student_guardians student_guardian
-    join public.guardians guardian on guardian.id=student_guardian.guardian_id
+    join public.guardians guardian
+      on guardian.id=student_guardian.guardian_id
+      and guardian.institution_id=student_row.institution_id
     where public.has_permission(student_row.institution_id,'schooling.students.read')
       and student_guardian.student_id=student_row.id and guardian.auth_user_id=(select auth.uid())
   ) then return true; end if;
@@ -931,14 +969,18 @@ begin
     join public.access_profile_permissions profile_permission on profile_permission.access_profile_id=profile.id
     join public.permissions permission on permission.id=profile_permission.permission_id
     where membership.institution_id=student_row.institution_id and membership.user_id=(select auth.uid())
-      and membership.status='active' and membership_profile.is_active and profile.is_active
+      and membership.status='active'
+      and membership.valid_from<=current_date
+      and (membership.valid_until is null or membership.valid_until>=current_date)
+      and membership_profile.is_active and profile.is_active
+      and profile.institution_id=student_row.institution_id
       and membership_profile.valid_from<=current_date
       and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
-      and permission.code='schooling.students.read'
+      and permission.code='schooling.students.read' and permission.is_active
       and profile.code not in('teacher','homeroom_teacher','parent','student')
       and not exists(
         select 1 from public.access_scope_assignments scope where scope.membership_profile_id=membership_profile.id
-          and scope.valid_from<=current_date and (scope.valid_until is null or scope.valid_until>=current_date)
+          and scope.institution_id=student_row.institution_id
       )
   );
 end;
@@ -1000,10 +1042,28 @@ create policy student_guardians_select_scoped on public.student_guardians for se
   using(public.can_read_student(student_id));
 drop policy student_guardians_manage_schooling on public.student_guardians;
 create policy student_guardians_insert_scoped on public.student_guardians for insert to authenticated
-  with check(public.has_permission_for_student(student_id,'schooling.guardians.manage'));
+  with check(
+    public.has_permission_for_student(student_id,'schooling.guardians.manage')
+    and exists(
+      select 1
+      from public.students student
+      join public.guardians guardian on guardian.id=student_guardians.guardian_id
+      where student.id=student_guardians.student_id
+        and guardian.institution_id=student.institution_id
+    )
+  );
 create policy student_guardians_update_scoped on public.student_guardians for update to authenticated
   using(public.has_permission_for_student(student_id,'schooling.guardians.manage'))
-  with check(public.has_permission_for_student(student_id,'schooling.guardians.manage'));
+  with check(
+    public.has_permission_for_student(student_id,'schooling.guardians.manage')
+    and exists(
+      select 1
+      from public.students student
+      join public.guardians guardian on guardian.id=student_guardians.guardian_id
+      where student.id=student_guardians.student_id
+        and guardian.institution_id=student.institution_id
+    )
+  );
 drop policy enrollments_select_member on public.enrollments;
 create policy enrollments_select_scoped on public.enrollments for select to authenticated
   using(public.can_read_enrollment(id));
