@@ -16,6 +16,7 @@ const BatchReenrollmentPage = lazy(() => import("../../modules/schooling/pages/B
 const FinancialAccountsPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountsWorkspacePage").then((module) => ({ default: module.FinancialAccountsWorkspacePage })));
 const FinancialAccountDetailPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountDetailPage").then((module) => ({ default: module.FinancialAccountDetailPage })));
 const FinancialPaymentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })));
+const FinancialWorkdayPage = lazy(() => import("../../modules/financial-management/pages/FinancialWorkdayPage").then((module) => ({ default: module.FinancialWorkdayPage })));
 const FinancialDashboardPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialDashboardPage })));
 const FinancialInstallmentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPilotagePage").then((module) => ({ default: module.FinancialInstallmentsPage })));
 const FinancialFamiliesPage = lazy(() => import("../../modules/financial-management/pages/FinancialFamiliesWorkspacePage").then((module) => ({ default: module.FinancialFamiliesWorkspacePage })));
@@ -64,6 +65,8 @@ export function AppRouter() {
             <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
             <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
             <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
+            <Route path="/gestion-financiere" element={<Navigate to="/gestion-financiere/travail" replace />} />
+            <Route path="/gestion-financiere/travail" element={<FinancialWorkdayPage />} />
             <Route path="/gestion-financiere/pilotage" element={<FinancialDashboardPage />} />
             <Route path="/gestion-financiere/echeances" element={<FinancialInstallmentsPage />} />
             <Route path="/gestion-financiere/familles" element={<FinancialFamiliesPage />} />
