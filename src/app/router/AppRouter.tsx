@@ -92,7 +92,7 @@ export function AppRouter() {
             <Route path="/parametrage/personnel/retenues" element={<DeductionTypesSettingsPage />} />
             <Route path="/parametrage/personnel/avances" element={<AdvanceTypesSettingsPage />} />
             <Route path="/parametrage/personnel/conges" element={<LeaveTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/sanctions" element={<EmployeeSanctionsPage />} />
+            <Route path="/parametrage/personnel/sanctions" element={<SanctionTypesSettingsPage />} />
             <Route path="/parametrage/personnel/documents" element={<DocumentTypesSettingsPage />} />
             <Route path="/parametrage/catalogues-personnel" element={<Navigate to="/parametrage/personnel/fonctions" replace />} />
             <Route path="/notes-bulletins" element={<Navigate to="/notes-bulletins/cahiers" replace />} />
