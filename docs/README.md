@@ -14,10 +14,12 @@ GeeCole est une plateforme de gestion scolaire organisée autour du contexte :
 3. [Glossaire](product/glossary.md)
 4. [Architecture générale](architecture/overview.md)
 5. [Architecture Front-End orientée domaine](architecture/frontend.md)
-6. [Design System GeeCole](design-system/README.md)
-7. [Modules métier](modules/README.md)
-8. [Roadmap d’implémentation](implementation/roadmap.md)
-9. [Décisions d’architecture](adr/README.md)
+6. [Contrats intermodules](architecture/module-contracts.md)
+7. [Design System GeeCole](design-system/README.md)
+8. [Navigation et Workspaces](ux/navigation.md)
+9. [Modules métier](modules/README.md)
+10. [Roadmap d’implémentation](implementation/roadmap.md)
+11. [Décisions d’architecture](adr/README.md)
 
 ## Sources de vérité
 
@@ -43,6 +45,6 @@ GeeCole est une plateforme de gestion scolaire organisée autour du contexte :
 - Les statuts sont modifiés par des actions métier explicites, jamais par une liste déroulante dans un formulaire.
 - Les synthèses de fiches utilisent une liste attribut-valeur (`SummaryList`), pas une accumulation de cards.
 - Le Front-End sépare domaine, application, infrastructure et présentation ; la présentation n’accède jamais directement à Supabase.
-- Les modules communiquent uniquement par leurs contrats publics, événements métier ou identifiants stables.
+- Les modules communiquent uniquement par leurs contrats publics, événements métier, identifiants stables ou vues/RPC explicitement publiques.
 - Un cours correspond à `année + classe/niveau + matière + période`. L’enseignant effectif est résolu par les affectations.
 - Les politiques de paiement à l’inscription sont configurables côté front et back.
