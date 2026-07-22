@@ -22,9 +22,11 @@ import { ReenrollmentPolicyPanel } from "../../schooling/components/Reenrollment
 import { DocumentRequirementsPanel } from "../../schooling/components/DocumentRequirementsPanel";
 import { ClassOrganizationCard } from "../../schooling/components/ClassOrganizationCard";
 import { ClassesPage } from "../../schooling/pages/ClassesPage";
+import { InstitutionModulesPanel } from "../components/InstitutionModulesPanel";
 
 const sections = [
   "etablissement",
+  "modules",
   "annees-scolaires",
   "cycles",
   "niveaux",
@@ -82,8 +84,12 @@ export function SettingsPage() {
   return (
     <section className="space-y-3">
       <PageHeader
-        eyebrow={isFinancialConfiguration ? "Gestion financière" : "Administration"}
-        title={isFinancialConfiguration ? "Configuration financière" : "Paramétrage"}
+        eyebrow={
+          isFinancialConfiguration ? "Gestion financière" : "Administration"
+        }
+        title={
+          isFinancialConfiguration ? "Configuration financière" : "Paramétrage"
+        }
         description={
           isFinancialConfiguration
             ? `Configurez la grille tarifaire, les plans de paiement et les avantages de ${selected.name}.`
@@ -139,11 +145,16 @@ export function SettingsPage() {
                   <DocumentRequirementsPanel institutionId={selected.id} />
                 </AccordionTab>
                 <AccordionTab header="Organisation des classes">
-                  <ClassOrganizationCard institution={selected} onSaved={refresh} />
+                  <ClassOrganizationCard
+                    institution={selected}
+                    onSaved={refresh}
+                  />
                 </AccordionTab>
               </Accordion>
             </section>
           </div>
+        ) : section === "modules" ? (
+          <InstitutionModulesPanel />
         ) : section === "annees-scolaires" ? (
           <AcademicYearsPanel institutionId={selected.id} />
         ) : section === "cycles" ? (

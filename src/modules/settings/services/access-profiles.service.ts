@@ -28,6 +28,33 @@ export async function listAccessProfilePermissionCodes(
   return permissions.map((permission) => permission.code);
 }
 
+export async function listAccessProfileDelegationCodes(
+  accessProfileId: string,
+) {
+  const { data, error } = await supabase.rpc(
+    "list_access_profile_delegation_codes",
+    { target_access_profile_id: accessProfileId },
+  );
+  if (error) throw error;
+  return data;
+}
+
+export async function setAccessProfileDelegations(input: {
+  accessProfileId: string;
+  permissionCodes: string[];
+  reason?: string;
+}) {
+  const { error } = await supabase.rpc(
+    "set_access_profile_permission_delegations",
+    {
+      target_access_profile_id: input.accessProfileId,
+      permission_codes: input.permissionCodes,
+      change_reason: input.reason ?? null,
+    },
+  );
+  if (error) throw error;
+}
+
 export async function createCustomAccessProfile(input: {
   institutionId: string;
   name: string;

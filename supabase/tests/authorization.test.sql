@@ -1,5 +1,5 @@
 begin;
-select plan(44);
+select plan(49);
 
 select hasnt_column('public','memberships','role','le rôle unique a été retiré des appartenances');
 select has_column('public','memberships','is_owner','la propriété est un invariant séparé');
@@ -21,6 +21,9 @@ select has_function('public','set_membership_status',array['uuid','membership_st
 select has_function('public','remove_membership',array['uuid','text'],'révocation contrôlée présente');
 select has_function('public','get_my_authorization_summary',array['uuid'],'résumé frontend présent');
 select has_function('public','can_delegate_permission',array['uuid','text'],'contrôle de délégation présent');
+select has_function('public','list_delegable_permissions',array['uuid'],'catalogue délégable contrôlé présent');
+select has_function('public','update_custom_access_profile',array['uuid','text','text','text[]','boolean'],'modification contrôlée des profils présente');
+select has_function('public','set_access_profile_permission_delegations',array['uuid','text[]','text'],'gestion Owner des délégations présente');
 select has_function('public','set_institution_module_enabled',array['uuid','text','boolean','text'],'activation contrôlée des modules présente');
 
 select has_trigger('public','memberships','memberships_protect_last_owner','dernier propriétaire protégé');
@@ -86,6 +89,8 @@ select ok(not exists(
   where specific_schema='public' and routine_name='set_membership_owner' and grantee='PUBLIC'
 ),'aucun EXECUTE public sur la gestion Owner');
 select function_privs_are('public','set_membership_owner',array['uuid','boolean','text'],'authenticated',array['EXECUTE']);
+select function_privs_are('public','set_access_profile_permission_delegations',array['uuid','text[]','text'],'authenticated',array['EXECUTE']);
+select function_privs_are('public','set_institution_module_enabled',array['uuid','text','boolean','text'],'authenticated',array['EXECUTE']);
 
 select * from finish();
 rollback;

@@ -206,6 +206,7 @@ export interface Database {
         Row: {
           id: string;
           institution_id: string;
+          auth_user_id: string | null;
           matricule: string;
           first_name: string;
           last_name: string;
@@ -227,6 +228,7 @@ export interface Database {
         Insert: {
           id?: string;
           institution_id: string;
+          auth_user_id?: string | null;
           matricule: string;
           first_name: string;
           last_name: string;
@@ -243,6 +245,7 @@ export interface Database {
         Row: {
           id: string;
           institution_id: string;
+          auth_user_id: string | null;
           first_name: string;
           last_name: string;
           primary_phone: string;
@@ -255,6 +258,7 @@ export interface Database {
         Insert: {
           id?: string;
           institution_id: string;
+          auth_user_id?: string | null;
           first_name: string;
           last_name: string;
           primary_phone: string;
@@ -716,6 +720,21 @@ export interface Database {
         };
         Update: Partial<
           Database["public"]["Tables"]["access_profile_permissions"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      access_profile_permission_delegations: {
+        Row: {
+          access_profile_id: string;
+          permission_id: string;
+          created_at: string;
+        };
+        Insert: {
+          access_profile_id: string;
+          permission_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["access_profile_permission_delegations"]["Insert"]
         >;
         Relationships: [];
       };
@@ -1804,6 +1823,45 @@ export interface Database {
       list_delegable_permissions: {
         Args: { target_institution_id: string };
         Returns: Array<Database["public"]["Tables"]["permissions"]["Row"]>;
+      };
+      list_access_profile_delegation_codes: {
+        Args: { target_access_profile_id: string };
+        Returns: string[];
+      };
+      set_access_profile_permission_delegations: {
+        Args: {
+          target_access_profile_id: string;
+          permission_codes: string[];
+          change_reason?: string | null;
+        };
+        Returns: undefined;
+      };
+      access_profile_scope_allows_class: {
+        Args: {
+          target_membership_profile_id: string;
+          target_class_id: string;
+        };
+        Returns: boolean;
+      };
+      has_active_pedagogical_assignment: {
+        Args: { target_person_id: string; target_class_id: string };
+        Returns: boolean;
+      };
+      can_read_school_class: {
+        Args: { target_class_id: string };
+        Returns: boolean;
+      };
+      can_read_student: {
+        Args: { target_student_id: string };
+        Returns: boolean;
+      };
+      can_read_guardian: {
+        Args: { target_guardian_id: string };
+        Returns: boolean;
+      };
+      can_read_enrollment: {
+        Args: { target_enrollment_id: string };
+        Returns: boolean;
       };
       sync_academic_year_periods: {
         Args: { target_year_id: string; target_cycle_id: string };

@@ -14,6 +14,7 @@ create type public.enrollment_status as enum (
 create table public.students (
   id uuid primary key default extensions.gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,
+  auth_user_id uuid references auth.users(id) on delete set null,
   matricule text not null,
   first_name text not null check (char_length(trim(first_name)) between 1 and 80),
   last_name text not null check (char_length(trim(last_name)) between 1 and 80),
@@ -31,12 +32,14 @@ create table public.students (
   status public.student_status not null default 'active',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (institution_id, matricule)
+  unique (institution_id, matricule),
+  unique (institution_id, auth_user_id)
 );
 
 create table public.guardians (
   id uuid primary key default extensions.gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,
+  auth_user_id uuid references auth.users(id) on delete set null,
   first_name text not null,
   last_name text not null,
   primary_phone text not null,
@@ -44,7 +47,8 @@ create table public.guardians (
   address text,
   occupation text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique (institution_id, auth_user_id)
 );
 
 create unique index guardians_phone_unique
@@ -95,6 +99,27 @@ create trigger enrollments_set_updated_at before update on public.enrollments
 
 create sequence public.student_matricule_sequence;
 
+-- Contrats remplacés par leurs implémentations tenantées après la création des
+-- classes et des affectations de périmètre dans cette même migration.
+create or replace function public.has_permission_for_school_scope(
+  target_institution_id uuid,permission_code text,target_academic_year_id uuid,
+  target_annual_level_id uuid,target_class_id uuid
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select false;
+$$;
+create or replace function public.has_permission_for_student(target_student_id uuid,permission_code text)
+returns boolean language sql stable security definer set search_path='' as $$
+  select false;
+$$;
+create or replace function public.has_permission_for_guardian(target_guardian_id uuid,permission_code text)
+returns boolean language sql stable security definer set search_path='' as $$
+  select false;
+$$;
+revoke all on function public.has_permission_for_school_scope(uuid,text,uuid,uuid,uuid) from public;
+revoke all on function public.has_permission_for_student(uuid,text) from public;
+revoke all on function public.has_permission_for_guardian(uuid,text) from public;
+
 create or replace function public.create_student_enrollment(
   target_institution_id uuid,
   target_academic_year_id uuid,
@@ -119,9 +144,6 @@ declare
   enrollment_id uuid;
   generated_matricule text;
 begin
-  if not public.has_institution_role(target_institution_id, array['owner','admin','secretary']::public.app_role[]) then
-    raise exception 'permission_denied';
-  end if;
   if enrollment_kind not in ('draft', 'pre_registered', 'confirmed') then
     raise exception 'invalid_initial_status';
   end if;
@@ -129,6 +151,12 @@ begin
     where id = target_annual_level_id and institution_id = target_institution_id
       and academic_year_id = target_academic_year_id and is_active;
   if not found then raise exception 'invalid_annual_level'; end if;
+  if not public.has_permission_for_school_scope(target_institution_id,'schooling.students.create',target_academic_year_id,target_annual_level_id,null)
+    or not public.has_permission_for_school_scope(target_institution_id,'schooling.enrollments.create',target_academic_year_id,target_annual_level_id,null)
+    or not public.has_permission_for_school_scope(target_institution_id,'schooling.guardians.manage',target_academic_year_id,target_annual_level_id,null)
+    or (enrollment_kind='confirmed' and not public.has_permission_for_school_scope(target_institution_id,'schooling.enrollments.validate',target_academic_year_id,target_annual_level_id,null)) then
+    raise exception 'permission_denied';
+  end if;
 
   generated_matricule := 'EL-' || extract(year from current_date)::text || '-' ||
     lpad(nextval('public.student_matricule_sequence')::text, 5, '0');
@@ -176,24 +204,28 @@ alter table public.enrollments enable row level security;
 
 create policy students_select_member on public.students for select to authenticated
   using (public.is_active_member(institution_id));
-create policy students_manage_schooling on public.students for all to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]))
-  with check (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+create policy students_insert_schooling on public.students for insert to authenticated
+  with check (public.has_permission(institution_id,'schooling.students.create'));
+create policy students_update_schooling on public.students for update to authenticated
+  using (public.has_permission(institution_id,'schooling.students.update'))
+  with check (public.has_permission(institution_id,'schooling.students.update'));
 create policy guardians_select_member on public.guardians for select to authenticated
   using (public.is_active_member(institution_id));
 create policy guardians_manage_schooling on public.guardians for all to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]))
-  with check (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+  using (public.has_permission(institution_id,'schooling.guardians.manage'))
+  with check (public.has_permission(institution_id,'schooling.guardians.manage'));
 create policy student_guardians_select_member on public.student_guardians for select to authenticated
   using (exists (select 1 from public.students s where s.id = student_id and public.is_active_member(s.institution_id)));
 create policy student_guardians_manage_schooling on public.student_guardians for all to authenticated
-  using (exists (select 1 from public.students s where s.id = student_id and public.has_institution_role(s.institution_id, array['owner','admin','secretary']::public.app_role[])))
-  with check (exists (select 1 from public.students s where s.id = student_id and public.has_institution_role(s.institution_id, array['owner','admin','secretary']::public.app_role[])));
+  using (exists (select 1 from public.students s where s.id = student_id and public.has_permission(s.institution_id,'schooling.guardians.manage')))
+  with check (exists (select 1 from public.students s where s.id = student_id and public.has_permission(s.institution_id,'schooling.guardians.manage')));
 create policy enrollments_select_member on public.enrollments for select to authenticated
   using (public.is_active_member(institution_id));
-create policy enrollments_manage_schooling on public.enrollments for all to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]))
-  with check (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
+create policy enrollments_insert_schooling on public.enrollments for insert to authenticated
+  with check (public.has_permission(institution_id,'schooling.enrollments.create') and status in('draft','pre_registered'));
+create policy enrollments_update_schooling on public.enrollments for update to authenticated
+  using (public.has_permission(institution_id,'schooling.enrollments.create') and status in('draft','pre_registered'))
+  with check (public.has_permission(institution_id,'schooling.enrollments.create') and status in('draft','pre_registered'));
 
 grant select, insert, update on public.students, public.guardians, public.student_guardians, public.enrollments to authenticated;
 revoke all on public.students, public.guardians, public.student_guardians, public.enrollments from anon;
@@ -221,10 +253,10 @@ create trigger enrollment_policies_set_updated_at before update on public.enroll
   for each row execute function public.set_updated_at();
 alter table public.enrollment_policies enable row level security;
 create policy enrollment_policies_select_member on public.enrollment_policies for select to authenticated
-  using (public.is_active_member(institution_id));
+  using (public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.read'));
 create policy enrollment_policies_manage_admin on public.enrollment_policies for all to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]))
-  with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
+  using (public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.manage'))
+  with check (public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.manage'));
 grant select, insert, update on public.enrollment_policies to authenticated;
 revoke all on public.enrollment_policies from anon;
 
@@ -290,7 +322,7 @@ declare target_year public.academic_years%rowtype;
 begin
   select * into current_enrollment from public.enrollments where id = target_enrollment_id for update;
   if not found then raise exception 'enrollment_not_found'; end if;
-  if not public.has_institution_role(current_enrollment.institution_id, array['owner','admin','secretary']::public.app_role[]) then raise exception 'permission_denied'; end if;
+  if not public.has_permission_for_student(current_enrollment.student_id,'schooling.enrollments.validate') then raise exception 'permission_denied'; end if;
   select * into target_year from public.academic_years where id = current_enrollment.academic_year_id;
   if target_year.status in ('closed','archived') then raise exception 'academic_year_read_only'; end if;
   if not (
@@ -355,10 +387,10 @@ create trigger reenrollment_policies_set_updated_at before update on public.reen
 
 alter table public.reenrollment_policies enable row level security;
 create policy reenrollment_policies_select_member on public.reenrollment_policies for select to authenticated
-  using (public.is_active_member(institution_id));
+  using (public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.read'));
 create policy reenrollment_policies_manage_admin on public.reenrollment_policies for all to authenticated
-  using (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]))
-  with check (public.has_institution_role(institution_id, array['owner','admin']::public.app_role[]));
+  using (public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.manage'))
+  with check (public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.manage'));
 grant select, insert, update on public.reenrollment_policies to authenticated;
 revoke all on public.reenrollment_policies from anon;
 
@@ -380,7 +412,7 @@ declare
 begin
   select * into previous from public.enrollments where id = source_enrollment;
   if not found then raise exception 'source_enrollment_not_found'; end if;
-  if not public.has_institution_role(previous.institution_id, array['owner','admin','secretary']::public.app_role[]) then
+  if not public.has_permission_for_student(previous.student_id,'schooling.enrollments.create') then
     raise exception 'permission_denied';
   end if;
   if previous.status <> 'confirmed' then raise exception 'source_enrollment_not_confirmed'; end if;
@@ -394,6 +426,13 @@ begin
     where id = target_annual_level and institution_id = previous.institution_id
       and academic_year_id = target_academic_year and is_active;
   if not found then raise exception 'invalid_target_level'; end if;
+  if not public.has_permission_for_school_scope(previous.institution_id,'schooling.enrollments.create',target_academic_year,target_annual_level,null)
+    or (target_enrollment_status='confirmed' and (
+      not public.has_permission_for_student(previous.student_id,'schooling.enrollments.validate')
+      or not public.has_permission_for_school_scope(previous.institution_id,'schooling.enrollments.validate',target_academic_year,target_annual_level,null)
+    )) then
+    raise exception 'permission_denied';
+  end if;
 
   select * into policy from public.reenrollment_policies where institution_id = previous.institution_id;
   if policy.institution_id is null then raise exception 'reenrollment_policy_missing'; end if;
@@ -448,7 +487,7 @@ language plpgsql security definer set search_path = '' as $$
 declare target_institution uuid;
 begin
   select institution_id into target_institution from public.students where id = target_student_id;
-  if target_institution is null or not public.has_institution_role(target_institution, array['owner','admin','secretary']::public.app_role[]) then
+  if target_institution is null or not public.has_permission_for_student(target_student_id,'schooling.guardians.manage') then
     raise exception 'permission_denied';
   end if;
   if not exists (select 1 from public.guardians where id = target_guardian_id and institution_id = target_institution) then
@@ -487,7 +526,7 @@ language plpgsql security definer set search_path = '' as $$
 declare target_institution uuid; guardian_id uuid;
 begin
   select institution_id into target_institution from public.students where id = target_student_id;
-  if target_institution is null or not public.has_institution_role(target_institution, array['owner','admin','secretary']::public.app_role[]) then
+  if target_institution is null or not public.has_permission_for_student(target_student_id,'schooling.guardians.manage') then
     raise exception 'permission_denied';
   end if;
   select id into guardian_id from public.guardians
@@ -525,7 +564,7 @@ begin
       previous := null;
       select * into previous from public.enrollments where id = source_id;
       if not found then raise exception 'source_enrollment_not_found'; end if;
-      if not public.has_institution_role(previous.institution_id, array['owner','admin','secretary']::public.app_role[]) then raise exception 'permission_denied'; end if;
+      if not public.has_permission(previous.institution_id,'schooling.enrollments.create') then raise exception 'permission_denied'; end if;
       select * into policy from public.reenrollment_policies where institution_id = previous.institution_id;
       if not policy.allow_batch then raise exception 'batch_reenrollment_disabled'; end if;
       select * into current_level from public.academic_year_levels where id = previous.academic_year_level_id;
@@ -688,6 +727,306 @@ create table public.class_assignments (
 );
 create unique index class_assignments_one_active on public.class_assignments(enrollment_id) where ends_on is null;
 
+-- Le module Notes remplace cette implémentation après la création des
+-- affectations pédagogiques. Ce contrat évite une dépendance vers une table
+-- créée dans une migration ultérieure.
+create or replace function public.has_active_pedagogical_assignment(
+  target_institution_id uuid,target_class_id uuid
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select false;
+$$;
+
+create or replace function public.access_profile_scope_allows_class(
+  target_membership_profile_id uuid,target_class_id uuid
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select not exists(
+    select 1 from public.access_scope_assignments scope
+    where scope.membership_profile_id=target_membership_profile_id
+      and scope.valid_from<=current_date and (scope.valid_until is null or scope.valid_until>=current_date)
+  ) or exists(
+    select 1
+    from public.access_scope_assignments scope
+    join public.school_classes class on class.id=target_class_id and class.institution_id=scope.institution_id
+    join public.academic_year_levels annual_level on annual_level.id=class.academic_year_level_id
+    where scope.membership_profile_id=target_membership_profile_id
+      and scope.valid_from<=current_date and (scope.valid_until is null or scope.valid_until>=current_date)
+      and (scope.academic_year_id is null or scope.academic_year_id=class.academic_year_id)
+      and (scope.class_id is null or scope.class_id=class.id)
+      and (scope.level_id is null or scope.level_id=annual_level.level_id)
+      and (scope.cycle_id is null or scope.cycle_id=annual_level.cycle_id)
+  );
+$$;
+
+create or replace function public.has_permission_for_school_scope(
+  target_institution_id uuid,permission_code text,target_academic_year_id uuid,
+  target_annual_level_id uuid,target_class_id uuid
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select public.is_active_member(target_institution_id)
+    and public.is_module_enabled(target_institution_id,'schooling')
+    and (
+      public.is_institution_owner(target_institution_id)
+      or exists(
+        select 1
+        from public.memberships membership
+        join public.membership_access_profiles membership_profile on membership_profile.membership_id=membership.id
+        join public.access_profiles profile on profile.id=membership_profile.access_profile_id
+        join public.access_profile_permissions profile_permission on profile_permission.access_profile_id=profile.id
+        join public.permissions permission on permission.id=profile_permission.permission_id
+        where membership.institution_id=target_institution_id
+          and membership.user_id=(select auth.uid())
+          and membership.status='active'
+          and membership.valid_from<=current_date
+          and (membership.valid_until is null or membership.valid_until>=current_date)
+          and membership_profile.is_active and profile.is_active
+          and membership_profile.valid_from<=current_date
+          and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
+          and permission.code=$2
+          and (
+            not exists(
+              select 1 from public.access_scope_assignments scope
+              where scope.membership_profile_id=membership_profile.id
+                and scope.valid_from<=current_date
+                and (scope.valid_until is null or scope.valid_until>=current_date)
+            )
+            or exists(
+              select 1
+              from public.access_scope_assignments scope
+              where scope.membership_profile_id=membership_profile.id
+                and scope.valid_from<=current_date
+                and (scope.valid_until is null or scope.valid_until>=current_date)
+                and (scope.academic_year_id is null or scope.academic_year_id=target_academic_year_id)
+                and (scope.class_id is null or scope.class_id=target_class_id)
+                and (scope.level_id is null or exists(
+                  select 1 from public.academic_year_levels annual_level
+                  where annual_level.id=coalesce(
+                    target_annual_level_id,
+                    (select class.academic_year_level_id from public.school_classes class where class.id=target_class_id)
+                  ) and annual_level.level_id=scope.level_id
+                ))
+                and (scope.cycle_id is null or exists(
+                  select 1 from public.academic_year_levels annual_level
+                  where annual_level.id=coalesce(
+                    target_annual_level_id,
+                    (select class.academic_year_level_id from public.school_classes class where class.id=target_class_id)
+                  ) and annual_level.cycle_id=scope.cycle_id
+                ))
+            )
+          )
+      )
+    );
+$$;
+
+create or replace function public.has_permission_for_student(target_student_id uuid,permission_code text)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.students student
+    where student.id=target_student_id
+      and (
+        public.has_permission_for_school_scope(student.institution_id,permission_code,null,null,null)
+        or exists(
+          select 1
+          from public.enrollments enrollment
+          left join public.class_assignments class_assignment
+            on class_assignment.enrollment_id=enrollment.id and class_assignment.ends_on is null
+          where enrollment.student_id=student.id
+            and enrollment.status not in('cancelled','rejected','withdrawn')
+            and public.has_permission_for_school_scope(
+              student.institution_id,permission_code,enrollment.academic_year_id,
+              enrollment.academic_year_level_id,class_assignment.class_id
+            )
+        )
+      )
+  );
+$$;
+
+create or replace function public.has_permission_for_guardian(target_guardian_id uuid,permission_code text)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.guardians guardian
+    where guardian.id=target_guardian_id
+      and (
+        public.has_permission_for_school_scope(guardian.institution_id,permission_code,null,null,null)
+        or exists(
+          select 1 from public.student_guardians student_guardian
+          where student_guardian.guardian_id=guardian.id
+            and public.has_permission_for_student(student_guardian.student_id,permission_code)
+        )
+      )
+  );
+$$;
+
+create or replace function public.can_read_school_class(target_class_id uuid)
+returns boolean language plpgsql stable security definer set search_path='' as $$
+declare class_row public.school_classes;
+begin
+  select * into class_row from public.school_classes where id=target_class_id;
+  if class_row.id is null or not public.is_active_member(class_row.institution_id)
+    or not public.is_module_enabled(class_row.institution_id,'schooling') then return false; end if;
+  if public.is_institution_owner(class_row.institution_id) then return true; end if;
+  if exists(
+    select 1
+    from public.memberships membership
+    join public.membership_access_profiles membership_profile on membership_profile.membership_id=membership.id
+    join public.access_profiles profile on profile.id=membership_profile.access_profile_id
+    join public.access_profile_permissions profile_permission on profile_permission.access_profile_id=profile.id
+    join public.permissions permission on permission.id=profile_permission.permission_id
+    where membership.institution_id=class_row.institution_id and membership.user_id=(select auth.uid())
+      and membership.status='active' and membership_profile.is_active and profile.is_active
+      and membership_profile.valid_from<=current_date
+      and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
+      and permission.code='schooling.classes.read'
+      and profile.code not in('teacher','homeroom_teacher','parent','student')
+      and public.access_profile_scope_allows_class(membership_profile.id,class_row.id)
+  ) then return true; end if;
+  if public.has_permission(class_row.institution_id,'schooling.classes.read')
+    and public.has_active_pedagogical_assignment(class_row.institution_id,class_row.id)
+  then return true; end if;
+  return exists(
+    select 1 from public.class_assignments class_assignment
+    join public.enrollments enrollment on enrollment.id=class_assignment.enrollment_id
+    join public.students student on student.id=enrollment.student_id
+    left join public.student_guardians student_guardian on student_guardian.student_id=student.id
+    left join public.guardians guardian on guardian.id=student_guardian.guardian_id
+    where public.has_permission(class_row.institution_id,'schooling.classes.read')
+      and class_assignment.class_id=class_row.id and class_assignment.ends_on is null
+      and (student.auth_user_id=(select auth.uid()) or guardian.auth_user_id=(select auth.uid()))
+  );
+end;
+$$;
+
+create or replace function public.can_read_student(target_student_id uuid)
+returns boolean language plpgsql stable security definer set search_path='' as $$
+declare student_row public.students;
+begin
+  select * into student_row from public.students where id=target_student_id;
+  if student_row.id is null or not public.is_active_member(student_row.institution_id)
+    or not public.is_module_enabled(student_row.institution_id,'schooling') then return false; end if;
+  if public.is_institution_owner(student_row.institution_id) then return true; end if;
+  if student_row.auth_user_id=(select auth.uid())
+    and public.has_permission(student_row.institution_id,'schooling.students.read') then return true; end if;
+  if exists(
+    select 1 from public.student_guardians student_guardian
+    join public.guardians guardian on guardian.id=student_guardian.guardian_id
+    where public.has_permission(student_row.institution_id,'schooling.students.read')
+      and student_guardian.student_id=student_row.id and guardian.auth_user_id=(select auth.uid())
+  ) then return true; end if;
+  if exists(
+    select 1 from public.enrollments enrollment
+    join public.class_assignments class_assignment on class_assignment.enrollment_id=enrollment.id and class_assignment.ends_on is null
+    where enrollment.student_id=student_row.id and public.can_read_school_class(class_assignment.class_id)
+  ) then return true; end if;
+  return exists(
+    select 1
+    from public.memberships membership
+    join public.membership_access_profiles membership_profile on membership_profile.membership_id=membership.id
+    join public.access_profiles profile on profile.id=membership_profile.access_profile_id
+    join public.access_profile_permissions profile_permission on profile_permission.access_profile_id=profile.id
+    join public.permissions permission on permission.id=profile_permission.permission_id
+    where membership.institution_id=student_row.institution_id and membership.user_id=(select auth.uid())
+      and membership.status='active' and membership_profile.is_active and profile.is_active
+      and membership_profile.valid_from<=current_date
+      and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
+      and permission.code='schooling.students.read'
+      and profile.code not in('teacher','homeroom_teacher','parent','student')
+      and not exists(
+        select 1 from public.access_scope_assignments scope where scope.membership_profile_id=membership_profile.id
+          and scope.valid_from<=current_date and (scope.valid_until is null or scope.valid_until>=current_date)
+      )
+  );
+end;
+$$;
+
+create or replace function public.can_read_guardian(target_guardian_id uuid)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1 from public.guardians guardian
+    where guardian.id=target_guardian_id
+      and public.is_module_enabled(guardian.institution_id,'schooling')
+      and public.is_active_member(guardian.institution_id)
+      and (public.has_permission(guardian.institution_id,'schooling.guardians.read') or exists(
+        select 1 from public.student_guardians student_guardian
+        where student_guardian.guardian_id=guardian.id and public.can_read_student(student_guardian.student_id)
+      ))
+  );
+$$;
+
+create or replace function public.can_read_enrollment(target_enrollment_id uuid)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.enrollments enrollment
+    where enrollment.id=target_enrollment_id
+      and public.has_permission(enrollment.institution_id,'schooling.enrollments.read')
+      and public.can_read_student(enrollment.student_id)
+  );
+$$;
+
+revoke all on function public.access_profile_scope_allows_class(uuid,uuid) from public;
+revoke all on function public.has_active_pedagogical_assignment(uuid,uuid) from public;
+revoke all on function public.can_read_school_class(uuid) from public;
+revoke all on function public.can_read_student(uuid) from public;
+revoke all on function public.can_read_guardian(uuid) from public;
+revoke all on function public.can_read_enrollment(uuid) from public;
+grant execute on function public.can_read_school_class(uuid),public.can_read_student(uuid),public.can_read_guardian(uuid),public.can_read_enrollment(uuid) to authenticated;
+
+drop policy students_select_member on public.students;
+create policy students_select_scoped on public.students for select to authenticated
+  using(public.can_read_student(id));
+drop policy students_insert_schooling on public.students;
+create policy students_insert_scoped on public.students for insert to authenticated
+  with check(public.has_permission_for_school_scope(institution_id,'schooling.students.create',null,null,null));
+drop policy students_update_schooling on public.students;
+create policy students_update_scoped on public.students for update to authenticated
+  using(public.has_permission_for_student(id,'schooling.students.update'))
+  with check(public.has_permission_for_student(id,'schooling.students.update'));
+drop policy guardians_select_member on public.guardians;
+create policy guardians_select_scoped on public.guardians for select to authenticated
+  using(public.can_read_guardian(id));
+drop policy guardians_manage_schooling on public.guardians;
+create policy guardians_insert_scoped on public.guardians for insert to authenticated
+  with check(public.has_permission_for_school_scope(institution_id,'schooling.guardians.manage',null,null,null));
+create policy guardians_update_scoped on public.guardians for update to authenticated
+  using(public.has_permission_for_guardian(id,'schooling.guardians.manage'))
+  with check(public.has_permission_for_guardian(id,'schooling.guardians.manage'));
+drop policy student_guardians_select_member on public.student_guardians;
+create policy student_guardians_select_scoped on public.student_guardians for select to authenticated
+  using(public.can_read_student(student_id));
+drop policy student_guardians_manage_schooling on public.student_guardians;
+create policy student_guardians_insert_scoped on public.student_guardians for insert to authenticated
+  with check(public.has_permission_for_student(student_id,'schooling.guardians.manage'));
+create policy student_guardians_update_scoped on public.student_guardians for update to authenticated
+  using(public.has_permission_for_student(student_id,'schooling.guardians.manage'))
+  with check(public.has_permission_for_student(student_id,'schooling.guardians.manage'));
+drop policy enrollments_select_member on public.enrollments;
+create policy enrollments_select_scoped on public.enrollments for select to authenticated
+  using(public.can_read_enrollment(id));
+drop policy enrollments_insert_schooling on public.enrollments;
+create policy enrollments_insert_scoped on public.enrollments for insert to authenticated
+  with check(
+    status in('draft','pre_registered')
+    and public.has_permission_for_student(student_id,'schooling.enrollments.create')
+    and public.has_permission_for_school_scope(institution_id,'schooling.enrollments.create',academic_year_id,academic_year_level_id,null)
+  );
+drop policy enrollments_update_schooling on public.enrollments;
+create policy enrollments_update_scoped on public.enrollments for update to authenticated
+  using(status in('draft','pre_registered') and public.has_permission_for_student(student_id,'schooling.enrollments.create'))
+  with check(
+    status in('draft','pre_registered')
+    and public.has_permission_for_student(student_id,'schooling.enrollments.create')
+    and public.has_permission_for_school_scope(institution_id,'schooling.enrollments.create',academic_year_id,academic_year_level_id,null)
+  );
+drop policy enrollment_status_history_select_member on public.enrollment_status_history;
+create policy enrollment_status_history_select_scoped on public.enrollment_status_history for select to authenticated
+  using(exists(
+    select 1 from public.enrollments enrollment
+    where enrollment.id=enrollment_id and public.can_read_enrollment(enrollment.id)
+  ));
+
 create table public.student_document_type_catalog (
   id uuid primary key default extensions.gen_random_uuid(),
   code text not null unique check (code ~ '^[A-Z0-9_-]{2,40}$'),
@@ -762,9 +1101,10 @@ returns uuid language plpgsql security definer set search_path = '' as $$
 declare enrollment_row public.enrollments%rowtype; class_row public.school_classes%rowtype; policy public.enrollment_policies%rowtype; active_count integer; assignment_id uuid;
 begin
   select * into enrollment_row from public.enrollments where id = target_enrollment;
-  if not found or not public.has_institution_role(enrollment_row.institution_id, array['owner','admin','secretary']::public.app_role[]) then raise exception 'permission_denied'; end if;
+  if not found or not public.has_permission_for_student(enrollment_row.student_id,'schooling.enrollments.validate') then raise exception 'permission_denied'; end if;
   select * into class_row from public.school_classes where id = target_class and is_active;
   if not found or class_row.institution_id <> enrollment_row.institution_id or class_row.academic_year_id <> enrollment_row.academic_year_id or class_row.academic_year_level_id <> enrollment_row.academic_year_level_id then raise exception 'class_enrollment_mismatch'; end if;
+  if not public.has_permission_for_school_scope(enrollment_row.institution_id,'schooling.enrollments.validate',class_row.academic_year_id,class_row.academic_year_level_id,class_row.id) then raise exception 'permission_denied'; end if;
   select * into policy from public.enrollment_policies where institution_id = enrollment_row.institution_id;
   select count(*) into active_count from public.class_assignments where class_id = target_class and ends_on is null;
   if class_row.capacity is not null and active_count >= class_row.capacity and policy.capacity_mode = 'blocking' then raise exception 'class_capacity_reached'; end if;
@@ -780,14 +1120,27 @@ alter table public.school_classes enable row level security;
 alter table public.class_assignments enable row level security;
 alter table public.document_requirements enable row level security;
 alter table public.student_documents enable row level security;
-create policy school_classes_select on public.school_classes for select to authenticated using(public.is_active_member(institution_id));
-create policy school_classes_manage on public.school_classes for all to authenticated using(public.has_institution_role(institution_id,array['owner','admin','secretary']::public.app_role[])) with check(public.has_institution_role(institution_id,array['owner','admin','secretary']::public.app_role[]));
-create policy class_assignments_select on public.class_assignments for select to authenticated using(public.is_active_member(institution_id));
-create policy class_assignments_manage on public.class_assignments for all to authenticated using(public.has_institution_role(institution_id,array['owner','admin','secretary']::public.app_role[])) with check(public.has_institution_role(institution_id,array['owner','admin','secretary']::public.app_role[]));
-create policy document_requirements_select on public.document_requirements for select to authenticated using(public.is_active_member(institution_id));
-create policy document_requirements_manage on public.document_requirements for all to authenticated using(public.has_institution_role(institution_id,array['owner','admin']::public.app_role[])) with check(public.has_institution_role(institution_id,array['owner','admin']::public.app_role[]));
-create policy student_documents_select on public.student_documents for select to authenticated using(public.is_active_member(institution_id));
-create policy student_documents_manage on public.student_documents for all to authenticated using(public.has_institution_role(institution_id,array['owner','admin','secretary']::public.app_role[])) with check(public.has_institution_role(institution_id,array['owner','admin','secretary']::public.app_role[]));
+create policy school_classes_select on public.school_classes for select to authenticated using(public.can_read_school_class(id));
+create policy school_classes_manage on public.school_classes for all to authenticated
+  using(public.has_permission_for_school_scope(institution_id,'schooling.classes.manage',academic_year_id,academic_year_level_id,id))
+  with check(public.has_permission_for_school_scope(institution_id,'schooling.classes.manage',academic_year_id,academic_year_level_id,id));
+create policy class_assignments_select on public.class_assignments for select to authenticated using(public.can_read_school_class(class_id));
+create policy class_assignments_manage on public.class_assignments for all to authenticated
+  using(public.has_permission_for_student((select enrollment.student_id from public.enrollments enrollment where enrollment.id=enrollment_id),'schooling.enrollments.validate'))
+  with check(
+    public.has_permission_for_student((select enrollment.student_id from public.enrollments enrollment where enrollment.id=enrollment_id),'schooling.enrollments.validate')
+    and public.has_permission_for_school_scope(institution_id,'schooling.enrollments.validate',academic_year_id,(select class.academic_year_level_id from public.school_classes class where class.id=class_id),class_id)
+  );
+create policy document_requirements_select on public.document_requirements for select to authenticated
+using(public.is_module_enabled(institution_id,'schooling') and (
+  public.has_permission(institution_id,'settings.academic.read')
+  or public.has_permission(institution_id,'schooling.documents.read')
+));
+create policy document_requirements_manage on public.document_requirements for all to authenticated using(public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.manage')) with check(public.is_module_enabled(institution_id,'schooling') and public.has_permission(institution_id,'settings.academic.manage'));
+create policy student_documents_select on public.student_documents for select to authenticated using(public.can_read_student(student_id));
+create policy student_documents_manage on public.student_documents for all to authenticated
+  using(public.has_permission_for_student(student_id,'schooling.documents.manage'))
+  with check(public.has_permission_for_student(student_id,'schooling.documents.manage'));
 grant select,insert,update on public.school_classes,public.class_assignments,public.document_requirements,public.student_documents to authenticated;
 revoke all on public.school_classes,public.class_assignments,public.document_requirements,public.student_documents from anon;
 
@@ -809,7 +1162,8 @@ create or replace function public.install_student_document_catalog(target_instit
 returns integer language plpgsql security definer set search_path='' as $$
 declare inserted_count integer;
 begin
-  if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
+  if not public.is_module_enabled(target_institution_id,'schooling')
+    or not public.has_permission(target_institution_id,'settings.academic.manage') then
     raise exception 'permission_denied';
   end if;
   insert into public.document_requirements(
@@ -847,15 +1201,15 @@ set public = excluded.public,
     allowed_mime_types = excluded.allowed_mime_types;
 
 create policy school_admin_select on storage.objects for select to authenticated using(
-  bucket_id='school-admin' and public.is_active_member((storage.foldername(name))[1]::uuid)
+  bucket_id='school-admin' and public.has_permission((storage.foldername(name))[1]::uuid,'documents.files.read')
 );
 create policy school_admin_insert on storage.objects for insert to authenticated with check(
-  bucket_id='school-admin' and public.has_institution_role((storage.foldername(name))[1]::uuid,array['owner','admin','secretary']::public.app_role[])
+  bucket_id='school-admin' and public.has_permission((storage.foldername(name))[1]::uuid,'documents.files.upload')
 );
 create policy school_admin_update on storage.objects for update to authenticated using(
-  bucket_id='school-admin' and public.has_institution_role((storage.foldername(name))[1]::uuid,array['owner','admin','secretary']::public.app_role[])
+  bucket_id='school-admin' and public.has_permission((storage.foldername(name))[1]::uuid,'documents.files.upload')
 ) with check(
-  bucket_id='school-admin' and public.has_institution_role((storage.foldername(name))[1]::uuid,array['owner','admin','secretary']::public.app_role[])
+  bucket_id='school-admin' and public.has_permission((storage.foldername(name))[1]::uuid,'documents.files.upload')
 );
 
 create or replace function public.create_school_class(
@@ -865,7 +1219,7 @@ create or replace function public.create_school_class(
 declare target_year public.academic_years%rowtype; target_institution public.institutions%rowtype; annual_cycle public.academic_year_cycles%rowtype; level_id uuid; annual_level_id uuid; class_id uuid; next_order integer;
 begin
   select * into target_year from public.academic_years where id=target_year_id;
-  if not found or not public.has_institution_role(target_year.institution_id,array['owner','admin']::public.app_role[]) then raise exception 'permission_denied'; end if;
+  if not found or not public.has_permission(target_year.institution_id,'schooling.classes.manage') then raise exception 'permission_denied'; end if;
   if target_year.status in ('closed','archived') then raise exception 'academic_year_configuration_locked'; end if;
   select * into target_institution from public.institutions where id=target_year.institution_id;
   if target_institution.class_structure_mode='classes_as_levels' then
@@ -933,10 +1287,8 @@ declare
   activation_id uuid;
   annual_cycle_id uuid;
 begin
-  if not public.has_institution_role(
-    target_institution_id,
-    array['owner','admin']::public.app_role[]
-  ) then
+  if not public.is_module_enabled(target_institution_id,'schooling')
+    or not public.has_permission(target_institution_id,'settings.academic.manage') then
     raise exception 'permission_denied';
   end if;
 

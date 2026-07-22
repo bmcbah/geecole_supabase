@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Institution } from "../../institutions/types/institution";
+import type { AuthorizationSummary } from "../../institutions/services/institution.service";
 import type { AcademicYear } from "../../settings/types/settings";
 
 export interface AcademicSessionValue {
@@ -12,9 +13,12 @@ export interface AcademicSessionValue {
   loading: boolean;
   failure: string;
   canChangeYear: boolean;
+  authorization: AuthorizationSummary | null;
+  enabledModules: string[] | null;
   setInstitutionId: (id: string) => void;
   setYearId: (id: string) => void;
   refresh: () => Promise<void>;
+  refreshAuthorization: () => Promise<void>;
 }
 
 export const AcademicSessionContext =

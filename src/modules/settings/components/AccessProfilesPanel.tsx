@@ -11,15 +11,18 @@ import { Tag } from "primereact/tag";
 import { Toolbar } from "primereact/toolbar";
 import { TableSearch } from "../../../shared/components/TableSearch";
 import { useToast } from "../../../shared/components/toast-context";
+import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   createCustomAccessProfile,
+  listAccessProfileDelegationCodes,
   listAccessProfilePermissionCodes,
   listAssignablePermissions,
+  setAccessProfileDelegations,
   updateCustomAccessProfile,
 } from "../services/access-profiles.service";
-import { listAccessProfiles } from "../services/annual-settings.service";
+import { listAllAccessProfiles } from "../services/annual-settings.service";
 
-type AccessProfile = Awaited<ReturnType<typeof listAccessProfiles>>[number];
+type AccessProfile = Awaited<ReturnType<typeof listAllAccessProfiles>>[number];
 type Permission = Awaited<ReturnType<typeof listAssignablePermissions>>[number];
 
 const emptyForm = {
@@ -36,6 +39,7 @@ export function AccessProfilesPanel({
   institutionId: string;
   onChanged: () => Promise<void>;
 }) {
+  const { authorization } = useAcademicSession();
   const notify = useToast();
   const [profiles, setProfiles] = useState<AccessProfile[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -46,10 +50,14 @@ export function AccessProfilesPanel({
   const [sourceProfileId, setSourceProfileId] = useState<string>();
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [delegationProfile, setDelegationProfile] = useState<AccessProfile>();
+  const [delegationCodes, setDelegationCodes] = useState<string[]>([]);
+  const [savingDelegations, setSavingDelegations] = useState(false);
+  const isOwner = authorization?.isOwner === true;
 
   const load = useCallback(async () => {
     const [accessProfiles, assignablePermissions] = await Promise.all([
-      listAccessProfiles(institutionId),
+      listAllAccessProfiles(institutionId),
       listAssignablePermissions(institutionId),
     ]);
     setProfiles(accessProfiles);
@@ -87,6 +95,38 @@ export function AccessProfilesPanel({
       permissionCodes,
       active: profile.is_active,
     });
+  };
+
+  const openDelegations = async (profile: AccessProfile) => {
+    const codes = await listAccessProfileDelegationCodes(profile.id);
+    setDelegationProfile(profile);
+    setDelegationCodes(codes);
+  };
+
+  const saveDelegations = async () => {
+    if (!delegationProfile) return;
+    setSavingDelegations(true);
+    try {
+      await setAccessProfileDelegations({
+        accessProfileId: delegationProfile.id,
+        permissionCodes: delegationCodes,
+        reason: "Mise à jour depuis le paramétrage des profils d’accès",
+      });
+      setDelegationProfile(undefined);
+      notify({
+        severity: "success",
+        summary: "Délégations mises à jour",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Mise à jour des délégations impossible",
+        detail:
+          "Cette action est réservée au propriétaire récemment authentifié.",
+      });
+    } finally {
+      setSavingDelegations(false);
+    }
   };
 
   const save = async () => {
@@ -191,13 +231,24 @@ export function AccessProfilesPanel({
           headerClassName="text-right"
           bodyClassName="text-right"
           body={(profile: AccessProfile) => (
-            <Button
-              label={profile.is_standard ? "Dupliquer" : "Modifier"}
-              icon={profile.is_standard ? "pi pi-copy" : "pi pi-pencil"}
-              text
-              size="small"
-              onClick={() => void open(profile)}
-            />
+            <div className="flex justify-end gap-1">
+              {isOwner ? (
+                <Button
+                  label="Délégations"
+                  icon="pi pi-key"
+                  text
+                  size="small"
+                  onClick={() => void openDelegations(profile)}
+                />
+              ) : null}
+              <Button
+                label={profile.is_standard ? "Dupliquer" : "Modifier"}
+                icon={profile.is_standard ? "pi pi-copy" : "pi pi-pencil"}
+                text
+                size="small"
+                onClick={() => void open(profile)}
+              />
+            </div>
           )}
         />
       </DataTable>
@@ -284,6 +335,52 @@ export function AccessProfilesPanel({
               loading={saving}
               disabled={!form.name.trim() || !form.permissionCodes.length}
               onClick={() => void save()}
+            />
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        header={`Délégations · ${delegationProfile?.name ?? ""}`}
+        visible={delegationProfile !== undefined}
+        modal
+        className="form-dialog w-[min(96vw,52rem)]"
+        onHide={() => setDelegationProfile(undefined)}
+      >
+        <div className="form-stack">
+          <p className="text-sm text-slate-600">
+            Ces permissions déterminent ce que les titulaires du profil peuvent
+            attribuer à d’autres profils. Elles n’accordent pas l’action métier
+            elle-même.
+          </p>
+          <div className="field">
+            <label htmlFor="access-profile-delegations">
+              Permissions délégables
+            </label>
+            <MultiSelect
+              inputId="access-profile-delegations"
+              value={delegationCodes}
+              options={permissionOptions}
+              optionLabel="displayLabel"
+              optionValue="code"
+              display="chip"
+              filter
+              className="w-full"
+              onChange={(event) => setDelegationCodes(event.value as string[])}
+            />
+          </div>
+          <div className="dialog-actions">
+            <Button
+              label="Annuler"
+              severity="secondary"
+              outlined
+              onClick={() => setDelegationProfile(undefined)}
+            />
+            <Button
+              label="Enregistrer les délégations"
+              icon="pi pi-check"
+              loading={savingDelegations}
+              onClick={() => void saveDelegations()}
             />
           </div>
         </div>

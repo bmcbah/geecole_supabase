@@ -62,17 +62,17 @@ create table public.module_catalog (
   sort_order smallint not null default 0
 );
 
-insert into public.module_catalog(code,name,is_mandatory,sort_order) values
-  ('settings','Paramétrage',true,10),
-  ('schooling','Scolarité',false,20),
-  ('notes','Notes et évaluations',false,30),
-  ('bulletins','Bulletins et classements',false,40),
-  ('finance','Frais scolaires',false,50),
-  ('personnel','Personnel',false,60),
-  ('documents','Documents',false,70),
-  ('attendance','Assiduité',false,80),
-  ('agenda','Agenda',false,90),
-  ('audit','Audit',true,100);
+insert into public.module_catalog(code,name,description,is_mandatory,sort_order) values
+  ('settings','Paramétrage','Établissement, années scolaires, catalogues et accès.',true,10),
+  ('schooling','Scolarité','Élèves, responsables, inscriptions, réinscriptions et classes.',false,20),
+  ('notes','Notes et évaluations','Affectations pédagogiques, évaluations, résultats et moyennes.',false,30),
+  ('bulletins','Bulletins et classements','Génération, validation, publication et classement des bulletins.',false,40),
+  ('finance','Frais scolaires','Tarifs, dossiers financiers, échéances, paiements et reçus.',false,50),
+  ('personnel','Personnel','Employés, contrats, congés, avances, sanctions et paie.',false,60),
+  ('documents','Documents','Documents administratifs demandés, déposés et générés.',false,70),
+  ('attendance','Assiduité','Présences, absences, retards et justificatifs des élèves.',false,80),
+  ('agenda','Agenda','Cours, examens, réunions, événements et notifications.',false,90),
+  ('audit','Audit','Journal transversal immuable des opérations sensibles.',true,100);
 
 create table public.institution_modules (
   institution_id uuid not null references public.institutions(id) on delete cascade,
@@ -290,6 +290,7 @@ with template_permissions(template_code, permission_code) as (
     ('administration', 'settings.academic.read'), ('administration', 'settings.academic.manage'),
     ('direction', 'settings.institution.read'), ('direction', 'settings.academic.read'),
     ('direction', 'schooling.students.read'), ('direction', 'schooling.enrollments.read'),
+    ('direction', 'schooling.enrollments.validate'),
     ('direction', 'schooling.classes.read'), ('direction', 'notes.assessments.read'),
     ('direction', 'notes.results.read'), ('direction', 'notes.class_overview.read'),
     ('direction', 'notes.class_results.read'), ('direction', 'bulletins.reports.read'),
@@ -328,10 +329,14 @@ with template_permissions(template_code, permission_code) as (
     ('personnel_manager', 'personnel.leaves.validate'), ('personnel_manager', 'personnel.payroll.read'),
     ('personnel_manager', 'personnel.payroll.prepare'), ('personnel_manager', 'personnel.sanctions.read'),
     ('personnel_manager', 'personnel.sanctions.manage'),
-    ('parent', 'schooling.students.read'), ('parent', 'schooling.documents.read'),
+    ('parent', 'schooling.students.read'), ('parent', 'schooling.enrollments.read'),
+    ('parent', 'schooling.documents.read'),
+    ('parent', 'schooling.classes.read'),
     ('parent', 'notes.results.read'), ('parent', 'bulletins.reports.read'),
     ('parent', 'finance.accounts.read'), ('parent', 'attendance.records.read'), ('parent', 'agenda.events.read'),
-    ('student', 'schooling.students.read'), ('student', 'schooling.documents.read'),
+    ('student', 'schooling.students.read'), ('student', 'schooling.enrollments.read'),
+    ('student', 'schooling.documents.read'),
+    ('student', 'schooling.classes.read'),
     ('student', 'notes.results.read'), ('student', 'bulletins.reports.read'),
     ('student', 'finance.accounts.read'), ('student', 'attendance.records.read'), ('student', 'agenda.events.read')
 )
@@ -384,6 +389,17 @@ returns boolean language sql stable security definer set search_path = '' as $$
       and is_owner
       and valid_from <= current_date
       and (valid_until is null or valid_until >= current_date)
+  );
+$$;
+
+create or replace function public.is_module_enabled(target_institution_id uuid,target_module_code text)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1 from public.institution_modules institution_module
+    join public.module_catalog module on module.code=institution_module.module_code
+    where institution_module.institution_id=target_institution_id
+      and institution_module.module_code=target_module_code
+      and institution_module.is_enabled and module.is_active
   );
 $$;
 
@@ -522,6 +538,8 @@ revoke all on function public.is_active_member(uuid) from public;
 grant execute on function public.is_active_member(uuid) to authenticated;
 revoke all on function public.is_institution_owner(uuid) from public;
 grant execute on function public.is_institution_owner(uuid) to authenticated;
+revoke all on function public.is_module_enabled(uuid,text) from public;
+grant execute on function public.is_module_enabled(uuid,text) to authenticated;
 revoke all on function public.has_permission(uuid, text) from public;
 grant execute on function public.has_permission(uuid, text) to authenticated;
 revoke all on function public.install_standard_access_profiles(uuid) from public;
@@ -764,6 +782,71 @@ begin
   where permission.is_active and permission.is_assignable
     and public.can_delegate_permission(target_institution_id,permission.code)
   order by permission.module,permission.label;
+end;
+$$;
+
+create or replace function public.list_access_profile_delegation_codes(target_access_profile_id uuid)
+returns text[] language plpgsql stable security definer set search_path='' as $$
+declare target_profile public.access_profiles;
+begin
+  select * into target_profile
+  from public.access_profiles
+  where id=target_access_profile_id;
+  if target_profile.id is null then raise exception 'access_profile_not_found'; end if;
+  if not public.has_permission(target_profile.institution_id,'settings.access.read') then
+    raise exception 'permission_denied';
+  end if;
+  return coalesce((
+    select array_agg(permission.code order by permission.module,permission.label)
+    from public.access_profile_permission_delegations delegation
+    join public.permissions permission on permission.id=delegation.permission_id
+    where delegation.access_profile_id=target_profile.id
+  ),array[]::text[]);
+end;
+$$;
+
+create or replace function public.set_access_profile_permission_delegations(
+  target_access_profile_id uuid,
+  permission_codes text[],
+  change_reason text default null
+)
+returns void language plpgsql security definer set search_path='' as $$
+declare target_profile public.access_profiles; previous_codes text[];
+begin
+  select * into target_profile
+  from public.access_profiles
+  where id=target_access_profile_id
+  for update;
+  if target_profile.id is null then raise exception 'access_profile_not_found'; end if;
+  if not public.is_institution_owner(target_profile.institution_id)
+    or not public.is_recently_authenticated() then
+    raise exception 'owner_action_forbidden';
+  end if;
+  if exists(
+    select 1
+    from unnest(coalesce(permission_codes,array[]::text[])) requested(code)
+    left join public.permissions permission on permission.code=requested.code
+    where permission.id is null or not permission.is_active or not permission.is_assignable
+  ) then raise exception 'permission_not_delegable'; end if;
+
+  select coalesce(array_agg(permission.code order by permission.code),array[]::text[])
+  into previous_codes
+  from public.access_profile_permission_delegations delegation
+  join public.permissions permission on permission.id=delegation.permission_id
+  where delegation.access_profile_id=target_profile.id;
+
+  delete from public.access_profile_permission_delegations
+  where access_profile_id=target_profile.id;
+  insert into public.access_profile_permission_delegations(access_profile_id,permission_id)
+  select target_profile.id,permission.id
+  from public.permissions permission
+  where permission.code=any(coalesce(permission_codes,array[]::text[]));
+
+  perform public.write_access_audit(
+    target_profile.institution_id,'access_profile.delegations_updated','access_profile',target_profile.id,
+    jsonb_build_object('permissionCodes',previous_codes),
+    jsonb_build_object('permissionCodes',coalesce(permission_codes,array[]::text[])),change_reason
+  );
 end;
 $$;
 
@@ -1023,6 +1106,12 @@ returns jsonb language sql stable security definer set search_path = '' as $$
         and assignment.valid_from <= current_date
         and (assignment.valid_until is null or assignment.valid_until >= current_date)
     ), '[]'::jsonb),
+    'enabledModules', coalesce((
+      select jsonb_agg(institution_module.module_code order by institution_module.module_code)
+      from public.institution_modules institution_module
+      where institution_module.institution_id=membership.institution_id
+        and institution_module.is_enabled
+    ),'[]'::jsonb),
     'permissions', case when membership.is_owner then '[]'::jsonb else coalesce((
       select jsonb_agg(distinct permission.code)
       from public.membership_access_profiles assignment
@@ -1074,6 +1163,10 @@ revoke all on function public.is_recently_authenticated(interval) from public;
 revoke all on function public.can_delegate_permission(uuid,text) from public;
 revoke all on function public.list_delegable_permissions(uuid) from public;
 grant execute on function public.list_delegable_permissions(uuid) to authenticated;
+revoke all on function public.list_access_profile_delegation_codes(uuid) from public;
+grant execute on function public.list_access_profile_delegation_codes(uuid) to authenticated;
+revoke all on function public.set_access_profile_permission_delegations(uuid,text[],text) from public;
+grant execute on function public.set_access_profile_permission_delegations(uuid,text[],text) to authenticated;
 revoke all on function public.can_delegate_access_profile(uuid) from public;
 revoke all on function public.create_custom_access_profile(uuid, text, text, text[], uuid) from public;
 grant execute on function public.create_custom_access_profile(uuid, text, text, text[], uuid) to authenticated;
@@ -1092,6 +1185,7 @@ grant execute on function public.remove_membership(uuid, text) to authenticated;
 revoke all on function public.get_my_authorization_summary(uuid) from public;
 grant execute on function public.get_my_authorization_summary(uuid) to authenticated;
 revoke all on function public.set_institution_module_enabled(uuid,text,boolean,text) from public;
+grant execute on function public.set_institution_module_enabled(uuid,text,boolean,text) to authenticated;
 
 
 -- -----------------------------------------------------------------------------

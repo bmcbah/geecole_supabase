@@ -497,6 +497,16 @@ export async function listAccessProfiles(institutionId: string) {
   return data;
 }
 
+export async function listAllAccessProfiles(institutionId: string) {
+  const { data, error } = await supabase
+    .from("access_profiles")
+    .select("*")
+    .eq("institution_id", institutionId)
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
 export async function savePerson(
   institutionId: string,
   input: {

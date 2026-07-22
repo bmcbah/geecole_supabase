@@ -51,6 +51,24 @@ create table public.pedagogical_assignment_periods (
   primary key (assignment_id, period_id)
 );
 
+create or replace function public.has_active_pedagogical_assignment(
+  target_institution_id uuid,target_class_id uuid
+)
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(
+    select 1
+    from public.people person
+    join public.pedagogical_assignments assignment on assignment.teacher_id=person.id
+    where person.auth_user_id=(select auth.uid())
+      and person.institution_id=target_institution_id
+      and assignment.institution_id=target_institution_id
+      and assignment.class_id=target_class_id
+      and assignment.is_active
+  );
+$$;
+
+revoke all on function public.has_active_pedagogical_assignment(uuid,uuid) from public;
+
 create table public.gradebook_notes (
   id uuid primary key default extensions.gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,

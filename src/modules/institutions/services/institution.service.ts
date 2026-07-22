@@ -50,6 +50,7 @@ export interface AuthorizationSummary {
     validUntil: string | null;
   }>;
   permissions: string[];
+  enabledModules: string[];
 }
 
 export async function getMyAuthorizationSummary(institutionId: string) {

@@ -4,6 +4,7 @@ import {
   getMyAuthorizationSummary,
   getMyInstitutions,
 } from "../../institutions/services/institution.service";
+import type { AuthorizationSummary } from "../../institutions/services/institution.service";
 import type { Institution } from "../../institutions/types/institution";
 import { listAcademicYears } from "../../settings/services/settings.service";
 import type { AcademicYear } from "../../settings/types/settings";
@@ -21,6 +22,8 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [failure, setFailure] = useState("");
   const [canChangeYear, setCanChangeYear] = useState(true);
+  const [authorization, setAuthorization] =
+    useState<AuthorizationSummary | null>(null);
 
   const loadInstitutions = useCallback(async () => {
     if (!user) return;
@@ -46,16 +49,19 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
     if (!institutionId || !user) {
       setYears([]);
       setYearIdState("");
+      setAuthorization(null);
       return;
     }
     localStorage.setItem(institutionKey, institutionId);
     setLoading(true);
+    setAuthorization(null);
     void Promise.all([
       listAcademicYears(institutionId),
       getMyAuthorizationSummary(institutionId),
     ])
       .then(([data, authorization]) => {
         setYears(data);
+        setAuthorization(authorization);
         const allowed =
           authorization.isOwner ||
           authorization.profiles.some(
@@ -91,6 +97,13 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   const refresh = useCallback(async () => {
     await loadInstitutions();
   }, [loadInstitutions]);
+  const refreshAuthorization = useCallback(async () => {
+    if (!institutionId || !user) {
+      setAuthorization(null);
+      return;
+    }
+    setAuthorization(await getMyAuthorizationSummary(institutionId));
+  }, [institutionId, user]);
 
   return (
     <AcademicSessionContext.Provider
@@ -104,9 +117,12 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
         loading,
         failure,
         canChangeYear,
+        authorization,
+        enabledModules: authorization?.enabledModules ?? null,
         setInstitutionId,
         setYearId,
         refresh,
+        refreshAuthorization,
       }}
     >
       {children}
