@@ -15,7 +15,7 @@ const ReenrollmentPage = lazy(() => import("../../modules/schooling/pages/Reenro
 const BatchReenrollmentPage = lazy(() => import("../../modules/schooling/pages/BatchReenrollmentPage").then((module) => ({ default: module.BatchReenrollmentPage })));
 const AdmissionsWorkspacePage = lazy(() => import("../../modules/schooling/pages/AdmissionsWorkspacePage").then((module) => ({ default: module.AdmissionsWorkspacePage })));
 const AttendanceWorkspacePage = lazy(() => import("../../modules/schooling/pages/AttendanceWorkspacePage").then((module) => ({ default: module.AttendanceWorkspacePage })));
-const SchoolingAdministrationPage = lazy(() => import("../../modules/schooling/pages/SchoolingAdministrationPage").then((module) => ({ default: module.SchoolingAdministrationPage })));
+const SchoolYearPreparationWorkspacePage = lazy(() => import("../../modules/schooling/pages/SchoolYearPreparationWorkspacePage").then((module) => ({ default: module.SchoolYearPreparationWorkspacePage })));
 const FinancialAccountsPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountsWorkspacePage").then((module) => ({ default: module.FinancialAccountsWorkspacePage })));
 const FinancialAccountDetailPage = lazy(() => import("../../modules/financial-management/pages/FinancialAccountDetailPage").then((module) => ({ default: module.FinancialAccountDetailPage })));
 const FinancialPaymentsPage = lazy(() => import("../../modules/financial-management/pages/FinancialPaymentsPage").then((module) => ({ default: module.FinancialPaymentsPage })));
@@ -62,15 +62,16 @@ export function AppRouter() {
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
             <Route path="/scolarite/admissions" element={<AdmissionsWorkspacePage />} />
             <Route path="/scolarite/assiduite" element={<AttendanceWorkspacePage />} />
+            <Route path="/scolarite/preparation-rentree" element={<SchoolYearPreparationWorkspacePage />} />
             <Route path="/scolarite/inscriptions/nouvelle" element={<EnrollmentPage />} />
             <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
             <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
             <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
-            <Route path="/scolarite/classes" element={<SchoolingAdministrationPage />} />
-            <Route path="/scolarite/responsables" element={<SchoolingAdministrationPage />} />
-            <Route path="/scolarite/documents" element={<SchoolingAdministrationPage />} />
-            <Route path="/scolarite/imports" element={<SchoolingAdministrationPage />} />
-            <Route path="/scolarite/attestations" element={<SchoolingAdministrationPage />} />
+            <Route path="/scolarite/classes" element={<Navigate to="/scolarite/preparation-rentree" replace />} />
+            <Route path="/scolarite/responsables" element={<Navigate to="/scolarite/eleves" replace />} />
+            <Route path="/scolarite/documents" element={<Navigate to="/scolarite/admissions" replace />} />
+            <Route path="/scolarite/imports" element={<Navigate to="/scolarite/eleves" replace />} />
+            <Route path="/scolarite/attestations" element={<Navigate to="/scolarite/eleves" replace />} />
             <Route path="/gestion-financiere/dossiers" element={<FinancialAccountsPage />} />
             <Route path="/gestion-financiere/dossiers/:accountId" element={<FinancialAccountDetailPage />} />
             <Route path="/gestion-financiere/encaissements" element={<FinancialPaymentsPage />} />
