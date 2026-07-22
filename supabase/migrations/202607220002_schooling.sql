@@ -564,7 +564,7 @@ begin
       previous := null;
       select * into previous from public.enrollments where id = source_id;
       if not found then raise exception 'source_enrollment_not_found'; end if;
-      if not public.has_permission(previous.institution_id,'schooling.enrollments.create') then raise exception 'permission_denied'; end if;
+      if not public.has_permission_for_student(previous.student_id,'schooling.enrollments.create') then raise exception 'permission_denied'; end if;
       select * into policy from public.reenrollment_policies where institution_id = previous.institution_id;
       if not policy.allow_batch then raise exception 'batch_reenrollment_disabled'; end if;
       select * into current_level from public.academic_year_levels where id = previous.academic_year_level_id;
@@ -876,7 +876,10 @@ begin
     join public.access_profile_permissions profile_permission on profile_permission.access_profile_id=profile.id
     join public.permissions permission on permission.id=profile_permission.permission_id
     where membership.institution_id=class_row.institution_id and membership.user_id=(select auth.uid())
-      and membership.status='active' and membership_profile.is_active and profile.is_active
+      and membership.status='active'
+      and membership.valid_from<=current_date
+      and (membership.valid_until is null or membership.valid_until>=current_date)
+      and membership_profile.is_active and profile.is_active
       and membership_profile.valid_from<=current_date
       and (membership_profile.valid_until is null or membership_profile.valid_until>=current_date)
       and permission.code='schooling.classes.read'
@@ -948,7 +951,7 @@ returns boolean language sql stable security definer set search_path='' as $$
     where guardian.id=target_guardian_id
       and public.is_module_enabled(guardian.institution_id,'schooling')
       and public.is_active_member(guardian.institution_id)
-      and (public.has_permission(guardian.institution_id,'schooling.guardians.read') or exists(
+      and (public.has_permission_for_guardian(guardian.id,'schooling.guardians.read') or exists(
         select 1 from public.student_guardians student_guardian
         where student_guardian.guardian_id=guardian.id and public.can_read_student(student_guardian.student_id)
       ))
@@ -961,8 +964,7 @@ returns boolean language sql stable security definer set search_path='' as $$
     select 1
     from public.enrollments enrollment
     where enrollment.id=target_enrollment_id
-      and public.has_permission(enrollment.institution_id,'schooling.enrollments.read')
-      and public.can_read_student(enrollment.student_id)
+      and public.has_permission_for_student(enrollment.student_id,'schooling.enrollments.read')
   );
 $$;
 
@@ -1234,6 +1236,7 @@ begin
     select id into annual_level_id from public.academic_year_levels where id=target_annual_level_id and academic_year_id=target_year_id and is_active;
     if annual_level_id is null then raise exception 'annual_level_required'; end if;
   end if;
+  if not public.has_permission_for_school_scope(target_year.institution_id,'schooling.classes.manage',target_year_id,annual_level_id,null) then raise exception 'permission_denied'; end if;
   insert into public.school_classes(institution_id,academic_year_id,academic_year_level_id,name,code,capacity,room)
   values(target_year.institution_id,target_year_id,annual_level_id,trim(class_name),upper(trim(class_code)),class_capacity,nullif(trim(class_room),'')) returning id into class_id;
   return class_id;

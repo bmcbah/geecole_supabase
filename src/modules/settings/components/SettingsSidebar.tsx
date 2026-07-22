@@ -5,7 +5,6 @@ const groups = [
     label: "Administration",
     sections: [
       { path: "etablissement", icon: "pi-cog", label: "Général" },
-      { path: "modules", icon: "pi-th-large", label: "Modules" },
       {
         path: "annees-scolaires",
         icon: "pi-calendar",

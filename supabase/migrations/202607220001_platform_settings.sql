@@ -1185,7 +1185,6 @@ grant execute on function public.remove_membership(uuid, text) to authenticated;
 revoke all on function public.get_my_authorization_summary(uuid) from public;
 grant execute on function public.get_my_authorization_summary(uuid) to authenticated;
 revoke all on function public.set_institution_module_enabled(uuid,text,boolean,text) from public;
-grant execute on function public.set_institution_module_enabled(uuid,text,boolean,text) to authenticated;
 
 
 -- -----------------------------------------------------------------------------

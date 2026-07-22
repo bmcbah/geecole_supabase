@@ -90,7 +90,10 @@ select ok(not exists(
 ),'aucun EXECUTE public sur la gestion Owner');
 select function_privs_are('public','set_membership_owner',array['uuid','boolean','text'],'authenticated',array['EXECUTE']);
 select function_privs_are('public','set_access_profile_permission_delegations',array['uuid','text[]','text'],'authenticated',array['EXECUTE']);
-select function_privs_are('public','set_institution_module_enabled',array['uuid','text','boolean','text'],'authenticated',array['EXECUTE']);
+select ok(
+  not has_function_privilege('authenticated','public.set_institution_module_enabled(uuid,text,boolean,text)','EXECUTE'),
+  'activation des modules non exposée avant cloisonnement complet'
+);
 
 select * from finish();
 rollback;

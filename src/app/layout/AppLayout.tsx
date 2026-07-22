@@ -71,7 +71,7 @@ export function AppLayout() {
       .sort((left, right) => right.to.length - left.to.length)
       .find((link) => location.pathname.startsWith(link.to));
     if (requestedLink && !enabledModules.includes(requestedLink.moduleCode)) {
-      void navigate("/parametrage/modules", { replace: true });
+      void navigate("/parametrage/etablissement", { replace: true });
     }
   }, [enabledModules, location.pathname, navigate]);
 

@@ -22,11 +22,9 @@ import { ReenrollmentPolicyPanel } from "../../schooling/components/Reenrollment
 import { DocumentRequirementsPanel } from "../../schooling/components/DocumentRequirementsPanel";
 import { ClassOrganizationCard } from "../../schooling/components/ClassOrganizationCard";
 import { ClassesPage } from "../../schooling/pages/ClassesPage";
-import { InstitutionModulesPanel } from "../components/InstitutionModulesPanel";
 
 const sections = [
   "etablissement",
-  "modules",
   "annees-scolaires",
   "cycles",
   "niveaux",
@@ -153,8 +151,6 @@ export function SettingsPage() {
               </Accordion>
             </section>
           </div>
-        ) : section === "modules" ? (
-          <InstitutionModulesPanel />
         ) : section === "annees-scolaires" ? (
           <AcademicYearsPanel institutionId={selected.id} />
         ) : section === "cycles" ? (
