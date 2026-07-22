@@ -35,7 +35,7 @@ const BonusTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/
 const DeductionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/DeductionTypesSettingsPage").then((module) => ({ default: module.DeductionTypesSettingsPage })));
 const AdvanceTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/AdvanceTypesSettingsPage").then((module) => ({ default: module.AdvanceTypesSettingsPage })));
 const LeaveTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/LeaveTypesSettingsPage").then((module) => ({ default: module.LeaveTypesSettingsPage })));
-const SanctionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/PersonnelSanctionsSettingsPage").then((module) => ({ default: module.PersonnelSanctionsSettingsPage })));
+const SanctionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/SanctionTypesSettingsPage").then((module) => ({ default: module.SanctionTypesSettingsPage })));
 const DocumentTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/DocumentTypesSettingsPage").then((module) => ({ default: module.DocumentTypesSettingsPage })));
 const NotesWorkspacePage = lazy(() => import("../../modules/notes/pages/NotesWorkspacePage").then((module) => ({ default: module.NotesWorkspacePage })));
 const PedagogicalAssignmentsPage = lazy(() => import("../../modules/notes/pages/PedagogicalAssignmentsPage").then((module) => ({ default: module.PedagogicalAssignmentsPage })));
