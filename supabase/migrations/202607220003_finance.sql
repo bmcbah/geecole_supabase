@@ -381,6 +381,54 @@ create index payment_plans_cycle_ids_idx on public.payment_plans using gin(cycle
 create index payment_plans_level_ids_idx on public.payment_plans using gin(level_ids);
 create index payment_plan_installments_plan_idx on public.payment_plan_installments(payment_plan_id, sequence);
 
+create or replace function public.validate_payment_plan_tenant()
+returns trigger language plpgsql security definer set search_path='' as $$
+begin
+  if not exists(
+    select 1 from public.academic_years year
+    where year.id=new.academic_year_id and year.institution_id=new.institution_id
+  ) then raise exception 'payment_plan_academic_year_mismatch'; end if;
+  if exists(
+    select 1 from unnest(new.fee_type_ids) target(id)
+    left join public.fee_types fee_type on fee_type.id=target.id and fee_type.institution_id=new.institution_id
+    where fee_type.id is null
+  ) then raise exception 'payment_plan_fee_type_mismatch'; end if;
+  if exists(
+    select 1 from unnest(new.cycle_ids) target(id)
+    left join public.academic_year_cycles cycle
+      on cycle.id=target.id and cycle.institution_id=new.institution_id and cycle.academic_year_id=new.academic_year_id
+    where cycle.id is null
+  ) then raise exception 'payment_plan_cycle_mismatch'; end if;
+  if exists(
+    select 1 from unnest(new.level_ids) target(id)
+    left join public.academic_year_levels level
+      on level.id=target.id and level.institution_id=new.institution_id and level.academic_year_id=new.academic_year_id
+    where level.id is null
+  ) then raise exception 'payment_plan_level_mismatch'; end if;
+  return new;
+end;
+$$;
+
+create or replace function public.validate_payment_plan_installment_total()
+returns trigger language plpgsql security definer set search_path='' as $$
+declare target_plan_id uuid:=coalesce(new.payment_plan_id,old.payment_plan_id); total_percentage numeric;
+begin
+  select coalesce(sum(percentage),0) into total_percentage
+  from public.payment_plan_installments where payment_plan_id=target_plan_id;
+  if total_percentage>100.001 then raise exception 'payment_plan_percentage_exceeds_100'; end if;
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+create trigger payment_plans_validate_tenant before insert or update on public.payment_plans
+for each row execute function public.validate_payment_plan_tenant();
+create trigger payment_plan_installments_validate_total after insert or update or delete on public.payment_plan_installments
+for each row execute function public.validate_payment_plan_installment_total();
+
+revoke all on function public.validate_payment_plan_tenant() from public;
+revoke all on function public.validate_payment_plan_installment_total() from public;
+
 alter table public.payment_plans enable row level security;
 alter table public.payment_plan_installments enable row level security;
 

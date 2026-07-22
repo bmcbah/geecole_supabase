@@ -1,5 +1,5 @@
 begin;
-select plan(35);
+select plan(39);
 
 select has_function('public','finance_profile_scope_allows_account',array['uuid','uuid'],'périmètre financier rattaché au profil');
 select has_function('public','has_finance_permission_for_account',array['uuid','text'],'permission financière bornée au dossier');
@@ -14,6 +14,10 @@ select has_trigger('public','fee_schedule_items','fee_schedule_items_audit','tar
 select has_trigger('public','payment_plans','payment_plans_audit','plans de paiement audités');
 select has_trigger('public','payment_plan_installments','payment_plan_installments_audit','tranches de paiement auditées');
 select has_trigger('public','financial_benefit_templates','financial_benefit_templates_audit','modèles d’avantage audités');
+select has_function('public','validate_payment_plan_tenant',array[]::text[],'cohérence tenantée des plans présente');
+select has_function('public','validate_payment_plan_installment_total',array[]::text[],'total des tranches contrôlé');
+select has_trigger('public','payment_plans','payment_plans_validate_tenant','clés tenantées du plan contrôlées');
+select has_trigger('public','payment_plan_installments','payment_plan_installments_validate_total','pourcentage des tranches contrôlé');
 select ok((select prosecdef from pg_catalog.pg_proc where oid='public.can_read_financial_account(uuid)'::regprocedure),'lecture financière en SECURITY DEFINER');
 select ok((select proconfig @> array['search_path=""'] from pg_catalog.pg_proc where oid='public.can_read_financial_account(uuid)'::regprocedure),'search_path lecture financière verrouillé');
 select function_privs_are('public','can_read_financial_account',array['uuid'],'authenticated',array['EXECUTE']);
