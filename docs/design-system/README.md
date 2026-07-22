@@ -14,6 +14,13 @@ GeeCole privilégie, dans cet ordre :
 
 L’interface doit être moderne, métier, relativement dense et cohérente. Elle ne doit ni copier un ERP lourd, ni multiplier les cartes décoratives, ni disperser les actions.
 
+## Documents associés
+
+- [Responsive](responsive.md)
+- [Accessibilité](accessibility.md)
+- [Performances](performance.md)
+- [États d’interface et qualité](states-and-quality.md)
+
 ## Grammaire de navigation
 
 La profondeur maximale est :
@@ -30,7 +37,7 @@ La profondeur maximale est :
 GeeCole utilise cinq modèles :
 
 - **Workspace Liste** : header, filtres compacts, table, actions de masse, pagination.
-- **Workspace Fiche** : header d’entité, SummaryList, onglets métier, contenu.
+- **Workspace Fiche** : header d’entité, onglets métier, contenu et, lorsque nécessaire, cards de synthèse ou composants métier.
 - **Workspace Rapport** : paramètres, prévisualisation, génération, historique.
 - **Workspace Assistant** : étapes ordonnées, formulaire, résumé, validation.
 - **Workspace Dashboard** : KPI, activité, tâches, calendrier et raccourcis adaptés au rôle.
@@ -110,11 +117,20 @@ Une fiche complète reste dans le workspace de sa fonctionnalité.
 
 Le header contient : retour vers la liste, identité, identifiant secondaire, statut et actions.
 
-Les synthèses utilisent exclusivement une **SummaryList**, sous forme de liste attribut-valeur bien mise en forme. Elles ne sont pas présentées comme une succession de cards.
+Une fiche peut utiliser des cards lorsqu’elles structurent réellement l’information, mettent en avant un indicateur, une alerte, une sélection ou un composant métier. Les cards ne doivent pas devenir un conteneur systématique autour de chaque section.
 
-Les fiches riches utilisent des onglets représentant des domaines de données, jamais des actions. L’onglet Aperçu est synthétique et ne duplique pas intégralement les autres onglets.
+### Onglet Aperçu
 
-Les valeurs en consultation sont rendues comme du texte lisible, jamais comme des champs désactivés.
+L’onglet `Aperçu` fournit une synthèse dense et immédiatement lisible :
+
+- il utilise principalement une ou plusieurs `SummaryList` sous forme attribut-valeur ;
+- il peut contenir quelques cards utiles pour les KPI, alertes ou raccourcis ;
+- il renvoie vers les onglets détaillés ;
+- il ne recopie pas intégralement les tableaux et informations des autres onglets.
+
+Les autres onglets peuvent utiliser les composants les plus adaptés à leur métier : tables, cards, timelines, explorateur documentaire, workflow ou rapports.
+
+Les onglets représentent des domaines de données, jamais des actions. Les valeurs en consultation sont rendues comme du texte lisible, jamais comme des champs désactivés.
 
 ## Historique métier
 
