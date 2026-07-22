@@ -121,6 +121,29 @@ export async function createAttendance(input: {
   if (error) throw error;
 }
 
+export async function createAttendanceBatch(input: {
+  institutionId: string;
+  academicYearId: string;
+  enrollmentIds: string[];
+  date: string;
+  slot?: string;
+  kind: "absence" | "late";
+  reason?: string;
+}) {
+  if (!input.enrollmentIds.length) return;
+  const rows = input.enrollmentIds.map((enrollmentId) => ({
+    institution_id: input.institutionId,
+    academic_year_id: input.academicYearId,
+    enrollment_id: enrollmentId,
+    attendance_date: input.date,
+    slot_label: input.slot?.trim() || null,
+    kind: input.kind,
+    reason: input.reason?.trim() || null,
+  }));
+  const { error } = await client.from("student_attendance_records").insert(rows);
+  if (error) throw error;
+}
+
 export async function updateAttendanceJustification(
   id: string,
   status: "unjustified" | "pending" | "justified",
@@ -130,5 +153,68 @@ export async function updateAttendanceJustification(
     .from("student_attendance_records")
     .update({ justification_status: status, reason: reason?.trim() || null })
     .eq("id", id);
+  if (error) throw error;
+}
+
+export type EnrollmentDocumentStatus = "requested" | "received" | "verified" | "rejected" | "expired";
+
+export type EnrollmentDocumentRow = {
+  id: string;
+  document_code: string;
+  document_name: string;
+  status: EnrollmentDocumentStatus;
+  storage_path: string | null;
+  rejection_reason: string | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+  enrollment: {
+    id: string;
+    level_name_snapshot: string;
+    cycle_name_snapshot: string;
+    student: { id: string; matricule: string; first_name: string; last_name: string };
+    class_assignments: Array<{ class_name_snapshot: string; ends_on: string | null }>;
+  };
+};
+
+export async function listEnrollmentDocuments(institutionId: string, academicYearId: string) {
+  const { data, error } = await client
+    .from("enrollment_documents")
+    .select(`
+      id,document_code,document_name,status,storage_path,rejection_reason,verified_at,created_at,updated_at,
+      enrollment:enrollments!inner(
+        id,academic_year_id,level_name_snapshot,cycle_name_snapshot,
+        student:students!inner(id,matricule,first_name,last_name),
+        class_assignments(class_name_snapshot,ends_on)
+      )
+    `)
+    .eq("institution_id", institutionId)
+    .eq("enrollment.academic_year_id", academicYearId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => {
+    const enrollment = Array.isArray(row.enrollment) ? row.enrollment[0] : row.enrollment;
+    return {
+      ...row,
+      enrollment: {
+        ...enrollment,
+        student: Array.isArray(enrollment?.student) ? enrollment.student[0] : enrollment?.student,
+        class_assignments: enrollment?.class_assignments ?? [],
+      },
+    };
+  }) as EnrollmentDocumentRow[];
+}
+
+export async function updateEnrollmentDocumentStatus(
+  id: string,
+  status: EnrollmentDocumentStatus,
+  rejectionReason?: string,
+) {
+  const patch: Record<string, unknown> = {
+    status,
+    rejection_reason: status === "rejected" ? rejectionReason?.trim() || null : null,
+  };
+  if (status === "verified") patch.verified_at = new Date().toISOString();
+  const { error } = await client.from("enrollment_documents").update(patch).eq("id", id);
   if (error) throw error;
 }
