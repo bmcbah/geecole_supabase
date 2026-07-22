@@ -7,16 +7,19 @@ import { InputText } from "primereact/inputtext";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import {
+  installStudentDocumentCatalog,
   listDocumentRequirements,
   saveDocumentRequirement,
 } from "../services/documents.service";
 import type { Database } from "../../../shared/lib/supabase/database.types";
+import { useToast } from "../../../shared/components/toast-context";
 type Requirement = Database["public"]["Tables"]["document_requirements"]["Row"];
 export function DocumentRequirementsPanel({
   institutionId,
 }: {
   institutionId: string;
 }) {
+  const notify = useToast();
   const [items, setItems] = useState<Requirement[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -32,6 +35,25 @@ export function DocumentRequirementsPanel({
   useEffect(() => {
     void load();
   }, [load]);
+  const installCatalog = async () => {
+    try {
+      const installed = await installStudentDocumentCatalog(institutionId);
+      await load();
+      notify({
+        severity: "success",
+        summary: "Catalogue GeEcole chargé",
+        detail:
+          Number(installed) > 0
+            ? `${installed} pièce(s) ajoutée(s).`
+            : "Le catalogue est déjà à jour.",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Chargement du catalogue impossible",
+      });
+    }
+  };
   return (
     <Card
       title="Documents exigés"
@@ -58,6 +80,13 @@ export function DocumentRequirementsPanel({
         />
       </DataTable>
       <div className="dialog-actions">
+        <Button
+          label="Catalogue GeEcole"
+          icon="pi pi-download"
+          severity="secondary"
+          outlined
+          onClick={() => void installCatalog()}
+        />
         <Button
           label="Ajouter une pièce"
           icon="pi pi-plus"

@@ -1,14 +1,18 @@
 -- Financial management: realistic Guinean fee catalogue and payment plans.
 begin;
 
-insert into public.fee_types (id,institution_id,name,code,description) values
- ('37000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Inscription','INSCRIPTION','Frais annuels d’inscription ou de réinscription'),
- ('37000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','Scolarité','SCOLARITE','Frais annuels de scolarité'),
- ('37000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','Tenue scolaire','TENUE','Tenue réglementaire de l’établissement'),
- ('37000000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','Transport','TRANSPORT','Transport scolaire annuel'),
- ('37000000-0000-0000-0000-000000000005','20000000-0000-0000-0000-000000000001','Cantine','CANTINE','Restauration scolaire'),
- ('37000000-0000-0000-0000-000000000006','20000000-0000-0000-0000-000000000001','Fournitures','FOURNITURES','Kit de fournitures scolaires'),
- ('37000000-0000-0000-0000-000000000007','20000000-0000-0000-0000-000000000001','Examen blanc','EXAMEN_BLANC','Participation aux examens blancs');
+insert into public.fee_types (id,institution_id,catalog_id,name,code,description)
+select value.id,'20000000-0000-0000-0000-000000000001',catalog.id,catalog.name,catalog.code,catalog.description
+from (values
+ ('37000000-0000-0000-0000-000000000001'::uuid,'INSCRIPTION'),
+ ('37000000-0000-0000-0000-000000000002'::uuid,'SCOLARITE'),
+ ('37000000-0000-0000-0000-000000000003'::uuid,'UNIFORME'),
+ ('37000000-0000-0000-0000-000000000004'::uuid,'TRANSPORT'),
+ ('37000000-0000-0000-0000-000000000005'::uuid,'CANTINE'),
+ ('37000000-0000-0000-0000-000000000006'::uuid,'FOURNITURES'),
+ ('37000000-0000-0000-0000-000000000007'::uuid,'EXAMEN')
+) as value(id,catalog_code)
+join public.fee_type_catalog catalog on catalog.code=value.catalog_code;
 
 insert into public.fee_schedules (id,institution_id,academic_year_id) values
  ('37100000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002');

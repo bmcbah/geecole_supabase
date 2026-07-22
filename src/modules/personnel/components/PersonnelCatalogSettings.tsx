@@ -12,6 +12,7 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import type { CatalogItem } from "../services/personnel.service";
 import {
   createPersonnelCatalogItem,
+  installPersonnelCatalog,
   listPersonnelCatalog,
   updatePersonnelCatalogItem,
 } from "../services/personnel.service";
@@ -89,6 +90,28 @@ export function PersonnelCatalogSettings({
       });
     }
   };
+  const installCatalog = async () => {
+    setSaving(true);
+    try {
+      const installed = await installPersonnelCatalog(institutionId);
+      await load();
+      notify({
+        severity: "success",
+        summary: "Catalogue GeEcole chargé",
+        detail:
+          installed > 0
+            ? `${installed} valeur(s) ajoutée(s).`
+            : "Le catalogue est déjà à jour.",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Chargement du catalogue impossible",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
   const save = async () => {
     if (!label.trim()) return;
     setSaving(true);
@@ -130,7 +153,17 @@ export function PersonnelCatalogSettings({
         title={title}
         description={description}
         actions={
-          <Button label={addLabel} icon="pi pi-plus" onClick={showAdd} />
+          <div className="flex gap-2">
+            <Button
+              label="Catalogue GeEcole"
+              icon="pi pi-download"
+              severity="secondary"
+              outlined
+              loading={saving}
+              onClick={() => void installCatalog()}
+            />
+            <Button label={addLabel} icon="pi pi-plus" onClick={showAdd} />
+          </div>
         }
       />
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">

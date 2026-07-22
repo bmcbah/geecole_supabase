@@ -109,6 +109,7 @@ export interface Database {
         Row: {
           id: string;
           institution_id: string;
+          catalog_id: string | null;
           name: string;
           code: string;
           required_for_pre_registration: boolean;
@@ -121,6 +122,7 @@ export interface Database {
         Insert: {
           id?: string;
           institution_id: string;
+          catalog_id?: string | null;
           name: string;
           code: string;
           required_for_pre_registration?: boolean;
@@ -602,6 +604,7 @@ export interface Database {
           id: string;
           institution_id: string;
           cycle_id: string;
+          catalog_id: string | null;
           name: string;
           code: string;
           sort_order: number;
@@ -616,6 +619,7 @@ export interface Database {
           id?: string;
           institution_id: string;
           cycle_id: string;
+          catalog_id?: string | null;
           name: string;
           code: string;
           sort_order?: number;
@@ -646,6 +650,7 @@ export interface Database {
         Row: {
           id: string;
           institution_id: string;
+          catalog_id: string | null;
           name: string;
           code: string;
           is_active: boolean;
@@ -655,6 +660,7 @@ export interface Database {
         Insert: {
           id?: string;
           institution_id: string;
+          catalog_id?: string | null;
           name: string;
           code: string;
           is_active?: boolean;
@@ -1465,6 +1471,18 @@ export interface Database {
       };
       install_assessment_type_catalog: {
         Args: { target_institution_id: string; target_year_id: string };
+        Returns: number;
+      };
+      install_grade_level_catalog: {
+        Args: { target_institution_id: string };
+        Returns: number;
+      };
+      install_subject_catalog: {
+        Args: { target_institution_id: string };
+        Returns: number;
+      };
+      install_student_document_catalog: {
+        Args: { target_institution_id: string };
         Returns: number;
       };
       change_academic_period_status: {

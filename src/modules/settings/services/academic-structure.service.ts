@@ -80,6 +80,14 @@ export async function listAnnualAcademicCycles(academicYearId: string) {
   return data;
 }
 
+export async function installGradeLevelCatalog(institutionId: string) {
+  const { data, error } = await supabase.rpc("install_grade_level_catalog", {
+    target_institution_id: institutionId,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function saveAnnualAcademicCycle(
   academicYearId: string,
   input: StructureItemInput,

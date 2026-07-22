@@ -3,6 +3,7 @@ import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { Toolbar } from "primereact/toolbar";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import { Checkbox } from "primereact/checkbox";
 import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { TabPanel, TabView } from "primereact/tabview";
@@ -11,6 +12,7 @@ import type { StructureItemInput } from "../../settings/schemas/academic-structu
 import {
   deleteLevel,
   generateAcademicPeriods,
+  installGradeLevelCatalog,
   listAcademicStructure,
   listAnnualAcademicLevels,
   listAnnualAcademicCycles,
@@ -65,7 +67,8 @@ const toInput = (
           "absences_on_report" in item
             ? Boolean(item.absences_on_report)
             : undefined,
-        capacity: "capacity" in item ? Number(item.capacity) || null : undefined,
+        capacity:
+          "capacity" in item ? Number(item.capacity) || null : undefined,
         repeatAllowed:
           "repeat_allowed" in item ? Boolean(item.repeat_allowed) : undefined,
       }
@@ -111,14 +114,60 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
       new Map(
         cycles.map((cycle) => [
           cycle.cycle_id,
-          levels.filter(
-            (level) =>
-              level.cycle_id === cycle.cycle_id && annualIds.includes(level.id),
-          ),
+          levels.filter((level) => level.cycle_id === cycle.cycle_id),
         ]),
       ),
-    [annualIds, cycles, levels],
+    [cycles, levels],
   );
+
+  const installCatalog = async () => {
+    setSaving(true);
+    try {
+      const installed = await installGradeLevelCatalog(institutionId);
+      await load();
+      notify({
+        severity: "success",
+        summary: "Catalogue GeEcole chargé",
+        detail:
+          Number(installed) > 0
+            ? `${installed} niveau(x) ajouté(s). Activez ceux utilisés cette année.`
+            : "Le catalogue est déjà à jour.",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Chargement du catalogue impossible",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setLevelActiveForYear = async (
+    cycle: AnnualAcademicCycle,
+    level: GradeLevel,
+    active: boolean,
+  ) => {
+    if (!year) return;
+    const currentIds = levels
+      .filter(
+        (item) =>
+          item.cycle_id === cycle.cycle_id && annualIds.includes(item.id),
+      )
+      .map((item) => item.id);
+    const nextIds = active
+      ? Array.from(new Set([...currentIds, level.id]))
+      : currentIds.filter((id) => id !== level.id);
+    setSaving(true);
+    try {
+      await setAnnualCycleLevels(year.id, cycle.cycle_id, nextIds);
+      await load();
+    } catch {
+      notify({ severity: "error", summary: "Activation du niveau impossible" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const submit = async (input: StructureItemInput) => {
     if (!dialog || !year) return;
@@ -188,7 +237,9 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
         void (async () => {
           if (!year) return;
           const remaining = (levelsByCycle.get(cycle.cycle_id) ?? [])
-            .filter((item) => item.id !== level.id)
+            .filter(
+              (item) => item.id !== level.id && annualIds.includes(item.id),
+            )
             .map((item) => item.id);
           await setAnnualCycleLevels(year.id, cycle.cycle_id, remaining);
           try {
@@ -231,10 +282,22 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
       <PageHeader
         title="Niveaux"
         description="Configurez les niveaux d’enseignement et leur cycle associé. Les niveaux sont utilisés pour organiser les classes et les matières."
+        actions={
+          <Button
+            label="Catalogue GeEcole"
+            icon="pi pi-download"
+            severity="secondary"
+            outlined
+            size="small"
+            loading={saving}
+            disabled={!editable}
+            onClick={() => void installCatalog()}
+          />
+        }
         headingAs="h2"
         compact
       />
-      <TabView className=""> 
+      <TabView className="">
         {cycles.map((cycle) => {
           const cycleLevels = levelsByCycle.get(cycle.cycle_id) ?? [];
           return (
@@ -242,7 +305,9 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
               <SettingsTablePanel
                 activeCard={false}
                 alert={
-                  (failure ? <Message severity="error" text={failure} /> : undefined)
+                  failure ? (
+                    <Message severity="error" text={failure} />
+                  ) : undefined
                   // (readOnlyAlert)
                 }
                 toolbar={
@@ -264,7 +329,9 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
                           outlined
                           size="small"
                           disabled={!editable}
-                          onClick={() => setDialog({ kind: "cycle", item: cycle })}
+                          onClick={() =>
+                            setDialog({ kind: "cycle", item: cycle })
+                          }
                         />
                         <Button
                           label="Ajouter un niveau"
@@ -297,6 +364,22 @@ export function LevelsSettingsPanel({ institutionId }: Props) {
                     size="small"
                   >
                     <Column field="sort_order" header="Ordre" />
+                    <Column
+                      header="Actif cette année"
+                      body={(level: GradeLevel) => (
+                        <Checkbox
+                          checked={annualIds.includes(level.id)}
+                          disabled={!editable || saving}
+                          onChange={(event) =>
+                            void setLevelActiveForYear(
+                              cycle,
+                              level,
+                              Boolean(event.checked),
+                            )
+                          }
+                        />
+                      )}
+                    />
                     <Column field="name" header="Niveau" />
                     <Column field="code" header="Code" />
                     <Column

@@ -62,6 +62,20 @@ values
     now(),
     now(),
     '', '', '', ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '10000000-0000-0000-0000-000000000004',
+    'authenticated',
+    'authenticated',
+    'owner.kankan@geecole.local',
+    crypt('Dev12345!', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"full_name":"Mariama Condé"}'::jsonb,
+    now(),
+    now(),
+    '', '', '', ''
   );
 
 insert into auth.identities (
@@ -87,14 +101,16 @@ from auth.users
 where id in (
   '10000000-0000-0000-0000-000000000001',
   '10000000-0000-0000-0000-000000000002',
-  '10000000-0000-0000-0000-000000000003'
+  '10000000-0000-0000-0000-000000000003',
+  '10000000-0000-0000-0000-000000000004'
 );
 
 insert into public.profiles (id, full_name, phone)
 values
   ('10000000-0000-0000-0000-000000000001', 'Mamadou Diallo', '+224 620 00 00 01'),
   ('10000000-0000-0000-0000-000000000002', 'Aïssatou Camara', '+224 620 00 00 02'),
-  ('10000000-0000-0000-0000-000000000003', 'Fatoumata Bah', '+224 620 00 00 03')
+  ('10000000-0000-0000-0000-000000000003', 'Fatoumata Bah', '+224 620 00 00 03'),
+  ('10000000-0000-0000-0000-000000000004', 'Mariama Condé', '+224 622 00 00 04')
 on conflict (id) do update
 set full_name = excluded.full_name,
     phone = excluded.phone;

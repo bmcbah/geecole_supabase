@@ -43,33 +43,15 @@ declare
   transport_bonus uuid;
   absence_deduction uuid;
 begin
-  select id into institution from public.institutions order by created_at limit 1;
+  select id into institution from public.institutions where slug='complexe-scolaire-geecole';
   if institution is null then return; end if;
 
   insert into public.personnel_catalog_items(
-    institution_id, category, code, default_label, is_system, display_order
-  ) values
-    (institution,'function','TEACHER','Enseignant(e)',true,10),
-    (institution,'function','DIRECTOR','Directeur / Directrice',true,20),
-    (institution,'function','SECRETARY','Secrétaire',true,30),
-    (institution,'function','ACCOUNTANT','Comptable',true,40),
-    (institution,'function','SUPERVISOR','Surveillant(e)',true,50),
-    (institution,'function','CLEANER','Agent d’entretien',true,60),
-    (institution,'contract_type','PERMANENT','Permanent',true,10),
-    (institution,'contract_type','VACATION','Vacation',true,20),
-    (institution,'contract_type','SERVICE','Prestation de service',true,30),
-    (institution,'work_type','NORMAL_COURSE','Cours normal',true,10),
-    (institution,'work_type','OVERTIME','Heures supplémentaires',true,20),
-    (institution,'bonus_type','RESPONSIBILITY','Responsabilité',true,10),
-    (institution,'bonus_type','TRANSPORT','Transport',true,20),
-    (institution,'deduction_type','ABSENCE','Absence non rémunérée',true,10),
-    (institution,'advance_type','SALARY','Avance sur salaire',true,10),
-    (institution,'advance_type','EMERGENCY','Avance exceptionnelle',true,20),
-    (institution,'leave_type','ANNUAL','Congé annuel',true,10),
-    (institution,'leave_type','SICK','Congé maladie',true,20),
-    (institution,'leave_type','UNPAID','Congé sans solde',true,30),
-    (institution,'sanction_type','WARNING','Avertissement',true,10),
-    (institution,'sanction_type','SUSPENSION','Suspension',true,20)
+    institution_id, catalog_id, category, code, default_label, is_system, display_order
+  )
+  select institution,id,category,code,default_label,true,display_order
+  from public.personnel_catalog
+  where is_active
   on conflict (institution_id, category, code) do nothing;
 
   select id into teacher_function from public.personnel_catalog_items where institution_id=institution and category='function' and upper(code)='TEACHER' limit 1;

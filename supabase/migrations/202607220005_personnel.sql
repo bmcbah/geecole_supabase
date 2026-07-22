@@ -12,13 +12,115 @@ create type public.contract_status as enum ('draft', 'active', 'ended', 'termina
 create type public.work_entry_status as enum ('planned', 'completed', 'validated', 'rejected', 'paid');
 create type public.payroll_status as enum ('draft', 'calculated', 'validated', 'partially_paid', 'paid', 'closed', 'cancelled');
 
+create table public.personnel_catalog (
+  id uuid primary key default extensions.gen_random_uuid(),
+  category text not null check (category in ('function','contract_type','work_type','bonus_type','deduction_type','advance_type','leave_type','sanction_type','document_type')),
+  code text not null,
+  default_label text not null check (char_length(trim(default_label)) between 2 and 120),
+  description text,
+  display_order integer not null default 0 check (display_order >= 0),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (category,code)
+);
+
+insert into public.personnel_catalog(category,code,default_label,description,display_order) values
+  ('function','TEACHER','Enseignant(e)','Personnel enseignant',10),
+  ('function','HEAD_TEACHER','Enseignant(e) principal(e)','Responsable pédagogique principal d’une classe',15),
+  ('function','DIRECTOR','Directeur / Directrice','Direction d’un établissement primaire ou polyvalent',20),
+  ('function','PRINCIPAL','Principal(e)','Direction d’un collège',30),
+  ('function','PROVISOR','Proviseur','Direction d’un lycée',40),
+  ('function','CENSOR','Censeur','Responsabilité pédagogique du secondaire',50),
+  ('function','STUDIES_DIRECTOR','Directeur des études','Pilotage des études et programmes',60),
+  ('function','HR_MANAGER','Responsable du personnel','Gestion administrative du personnel',65),
+  ('function','ACCOUNTANT','Comptable','Comptabilité de l’établissement',70),
+  ('function','SECRETARY','Secrétaire','Secrétariat administratif',75),
+  ('function','CASHIER','Caissier / Caissière','Encaissements et tenue de caisse',80),
+  ('function','SUPERVISOR','Surveillant(e)','Surveillance et vie scolaire',90),
+  ('function','LIBRARIAN','Bibliothécaire','Gestion de la bibliothèque',100),
+  ('function','NURSE','Infirmier / Infirmière scolaire','Santé scolaire',105),
+  ('function','CARETAKER','Gardien(ne)','Gardiennage de l’établissement',110),
+  ('function','DRIVER','Chauffeur','Transport de l’établissement',115),
+  ('function','CLEANER','Agent d’entretien','Entretien et propreté',120),
+  ('function','COOK','Cuisinier / Cuisinière','Restauration scolaire',125),
+  ('function','MAINTENANCE','Agent de maintenance','Maintenance des locaux et équipements',130),
+  ('contract_type','PERMANENT_PUBLIC','Titulaire du public','Personnel titulaire affecté dans un établissement public',10),
+  ('contract_type','CDI','Contrat à durée indéterminée','Contrat salarié sans date de fin prévue',20),
+  ('contract_type','CDD','Contrat à durée déterminée','Contrat salarié avec une date de fin',30),
+  ('contract_type','TEMPORARY','Contrat temporaire','Renfort temporaire',40),
+  ('contract_type','VACATION','Vacation / Enseignement à l’heure','Rémunération à l’heure ou à la séance',50),
+  ('contract_type','INTERNSHIP','Stage','Convention ou contrat de stage',60),
+  ('contract_type','SERVICE','Prestation de service','Prestation indépendante',70),
+  ('contract_type','VOLUNTEER','Bénévolat','Activité sans rémunération contractuelle',80),
+  ('work_type','TEACHING','Cours dispensé','Heure ou séance d’enseignement',10),
+  ('work_type','REMEDIAL','Cours de rattrapage','Séance de remédiation ou rattrapage',20),
+  ('work_type','EXAM_SUPERVISION','Surveillance d’examen','Surveillance d’une épreuve',30),
+  ('work_type','CORRECTION','Correction de copies','Correction de devoirs ou compositions',40),
+  ('work_type','EXAM_MARKING','Correction d’examen','Correction d’un examen national ou blanc',45),
+  ('work_type','MEETING','Réunion pédagogique','Réunion liée aux activités pédagogiques',50),
+  ('work_type','TRAINING','Formation','Participation à une formation',55),
+  ('work_type','ADMINISTRATIVE','Activité administrative','Travail administratif ponctuel',60),
+  ('work_type','ON_CALL','Permanence','Permanence planifiée',65),
+  ('work_type','OVERTIME','Heures supplémentaires','Temps de travail au-delà du service prévu',70),
+  ('bonus_type','RESPONSIBILITY','Prime de responsabilité','Prime liée à une fonction ou responsabilité',10),
+  ('bonus_type','SENIORITY','Prime d’ancienneté','Prime liée à l’ancienneté',20),
+  ('bonus_type','TRANSPORT','Indemnité de transport','Participation aux frais de déplacement',30),
+  ('bonus_type','EXAM','Prime d’examen et correction','Prime liée aux examens',35),
+  ('bonus_type','HOUSING','Indemnité de logement','Participation aux frais de logement',40),
+  ('bonus_type','ATTENDANCE','Prime d’assiduité','Prime liée à l’assiduité',45),
+  ('bonus_type','PERFORMANCE','Prime exceptionnelle','Prime ponctuelle de performance',50),
+  ('bonus_type','OTHER','Autre prime','Extension locale pour une autre prime',900),
+  ('deduction_type','ABSENCE','Absence non rémunérée','Retenue liée à une absence',10),
+  ('deduction_type','ADVANCE','Remboursement d’avance','Retenue de remboursement d’une avance',20),
+  ('deduction_type','LATE','Retard','Retenue liée à des retards',30),
+  ('deduction_type','DISCIPLINARY','Retenue disciplinaire','Retenue résultant d’une décision disciplinaire',40),
+  ('deduction_type','DAMAGE','Dommage ou perte','Retenue autorisée liée à un dommage ou une perte',50),
+  ('deduction_type','OTHER','Autre retenue','Extension locale pour une autre retenue',900),
+  ('advance_type','SALARY','Avance sur salaire','Avance ordinaire sur la rémunération',10),
+  ('advance_type','EMERGENCY','Avance exceptionnelle','Avance motivée par une situation exceptionnelle',20),
+  ('advance_type','SCHOOL_START','Avance de rentrée','Avance liée aux dépenses de rentrée',30),
+  ('advance_type','MEDICAL','Avance médicale','Avance liée à une dépense de santé',40),
+  ('leave_type','ANNUAL','Congé annuel','Congé annuel planifié',10),
+  ('leave_type','SICK','Congé maladie','Absence justifiée pour maladie',20),
+  ('leave_type','MATERNITY','Congé maternité','Congé lié à la maternité',30),
+  ('leave_type','PATERNITY','Congé paternité','Congé lié à la naissance d’un enfant',40),
+  ('leave_type','FAMILY','Événement familial','Congé pour événement familial',50),
+  ('leave_type','BEREAVEMENT','Décès / Deuil','Congé pour décès ou deuil',60),
+  ('leave_type','UNPAID','Congé sans solde','Congé sans maintien de rémunération',70),
+  ('leave_type','TRAINING','Formation','Absence autorisée pour formation',80),
+  ('leave_type','AUTHORIZED_ABSENCE','Absence autorisée','Absence ponctuelle autorisée',90),
+  ('leave_type','UNJUSTIFIED_ABSENCE','Absence non justifiée','Absence enregistrée sans justification acceptée',100),
+  ('sanction_type','VERBAL_WARNING','Rappel verbal consigné','Rappel formalisé dans le dossier du salarié',5),
+  ('sanction_type','WARNING','Avertissement','Avertissement écrit',10),
+  ('sanction_type','REPRIMAND','Blâme','Blâme écrit',20),
+  ('sanction_type','SUSPENSION','Suspension','Suspension temporaire selon décision autorisée',30),
+  ('sanction_type','DISMISSAL','Rupture disciplinaire','Rupture du contrat pour motif disciplinaire',40),
+  ('document_type','IDENTITY_CARD','Pièce d’identité','Copie d’une pièce d’identité valide',10),
+  ('document_type','CONTRACT','Contrat signé','Contrat ou avenant signé',20),
+  ('document_type','DIPLOMA','Diplôme ou attestation','Diplôme, certificat ou attestation professionnelle',30),
+  ('document_type','PHOTO','Photo d’identité','Photo récente du salarié',40),
+  ('document_type','CRIMINAL_RECORD','Extrait de casier judiciaire','Extrait demandé lorsque le poste le justifie',50),
+  ('document_type','CV','Curriculum vitæ','Curriculum vitæ du salarié',60),
+  ('document_type','WORK_CERTIFICATE','Certificat de travail','Certificat produit ou reçu dans le parcours professionnel',70),
+  ('document_type','MEDICAL','Certificat médical','Document médical administratif',80),
+  ('document_type','PAYMENT_DETAILS','Coordonnées de paiement','Informations nécessaires au paiement de la rémunération',90),
+  ('document_type','OTHER','Autre document','Extension locale pour un autre document',900);
+
+alter table public.personnel_catalog enable row level security;
+create policy personnel_catalog_read on public.personnel_catalog for select to authenticated using(is_active);
+grant select on public.personnel_catalog to authenticated;
+revoke all on public.personnel_catalog from anon;
+
 create table public.personnel_catalog_items (
-  id uuid primary key default extensions.gen_random_uuid(), institution_id uuid references public.institutions(id) on delete cascade,
+  id uuid primary key default extensions.gen_random_uuid(), institution_id uuid not null references public.institutions(id) on delete cascade,
+  catalog_id uuid references public.personnel_catalog(id) on delete restrict,
   category text not null check (category in ('function','contract_type','work_type','bonus_type','deduction_type','advance_type','leave_type','sanction_type')),
   code text not null, default_label text not null, local_label text, is_system boolean not null default false,
   is_active boolean not null default true, display_order integer not null default 0, created_at timestamptz not null default now(),
   unique nulls not distinct (institution_id, category, code)
 );
+create unique index personnel_catalog_items_catalog_idx
+  on public.personnel_catalog_items(institution_id,catalog_id) where catalog_id is not null;
 
 create table public.employees (
   id uuid primary key default extensions.gen_random_uuid(), institution_id uuid not null references public.institutions(id) on delete cascade,
@@ -1107,3 +1209,22 @@ $$;
 comment on column public.employees.person_id is
   'Identité applicative stable utilisée par les affectations pédagogiques, même sans compte utilisateur.';
 
+create or replace function public.install_personnel_catalog(target_institution_id uuid)
+returns integer language plpgsql security definer set search_path='' as $$
+declare inserted_count integer;
+begin
+  if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
+    raise exception 'permission_denied';
+  end if;
+  insert into public.personnel_catalog_items(
+    institution_id,catalog_id,category,code,default_label,is_system,is_active,display_order
+  )
+  select target_institution_id,id,category,code,default_label,true,true,display_order
+  from public.personnel_catalog where is_active
+  on conflict(institution_id,category,code) do nothing;
+  get diagnostics inserted_count=row_count;
+  return inserted_count;
+end; $$;
+
+revoke all on function public.install_personnel_catalog(uuid) from public;
+grant execute on function public.install_personnel_catalog(uuid) to authenticated;

@@ -7,6 +7,7 @@ import { Toolbar } from "primereact/toolbar";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import {
   archiveFeeType,
+  installFeeTypeCatalog,
   listFeeTypes,
   saveFeeType,
   type FeeType,
@@ -60,12 +61,38 @@ export function FeeTypesSettingsPanel() {
       );
       setEditing(undefined);
       await load();
-      notify({ severity: "success", summary: "Catégorie de frais enregistrée" });
+      notify({
+        severity: "success",
+        summary: "Catégorie de frais enregistrée",
+      });
     } catch (error) {
       notify({
         severity: "error",
         summary: "Enregistrement impossible",
         detail: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const installCatalog = async () => {
+    setSaving(true);
+    try {
+      const installed = await installFeeTypeCatalog(institutionId);
+      await load();
+      notify({
+        severity: "success",
+        summary: "Catalogue GeEcole chargé",
+        detail:
+          installed > 0
+            ? `${installed} catégorie(s) ajoutée(s).`
+            : "Le catalogue est déjà à jour.",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Chargement du catalogue impossible",
       });
     } finally {
       setSaving(false);
@@ -79,31 +106,83 @@ export function FeeTypesSettingsPanel() {
           <PageHeader
             title="Catégories de frais"
             description="Définissez les frais réutilisables d’une année scolaire à l’autre."
-            meta={<Tag value={`${feeTypes.length} catégorie${feeTypes.length > 1 ? "s" : ""}`} severity="secondary" />}
+            meta={
+              <Tag
+                value={`${feeTypes.length} catégorie${feeTypes.length > 1 ? "s" : ""}`}
+                severity="secondary"
+              />
+            }
             headingAs="h2"
             compact
           />
         }
         toolbar={
           <Toolbar
-            start={<span className="text-xs text-slate-500">Ce référentiel appartient à l’établissement.</span>}
-            end={<Button label="Nouvelle catégorie" icon="pi pi-plus" size="small" onClick={() => setEditing(null)} />}
+            start={
+              <span className="text-xs text-slate-500">
+                Ce référentiel appartient à l’établissement.
+              </span>
+            }
+            end={
+              <div className="flex gap-2">
+                <Button
+                  label="Catalogue GeEcole"
+                  icon="pi pi-download"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  loading={saving}
+                  onClick={() => void installCatalog()}
+                />
+                <Button
+                  label="Nouvelle catégorie"
+                  icon="pi pi-plus"
+                  size="small"
+                  onClick={() => setEditing(null)}
+                />
+              </div>
+            }
             className="min-h-0 rounded-none border-0 bg-transparent p-0"
           />
         }
         dataTable={
-          <DataTable value={feeTypes} dataKey="id" size="small" stripedRows emptyMessage="Aucune catégorie de frais">
+          <DataTable
+            value={feeTypes}
+            dataKey="id"
+            size="small"
+            stripedRows
+            emptyMessage="Aucune catégorie de frais"
+          >
             <Column field="name" header="Catégorie" />
             <Column field="code" header="Code" />
-            <Column header="Statut" body={(row: FeeType) => <Tag value={row.is_active ? "Actif" : "Inactif"} severity={row.is_active ? "success" : "secondary"} />} />
+            <Column
+              header="Statut"
+              body={(row: FeeType) => (
+                <Tag
+                  value={row.is_active ? "Actif" : "Inactif"}
+                  severity={row.is_active ? "success" : "secondary"}
+                />
+              )}
+            />
             <Column
               header="Actions"
               headerClassName="text-right"
               bodyClassName="text-right"
               body={(row: FeeType) => (
                 <div className="flex justify-end gap-1">
-                  <Button icon="pi pi-pencil" text size="small" onClick={() => setEditing(row)} />
-                  <Button icon="pi pi-archive" text size="small" severity="danger" onClick={() => void archiveFeeType(row.id).then(load)} />
+                  <Button
+                    icon="pi pi-pencil"
+                    text
+                    size="small"
+                    onClick={() => setEditing(row)}
+                  />
+                  <Button
+                    icon="pi pi-archive"
+                    text
+                    size="small"
+                    severity="danger"
+                    onClick={() => void archiveFeeType(row.id).then(load)}
+                  />
                 </div>
               )}
             />
@@ -116,12 +195,24 @@ export function FeeTypesSettingsPanel() {
         visible={editing !== undefined}
         loading={saving}
         columns={2}
-        fields={[
-          { key: "name", label: "Libellé", required: true },
-          { key: "code", label: "Code", required: true },
-          { key: "description", label: "Description", type: "textarea", span: 2 },
-          { key: "is_active", label: "Catégorie active", type: "boolean", span: 2 },
-        ] as EntityField[]}
+        fields={
+          [
+            { key: "name", label: "Libellé", required: true },
+            { key: "code", label: "Code", required: true },
+            {
+              key: "description",
+              label: "Description",
+              type: "textarea",
+              span: 2,
+            },
+            {
+              key: "is_active",
+              label: "Catégorie active",
+              type: "boolean",
+              span: 2,
+            },
+          ] as EntityField[]
+        }
         initial={initial}
         onHide={() => setEditing(undefined)}
         onSubmit={submit}

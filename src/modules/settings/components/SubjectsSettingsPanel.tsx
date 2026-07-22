@@ -15,6 +15,7 @@ import {
 } from "../services/academic-structure.service";
 import {
   deleteSubject,
+  installSubjectCatalog,
   listAnnualSubjects,
   listSubjects,
   saveAnnualSubject,
@@ -55,12 +56,14 @@ export function SubjectsSettingsPanel() {
 
   const load = useCallback(async () => {
     if (!institutionId) return;
-    const [catalog, annualItems, annualLevels, yearPeriods] = await Promise.all([
-      listSubjects(institutionId),
-      year ? listAnnualSubjects(year.id) : Promise.resolve([]),
-      year ? listAnnualAcademicLevels(year.id) : Promise.resolve([]),
-      year ? listAcademicPeriods(year.id) : Promise.resolve([]),
-    ]);
+    const [catalog, annualItems, annualLevels, yearPeriods] = await Promise.all(
+      [
+        listSubjects(institutionId),
+        year ? listAnnualSubjects(year.id) : Promise.resolve([]),
+        year ? listAnnualAcademicLevels(year.id) : Promise.resolve([]),
+        year ? listAcademicPeriods(year.id) : Promise.resolve([]),
+      ],
+    );
     setSubjects(catalog);
     setAnnual(annualItems);
     setLevels(annualLevels);
@@ -170,7 +173,9 @@ export function SubjectsSettingsPanel() {
             coefficient: Number(values.coefficient),
             weekly_hours: Number(values.weekly_hours),
             applies_all_periods: Boolean(values.applies_all_periods),
-            period_ids: Array.isArray(values.period_ids) ? values.period_ids : [],
+            period_ids: Array.isArray(values.period_ids)
+              ? values.period_ids
+              : [],
           },
           dialog.item.id,
         );
@@ -199,6 +204,29 @@ export function SubjectsSettingsPanel() {
       });
     } catch {
       notify({ severity: "error", summary: "Affectation impossible" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const installCatalog = async () => {
+    setSaving(true);
+    try {
+      const installed = await installSubjectCatalog(institutionId);
+      await load();
+      notify({
+        severity: "success",
+        summary: "Catalogue GeEcole chargé",
+        detail:
+          Number(installed) > 0
+            ? `${installed} matière(s) ajoutée(s).`
+            : "Le catalogue est déjà à jour.",
+      });
+    } catch {
+      notify({
+        severity: "error",
+        summary: "Chargement du catalogue impossible",
+      });
     } finally {
       setSaving(false);
     }
@@ -368,6 +396,15 @@ export function SubjectsSettingsPanel() {
           </div>
           <div className="flex items-center gap-2">
             <TableSearch value={search} onChange={setSearch} />
+            <Button
+              label="Catalogue GeEcole"
+              icon="pi pi-download"
+              severity="secondary"
+              outlined
+              size="small"
+              loading={saving}
+              onClick={() => void installCatalog()}
+            />
             <Button
               label="Nouvelle matière"
               icon="pi pi-plus"

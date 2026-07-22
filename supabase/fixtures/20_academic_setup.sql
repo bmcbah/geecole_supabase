@@ -3,22 +3,23 @@ begin;
 
 insert into public.institutions (
   id, name, slug, phone, email, address, currency, timezone, locale, class_structure_mode
-) values (
-  '20000000-0000-0000-0000-000000000001', 'Complexe Scolaire GeeCole',
-  'complexe-scolaire-geecole', '+224 610 00 00 00', 'contact@geecole.local',
-  'Kipé, Conakry', 'GNF', 'Africa/Conakry', 'fr-GN', 'levels_and_classes'
-);
+) values
+  (
+    '20000000-0000-0000-0000-000000000001', 'Complexe Scolaire GeeCole',
+    'complexe-scolaire-geecole', '+224 610 00 00 00', 'contact@geecole.local',
+    'Kipé, Conakry', 'GNF', 'Africa/Conakry', 'fr-GN', 'levels_and_classes'
+  ),
+  (
+    '20000000-0000-0000-0000-000000000002', 'École Primaire Kankan',
+    'ecole-primaire-kankan', '+224 622 10 10 10', 'contact.kankan@geecole.local',
+    'Quartier Bordo, Kankan', 'GNF', 'Africa/Conakry', 'fr-GN', 'classes_as_levels'
+  );
 
 insert into public.memberships (id, institution_id, user_id, role, status) values
   ('21000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'owner', 'active'),
   ('21000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 'admin', 'active'),
-  ('21000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'secretary', 'active');
-
-insert into public.cycle_catalog (id, name, code, description, icon, sort_order, is_active) values
-  ('22000000-0000-0000-0000-000000000001', 'Préscolaire', 'PRESCOLAIRE', 'Préparation au primaire', 'pi-sparkles', 10, true),
-  ('22000000-0000-0000-0000-000000000002', 'Primaire', 'PRIMAIRE', 'Enseignement primaire', 'pi-pencil', 20, true),
-  ('22000000-0000-0000-0000-000000000003', 'Collège', 'COLLEGE', 'Premier cycle secondaire', 'pi-book', 30, true),
-  ('22000000-0000-0000-0000-000000000004', 'Lycée', 'LYCEE', 'Second cycle secondaire', 'pi-graduation-cap', 40, true);
+  ('21000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'secretary', 'active'),
+  ('21000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000004', 'owner', 'active');
 
 insert into public.academic_cycles (
   id, institution_id, name, code, sort_order, is_active, period_system, period_count,
@@ -30,10 +31,14 @@ insert into public.academic_cycles (
 
 insert into public.institution_cycles (
   id, institution_id, catalog_cycle_id, academic_cycle_id, sort_order, is_active
-) values
-  ('24000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000002', '23000000-0000-0000-0000-000000000001', 20, true),
-  ('24000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000003', '23000000-0000-0000-0000-000000000002', 30, true),
-  ('24000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000004', '23000000-0000-0000-0000-000000000003', 40, true);
+)
+select value.id, '20000000-0000-0000-0000-000000000001', catalog.id, value.academic_cycle_id, catalog.sort_order, true
+from (values
+  ('24000000-0000-0000-0000-000000000001'::uuid,'PRIMAIRE','23000000-0000-0000-0000-000000000001'::uuid),
+  ('24000000-0000-0000-0000-000000000002'::uuid,'COLLEGE','23000000-0000-0000-0000-000000000002'::uuid),
+  ('24000000-0000-0000-0000-000000000003'::uuid,'LYCEE','23000000-0000-0000-0000-000000000003'::uuid)
+) as value(id,cycle_code,academic_cycle_id)
+join public.cycle_catalog catalog on catalog.code=value.cycle_code;
 
 insert into public.academic_years (id, institution_id, name, starts_on, ends_on, status) values
   ('25000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '2024-2025', '2024-09-16', '2025-06-30', 'preparation'),
@@ -53,13 +58,17 @@ insert into public.academic_year_cycles (
   ('26000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '25000000-0000-0000-0000-000000000003', '23000000-0000-0000-0000-000000000003', 'Lycée', 'LYCEE', 40, 'semester', 2, true, 'selectable', 20, 10, true, true);
 
 insert into public.grade_levels (
-  id, institution_id, cycle_id, name, code, sort_order, is_active, capacity, repeat_allowed
-) values
-  ('27000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000001', '5e année', 'P5', 50, true, 35, true),
-  ('27000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000001', '6e année', 'P6', 60, true, 35, true),
-  ('27000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000002', '7e année', 'C7', 70, true, 40, true),
-  ('27000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000002', '8e année', 'C8', 80, true, 40, true),
-  ('27000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000003', '11e année', 'L11', 110, true, 45, true);
+  id, institution_id, cycle_id, catalog_id, name, code, sort_order, is_active, capacity, repeat_allowed
+)
+select value.id,'20000000-0000-0000-0000-000000000001',value.cycle_id,catalog.id,catalog.name,catalog.code,catalog.sort_order,true,value.capacity,true
+from (values
+  ('27000000-0000-0000-0000-000000000001'::uuid,'23000000-0000-0000-0000-000000000001'::uuid,'PRIM_05',35),
+  ('27000000-0000-0000-0000-000000000002'::uuid,'23000000-0000-0000-0000-000000000001'::uuid,'PRIM_06',35),
+  ('27000000-0000-0000-0000-000000000003'::uuid,'23000000-0000-0000-0000-000000000002'::uuid,'COLL_07',40),
+  ('27000000-0000-0000-0000-000000000004'::uuid,'23000000-0000-0000-0000-000000000002'::uuid,'COLL_08',40),
+  ('27000000-0000-0000-0000-000000000005'::uuid,'23000000-0000-0000-0000-000000000003'::uuid,'LYC_11',45)
+) as value(id,cycle_id,catalog_code,capacity)
+join public.grade_level_catalog catalog on catalog.code=value.catalog_code;
 
 update public.grade_levels set next_level_id = '27000000-0000-0000-0000-000000000002' where id = '27000000-0000-0000-0000-000000000001';
 update public.grade_levels set next_level_id = '27000000-0000-0000-0000-000000000003' where id = '27000000-0000-0000-0000-000000000002';

@@ -589,9 +589,44 @@ create table public.class_assignments (
 );
 create unique index class_assignments_one_active on public.class_assignments(enrollment_id) where ends_on is null;
 
+create table public.student_document_type_catalog (
+  id uuid primary key default extensions.gen_random_uuid(),
+  code text not null unique check (code ~ '^[A-Z0-9_-]{2,40}$'),
+  name text not null check (char_length(trim(name)) between 2 and 120),
+  description text,
+  default_required_for_pre_registration boolean not null default false,
+  default_required_for_confirmation boolean not null default false,
+  expires boolean not null default false,
+  sort_order smallint not null default 0 check (sort_order >= 0),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+insert into public.student_document_type_catalog(
+  code,name,description,default_required_for_pre_registration,default_required_for_confirmation,expires,sort_order
+) values
+  ('BIRTH_CERTIFICATE','Extrait de naissance','Copie lisible de l’extrait ou acte de naissance',true,true,false,10),
+  ('IDENTITY_PHOTO','Photo d’identité','Photo récente de l’élève',false,true,false,20),
+  ('PARENT_IDENTITY','Pièce d’identité du parent','Pièce d’identité d’au moins un parent ou tuteur',false,true,true,30),
+  ('PREVIOUS_REPORT','Dernier bulletin scolaire','Dernier bulletin disponible pour une inscription avec antécédent scolaire',false,false,false,40),
+  ('TRANSFER_CERTIFICATE','Certificat de radiation ou transfert','Document de sortie de l’établissement précédent lorsque requis',false,false,false,50),
+  ('SCHOOL_CERTIFICATE','Certificat de scolarité antérieur','Justificatif de la dernière scolarisation',false,false,false,60),
+  ('MEDICAL_CERTIFICATE','Certificat médical','Certificat médical demandé par l’établissement',false,false,true,70),
+  ('VACCINATION_RECORD','Carnet de vaccination','Justificatif de vaccination lorsque requis',false,false,true,80),
+  ('RESIDENCE_PROOF','Justificatif de résidence','Justificatif de domicile ou de résidence',false,false,true,90),
+  ('EXAM_DOCUMENT','Pièce pour examen national','Pièce administrative nécessaire à l’inscription au CEE, BEPC ou Baccalauréat',false,false,true,100),
+  ('OTHER','Autre document','Extension locale pour une pièce non couverte par le catalogue',false,false,false,900);
+
+alter table public.student_document_type_catalog enable row level security;
+create policy student_document_type_catalog_read on public.student_document_type_catalog
+  for select to authenticated using(is_active);
+grant select on public.student_document_type_catalog to authenticated;
+revoke all on public.student_document_type_catalog from anon;
+
 create table public.document_requirements (
   id uuid primary key default extensions.gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,
+  catalog_id uuid references public.student_document_type_catalog(id) on delete restrict,
   name text not null,
   code text not null,
   required_for_pre_registration boolean not null default false,
@@ -600,7 +635,8 @@ create table public.document_requirements (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (institution_id, code)
+  unique (institution_id, code),
+  unique (institution_id, catalog_id)
 );
 create table public.student_documents (
   id uuid primary key default extensions.gen_random_uuid(),
@@ -656,13 +692,39 @@ create policy student_documents_manage on public.student_documents for all to au
 grant select,insert,update on public.school_classes,public.class_assignments,public.document_requirements,public.student_documents to authenticated;
 revoke all on public.school_classes,public.class_assignments,public.document_requirements,public.student_documents from anon;
 
-insert into public.document_requirements(institution_id,name,code,required_for_confirmation)
-select id,'Extrait de naissance','BIRTH_CERTIFICATE',true from public.institutions on conflict do nothing;
+insert into public.document_requirements(institution_id,catalog_id,name,code,required_for_pre_registration,required_for_confirmation,expires)
+select institution.id,catalog.id,catalog.name,catalog.code,catalog.default_required_for_pre_registration,catalog.default_required_for_confirmation,catalog.expires
+from public.institutions institution
+join public.student_document_type_catalog catalog on catalog.code='BIRTH_CERTIFICATE'
+on conflict do nothing;
 create or replace function public.create_default_document_requirement() returns trigger language plpgsql security definer set search_path='' as $$ begin
-  insert into public.document_requirements(institution_id,name,code,required_for_confirmation) values(new.id,'Extrait de naissance','BIRTH_CERTIFICATE',true) on conflict do nothing;
+  insert into public.document_requirements(institution_id,catalog_id,name,code,required_for_pre_registration,required_for_confirmation,expires)
+  select new.id,id,name,code,default_required_for_pre_registration,default_required_for_confirmation,expires
+  from public.student_document_type_catalog where code='BIRTH_CERTIFICATE'
+  on conflict do nothing;
   return new;
 end; $$;
 create trigger institutions_create_default_document after insert on public.institutions for each row execute function public.create_default_document_requirement();
+
+create or replace function public.install_student_document_catalog(target_institution_id uuid)
+returns integer language plpgsql security definer set search_path='' as $$
+declare inserted_count integer;
+begin
+  if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
+    raise exception 'permission_denied';
+  end if;
+  insert into public.document_requirements(
+    institution_id,catalog_id,name,code,required_for_pre_registration,required_for_confirmation,expires,is_active
+  )
+  select target_institution_id,id,name,code,default_required_for_pre_registration,default_required_for_confirmation,expires,true
+  from public.student_document_type_catalog where is_active
+  on conflict(institution_id,code) do nothing;
+  get diagnostics inserted_count=row_count;
+  return inserted_count;
+end; $$;
+
+revoke all on function public.install_student_document_catalog(uuid) from public;
+grant execute on function public.install_student_document_catalog(uuid) to authenticated;
 
 
 -- -----------------------------------------------------------------------------
@@ -889,4 +951,3 @@ $$;
 
 revoke all on function public.set_institution_cycle(uuid,uuid,boolean,uuid) from public;
 grant execute on function public.set_institution_cycle(uuid,uuid,boolean,uuid) to authenticated;
-

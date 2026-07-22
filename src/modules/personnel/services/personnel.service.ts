@@ -717,6 +717,14 @@ export async function listPersonnelCatalog(
   fail(error);
   return (data ?? []) as CatalogItem[];
 }
+export async function installPersonnelCatalog(institutionId: string) {
+  const { data, error } = await supabase.rpc(
+    "install_personnel_catalog" as never,
+    { target_institution_id: institutionId } as never,
+  );
+  fail(error);
+  return Number(data ?? 0);
+}
 export async function updatePersonnelCatalogItem(
   id: string,
   changes: Pick<CatalogItem, "is_active" | "local_label">,

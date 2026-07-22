@@ -8,9 +8,40 @@
 
 create type public.fee_scope as enum ('institution', 'cycle', 'level');
 
+create table public.fee_type_catalog (
+  id uuid primary key default extensions.gen_random_uuid(),
+  code text not null unique check (code ~ '^[A-Z0-9_-]{2,30}$'),
+  name text not null check (char_length(trim(name)) between 2 and 100),
+  description text,
+  sort_order smallint not null default 0 check (sort_order >= 0),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+insert into public.fee_type_catalog(code,name,description,sort_order) values
+  ('INSCRIPTION','Frais d’inscription','Frais dus lors de la première inscription dans l’établissement',10),
+  ('REINSCRIPTION','Frais de réinscription','Frais dus lors du renouvellement annuel de l’inscription',20),
+  ('SCOLARITE','Frais de scolarité','Frais principaux d’enseignement pour l’année scolaire',30),
+  ('EXAMEN','Frais d’examen','Participation aux examens internes ou blancs',40),
+  ('DOCUMENT','Documents administratifs','Cartes, attestations, relevés ou autres documents payants',50),
+  ('UNIFORME','Uniforme scolaire','Uniformes et tenues scolaires',60),
+  ('FOURNITURES','Fournitures scolaires','Manuels, cahiers et autres fournitures',70),
+  ('TRANSPORT','Transport scolaire','Service de transport proposé par l’établissement',80),
+  ('CANTINE','Cantine scolaire','Restauration ou collation scolaire',90),
+  ('INTERNAT','Internat','Hébergement et services d’internat',100),
+  ('ACTIVITE','Activités scolaires','Sorties, clubs, sport et activités parascolaires',110),
+  ('ASSURANCE','Assurance scolaire','Couverture d’assurance liée à la scolarité',120),
+  ('AUTRE','Autre frais','Extension locale pour un frais non couvert par le catalogue',900);
+
+alter table public.fee_type_catalog enable row level security;
+create policy fee_type_catalog_read on public.fee_type_catalog for select to authenticated using(is_active);
+grant select on public.fee_type_catalog to authenticated;
+revoke all on public.fee_type_catalog from anon;
+
 create table public.fee_types (
   id uuid primary key default gen_random_uuid(),
   institution_id uuid not null references public.institutions(id) on delete cascade,
+  catalog_id uuid references public.fee_type_catalog(id) on delete restrict,
   name text not null,
   code text not null,
   description text,
@@ -20,7 +51,8 @@ create table public.fee_types (
   updated_at timestamptz not null default now(),
   constraint fee_types_name_not_blank check (length(trim(name)) > 0),
   constraint fee_types_code_not_blank check (length(trim(code)) > 0),
-  constraint fee_types_institution_code_key unique (institution_id, code)
+  constraint fee_types_institution_code_key unique (institution_id, code),
+  constraint fee_types_institution_catalog_key unique (institution_id, catalog_id)
 );
 
 create table public.fee_schedules (
@@ -249,6 +281,24 @@ revoke all on table public.fee_types from anon;
 revoke all on table public.fee_schedules from anon;
 revoke all on table public.fee_schedule_items from anon;
 revoke execute on function public.duplicate_fee_schedule(uuid, uuid, uuid) from anon;
+
+create or replace function public.install_fee_type_catalog(target_institution_id uuid)
+returns integer language plpgsql security definer set search_path='' as $$
+declare inserted_count integer;
+begin
+  if not public.has_institution_role(target_institution_id,array['owner','admin','finance']::public.app_role[]) then
+    raise exception 'permission_denied';
+  end if;
+  insert into public.fee_types(institution_id,catalog_id,name,code,description,is_active)
+  select target_institution_id,id,name,code,description,true
+  from public.fee_type_catalog where is_active
+  on conflict(institution_id,code) do nothing;
+  get diagnostics inserted_count=row_count;
+  return inserted_count;
+end; $$;
+
+revoke all on function public.install_fee_type_catalog(uuid) from public;
+grant execute on function public.install_fee_type_catalog(uuid) to authenticated;
 
 
 -- -----------------------------------------------------------------------------

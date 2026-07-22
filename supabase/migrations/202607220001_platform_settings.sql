@@ -1386,3 +1386,160 @@ begin
 end; $$;
 revoke all on function public.set_institution_cycle(uuid,uuid,boolean,uuid) from public;
 grant execute on function public.set_institution_cycle(uuid,uuid,boolean,uuid) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- Catalogue GeEcole immuable : niveaux et matières
+-- -----------------------------------------------------------------------------
+
+create table public.grade_level_catalog (
+  id uuid primary key default extensions.gen_random_uuid(),
+  cycle_catalog_id uuid not null references public.cycle_catalog(id) on delete restrict,
+  code text not null unique check (code ~ '^[A-Z0-9_-]{2,30}$'),
+  name text not null check (char_length(trim(name)) between 2 and 80),
+  short_name text not null check (char_length(trim(short_name)) between 1 and 30),
+  description text,
+  sort_order smallint not null default 0 check (sort_order >= 0),
+  is_exam_level boolean not null default false,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (cycle_catalog_id, sort_order)
+);
+
+insert into public.grade_level_catalog (
+  cycle_catalog_id, code, name, short_name, description, sort_order, is_exam_level
+)
+select cycle.id, value.code, value.name, value.short_name, value.description, value.sort_order, value.is_exam_level
+from public.cycle_catalog cycle
+join (values
+  ('PRESCOLAIRE','PRESCO_PS','Petite section','PS','Première année du préscolaire',10,false),
+  ('PRESCOLAIRE','PRESCO_MS','Moyenne section','MS','Deuxième année du préscolaire',20,false),
+  ('PRESCOLAIRE','PRESCO_GS','Grande section','GS','Dernière année du préscolaire',30,false),
+  ('PRIMAIRE','PRIM_01','1ère année','CP1','Cours préparatoire 1',10,false),
+  ('PRIMAIRE','PRIM_02','2ème année','CP2','Cours préparatoire 2',20,false),
+  ('PRIMAIRE','PRIM_03','3ème année','CE1','Cours élémentaire 1',30,false),
+  ('PRIMAIRE','PRIM_04','4ème année','CE2','Cours élémentaire 2',40,false),
+  ('PRIMAIRE','PRIM_05','5ème année','CM1','Cours moyen 1',50,false),
+  ('PRIMAIRE','PRIM_06','6ème année','CM2','Cours moyen 2 — niveau du CEE',60,true),
+  ('COLLEGE','COLL_07','7ème année','7ème','Première année du collège',10,false),
+  ('COLLEGE','COLL_08','8ème année','8ème','Deuxième année du collège',20,false),
+  ('COLLEGE','COLL_09','9ème année','9ème','Troisième année du collège',30,false),
+  ('COLLEGE','COLL_10','10ème année','10ème','Dernière année du collège — niveau du BEPC',40,true),
+  ('LYCEE','LYC_11','11ème année','11ème','Première année du lycée',10,false),
+  ('LYCEE','LYC_12','12ème année','12ème','Deuxième année du lycée',20,false),
+  ('LYCEE','LYC_TLE','Terminale','Tle','Dernière année du lycée — niveau du Baccalauréat unique',30,true)
+) as value(cycle_code, code, name, short_name, description, sort_order, is_exam_level)
+  on value.cycle_code = cycle.code;
+
+create table public.subject_catalog (
+  id uuid primary key default extensions.gen_random_uuid(),
+  code text not null unique check (code ~ '^[A-Z0-9_-]{2,30}$'),
+  name text not null check (char_length(trim(name)) between 2 and 100),
+  category text not null check (category in ('language','science','humanities','arts','physical','technology','citizenship','preschool','other')),
+  description text,
+  sort_order smallint not null default 0 check (sort_order >= 0),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+insert into public.subject_catalog(code,name,category,description,sort_order) values
+  ('LANGAGE','Langage et expression','preschool','Communication orale et découverte du langage',10),
+  ('PRE_MATHS','Prémathématiques','preschool','Premières notions de nombre, forme et espace',20),
+  ('GRAPHISME','Graphisme et préécriture','preschool','Préparation au geste graphique et à l’écriture',30),
+  ('EVEIL','Éveil et découverte du monde','preschool','Observation de l’environnement et activités d’éveil',40),
+  ('MOTRICITE','Motricité','physical','Développement moteur et coordination',50),
+  ('FRANCAIS','Français','language','Langue française, lecture et expression',100),
+  ('MATHEMATIQUES','Mathématiques','science','Nombres, calcul, géométrie et raisonnement',110),
+  ('ANGLAIS','Anglais','language','Langue anglaise',120),
+  ('ARABE','Arabe','language','Langue arabe proposée selon le projet de l’établissement',130),
+  ('SCIENCES_OBS','Sciences d’observation','science','Découverte scientifique au primaire',140),
+  ('BIOLOGIE','Biologie','science','Sciences de la vie',150),
+  ('PHYSIQUE','Physique','science','Sciences physiques',160),
+  ('CHIMIE','Chimie','science','Sciences chimiques',170),
+  ('HISTOIRE','Histoire','humanities','Histoire de la Guinée, de l’Afrique et du monde',180),
+  ('GEOGRAPHIE','Géographie','humanities','Géographie de la Guinée, de l’Afrique et du monde',190),
+  ('ECM','Éducation civique et morale','citizenship','Citoyenneté, civisme et vie collective',200),
+  ('PHILOSOPHIE','Philosophie','humanities','Philosophie et réflexion critique',210),
+  ('ECONOMIE','Économie','humanities','Notions et sciences économiques',220),
+  ('SOCIOLOGIE','Sociologie','humanities','Notions de sociologie et étude de la société',230),
+  ('INFORMATIQUE','Informatique','technology','Culture numérique et informatique',240),
+  ('TECHNOLOGIE','Technologie','technology','Initiation technologique',250),
+  ('EPS','Éducation physique et sportive','physical','Activités physiques et sportives',260),
+  ('ARTS','Éducation artistique','arts','Dessin, musique et expression artistique',270),
+  ('TECH_EXPRESSION','Techniques d’expression','language','Expression écrite et orale',280);
+
+create table public.subject_catalog_cycles (
+  subject_catalog_id uuid not null references public.subject_catalog(id) on delete cascade,
+  cycle_catalog_id uuid not null references public.cycle_catalog(id) on delete cascade,
+  is_recommended boolean not null default true,
+  primary key (subject_catalog_id, cycle_catalog_id)
+);
+
+insert into public.subject_catalog_cycles(subject_catalog_id,cycle_catalog_id)
+select subject.id, cycle.id
+from public.subject_catalog subject
+cross join public.cycle_catalog cycle
+where
+  (cycle.code = 'PRESCOLAIRE' and subject.code in ('LANGAGE','PRE_MATHS','GRAPHISME','EVEIL','MOTRICITE','ARTS'))
+  or (cycle.code = 'PRIMAIRE' and subject.code in ('FRANCAIS','MATHEMATIQUES','SCIENCES_OBS','HISTOIRE','GEOGRAPHIE','ECM','EPS','ARTS','ANGLAIS','ARABE','INFORMATIQUE'))
+  or (cycle.code = 'COLLEGE' and subject.code in ('FRANCAIS','MATHEMATIQUES','ANGLAIS','ARABE','BIOLOGIE','PHYSIQUE','CHIMIE','HISTOIRE','GEOGRAPHIE','ECM','INFORMATIQUE','TECHNOLOGIE','EPS','ARTS','TECH_EXPRESSION'))
+  or (cycle.code = 'LYCEE' and subject.code in ('FRANCAIS','MATHEMATIQUES','ANGLAIS','ARABE','BIOLOGIE','PHYSIQUE','CHIMIE','HISTOIRE','GEOGRAPHIE','ECM','PHILOSOPHIE','ECONOMIE','SOCIOLOGIE','INFORMATIQUE','EPS','TECH_EXPRESSION'));
+
+alter table public.grade_levels
+  add column catalog_id uuid references public.grade_level_catalog(id) on delete restrict;
+create unique index grade_levels_institution_catalog_idx
+  on public.grade_levels(institution_id,catalog_id) where catalog_id is not null;
+
+alter table public.subjects
+  add column catalog_id uuid references public.subject_catalog(id) on delete restrict;
+create unique index subjects_institution_catalog_idx
+  on public.subjects(institution_id,catalog_id) where catalog_id is not null;
+
+alter table public.grade_level_catalog enable row level security;
+alter table public.subject_catalog enable row level security;
+alter table public.subject_catalog_cycles enable row level security;
+create policy grade_level_catalog_read on public.grade_level_catalog for select to authenticated using(is_active);
+create policy subject_catalog_read on public.subject_catalog for select to authenticated using(is_active);
+create policy subject_catalog_cycles_read on public.subject_catalog_cycles for select to authenticated
+  using(exists(select 1 from public.subject_catalog subject where subject.id=subject_catalog_id and subject.is_active));
+grant select on public.grade_level_catalog,public.subject_catalog,public.subject_catalog_cycles to authenticated;
+revoke all on public.grade_level_catalog,public.subject_catalog,public.subject_catalog_cycles from anon;
+
+create or replace function public.install_grade_level_catalog(target_institution_id uuid)
+returns integer language plpgsql security definer set search_path='' as $$
+declare inserted_count integer;
+begin
+  if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
+    raise exception 'permission_denied';
+  end if;
+  insert into public.grade_levels(institution_id,cycle_id,catalog_id,name,code,sort_order,is_active)
+  select target_institution_id,activation.academic_cycle_id,level.id,level.name,level.code,level.sort_order,true
+  from public.grade_level_catalog level
+  join public.institution_cycles activation
+    on activation.catalog_cycle_id=level.cycle_catalog_id
+   and activation.institution_id=target_institution_id
+   and activation.is_active
+   and activation.academic_cycle_id is not null
+  where level.is_active
+  on conflict(institution_id,code) do nothing;
+  get diagnostics inserted_count=row_count;
+  return inserted_count;
+end; $$;
+
+create or replace function public.install_subject_catalog(target_institution_id uuid)
+returns integer language plpgsql security definer set search_path='' as $$
+declare inserted_count integer;
+begin
+  if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
+    raise exception 'permission_denied';
+  end if;
+  insert into public.subjects(institution_id,catalog_id,name,code,is_active)
+  select target_institution_id,id,name,code,true from public.subject_catalog where is_active
+  on conflict(institution_id,code) do nothing;
+  get diagnostics inserted_count=row_count;
+  return inserted_count;
+end; $$;
+
+revoke all on function public.install_grade_level_catalog(uuid) from public;
+revoke all on function public.install_subject_catalog(uuid) from public;
+grant execute on function public.install_grade_level_catalog(uuid) to authenticated;
+grant execute on function public.install_subject_catalog(uuid) to authenticated;

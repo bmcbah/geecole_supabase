@@ -28,6 +28,14 @@ export async function deleteSubject(id: string) {
   if (error) throw error;
 }
 
+export async function installSubjectCatalog(institutionId: string) {
+  const { data, error } = await supabase.rpc("install_subject_catalog", {
+    target_institution_id: institutionId,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function listAnnualSubjects(yearId: string) {
   const { data, error } = await supabase
     .from("annual_subjects")
@@ -91,14 +99,14 @@ export async function listAssessmentTypes(yearId: string) {
   return data;
 }
 export const recommendedAssessmentTypes = [
-  { name: "Interrogation", code: "INTERRO", scale: 20 },
-  { name: "Devoir surveillé", code: "DS", scale: 20 },
-  { name: "Devoir à domicile", code: "DM", scale: 20 },
-  { name: "Composition", code: "COMPO", scale: 20 },
-  { name: "Examen blanc", code: "EXAM-BLANC", scale: 20 },
-  { name: "Évaluation orale", code: "ORAL", scale: 20 },
-  { name: "Travaux pratiques", code: "TP", scale: 20 },
-  { name: "Projet", code: "PROJET", scale: 20 },
+  { name: "Interrogation", code: "INTERRO" },
+  { name: "Devoir surveillé", code: "DS" },
+  { name: "Devoir à domicile", code: "DM" },
+  { name: "Composition", code: "COMPO" },
+  { name: "Examen blanc", code: "EXAM-BLANC" },
+  { name: "Évaluation orale", code: "ORAL" },
+  { name: "Travaux pratiques", code: "TP" },
+  { name: "Projet", code: "PROJET" },
 ] as const;
 export async function installRecommendedAssessmentTypes(
   institutionId: string,

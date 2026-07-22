@@ -5,6 +5,7 @@ export type FeeScope = "institution" | "cycle" | "level";
 export type FeeType = {
   id: string;
   institution_id: string;
+  catalog_id: string | null;
   name: string;
   code: string;
   description: string | null;
@@ -66,6 +67,14 @@ export async function archiveFeeType(id: string) {
     .update({ is_active: false, archived_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
+}
+
+export async function installFeeTypeCatalog(institutionId: string) {
+  const { data, error } = await db.rpc("install_fee_type_catalog", {
+    target_institution_id: institutionId,
+  });
+  if (error) throw error;
+  return data as number;
 }
 
 export async function ensureFeeSchedule(

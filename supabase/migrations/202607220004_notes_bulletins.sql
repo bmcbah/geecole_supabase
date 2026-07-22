@@ -593,6 +593,84 @@ revoke all on public.cycle_responsibility_types, public.cycle_responsibilities f
 -- Versioned, guided grading formulas. A formula applies to a cycle or a level,
 -- never to a period. Level assignments override cycle assignments.
 
+create table public.appreciation_template_catalog (
+  id uuid primary key default extensions.gen_random_uuid(),
+  code text not null unique check (code ~ '^[A-Z0-9_-]{2,40}$'),
+  label text not null check (char_length(trim(label)) between 2 and 500),
+  tone text not null check (tone in ('excellent','positive','neutral','warning','critical')),
+  description text,
+  sort_order smallint not null default 0 check (sort_order >= 0),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+insert into public.appreciation_template_catalog(code,label,tone,description,sort_order) values
+  ('FELICITATIONS','Excellent travail. Félicitations pour les résultats et l’investissement.','excellent','Appréciation très positive',10),
+  ('TRES_BON_TRAVAIL','Très bon travail, sérieux et régulier.','excellent','Très bons résultats',20),
+  ('BON_TRAVAIL','Bon travail dans l’ensemble. Continuez ainsi.','positive','Résultats satisfaisants',30),
+  ('EN_PROGRESSION','Des progrès encourageants sont observés. Poursuivez vos efforts.','positive','Progression notable',40),
+  ('ENSEMBLE_SATISFAISANT','Ensemble satisfaisant, avec encore quelques points à consolider.','positive','Résultats globalement satisfaisants',50),
+  ('PEUT_MIEUX_FAIRE','Des capacités réelles, mais un travail plus régulier est attendu.','neutral','Potentiel à mieux mobiliser',60),
+  ('EFFORTS_A_POURSUIVRE','Les efforts doivent être poursuivis et mieux organisés.','warning','Efforts présents mais insuffisants',70),
+  ('MANQUE_REGULARITE','Le manque de régularité pénalise les résultats.','warning','Travail irrégulier',80),
+  ('PARTICIPATION_A_RENFORCER','La participation en classe doit être renforcée.','warning','Participation insuffisante',90),
+  ('RESULTATS_INSUFFISANTS','Résultats insuffisants. Un travail soutenu et un accompagnement sont nécessaires.','critical','Résultats sous les attentes',100),
+  ('ABSENCES_PENALISANTES','Les absences ou retards nuisent aux apprentissages et doivent être corrigés.','critical','Assiduité à améliorer',110),
+  ('NON_EVALUE','Évaluation insuffisante pour formuler une appréciation complète.','neutral','Données d’évaluation insuffisantes',120);
+
+create table public.appreciation_templates (
+  id uuid primary key default extensions.gen_random_uuid(),
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  academic_year_id uuid references public.academic_years(id) on delete cascade,
+  catalog_id uuid references public.appreciation_template_catalog(id) on delete restrict,
+  code text not null,
+  label text not null check (char_length(trim(label)) between 2 and 500),
+  tone text not null check (tone in ('excellent','positive','neutral','warning','critical')),
+  is_active boolean not null default true,
+  sort_order smallint not null default 0 check (sort_order >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique nulls not distinct (institution_id,academic_year_id,code)
+);
+create unique index appreciation_templates_catalog_idx
+  on public.appreciation_templates(institution_id,academic_year_id,catalog_id)
+  nulls not distinct where catalog_id is not null;
+
+create trigger appreciation_templates_updated before update on public.appreciation_templates
+for each row execute function public.set_updated_at();
+
+alter table public.appreciation_template_catalog enable row level security;
+alter table public.appreciation_templates enable row level security;
+create policy appreciation_template_catalog_read on public.appreciation_template_catalog
+  for select to authenticated using(is_active);
+create policy appreciation_templates_read on public.appreciation_templates
+  for select to authenticated using(public.is_active_member(institution_id));
+create policy appreciation_templates_write on public.appreciation_templates
+  for all to authenticated
+  using(public.has_institution_role(institution_id,array['owner','admin']::public.app_role[]))
+  with check(public.has_institution_role(institution_id,array['owner','admin']::public.app_role[]));
+grant select on public.appreciation_template_catalog to authenticated;
+grant select,insert,update,delete on public.appreciation_templates to authenticated;
+revoke all on public.appreciation_template_catalog,public.appreciation_templates from anon;
+
+create or replace function public.install_appreciation_catalog(target_institution_id uuid)
+returns integer language plpgsql security definer set search_path='' as $$
+declare inserted_count integer;
+begin
+  if not public.has_institution_role(target_institution_id,array['owner','admin']::public.app_role[]) then
+    raise exception 'permission_denied';
+  end if;
+  insert into public.appreciation_templates(institution_id,catalog_id,code,label,tone,sort_order,is_active)
+  select target_institution_id,id,code,label,tone,sort_order,true
+  from public.appreciation_template_catalog where is_active
+  on conflict(institution_id,academic_year_id,code) do nothing;
+  get diagnostics inserted_count=row_count;
+  return inserted_count;
+end; $$;
+
+revoke all on function public.install_appreciation_catalog(uuid) from public;
+grant execute on function public.install_appreciation_catalog(uuid) to authenticated;
+
 create table public.assessment_type_catalog (
   id uuid primary key default extensions.gen_random_uuid(),
   code text not null unique,

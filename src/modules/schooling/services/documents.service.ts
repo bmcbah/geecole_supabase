@@ -21,6 +21,14 @@ export async function saveDocumentRequirement(
   if (error) throw error;
   return data;
 }
+export async function installStudentDocumentCatalog(institutionId: string) {
+  const { data, error } = await supabase.rpc(
+    "install_student_document_catalog",
+    { target_institution_id: institutionId },
+  );
+  if (error) throw error;
+  return data;
+}
 export async function listStudentDocuments(
   studentId: string,
   enrollmentId?: string,

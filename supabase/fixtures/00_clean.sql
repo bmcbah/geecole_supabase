@@ -12,7 +12,18 @@ begin
   select string_agg(format('%I.%I', schemaname, tablename), ', ' order by tablename)
     into tables_to_truncate
   from pg_tables
-  where schemaname = 'public';
+  where schemaname = 'public'
+    and tablename not in (
+      'cycle_catalog',
+      'grade_level_catalog',
+      'subject_catalog',
+      'subject_catalog_cycles',
+      'student_document_type_catalog',
+      'fee_type_catalog',
+      'assessment_type_catalog',
+      'appreciation_template_catalog',
+      'personnel_catalog'
+    );
 
   if tables_to_truncate is not null then
     execute 'truncate table ' || tables_to_truncate || ' restart identity cascade';

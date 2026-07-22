@@ -27,12 +27,20 @@ insert into public.person_roles (institution_id,person_id,role) values
  ('20000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000001','teacher'),
  ('20000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000002','teacher');
 
-insert into public.subjects (id,institution_id,name,code) values
- ('42000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Mathématiques','MATH'),
- ('42000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','Français','FR');
-insert into public.assessment_types (id,institution_id,academic_year_id,name,code) values
- ('43000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','Interrogation','INTERRO'),
- ('43000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','Devoir surveillé','DEVOIR');
+insert into public.subjects (id,institution_id,catalog_id,name,code)
+select value.id,'20000000-0000-0000-0000-000000000001',catalog.id,catalog.name,catalog.code
+from (values
+ ('42000000-0000-0000-0000-000000000001'::uuid,'MATHEMATIQUES'),
+ ('42000000-0000-0000-0000-000000000002'::uuid,'FRANCAIS')
+) as value(id,catalog_code)
+join public.subject_catalog catalog on catalog.code=value.catalog_code;
+insert into public.assessment_types (id,institution_id,academic_year_id,catalog_id,name,code)
+select value.id,'20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002',catalog.id,catalog.name,catalog.code
+from (values
+ ('43000000-0000-0000-0000-000000000001'::uuid,'INTERRO'),
+ ('43000000-0000-0000-0000-000000000002'::uuid,'DEVOIR')
+) as value(id,catalog_code)
+join public.assessment_type_catalog catalog on catalog.code=value.catalog_code;
 
 insert into public.pedagogical_assignments (id,institution_id,academic_year_id,class_id,subject_id,teacher_id,coefficient,all_periods) values
  ('44000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','42000000-0000-0000-0000-000000000001','41000000-0000-0000-0000-000000000001',3,true),
@@ -112,29 +120,6 @@ select '20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000
 insert into public.subject_appreciations (institution_id,academic_year_id,period_id,class_id,subject_id,student_id,appreciation,author_id)
 select '20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002',p.id,'30000000-0000-0000-0000-000000000002','42000000-0000-0000-0000-000000000002','31000000-0000-0000-0000-000000000007','Très bon trimestre, expression écrite précise.','41000000-0000-0000-0000-000000000002' from public.academic_periods p where p.academic_year_id='25000000-0000-0000-0000-000000000002' and p.cycle_id='23000000-0000-0000-0000-000000000002' and p.sequence=1;
 insert into public.pedagogical_settings (institution_id,academic_year_id,appreciations_required,ranking_displayed,coefficients_displayed,average_decimal_places,bulletin_title,bulletin_footer) values ('20000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000002',true,true,true,2,'Bulletin de résultats','Groupe scolaire GeeCole · Conakry');
-
--- Re-seed the global catalogue after 00_clean.sql truncates application data.
-insert into public.assessment_type_catalog(code,name,description,sort_order) values
-  ('INTERRO','Interrogation','Contrôle court écrit ou oral',10),
-  ('DEVOIR','Devoir','Travail évalué en classe',20),
-  ('DS','Devoir surveillé','Épreuve surveillée',30),
-  ('DM','Devoir à domicile','Travail réalisé hors classe',40),
-  ('EVALUATION','Évaluation','Évaluation pédagogique générique',50),
-  ('COMPO','Composition','Composition de fin de période',60),
-  ('EXAM','Examen','Examen interne',70),
-  ('EXAM-BLANC','Examen blanc','Préparation au DEF ou au Baccalauréat',80),
-  ('ORAL','Évaluation orale','Interrogation ou présentation orale',90),
-  ('TP','Travaux pratiques','Travail pratique évalué',100),
-  ('TD','Travaux dirigés','Exercices dirigés évalués',110),
-  ('PROJET','Projet','Projet individuel ou collectif',120),
-  ('EXPOSE','Exposé','Présentation préparée',130),
-  ('CONTINU','Contrôle continu','Résultat consolidé du contrôle continu',140),
-  ('RATTRAPAGE','Rattrapage','Évaluation de remplacement',150)
-on conflict (code) do update set
-  name=excluded.name,
-  description=excluded.description,
-  sort_order=excluded.sort_order,
-  is_active=true;
 
 -- Activate the full GeeCole assessment catalogue locally so every formula
 -- variable can be exercised from the Settings and Notes screens.
