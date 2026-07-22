@@ -22,6 +22,9 @@ export type FinancialAccount = {
   cycleName: string;
   paymentPlanName: string | null;
   generatedAt: string | null;
+  financialResponsibleId?: string | null;
+  financialResponsibleName?: string | null;
+  financialResponsiblePhone?: string | null;
 };
 
 export type FinancialInstallment = {
