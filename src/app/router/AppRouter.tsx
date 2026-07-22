@@ -64,8 +64,8 @@ export function AppRouter() {
             <Route path="/scolarite/eleves/:studentId" element={<StudentProfilePage />} />
             <Route path="/scolarite/eleves/:studentId/reinscription" element={<ReenrollmentPage />} />
             <Route path="/scolarite/reinscriptions" element={<BatchReenrollmentPage />} />
-            <Route path="/gestion-financiere" element={<Navigate to="/gestion-financiere/dossiers" replace />} />
-            <Route path="/gestion-financiere/travail" element={<Navigate to="/gestion-financiere/dossiers" replace />} />
+            <Route path="/gestion-financiere" element={<Navigate to="/gestion-financiere/pilotage" replace />} />
+            <Route path="/gestion-financiere/travail" element={<Navigate to="/gestion-financiere/pilotage" replace />} />
             <Route path="/gestion-financiere/familles" element={<Navigate to="/gestion-financiere/dossiers" replace />} />
             <Route path="/gestion-financiere/pilotage" element={<FinancialDashboardPage />} />
             <Route path="/gestion-financiere/echeances" element={<FinancialInstallmentsPage />} />
