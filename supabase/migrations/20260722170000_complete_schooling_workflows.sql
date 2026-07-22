@@ -128,4 +128,5 @@ using (public.has_institution_role(institution_id, array['owner','admin','secret
 with check (public.has_institution_role(institution_id, array['owner','admin','secretary']::public.app_role[]));
 
 grant select, insert, update on public.enrollment_status_history, public.student_attendance_records, public.schooling_document_requirements, public.enrollment_documents to authenticated;
+revoke all on function public.change_enrollment_status(uuid, public.enrollment_status, text) from public;
 grant execute on function public.change_enrollment_status(uuid, public.enrollment_status, text) to authenticated;
