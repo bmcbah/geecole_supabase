@@ -12,15 +12,16 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { PageHeader } from "../../../shared/components/layout/PageHeader";
+import { supabase } from "../../../shared/lib/supabase/client";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { NotesDataTableToolbar } from "../components/NotesDataTableToolbar";
 import {
   changeBulletinStatus,
   listBulletins,
-  listGenerationContext,
   type BulletinRow,
 } from "../services/bulletins.service";
 import { downloadBulletinsZip } from "../utils/bulletin-export";
+
 const labels: Record<BulletinRow["status"], string> = {
   generated: "Généré",
   pending_validation: "À valider",
@@ -29,6 +30,9 @@ const labels: Record<BulletinRow["status"], string> = {
   rejected: "Rejeté",
   replaced: "Remplacé",
 };
+
+type FilterOption = { id: string; name: string };
+
 export function BulletinsListPage() {
   const { pathname } = useLocation();
   const { institutionId, yearId, year } = useAcademicSession();
@@ -46,19 +50,20 @@ export function BulletinsListPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [advanced, setAdvanced] = useState(false);
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
-  const [periods, setPeriods] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<FilterOption[]>([]);
+  const [periods, setPeriods] = useState<FilterOption[]>([]);
   const [preview, setPreview] = useState<BulletinRow | null>(null);
   const [rejecting, setRejecting] = useState<BulletinRow | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
   const config =
     mode === "validation"
       ? {
           title: "Validation",
-          description:
-            "Contrôlez puis validez ou rejetez les bulletins générés.",
+          description: "Contrôlez puis validez ou rejetez les bulletins générés.",
         }
       : mode === "publication"
         ? {
@@ -74,30 +79,28 @@ export function BulletinsListPage() {
               title: "Bulletins",
               description: "Consultez les bulletins générés et leur état.",
             };
+
   const modeStatus = mode === "publication" ? "validated" : status;
+
   const load = useCallback(async () => {
-    if (!yearId) return;
+    if (!institutionId || !yearId) return;
     setLoading(true);
+    setError("");
     try {
-      const [page, context] = await Promise.all([
-        listBulletins(institutionId, yearId, {
-          first,
-          rows: pageSize,
-          search: query,
-          status: modeStatus,
-          classId,
-          periodId,
-          dateFrom,
-          dateTo,
-          sortField,
-          sortOrder,
-        }),
-        listGenerationContext(institutionId, yearId),
-      ]);
+      const page = await listBulletins(institutionId, yearId, {
+        first,
+        rows: pageSize,
+        search: query,
+        status: modeStatus,
+        classId,
+        periodId,
+        dateFrom,
+        dateTo,
+        sortField,
+        sortOrder,
+      });
       setItems(page.rows);
       setTotal(page.total);
-      setClasses(context.classes);
-      setPeriods(context.periods);
     } catch {
       setError("Impossible de charger les bulletins.");
     } finally {
@@ -117,19 +120,59 @@ export function BulletinsListPage() {
     sortOrder,
     yearId,
   ]);
+
   useEffect(() => {
-    const timer = setTimeout(() => void load(), 250);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => void load(), 250);
+    return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (!institutionId || !yearId) {
+      setClasses([]);
+      setPeriods([]);
+      return;
+    }
+
+    let cancelled = false;
+    void Promise.all([
+      supabase
+        .from("school_classes")
+        .select("id,name")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .eq("is_active", true)
+        .order("name"),
+      supabase
+        .from("academic_periods")
+        .select("id,name")
+        .eq("institution_id", institutionId)
+        .eq("academic_year_id", yearId)
+        .order("sequence"),
+    ]).then(([classResult, periodResult]) => {
+      if (cancelled) return;
+      if (classResult.error || periodResult.error) {
+        setError((current) => current || "Impossible de charger les filtres.");
+        return;
+      }
+      setClasses(classResult.data ?? []);
+      setPeriods(periodResult.data ?? []);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [institutionId, yearId]);
+
   const visible = useMemo(
     () =>
       mode === "validation"
-        ? items.filter((r) =>
-            ["generated", "pending_validation"].includes(r.status),
+        ? items.filter((row) =>
+            ["generated", "pending_validation"].includes(row.status),
           )
         : items,
     [items, mode],
   );
+
   const activeCount = [
     query,
     status,
@@ -138,6 +181,7 @@ export function BulletinsListPage() {
     dateFrom,
     dateTo,
   ].filter(Boolean).length;
+
   async function update(
     row: BulletinRow,
     next: BulletinRow["status"],
@@ -152,9 +196,10 @@ export function BulletinsListPage() {
       setError("Cette action n’a pas pu être appliquée.");
     }
   }
+
   async function exportZip() {
     if (!yearId) return;
-    setLoading(true);
+    setExporting(true);
     setError("");
     try {
       const page = await listBulletins(institutionId, yearId, {
@@ -180,9 +225,10 @@ export function BulletinsListPage() {
     } catch {
       setError("La génération du ZIP a échoué.");
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   }
+
   function reset() {
     setQuery("");
     setStatus("");
@@ -192,8 +238,10 @@ export function BulletinsListPage() {
     setDateTo("");
     setFirst(0);
   }
+
   if (!yearId)
     return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+
   return (
     <div className="space-y-4 pb-8">
       <PageHeader
@@ -207,7 +255,7 @@ export function BulletinsListPage() {
               icon="pi pi-file-export"
               severity="secondary"
               outlined
-              loading={loading}
+              loading={exporting}
               onClick={() => void exportZip()}
             />
             <Button
@@ -215,6 +263,7 @@ export function BulletinsListPage() {
               icon="pi pi-refresh"
               severity="secondary"
               outlined
+              loading={loading}
               onClick={() => void load()}
             />
           </div>
@@ -223,21 +272,21 @@ export function BulletinsListPage() {
       {error ? <Message severity="error" text={error} /> : null}
       <NotesDataTableToolbar
         search={query}
-        onSearch={(v) => {
+        onSearch={(value) => {
           setFirst(0);
-          setQuery(v);
+          setQuery(value);
         }}
         advanced={advanced}
-        onAdvanced={() => setAdvanced((v) => !v)}
+        onAdvanced={() => setAdvanced((value) => !value)}
         onReset={reset}
         activeCount={activeCount}
         status={status}
         onStatus={
           mode === "publication"
             ? undefined
-            : (v) => {
+            : (value) => {
                 setFirst(0);
-                setStatus(v);
+                setStatus(value);
               }
         }
         statusOptions={Object.entries(labels).map(([value, label]) => ({
@@ -245,29 +294,32 @@ export function BulletinsListPage() {
           label,
         }))}
         classId={classId}
-        onClass={(v) => {
+        onClass={(value) => {
           setFirst(0);
-          setClassId(v);
+          setClassId(value);
         }}
-        classOptions={classes.map((c) => ({ label: c.name, value: c.id }))}
+        classOptions={classes.map((item) => ({
+          label: item.name,
+          value: item.id,
+        }))}
         periodId={periodId}
-        onPeriod={(v) => {
+        onPeriod={(value) => {
           setFirst(0);
-          setPeriodId(v);
+          setPeriodId(value);
         }}
-        periodOptions={periods.map((p) => ({
-          label: "label" in p ? String(p.label) : p.name,
-          value: p.id,
+        periodOptions={periods.map((item) => ({
+          label: item.name,
+          value: item.id,
         }))}
         dateFrom={dateFrom}
-        onDateFrom={(v) => {
+        onDateFrom={(value) => {
           setFirst(0);
-          setDateFrom(v);
+          setDateFrom(value);
         }}
         dateTo={dateTo}
-        onDateTo={(v) => {
+        onDateTo={(value) => {
           setFirst(0);
-          setDateTo(v);
+          setDateTo(value);
         }}
         placeholder="Élève, nom ou matricule"
       />
@@ -283,27 +335,27 @@ export function BulletinsListPage() {
           rows={pageSize}
           totalRecords={total}
           rowsPerPageOptions={[10, 25, 50]}
-          onPage={(e: DataTablePageEvent) => {
-            setFirst(e.first);
-            setPageSize(e.rows);
+          onPage={(event: DataTablePageEvent) => {
+            setFirst(event.first);
+            setPageSize(event.rows);
           }}
           sortField={sortField}
           sortOrder={sortOrder}
-          onSort={(e: DataTableSortEvent) => {
+          onSort={(event: DataTableSortEvent) => {
             setFirst(0);
-            setSortField(String(e.sortField));
-            setSortOrder(e.sortOrder ?? 0);
+            setSortField(String(event.sortField));
+            setSortOrder(event.sortOrder ?? 0);
           }}
           emptyMessage="Aucun bulletin"
         >
           <Column
             field="studentName"
             header="Élève"
-            body={(r: BulletinRow) => (
+            body={(row: BulletinRow) => (
               <div>
-                <strong>{r.studentName}</strong>
+                <strong>{row.studentName}</strong>
                 <span className="block text-xs text-slate-400">
-                  {r.matricule}
+                  {row.matricule}
                 </span>
               </div>
             )}
@@ -314,19 +366,19 @@ export function BulletinsListPage() {
             field="version"
             header="Version"
             sortable
-            body={(r: BulletinRow) => `v${r.version}`}
+            body={(row: BulletinRow) => `v${row.version}`}
           />
           <Column
             field="status"
             header="État"
             sortable
-            body={(r: BulletinRow) => (
+            body={(row: BulletinRow) => (
               <Tag
-                value={labels[r.status]}
+                value={labels[row.status]}
                 severity={
-                  r.status === "published" || r.status === "validated"
+                  row.status === "published" || row.status === "validated"
                     ? "success"
-                    : r.status === "rejected"
+                    : row.status === "rejected"
                       ? "danger"
                       : "info"
                 }
@@ -335,14 +387,14 @@ export function BulletinsListPage() {
           />
           <Column
             header="Actions"
-            body={(r: BulletinRow) => (
+            body={(row: BulletinRow) => (
               <div className="flex gap-1">
                 <Button
                   icon="pi pi-eye"
                   text
                   rounded
                   aria-label="Aperçu"
-                  onClick={() => setPreview(r)}
+                  onClick={() => setPreview(row)}
                 />
                 {mode === "validation" ? (
                   <>
@@ -350,18 +402,22 @@ export function BulletinsListPage() {
                       label="Valider"
                       text
                       disabled={
-                        !["generated", "pending_validation"].includes(r.status)
+                        !["generated", "pending_validation"].includes(
+                          row.status,
+                        )
                       }
-                      onClick={() => void update(r, "validated")}
+                      onClick={() => void update(row, "validated")}
                     />
                     <Button
                       label="Rejeter"
                       severity="danger"
                       text
                       disabled={
-                        !["generated", "pending_validation"].includes(r.status)
+                        !["generated", "pending_validation"].includes(
+                          row.status,
+                        )
                       }
-                      onClick={() => setRejecting(r)}
+                      onClick={() => setRejecting(row)}
                     />
                   </>
                 ) : null}
@@ -369,8 +425,8 @@ export function BulletinsListPage() {
                   <Button
                     label="Publier"
                     text
-                    disabled={r.status !== "validated"}
-                    onClick={() => void update(r, "published")}
+                    disabled={row.status !== "validated"}
+                    onClick={() => void update(row, "published")}
                   />
                 ) : null}
               </div>
@@ -401,7 +457,7 @@ export function BulletinsListPage() {
             rows={4}
             autoResize
             className="w-full"
-            onChange={(e) => setRejectionReason(e.target.value)}
+            onChange={(event) => setRejectionReason(event.target.value)}
           />
         </label>
         <div className="mt-4 flex justify-end gap-2">
@@ -432,6 +488,7 @@ type BulletinSubject = {
   average: number | null;
   appreciation: string;
 };
+
 type BulletinDisplay = {
   bulletin_title?: string;
   bulletin_orientation?: string;
@@ -441,6 +498,7 @@ type BulletinDisplay = {
   bulletin_direction_signature_label?: string;
   bulletin_footer?: string;
 };
+
 function BulletinDocument({ row }: { row: BulletinRow }) {
   const snapshot =
     row.snapshot &&
@@ -488,6 +546,7 @@ function BulletinDocument({ row }: { row: BulletinRow }) {
       ? snapshot.class_size
       : null;
   const colSpan = showAppreciations ? 4 : 3;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end print:hidden">
