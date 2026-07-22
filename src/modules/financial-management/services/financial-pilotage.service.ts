@@ -48,9 +48,9 @@ export type FamilyFinancialRow = {
   nextDueDate: string | null;
 };
 
-function startOfMonthIso() {
+function startOfMonth() {
   const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 }
 
 function todayIso() {
@@ -129,11 +129,11 @@ export async function getFinancialDashboard(
       listFinancialInstallments(institutionId, academicYearId),
       db
         .from("financial_payments")
-        .select("amount,paid_at,status")
+        .select("amount,payment_date,status")
         .eq("institution_id", institutionId)
         .eq("academic_year_id", academicYearId)
-        .eq("status", "confirmed")
-        .gte("paid_at", startOfMonthIso()),
+        .eq("status", "posted")
+        .gte("payment_date", startOfMonth()),
     ]);
   if (accountsError) throw accountsError;
   if (paymentsError) throw paymentsError;
@@ -150,7 +150,7 @@ export async function getFinancialDashboard(
   );
   const today = todayIso();
   const collectedToday = (payments ?? [])
-    .filter((row: any) => String(row.paid_at).slice(0, 10) === today)
+    .filter((row: any) => String(row.payment_date) === today)
     .reduce((sum: number, row: any) => sum + Number(row.amount ?? 0), 0);
   const collectedThisMonth = (payments ?? []).reduce(
     (sum: number, row: any) => sum + Number(row.amount ?? 0),
@@ -187,8 +187,10 @@ export async function listFamilyFinancialRows(
         .from("student_guardians")
         .select(`
           student_id,is_financial_responsible,is_primary_contact,
+          student:students!inner(institution_id),
           guardian:guardians(id,first_name,last_name,primary_phone)
         `)
+        .eq("student.institution_id", institutionId)
         .eq("is_financial_responsible", true),
     ]);
   if (accountsError) throw accountsError;
@@ -204,11 +206,12 @@ export async function listFamilyFinancialRows(
   for (const account of accounts ?? []) {
     const guardian = linksByStudent.get(account.student_id) ?? null;
     const key = guardian?.id ?? `student:${account.student_id}`;
-    const overdueAmount = installments
-      .filter((row) => row.studentId === account.student_id && row.situation === "overdue")
+    const studentInstallments = installments.filter((row) => row.studentId === account.student_id);
+    const overdueAmount = studentInstallments
+      .filter((row) => row.situation === "overdue")
       .reduce((sum, row) => sum + row.balanceAmount, 0);
-    const nextDueDate = installments
-      .filter((row) => row.studentId === account.student_id && row.balanceAmount > 0 && row.dueDate >= todayIso())
+    const nextDueDate = studentInstallments
+      .filter((row) => row.balanceAmount > 0 && row.dueDate >= todayIso())
       .map((row) => row.dueDate)
       .sort()[0] ?? null;
     const current = families.get(key) ?? {
