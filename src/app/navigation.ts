@@ -16,6 +16,7 @@ export const navigation: NavigationGroup[] = [
       { type: "link", label: "Réinscriptions", icon: "pi-refresh", to: "/scolarite/reinscriptions" },
       { type: "link", label: "Préparation de rentrée", icon: "pi-sitemap", to: "/scolarite/preparation-rentree" },
       { type: "link", label: "Assiduité", icon: "pi-calendar-minus", to: "/scolarite/assiduite" },
+      { type: "link", label: "Suivi documentaire", icon: "pi-folder-open", to: "/scolarite/documents" },
     ],
   },
   {
