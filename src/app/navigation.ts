@@ -68,7 +68,7 @@ export const navigation: NavigationGroup[] = [
       { type: "title", label: "Pilotage" },
       { type: "link", label: "Vue d’ensemble", icon: "pi-chart-bar", to: "/gestion-financiere/pilotage" },
       { type: "link", label: "Échéances", icon: "pi-calendar-clock", to: "/gestion-financiere/echeances" },
-      { type: "link", label: "Suivi des familles", icon: "pi-users", to: "/gestion-financiere/familles" },
+      { type: "link", label: "Comptes familles", icon: "pi-users", to: "/gestion-financiere/familles" },
       { type: "divider" },
       { type: "title", label: "Opérations" },
       { type: "link", label: "Dossiers financiers", icon: "pi-folder", to: "/gestion-financiere/dossiers" },
