@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Column } from "primereact/column";
-import { DataTable } from "primereact/datatable";
 import { Message } from "primereact/message";
 import { Tag } from "primereact/tag";
 import { listStudentResults, type StudentBulletinSummary, type StudentNoteSummary } from "../services/student-results.service";
@@ -16,55 +14,60 @@ export function StudentResultsPanel(props: { institutionId: string; yearId: stri
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     void listStudentResults(props.institutionId, props.yearId, props.studentId)
       .then((data) => {
-        setNotes(data.notes);
-        setBulletins(data.bulletins);
-        const first = data.notes[0]?.periodName ?? data.bulletins[0]?.periodName ?? "";
-        setSelectedPeriod((current) => current || first);
+        setNotes(data.notes); setBulletins(data.bulletins);
+        setSelectedPeriod((current) => current || data.notes[0]?.periodName || data.bulletins[0]?.periodName || "");
       })
       .catch(() => setError("Impossible de charger les notes et bulletins."))
       .finally(() => setLoading(false));
   }, [props.institutionId, props.studentId, props.yearId]);
 
   const periods = useMemo(() => Array.from(new Set([...notes.map((item) => item.periodName), ...bulletins.map((item) => item.periodName)])).filter(Boolean), [bulletins, notes]);
-  const periodNotes = notes.filter((item) => item.periodName === selectedPeriod);
+  const subjects = useMemo(() => {
+    const scoped = notes.filter((item) => item.periodName === selectedPeriod);
+    return Array.from(new Set(scoped.map((item) => item.subjectName))).map((subjectName) => {
+      const subjectNotes = scoped.filter((item) => item.subjectName === subjectName);
+      const numeric = subjectNotes.filter((item) => item.score !== null && !item.status);
+      const average = numeric.length ? numeric.reduce((sum, item) => sum + ((item.score ?? 0) / item.scale) * 20, 0) / numeric.length : null;
+      return { subjectName, notes: subjectNotes, average };
+    });
+  }, [notes, selectedPeriod]);
   const periodBulletins = bulletins.filter((item) => item.periodName === selectedPeriod);
-  const latestBulletin = [...periodBulletins].sort((a, b) => b.version - a.version)[0];
 
   if (error) return <Message severity="error" text={error} />;
 
-  return (
-    <div className="grid min-h-[520px] gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div className="mb-3"><h2 className="text-sm font-semibold text-slate-950">Périodes</h2><p className="text-xs text-slate-500">Choisissez une période pour voir ses notes et son bulletin.</p></div>
-        <div className="space-y-1">
-          {periods.map((period) => {
-            const bulletin = bulletins.find((item) => item.periodName === period);
-            return <button key={period} type="button" className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${selectedPeriod === period ? "bg-emerald-600 text-white" : "bg-white text-slate-700 hover:bg-emerald-50"}`} onClick={() => setSelectedPeriod(period)}><span>{period}</span>{bulletin ? <i className="pi pi-file-pdf text-xs" title="Bulletin disponible" /> : <i className="pi pi-clock text-xs opacity-60" title="Bulletin non généré" />}</button>;
-          })}
-          {!periods.length && !loading ? <p className="rounded-lg border border-dashed border-slate-300 p-3 text-xs text-slate-500">Aucune période avec des résultats.</p> : null}
-        </div>
-      </aside>
+  return <div className="grid gap-4 lg:grid-cols-[210px_minmax(0,1fr)]">
+    <aside className="rounded-lg border border-slate-200 bg-white p-2">
+      <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Périodes</p>
+      <div className="space-y-1">{periods.map((period) => {
+        const hasBulletin = bulletins.some((item) => item.periodName === period);
+        return <button key={period} type="button" className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${selectedPeriod === period ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-50"}`} onClick={() => setSelectedPeriod(period)}><span>{period}</span>{hasBulletin ? <i className="pi pi-file-pdf text-xs" /> : null}</button>;
+      })}</div>
+      {!periods.length && !loading ? <p className="p-2 text-xs text-slate-500">Aucune période disponible.</p> : null}
+    </aside>
 
-      <div className="space-y-4">
-        <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="mb-3 flex items-start justify-between gap-3"><div><h2 className="text-base font-semibold text-slate-950">{selectedPeriod || "Résultats"}</h2><p className="text-sm text-slate-500">Notes enregistrées pour la période sélectionnée.</p></div><Tag value={`${periodNotes.length} note(s)`} severity="secondary" /></div>
-          <DataTable value={periodNotes} loading={loading} dataKey="id" size="small" stripedRows emptyMessage="Aucune note pour cette période.">
-            <Column field="subjectName" header="Matière" />
-            <Column field="label" header="Évaluation" />
-            <Column header="Résultat" body={(row: StudentNoteSummary) => row.status ? <Tag value={resultLabels[row.status] ?? row.status} severity={row.status === "postponed" ? "warning" : "secondary"} /> : <strong>{row.score} / {row.scale}</strong>} />
-          </DataTable>
-        </section>
+    <div className="space-y-3">
+      {loading ? <Message severity="info" text="Chargement des résultats…" /> : null}
+      {subjects.map((subject) => <section key={subject.subjectName} className="rounded-lg border border-slate-200 bg-white">
+        <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div><h3 className="text-sm font-semibold text-slate-950">{subject.subjectName}</h3><p className="text-xs text-slate-500">{subject.notes.length} note(s)</p></div>
+          <div className="text-right"><span className="block text-xs text-slate-500">Moyenne simple normalisée</span><strong className="text-lg text-slate-950">{subject.average === null ? "—" : `${subject.average.toFixed(2)} / 20`}</strong></div>
+        </header>
+        <div className="divide-y divide-slate-100">{subject.notes.map((note) => <div key={note.id} className="grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_120px_120px]">
+          <div><strong className="block text-sm text-slate-900">{note.label}</strong><span className="text-xs text-slate-500">{new Date(note.date).toLocaleDateString("fr-FR")}</span></div>
+          <span className="text-sm text-slate-600">Barème {note.scale}</span>
+          <div className="text-right">{note.status ? <Tag value={resultLabels[note.status] ?? note.status} severity={note.status === "postponed" ? "warning" : "secondary"} /> : <strong>{note.score} / {note.scale}</strong>}</div>
+        </div>)}</div>
+      </section>)}
+      {!subjects.length && !loading ? <Message severity="info" text="Aucune note enregistrée pour cette période." /> : null}
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="mb-3 flex items-start justify-between gap-3"><div><h2 className="text-base font-semibold text-slate-950">Bulletin de la période</h2><p className="text-sm text-slate-500">La dernière version générée est mise en avant.</p></div>{latestBulletin ? <Tag value={bulletinLabels[latestBulletin.status] ?? latestBulletin.status} severity={latestBulletin.status === "published" ? "success" : latestBulletin.status === "rejected" ? "danger" : "info"} /> : null}</div>
-          {latestBulletin ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4"><div><strong className="block text-sm text-slate-900">Bulletin {selectedPeriod} · v{latestBulletin.version}</strong><span className="text-xs text-slate-500">Généré le {new Date(latestBulletin.createdAt).toLocaleDateString("fr-FR")}</span></div><i className="pi pi-file-pdf text-2xl text-emerald-600" /></div> : <Message severity="info" text="Aucun bulletin n’a encore été généré pour cette période." />}
-          {periodBulletins.length > 1 ? <div className="mt-3"><DataTable value={periodBulletins} dataKey="id" size="small"><Column field="version" header="Version" body={(row: StudentBulletinSummary) => `v${row.version}`} /><Column header="État" body={(row: StudentBulletinSummary) => bulletinLabels[row.status] ?? row.status} /><Column header="Date" body={(row: StudentBulletinSummary) => new Date(row.createdAt).toLocaleDateString("fr-FR")} /></DataTable></div> : null}
-        </section>
-      </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-semibold text-slate-950">Bulletin de la période</h3><p className="text-xs text-slate-500">Versions générées pour {selectedPeriod || "la période"}.</p></div><Tag value={String(periodBulletins.length)} severity="secondary" /></div>
+        <div className="space-y-2">{periodBulletins.map((bulletin) => <div key={bulletin.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"><span><strong className="block text-sm">Version {bulletin.version}</strong><small className="text-slate-500">{new Date(bulletin.createdAt).toLocaleDateString("fr-FR")}</small></span><Tag value={bulletinLabels[bulletin.status] ?? bulletin.status} severity={bulletin.status === "published" ? "success" : bulletin.status === "rejected" ? "danger" : "info"} /></div>)}</div>
+        {!periodBulletins.length ? <p className="text-sm text-slate-500">Aucun bulletin généré pour cette période.</p> : null}
+      </section>
     </div>
-  );
+  </div>;
 }
