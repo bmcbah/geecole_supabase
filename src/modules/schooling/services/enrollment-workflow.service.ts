@@ -25,10 +25,17 @@ export type DocumentRequirement = {
   required_for_confirmation: boolean;
 };
 
-type RpcResponse<T> = Promise<{ data: T; error: { message: string } | null }>;
-type UntypedRpc = (name: string, args?: Record<string, unknown>) => RpcResponse<unknown>;
+type RpcResponse = Promise<{
+  data: unknown;
+  error: { message: string } | null;
+}>;
 
-const rpc = supabase.rpc.bind(supabase) as unknown as UntypedRpc;
+type WorkflowRpc = (
+  name: string,
+  args: Record<string, unknown>,
+) => RpcResponse;
+
+const workflowRpc = supabase.rpc.bind(supabase) as unknown as WorkflowRpc;
 
 export async function listEnrollmentDocumentRequirements(institutionId: string) {
   const { data, error } = await supabase
@@ -77,30 +84,32 @@ export async function getEnrollmentStudentId(enrollmentId: string) {
 }
 
 export async function evaluateEnrollment(enrollmentId: string) {
-  const { error } = await rpc("evaluate_enrollment", {
+  const { error } = await workflowRpc("evaluate_enrollment", {
     target_enrollment_id: enrollmentId,
   });
   if (error) throw new Error(error.message);
 
   const { data, error: resultError } = await supabase
-    .from("enrollment_validation_results")
-    .select("id,enrollment_id,code,severity,domain,message_key,details,resolution_action")
+    .from("enrollment_validation_results" as never)
+    .select(
+      "id,enrollment_id,code,severity,domain,message_key,details,resolution_action",
+    )
     .eq("enrollment_id", enrollmentId)
     .is("resolved_at", null)
     .order("severity");
   if (resultError) throw resultError;
-  return data as EnrollmentValidationResult[];
+  return data as unknown as EnrollmentValidationResult[];
 }
 
 export async function submitEnrollment(enrollmentId: string) {
-  const { error } = await rpc("submit_enrollment", {
+  const { error } = await workflowRpc("submit_enrollment", {
     target_enrollment_id: enrollmentId,
   });
   if (error) throw new Error(error.message);
 }
 
 export async function confirmEnrollment(enrollmentId: string) {
-  const { error } = await rpc("confirm_enrollment", {
+  const { error } = await workflowRpc("confirm_enrollment", {
     target_enrollment_id: enrollmentId,
   });
   if (error) throw new Error(error.message);
