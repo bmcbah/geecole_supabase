@@ -51,8 +51,9 @@ function KpiCard({ item, onOpen }: { item: SchoolingOverviewKpi; onOpen: () => v
       className="group flex min-h-36 min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-200"
       onClick={onOpen}
     >
-      <span className="flex items-start justify-between gap-3">
-        <span className="min-w-0 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+      <span className="flex min-w-0 items-start justify-between gap-3">
+        <span className="block min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-[0.08em] text-slate-500"
+          title={item.label}>
           {item.label}
         </span>
         <MetricIcon icon={item.icon} />
@@ -60,7 +61,8 @@ function KpiCard({ item, onOpen }: { item: SchoolingOverviewKpi; onOpen: () => v
       <strong className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
         {item.value}
       </strong>
-      <span className="mt-auto pt-3 text-xs leading-5 text-slate-500">
+      <span className="mt-auto block w-full min-w-0 truncate pt-3 text-xs leading-5 text-slate-500"
+        title={item.description}>
         {item.description}
       </span>
     </button>
@@ -229,8 +231,8 @@ export function SchoolingOverviewPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-5">
-          <section aria-labelledby="schooling-kpis-title">
+        <div className="w-full min-w-0 space-y-5">
+          <section className="w-full min-w-0" aria-labelledby="schooling-kpis-title">
             <div className="mb-3">
               <h2 id="schooling-kpis-title" className="m-0 text-sm font-semibold text-slate-900">
                 Indicateurs de pilotage
@@ -239,15 +241,15 @@ export function SchoolingOverviewPage() {
                 Les volumes qui demandent une lecture immédiate à l’entrée du module.
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
               {kpis.map((item) => (
                 <KpiCard key={item.id} item={item} onOpen={() => void navigate(item.route)} />
               ))}
             </div>
           </section>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <header className="border-b border-slate-200 px-4 py-4">
                 <h2 className="m-0 text-sm font-semibold text-slate-900">Actions récentes</h2>
                 <p className="mt-1 text-xs text-slate-500">
@@ -285,7 +287,7 @@ export function SchoolingOverviewPage() {
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <header className="border-b border-slate-200 px-4 py-4">
                 <h2 className="m-0 text-sm font-semibold text-slate-900">Alertes du module</h2>
                 <p className="mt-1 text-xs text-slate-500">
