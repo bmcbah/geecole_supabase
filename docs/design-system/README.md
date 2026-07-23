@@ -32,6 +32,8 @@ La profondeur maximale est :
 - Un workspace est une page de travail autonome regroupant l’essentiel d’une tâche métier.
 - Une action complexe peut ouvrir un workspace dédié ou un assistant, mais ne doit pas créer une navigation profonde.
 
+Le fil d’Ariane appartient au header global du layout. Il n’est jamais dupliqué dans le `WorkspaceHeader`.
+
 ## Workspaces officiels
 
 GeeCole utilise cinq modèles :
@@ -40,7 +42,7 @@ GeeCole utilise cinq modèles :
 - **Workspace Fiche** : header d’entité, onglets métier, contenu et, lorsque nécessaire, cards de synthèse ou composants métier.
 - **Workspace Rapport** : paramètres, prévisualisation, génération, historique.
 - **Workspace Assistant** : étapes ordonnées, formulaire, résumé, validation.
-- **Workspace Dashboard** : KPI, activité, tâches, calendrier et raccourcis adaptés au rôle.
+- **Workspace Dashboard** : KPI, activité, alertes, calendrier et raccourcis adaptés au rôle.
 
 Une page de travail doit permettre d’accomplir environ 95 % d’une tâche métier sans quitter la fonctionnalité.
 
@@ -60,88 +62,106 @@ Les actions globales sont dans le header. Les actions d’un onglet sont placée
 
 Chaque workspace GeeCole respecte la même hiérarchie visuelle afin de garantir une expérience cohérente, lisible et prévisible dans toute l’application.
 
-### HeaderPage
+### WorkspaceHeader
 
-Le `HeaderPage` contient :
+Le `WorkspaceHeader` contient :
 
 - le titre ;
 - la description ;
+- les métadonnées ou statuts utiles ;
 - les actions principales ;
 - les éventuels onglets de navigation du workspace.
 
-Lorsqu’un workspace possède des onglets de navigation, ils sont intégrés dans le `HeaderPage`, immédiatement sous le titre et les actions, sur sa `border-bottom`.
+Le fil d’Ariane, le sélecteur d’établissement, le sélecteur d’année scolaire et le profil restent dans le layout global.
+
+Lorsqu’un workspace possède des onglets de navigation, ils sont intégrés dans le `WorkspaceHeader`, immédiatement sous le titre et les actions, sur sa `border-bottom`.
 
 Les onglets ne doivent jamais être placés sous les filtres, dans une card ou dans le contenu principal.
 
-### Toolbar
+### SmartFilterBar
 
-La toolbar est toujours affichée sur une seule ligne horizontale sur desktop.
+La `SmartFilterBar` est toujours affichée sur une seule ligne horizontale sur desktop.
 
-Elle peut contenir :
+Elle contient en priorité :
 
 - la recherche ;
-- les filtres rapides ;
-- les actions rapides ;
-- les actions de masse ;
-- l’export ;
-- les commandes secondaires regroupées.
+- jusqu’à trois filtres rapides ;
+- le bouton `Plus de filtres` aligné à droite ;
+- les actions de masse lorsqu’une sélection existe ;
+- l’export ou les commandes secondaires regroupées lorsque nécessaire.
 
-Aucun retour à la ligne n’est autorisé sur desktop. Lorsque l’espace devient insuffisant, il faut réduire les contrôles secondaires ou les regrouper dans un menu `Plus` ou `Actions`, sans casser la toolbar sur plusieurs lignes.
+La recherche et les filtres rapides occupent la partie gauche. Le bouton `Plus de filtres` et les commandes secondaires occupent la partie droite.
 
-### Zone de filtres
+Aucun retour à la ligne n’est autorisé sur desktop. Lorsque l’espace devient insuffisant, les filtres rapides les moins prioritaires sont déplacés dans le `AdvancedFilterPanel` sans perdre leur valeur.
 
-Les filtres avancés sont placés sous la toolbar, dans une zone dédiée.
+Comportement responsive attendu :
+
+- écran large : recherche et jusqu’à trois filtres rapides ;
+- écran moyen : recherche et un ou deux filtres rapides ;
+- petit écran : recherche et `Plus de filtres` ;
+- très petit écran : commande de recherche compacte et `Plus de filtres`.
+
+Le bouton `Plus de filtres` affiche le nombre total de critères actifs, y compris ceux encore visibles dans la toolbar.
+
+### AdvancedFilterPanel
+
+Les filtres avancés sont placés sous la `SmartFilterBar`, dans une zone dédiée.
 
 Ils sont organisés en colonnes afin d’optimiser l’espace vertical, la lisibilité et la comparaison des critères.
 
-Les filtres avancés ne doivent pas être mélangés avec les actions principales de la toolbar.
+Le panneau peut contenir :
+
+- les filtres déplacés depuis la toolbar par manque de largeur ;
+- les critères moins fréquents ;
+- l’action de réinitialisation ;
+- le nombre de filtres actifs.
+
+Les filtres avancés ne doivent pas être mélangés avec les actions principales du workspace.
 
 ### Contenu principal
 
-Le contenu principal commence immédiatement sous la zone de filtres. Il peut contenir une `DataTable`, un `TreeView`, un dashboard, un rapport ou tout autre composant métier adapté au workspace.
+Le contenu principal commence immédiatement sous la zone de filtres. Il peut contenir une `WorkspaceDataTable`, un `TreeView`, un dashboard, un rapport ou tout autre composant métier adapté au workspace.
 
 La pagination et les informations de synthèse sont placées dans le pied du contenu lorsqu’elles sont nécessaires.
 
 ### Hiérarchie visuelle obligatoire
 
 ```text
-HeaderPage
-├── Titre
-├── Description
-├── Actions
-└── Onglets éventuels sur la border-bottom
+Layout global
+├── Fil d’Ariane
+├── Établissement
+├── Année scolaire
+└── Profil
 
-Toolbar — une seule ligne
-├── Recherche
-├── Filtres rapides
-├── Actions rapides
-├── Actions de masse
-└── Export / Actions secondaires
-
-Zone de filtres — en colonnes
-├── Filtre 1
-├── Filtre 2
-├── Filtre 3
-└── Autres filtres
-
-Contenu principal
-└── Tableau / TreeView / Dashboard / Rapport
-
-Pagination / Pied de page si nécessaire
+Workspace
+├── WorkspaceHeader
+│   ├── Titre
+│   ├── Description
+│   ├── Métadonnées
+│   ├── Actions
+│   └── WorkspaceTabs éventuels sur la border-bottom
+├── SmartFilterBar — une seule ligne
+│   ├── Recherche
+│   ├── Filtres rapides
+│   └── Plus de filtres / Actions secondaires
+├── AdvancedFilterPanel — en colonnes
+└── Contenu principal
+    └── Tableau / TreeView / Dashboard / Rapport
 ```
 
 ### Règles obligatoires
 
-- Une seule toolbar par workspace.
+- Une seule `SmartFilterBar` par workspace.
 - La toolbar reste sur une seule ligne sur desktop.
 - Les filtres avancés sont toujours placés sous la toolbar.
 - Les filtres avancés sont organisés en colonnes.
-- Les onglets de navigation sont toujours intégrés au `HeaderPage`.
-- Les onglets utilisent la `border-bottom` du `HeaderPage`.
+- Les onglets de navigation sont toujours intégrés au `WorkspaceHeader`.
+- Les onglets utilisent la `border-bottom` du `WorkspaceHeader`.
 - Les onglets ne sont jamais placés sous les filtres ni dans le contenu principal.
 - Les filtres ne sont jamais mélangés aux actions principales.
+- Le fil d’Ariane n’est jamais dupliqué dans un workspace.
 
-Sur mobile, les filtres peuvent être empilés verticalement. La toolbar conserve néanmoins une seule ligne horizontale et peut devenir scrollable horizontalement si nécessaire.
+Sur mobile, le `AdvancedFilterPanel` peut empiler ses champs verticalement. La `SmartFilterBar` conserve néanmoins une seule ligne horizontale et réduit progressivement les contrôles visibles.
 
 ## Statuts et cycle de vie
 
@@ -166,9 +186,12 @@ Cette séparation permet de contrôler les transitions autorisées, demander un 
 - Jusqu’à 10 champs : formulaire simple.
 - De 10 à 20 champs : sections.
 - Au-delà de 20 champs : réévaluer la page ou utiliser un assistant si le processus est ordonné.
-- Deux colonnes pour les champs courts ; une colonne pour les champs longs.
+- Une colonne pour les champs longs.
+- Deux colonnes uniquement pour des champs courts et naturellement liés.
+- Dans les dialogues, un champ par ligne par défaut ; deux champs par ligne seulement lorsqu’ils sont courts.
+- Les formulaires ne compressent jamais trois ou quatre champs métier sur une seule ligne.
 - Boutons en bas à droite : `Annuler | Enregistrer`.
-- Enregistrement explicite, sans autosave.
+- Enregistrement explicite, sans autosave, sauf décision métier spécifique comme un brouillon d’assistant.
 - Champs obligatoires marqués par `*`.
 - Validation immédiate pour les formats et champs requis ; validation métier à l’enregistrement.
 
@@ -187,16 +210,25 @@ Les drawers ne sont pas utilisés dans GeeCole.
 
 ## Tables et listes
 
-- `DataTable` pour les listes plates.
+- `WorkspaceDataTable` encapsule la `DataTable` PrimeReact pour les listes plates.
 - `TreeView` ou `TreeTable` uniquement pour une hiérarchie réelle.
 - Les lignes métier sont compactes sur desktop.
 - La première colonne contient l’information principale et une information secondaire discrète.
 - Une à trois actions de ligne visibles, puis menu `⋮`.
 - Le clic porte sur l’élément principal, pas sur toute la ligne.
 - Les cases à cocher ne sont affichées que si des actions de masse existent.
-- Les statuts sont affichés avec un badge textuel.
+- Les statuts sont affichés avec un `StatusBadge` textuel.
 - Les valeurs absentes sont affichées par `—`.
 - Pagination standard : 25, 50 ou 100 lignes.
+- Les filtres, le tri, la page et le mode d’affichage sont conservés lors d’un retour depuis une fiche.
+
+Lorsqu’une liste peut être regroupée, le composant `GroupedDataView` utilise le même modèle de données que la table et fournit :
+
+- des groupes pliables et dépliables ;
+- les actions `Tout déplier` et `Tout replier` ;
+- un compteur par groupe ;
+- l’accès direct aux éléments du groupe ;
+- la conservation des filtres lors du changement de mode d’affichage.
 
 ## Fiches métier
 
@@ -218,6 +250,22 @@ L’onglet `Aperçu` fournit une synthèse dense et immédiatement lisible :
 Les autres onglets peuvent utiliser les composants les plus adaptés à leur métier : tables, cards, timelines, explorateur documentaire, workflow ou rapports.
 
 Les onglets représentent des domaines de données, jamais des actions. Les valeurs en consultation sont rendues comme du texte lisible, jamais comme des champs désactivés.
+
+## Dashboards
+
+Un `Workspace Dashboard` présente en premier les indicateurs les plus importants du module.
+
+La grille de référence comporte six colonnes sur desktop et permet les compositions suivantes :
+
+- six éléments : un sixième chacun ;
+- trois éléments : un tiers chacun ;
+- deux éléments : une moitié chacun ;
+- un élément : toute la largeur ;
+- compositions mixtes : un tiers, deux tiers, une moitié ou pleine largeur.
+
+Les KPI sont affichés avant l’activité et les alertes. Une card de dashboard ne doit jamais laisser un espace vide lorsque le nombre d’éléments change.
+
+Les alertes peuvent agréger plusieurs modules lorsque le dashboard représente un parcours transverse. Chaque alerte conserve son module propriétaire et ouvre le workspace filtré correspondant.
 
 ## Historique métier
 
@@ -271,11 +319,22 @@ Les composants partagés GeeCole encapsulent PrimeReact et les règles UX du pro
 
 - `Workspace`
 - `WorkspaceHeader`
-- `EntityHeader`
+- `WorkspaceTabs`
+- `WorkspaceContent`
 - `SmartFilterBar`
+- `AdvancedFilterPanel`
+- `WorkspaceDataTable`
+- `GroupedDataView`
+- `EntityHeader`
 - `SummaryList`
+- `FormSection`
+- `FormField`
+- `WizardWorkspace`
 - `BulkActionBar`
+- `StatusBadge`
 - `StatusActionMenu`
+- `AlertSummary`
+- `AlertList`
 - `AuditTimeline`
 - `WorkflowTracker`
 - `DocumentExplorer`
@@ -301,6 +360,15 @@ GeeCole possède un véritable explorateur documentaire transverse organisé par
 - Paie.
 
 Le `DocumentExplorer` fournit une expérience commune dans tous les modules : nom, catégorie, date, auteur, version, taille, téléchargement et historique.
+
+Un document est identifié par :
+
+1. son attachement métier : module, type d’entité et identifiant d’entité ;
+2. sa catégorie fonctionnelle ;
+3. son document logique ;
+4. ses versions physiques dans Supabase Storage.
+
+Un même document logique n’est pas dupliqué entre les modules. Par exemple, un bulletin publié par le module Notes est affiché dans la fiche Élève au travers du même `DocumentExplorer`.
 
 ## Permissions
 
