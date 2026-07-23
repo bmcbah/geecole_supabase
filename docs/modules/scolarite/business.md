@@ -4,22 +4,24 @@
 
 Gérer le parcours administratif d'un élève, de sa préinscription à sa sortie, sans perdre l'historique annuel.
 
-## Sous-modules MVP
+## Fonctionnalités MVP
 
-1. Dossier élève
-2. Inscription
-3. Réinscription
+1. Vue d’ensemble du module
+2. Dossier élève
+3. Inscriptions
 4. Classes et affectations
 5. Liste et recherche des élèves
 6. Responsables légaux et contacts
-7. Documents administratifs
+7. Documents administratifs via le système documentaire transverse
 8. Frais générés par l'inscription
 9. Assiduité
-10. Évaluations, notes et bulletins
+10. Évaluations, notes et bulletins exposés depuis leurs modules propriétaires
+
+La fonctionnalité **Inscriptions** regroupe la nouvelle inscription, la préinscription et la réinscription. Ces opérations partagent le même objet annuel, le même moteur de contrôles et le même workflow de décision, tout en conservant leur origine métier.
 
 ## Règles communes
 
-- Un élève est une personne et peut posséder un compte utilisateur.
+- Un élève est une personne durable et peut posséder un compte utilisateur.
 - Le matricule est unique dans l'établissement et ne change pas entre les années.
 - Une inscription appartient à une seule année scolaire et un seul niveau.
 - Un élève ne possède qu'une inscription active par année.
@@ -29,56 +31,217 @@ Gérer le parcours administratif d'un élève, de sa préinscription à sa sorti
 - Les doublons probables sont signalés avant création.
 - Une suppression administrative devient une annulation historisée.
 - Toute modification sensible conserve auteur, date et motif.
+- Seules les inscriptions `confirmed` alimentent la liste officielle des élèves inscrits de l’année.
 
-## États d'une inscription
+## Définitions
 
-`draft → pending → confirmed → cancelled`
+- La **préinscription** enregistre un candidat sans en faire automatiquement un élève comptabilisé.
+- La **nouvelle inscription** crée le parcours annuel d’une personne qui n’est pas encore inscrite dans l’année cible.
+- La **réinscription** crée l'inscription d'une nouvelle année pour un élève déjà connu.
+- La préinscription reste facultative : selon sa politique, l'établissement peut autoriser l'inscription directe.
 
-- draft : dossier incomplet ;
-- pending : dossier soumis, pièces ou paiement à contrôler ;
-- confirmed : inscription validée ;
-- cancelled : inscription annulée avec motif.
+## États détaillés d’une inscription
 
-## Inscription
+- `draft` : brouillon incomplet, sans effet financier ;
+- `pre_registered` : candidat enregistré, hors effectif confirmé ;
+- `pending` : dossier soumis et en cours de contrôle ;
+- `confirmed` : inscription officielle ;
+- `rejected` : dossier refusé avec motif ;
+- `withdrawn` : démarche abandonnée par la famille ;
+- `cancelled` : inscription annulée et conservée dans l'historique ;
+- `transferred` : départ vers un autre établissement.
 
-Données minimales : identité, date et lieu de naissance, sexe, photo facultative, adresse, téléphone, responsable légal, année, cycle, niveau et provenance.
+Une inscription confirmée n'est jamais supprimée physiquement.
+
+Les transitions sont des actions métier explicites. Elles ne sont jamais réalisées par une modification libre de statut.
+
+## Workspace Inscriptions
+
+Le workspace Inscriptions constitue la file de travail unique pour :
+
+- créer une nouvelle inscription ;
+- créer une préinscription lorsque la politique l’autorise ;
+- réinscrire un élève existant ;
+- reprendre un brouillon ;
+- contrôler les dossiers ;
+- confirmer une inscription ;
+- demander un complément ;
+- rejeter, retirer, annuler ou transférer avec motif ;
+- traiter les opérations individuelles et groupées autorisées.
+
+Chaque dossier conserve son origine : `new_enrollment`, `pre_enrollment` ou `reenrollment`.
+
+## Parcours commun
+
+1. Rechercher un élève existant et afficher les doublons probables.
+2. Saisir ou reprendre l'identité.
+3. Rechercher ou créer les responsables et désigner le contact principal, le responsable financier et les personnes autorisées.
+4. Choisir l'année, le cycle, le niveau et éventuellement la classe.
+5. Récupérer ou saisir la décision pédagogique lorsqu’elle est nécessaire.
+6. Contrôler les documents configurés par l'établissement.
+7. Calculer et présenter les frais applicables.
+8. Afficher un récapitulatif avant enregistrement ou confirmation.
+
+Le parcours de réinscription précharge les données durables et affiche les dettes antérieures sans les mélanger aux frais de la nouvelle année.
+
+## Décision pédagogique
+
+La décision pédagogique répond à la question : dans quel niveau ou parcours l’élève doit-il poursuivre sa scolarité ?
+
+Elle est distincte de la confirmation administrative.
+
+Elle peut représenter :
+
+- passage au niveau suivant ;
+- redoublement ;
+- orientation vers un autre cycle, niveau ou parcours ;
+- admission sous dérogation ;
+- décision non renseignée ;
+- décision à confirmer.
+
+Elle peut provenir :
+
+- du dernier bulletin publié ;
+- d’un examen ou d’un conseil ;
+- d’une décision manuelle autorisée ;
+- d’un import provenant d’un autre établissement.
+
+Pour un nouvel élève, GeeCole distingue le niveau demandé du niveau retenu.
+
+Toute correction d’une décision pédagogique historisée exige le droit adapté et un motif.
+
+## Confirmation administrative
+
+La confirmation administrative répond à la question : le dossier remplit-il les conditions pour devenir une inscription officielle ?
+
+Elle peut contrôler notamment :
+
+- l’identité de l’élève ;
+- la présence d’un responsable principal ou d’une dérogation ;
+- l’année, le cycle et le niveau ;
+- la décision pédagogique lorsqu’elle est obligatoire ;
+- les doublons non résolus ;
+- les documents obligatoires ;
+- la capacité du niveau ou de la classe ;
+- l’affectation à une classe lorsqu’elle est obligatoire ;
+- les règles financières et le paiement lorsqu’il est bloquant ;
+- les permissions et dérogations.
 
 La confirmation :
 
 - attribue ou conserve le matricule ;
-- crée l'inscription annuelle ;
+- crée ou confirme l'inscription annuelle ;
 - génère les frais applicables avec leur montant instantané ;
 - affecte l'élève à une classe si elle est choisie ;
-- produit un reçu ou certificat d'inscription.
+- rend l’élève visible dans la liste officielle des élèves inscrits ;
+- produit les documents administratifs configurés, par exemple une fiche ou un certificat d'inscription.
 
-## Réinscription
+La confirmation génère la dette indépendamment de son paiement, sauf si la politique impose un paiement bloquant avant confirmation.
 
-- Propose automatiquement le niveau suivant configuré.
-- Autorise redoublement ou changement de niveau avec motif et droit adapté.
-- Reprend les contacts sans dupliquer les personnes.
-- Affiche les dettes antérieures sans les mélanger aux frais de la nouvelle année.
-- Conserve l'historique complet des inscriptions.
+## Moteur backend de contrôles d’inscription
 
-### Politiques configurables de réinscription
+Le backend calcule une synthèse de contrôles pour chaque dossier.
 
-Les règles suivantes sont définies par l'établissement et ne sont jamais codées en dur :
+Chaque contrôle possède :
 
+- un code métier stable ;
+- une gravité : `blocking`, `warning`, `information` ou `success` ;
+- un domaine : identité, responsables, documents, finances, capacité, pédagogie, doublons ou autre domaine explicite ;
+- une clé de message traduisible ;
+- une action de résolution éventuelle.
+
+La synthèse expose au minimum :
+
+- le nombre de blocages ;
+- le nombre d’avertissements ;
+- le nombre d’informations ;
+- l’état global `blocked`, `warning` ou `ready` ;
+- le détail des contrôles.
+
+Le même moteur est utilisé pour :
+
+- la colonne **Contrôles** du workspace Inscriptions ;
+- l’autorisation de confirmer ;
+- les imports ;
+- les opérations groupées ;
+- les RPC et services backend ;
+- les alertes du dashboard.
+
+Le frontend ne recalcule jamais si une règle est bloquante.
+
+## Politiques configurables par établissement
+
+Les décisions suivantes ne sont pas codées en dur :
+
+- autoriser ou non la préinscription ;
+- autoriser ou non l'inscription directe ;
 - autoriser la préparation des réinscriptions avant la clôture de l'année courante ;
 - autoriser une confirmation directe ou imposer un brouillon ;
 - anciennes dettes : information, avertissement ou blocage ;
-- exiger ou non une décision scolaire ;
+- exiger ou non une décision pédagogique ;
 - reprendre la décision du bulletin final lorsqu'elle existe ;
-- autoriser sa correction uniquement aux rôles habilités et avec un motif ;
 - redoublement : autorisé, soumis à dérogation ou interdit ;
-- classe obligatoire ou facultative à la confirmation ;
+- exiger ou non un paiement avant confirmation ;
+- exiger ou non une classe précise à la confirmation ;
+- faire compter ou non une préinscription dans les capacités ;
+- mode de capacité : information, avertissement ou blocage ;
+- documents obligatoires pour préinscrire et pour confirmer ;
+- autoriser une confirmation avec pièces manquantes ;
 - générer automatiquement ou manuellement les frais de réinscription ;
 - autoriser ou non la préparation groupée ;
 - résultat d'une préparation groupée : brouillon, préinscription ou inscription confirmée ;
-- proposer le cycle suivant uniquement s'il est actif dans l'établissement pour l'année cible.
+- proposer le cycle suivant uniquement s'il est actif dans l'établissement pour l'année cible ;
+- format de génération du matricule.
 
-Valeurs par défaut recommandées : préparation anticipée autorisée, confirmation directe autorisée, anciennes dettes avec avertissement, décision scolaire obligatoire, décision du bulletin proposée mais corrigeable avec motif, redoublement soumis à la règle du niveau, classe facultative, frais automatiques, préparation groupée en brouillon et passage vers un cycle suivant uniquement s'il est actif.
+Valeurs par défaut recommandées pour un nouvel établissement :
 
-Une surcharge peut être définie pour une année en préparation. La valeur effectivement appliquée est conservée sur la réinscription afin qu'un changement futur ne modifie pas l'historique.
+- préinscription autorisée ;
+- inscription directe autorisée ;
+- préparation anticipée des réinscriptions autorisée ;
+- paiement non bloquant ;
+- niveau obligatoire et classe facultative ;
+- préinscription hors effectif confirmé, mais capacité prévisionnelle affichée ;
+- dépassement de capacité avec avertissement ;
+- confirmation possible avec pièces manquantes et suivi visible ;
+- anciennes dettes avec avertissement ;
+- décision pédagogique proposée depuis le bulletin lorsqu’elle existe et corrigeable avec motif ;
+- préparation groupée en brouillon.
+
+Ces politiques sont définies au niveau de l'établissement. Une surcharge annuelle peut être préparée pour une année ouverte. Après clôture, la valeur appliquée reste historisée et ne change pas rétroactivement les inscriptions.
+
+## Règles complémentaires validées
+
+- Au moins un contact principal est normalement requis ; une dérogation motivée nécessite un droit adapté.
+- Un responsable peut être lié à plusieurs élèves et doit être recherché avant création.
+- La classe est distincte du niveau et peut être affectée ultérieurement si la politique l'autorise.
+- Une remise exige un motif et une autorisation.
+- L'annulation n'efface ni dette ni paiement ; avoirs et remboursements sont des opérations séparées.
+- Un compte utilisateur n'est pas nécessaire pour créer le dossier élève.
+
+## Vue d’ensemble du module
+
+La Vue d’ensemble agrège les informations opérationnelles du parcours élève.
+
+Elle expose notamment :
+
+- les élèves inscrits ;
+- les dossiers d’inscription en cours ;
+- les préinscriptions ;
+- les élèves sans classe ;
+- l’assiduité à traiter ;
+- les documents à contrôler ;
+- les actions récentes ;
+- les alertes administratives, pédagogiques et documentaires affectant directement le parcours d’un élève.
+
+Les alertes peuvent provenir de Scolarité, Notes ou Bulletins, mais conservent leur module propriétaire et leur destination.
+
+Le bloc `Travail à traiter` n’est pas un concept métier séparé : il est absorbé dans la liste d’alertes.
+
+## Liste des élèves
+
+La liste Élèves contient uniquement les inscriptions `confirmed` de l’année scolaire sélectionnée.
+
+Le mode regroupé utilise le responsable principal comme clé fonctionnelle et permet de plier ou déplier les groupes pour afficher les élèves liés.
 
 ## Classes
 
@@ -88,90 +251,33 @@ Une classe est une division annuelle d'un niveau : par exemple 7e A. Sa capacit�
 
 Absence ou retard par date, créneau et motif. États : non justifié, justifié, en attente. Les justificatifs et notifications sont historisés.
 
-## Évaluations et bulletins
+## Évaluations, notes et bulletins
 
 Les notes utilisent les types, périodes, barèmes et formules du Paramétrage. Une période verrouillée empêche la modification sans réouverture autorisée. Le bulletin publié devient une version immuable.
 
-## Compléments recommandés
+La fiche Élève consomme les résultats officiels du module Notes. Elle ne recalcule pas une moyenne simplifiée.
 
-- préinscriptions ;
-- import Excel contrôlé ;
-- détection des doublons ;
-- transferts d'établissement ;
-- radiation et abandon ;
-- archivage de pièces ;
-- historique des changements de classe ;
-- attestations et certificats ;
-- contacts d'urgence ;
-- besoins médicaux essentiels avec accès restreint.
+Le bulletin affiché dans la fiche Élève est le document généré, validé et publié par le module Notes.
 
-## Préinscription et inscription — atelier validé
+## Système documentaire transverse
 
-### Définitions
+GeeCole ne duplique pas une gestion documentaire dans chaque module.
 
-- La préinscription enregistre un candidat sans en faire automatiquement un élève comptabilisé.
-- L'inscription confirme sa présence dans l'établissement pour une année scolaire.
-- La réinscription crée l'inscription d'une nouvelle année pour un élève déjà connu.
-- La préinscription reste facultative : selon sa politique, l'établissement peut autoriser l'inscription directe.
+Un document est organisé selon quatre niveaux :
 
-### Parcours
+1. attachement métier : module, type d’entité et identifiant ;
+2. catégorie ;
+3. document logique ;
+4. versions physiques dans Supabase Storage.
 
-1. Rechercher un élève existant et afficher les doublons probables.
-2. Saisir l'identité, avec date de naissance exacte ou approximative.
-3. Rechercher ou créer les responsables et désigner le contact principal, le responsable financier et les personnes autorisées.
-4. Choisir l'année, le cycle, le niveau et éventuellement la classe.
-5. Contrôler les documents configurés par l'établissement.
-6. Calculer et présenter les frais applicables.
-7. Afficher un récapitulatif avant enregistrement ou confirmation.
+Exemples :
 
-### États détaillés
+- Scolarité → élève → document administratif ;
+- Notes → élève et période → bulletin ;
+- Personnel → employé → contrat ;
+- Finances → paiement → reçu.
 
-- `draft` : brouillon sans effet financier ;
-- `pre_registered` : candidat enregistré ;
-- `confirmed` : inscription officielle ;
-- `rejected` : admission refusée avec motif ;
-- `withdrawn` : démarche abandonnée par la famille ;
-- `cancelled` : inscription annulée et conservée dans l'historique ;
-- `transferred` : départ vers un autre établissement.
-
-Une inscription confirmée n'est jamais supprimée physiquement.
-
-### Politiques configurables par établissement
-
-Les décisions suivantes ne sont pas codées en dur :
-
-- autoriser ou non la préinscription ;
-- autoriser ou non l'inscription directe ;
-- exiger ou non un paiement avant confirmation ;
-- exiger ou non une classe précise à la confirmation ;
-- faire compter ou non une préinscription dans les capacités ;
-- mode de capacité : information, avertissement ou blocage ;
-- documents obligatoires pour préinscrire et pour confirmer ;
-- autoriser une confirmation avec pièces manquantes ;
-- format de génération du matricule.
-
-Valeurs par défaut recommandées pour un nouvel établissement :
-
-- préinscription autorisée ;
-- inscription directe autorisée ;
-- paiement non bloquant ;
-- niveau obligatoire et classe facultative ;
-- préinscription hors effectif confirmé, mais capacité prévisionnelle affichée ;
-- dépassement de capacité avec avertissement ;
-- confirmation possible avec pièces manquantes et suivi visible.
-
-Ces politiques sont définies au niveau de l'établissement. Une surcharge annuelle peut être préparée pour une année ouverte. Après clôture, la valeur appliquée reste historisée et ne change pas rétroactivement les inscriptions.
-
-### Règles complémentaires validées
-
-- Au moins un contact principal est normalement requis ; une dérogation motivée nécessite un droit adapté.
-- Un responsable peut être lié à plusieurs élèves et doit être recherché avant création.
-- La classe est distincte du niveau et peut être affectée ultérieurement si la politique l'autorise.
-- La confirmation génère la dette, indépendamment de son paiement.
-- Une remise exige un motif et une autorisation.
-- L'annulation n'efface ni dette ni paiement ; avoirs et remboursements sont des opérations séparées.
-- Un compte utilisateur n'est pas nécessaire pour créer le dossier élève.
-
+Un bulletin publié reste la propriété métier du module Notes et est rendu visible dans la fiche Élève par le `DocumentExplorer` partagé.
 
 # GeeCole — Gestion des affectations pédagogiques
 
