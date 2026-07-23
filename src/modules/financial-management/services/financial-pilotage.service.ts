@@ -22,6 +22,15 @@ export type FinancialInstallmentRow = {
   situation: InstallmentSituation;
 };
 
+export type FinancialDashboardBreakdown = {
+  label: string;
+  total: number;
+  paid: number;
+  balance: number;
+  rate: number;
+  count: number;
+};
+
 export type FinancialDashboard = {
   totalBilled: number;
   totalCollected: number;
@@ -29,10 +38,32 @@ export type FinancialDashboard = {
   collectionRate: number;
   overdueAmount: number;
   overdueCount: number;
+  overdueStudentCount: number;
+  dueTodayAmount: number;
+  dueTodayCount: number;
   dueSoonAmount: number;
   dueSoonCount: number;
   collectedToday: number;
   collectedThisMonth: number;
+  paymentCountToday: number;
+  paymentCountThisMonth: number;
+  accountCount: number;
+  settledAccountCount: number;
+  partialAccountCount: number;
+  unpaidAccountCount: number;
+  averageAccountAmount: number;
+  averagePaymentAmount: number;
+  cycles: FinancialDashboardBreakdown[];
+  methods: Array<{ method: string; amount: number; count: number }>;
+  urgentAccounts: Array<{
+    accountId: string;
+    studentName: string;
+    matricule: string;
+    levelName: string;
+    balanceAmount: number;
+    overdueAmount: number;
+    maxDaysLate: number;
+  }>;
 };
 
 export type FamilyFinancialRow = {
@@ -119,43 +150,87 @@ export async function getFinancialDashboard(
   institutionId: string,
   academicYearId: string,
 ): Promise<FinancialDashboard> {
-  const [{ data: accounts, error: accountsError }, installments, { data: payments, error: paymentsError }] =
-    await Promise.all([
-      db
-        .from("student_financial_accounts")
-        .select("total_amount,paid_amount,balance_amount")
-        .eq("institution_id", institutionId)
-        .eq("academic_year_id", academicYearId),
-      listFinancialInstallments(institutionId, academicYearId),
-      db
-        .from("financial_payments")
-        .select("amount,payment_date,status")
-        .eq("institution_id", institutionId)
-        .eq("academic_year_id", academicYearId)
-        .eq("status", "posted")
-        .gte("payment_date", startOfMonth()),
-    ]);
+  const [{ data: accounts, error: accountsError }, installments, { data: payments, error: paymentsError }] = await Promise.all([
+    db
+      .from("student_financial_accounts")
+      .select("id,student_name_snapshot,matricule_snapshot,level_name_snapshot,cycle_name_snapshot,total_amount,paid_amount,balance_amount")
+      .eq("institution_id", institutionId)
+      .eq("academic_year_id", academicYearId),
+    listFinancialInstallments(institutionId, academicYearId),
+    db
+      .from("financial_payments")
+      .select("amount,payment_date,status,method")
+      .eq("institution_id", institutionId)
+      .eq("academic_year_id", academicYearId)
+      .eq("status", "posted")
+      .gte("payment_date", startOfMonth()),
+  ]);
   if (accountsError) throw accountsError;
   if (paymentsError) throw paymentsError;
 
-  const totalBilled = (accounts ?? []).reduce((sum: number, row: any) => sum + Number(row.total_amount ?? 0), 0);
-  const totalCollected = (accounts ?? []).reduce((sum: number, row: any) => sum + Number(row.paid_amount ?? 0), 0);
-  const totalOutstanding = (accounts ?? []).reduce((sum: number, row: any) => sum + Number(row.balance_amount ?? 0), 0);
+  const accountRows = accounts ?? [];
+  const paymentRows = payments ?? [];
+  const totalBilled = accountRows.reduce((sum: number, row: any) => sum + Number(row.total_amount ?? 0), 0);
+  const totalCollected = accountRows.reduce((sum: number, row: any) => sum + Number(row.paid_amount ?? 0), 0);
+  const totalOutstanding = accountRows.reduce((sum: number, row: any) => sum + Number(row.balance_amount ?? 0), 0);
   const overdue = installments.filter((row) => row.situation === "overdue");
+  const dueToday = installments.filter((row) => row.situation === "due");
   const limit = new Date();
   limit.setDate(limit.getDate() + 30);
   const limitIso = limit.toISOString().slice(0, 10);
-  const dueSoon = installments.filter(
-    (row) => row.balanceAmount > 0 && row.dueDate >= todayIso() && row.dueDate <= limitIso,
-  );
+  const dueSoon = installments.filter((row) => row.balanceAmount > 0 && row.dueDate > todayIso() && row.dueDate <= limitIso);
   const today = todayIso();
-  const collectedToday = (payments ?? [])
-    .filter((row: any) => String(row.payment_date) === today)
-    .reduce((sum: number, row: any) => sum + Number(row.amount ?? 0), 0);
-  const collectedThisMonth = (payments ?? []).reduce(
-    (sum: number, row: any) => sum + Number(row.amount ?? 0),
-    0,
-  );
+  const todayPayments = paymentRows.filter((row: any) => String(row.payment_date) === today);
+
+  const cyclesMap = new Map<string, FinancialDashboardBreakdown>();
+  accountRows.forEach((row: any) => {
+    const label = row.cycle_name_snapshot || "Cycle non renseigné";
+    const current = cyclesMap.get(label) ?? { label, total: 0, paid: 0, balance: 0, rate: 0, count: 0 };
+    current.total += Number(row.total_amount ?? 0);
+    current.paid += Number(row.paid_amount ?? 0);
+    current.balance += Number(row.balance_amount ?? 0);
+    current.count += 1;
+    cyclesMap.set(label, current);
+  });
+  const cycles = [...cyclesMap.values()].map((item) => ({ ...item, rate: item.total > 0 ? (item.paid / item.total) * 100 : 0 })).sort((left, right) => right.balance - left.balance);
+
+  const methodsMap = new Map<string, { method: string; amount: number; count: number }>();
+  paymentRows.forEach((row: any) => {
+    const method = String(row.method ?? "unknown");
+    const current = methodsMap.get(method) ?? { method, amount: 0, count: 0 };
+    current.amount += Number(row.amount ?? 0);
+    current.count += 1;
+    methodsMap.set(method, current);
+  });
+
+  const overdueByAccount = new Map<string, { overdueAmount: number; maxDaysLate: number }>();
+  overdue.forEach((row) => {
+    const current = overdueByAccount.get(row.accountId) ?? { overdueAmount: 0, maxDaysLate: 0 };
+    current.overdueAmount += row.balanceAmount;
+    current.maxDaysLate = Math.max(current.maxDaysLate, row.daysLate);
+    overdueByAccount.set(row.accountId, current);
+  });
+  const urgentAccounts = accountRows
+    .map((row: any) => {
+      const late = overdueByAccount.get(row.id);
+      return late ? {
+        accountId: row.id,
+        studentName: row.student_name_snapshot,
+        matricule: row.matricule_snapshot,
+        levelName: row.level_name_snapshot,
+        balanceAmount: Number(row.balance_amount ?? 0),
+        overdueAmount: late.overdueAmount,
+        maxDaysLate: late.maxDaysLate,
+      } : null;
+    })
+    .filter(Boolean)
+    .sort((left: any, right: any) => right.overdueAmount - left.overdueAmount || right.maxDaysLate - left.maxDaysLate)
+    .slice(0, 8);
+
+  const settledAccountCount = accountRows.filter((row: any) => Number(row.balance_amount ?? 0) <= 0).length;
+  const partialAccountCount = accountRows.filter((row: any) => Number(row.paid_amount ?? 0) > 0 && Number(row.balance_amount ?? 0) > 0).length;
+  const unpaidAccountCount = accountRows.filter((row: any) => Number(row.paid_amount ?? 0) <= 0 && Number(row.balance_amount ?? 0) > 0).length;
+  const collectedThisMonth = paymentRows.reduce((sum: number, row: any) => sum + Number(row.amount ?? 0), 0);
 
   return {
     totalBilled,
@@ -164,10 +239,24 @@ export async function getFinancialDashboard(
     collectionRate: totalBilled > 0 ? (totalCollected / totalBilled) * 100 : 0,
     overdueAmount: overdue.reduce((sum, row) => sum + row.balanceAmount, 0),
     overdueCount: overdue.length,
+    overdueStudentCount: new Set(overdue.map((row) => row.studentId)).size,
+    dueTodayAmount: dueToday.reduce((sum, row) => sum + row.balanceAmount, 0),
+    dueTodayCount: dueToday.length,
     dueSoonAmount: dueSoon.reduce((sum, row) => sum + row.balanceAmount, 0),
     dueSoonCount: dueSoon.length,
-    collectedToday,
+    collectedToday: todayPayments.reduce((sum: number, row: any) => sum + Number(row.amount ?? 0), 0),
     collectedThisMonth,
+    paymentCountToday: todayPayments.length,
+    paymentCountThisMonth: paymentRows.length,
+    accountCount: accountRows.length,
+    settledAccountCount,
+    partialAccountCount,
+    unpaidAccountCount,
+    averageAccountAmount: accountRows.length ? totalBilled / accountRows.length : 0,
+    averagePaymentAmount: paymentRows.length ? collectedThisMonth / paymentRows.length : 0,
+    cycles,
+    methods: [...methodsMap.values()].sort((left, right) => right.amount - left.amount),
+    urgentAccounts,
   };
 }
 
@@ -175,24 +264,23 @@ export async function listFamilyFinancialRows(
   institutionId: string,
   academicYearId: string,
 ): Promise<FamilyFinancialRow[]> {
-  const [{ data: accounts, error: accountsError }, installments, { data: links, error: linksError }] =
-    await Promise.all([
-      db
-        .from("student_financial_accounts")
-        .select("student_id,student_name_snapshot,matricule_snapshot,total_amount,paid_amount,balance_amount")
-        .eq("institution_id", institutionId)
-        .eq("academic_year_id", academicYearId),
-      listFinancialInstallments(institutionId, academicYearId),
-      db
-        .from("student_guardians")
-        .select(`
-          student_id,is_financial_responsible,is_primary_contact,
-          student:students!inner(institution_id),
-          guardian:guardians(id,first_name,last_name,primary_phone)
-        `)
-        .eq("student.institution_id", institutionId)
-        .eq("is_financial_responsible", true),
-    ]);
+  const [{ data: accounts, error: accountsError }, installments, { data: links, error: linksError }] = await Promise.all([
+    db
+      .from("student_financial_accounts")
+      .select("student_id,student_name_snapshot,matricule_snapshot,total_amount,paid_amount,balance_amount")
+      .eq("institution_id", institutionId)
+      .eq("academic_year_id", academicYearId),
+    listFinancialInstallments(institutionId, academicYearId),
+    db
+      .from("student_guardians")
+      .select(`
+        student_id,is_financial_responsible,is_primary_contact,
+        student:students!inner(institution_id),
+        guardian:guardians(id,first_name,last_name,primary_phone)
+      `)
+      .eq("student.institution_id", institutionId)
+      .eq("is_financial_responsible", true),
+  ]);
   if (accountsError) throw accountsError;
   if (linksError) throw linksError;
 
@@ -207,13 +295,8 @@ export async function listFamilyFinancialRows(
     const guardian = linksByStudent.get(account.student_id) ?? null;
     const key = guardian?.id ?? `student:${account.student_id}`;
     const studentInstallments = installments.filter((row) => row.studentId === account.student_id);
-    const overdueAmount = studentInstallments
-      .filter((row) => row.situation === "overdue")
-      .reduce((sum, row) => sum + row.balanceAmount, 0);
-    const nextDueDate = studentInstallments
-      .filter((row) => row.balanceAmount > 0 && row.dueDate >= todayIso())
-      .map((row) => row.dueDate)
-      .sort()[0] ?? null;
+    const overdueAmount = studentInstallments.filter((row) => row.situation === "overdue").reduce((sum, row) => sum + row.balanceAmount, 0);
+    const nextDueDate = studentInstallments.filter((row) => row.balanceAmount > 0 && row.dueDate >= todayIso()).map((row) => row.dueDate).sort()[0] ?? null;
     const current = families.get(key) ?? {
       key,
       guardianId: guardian?.id ?? null,
@@ -226,11 +309,7 @@ export async function listFamilyFinancialRows(
       overdueAmount: 0,
       nextDueDate: null,
     };
-    current.students.push({
-      studentId: account.student_id,
-      studentName: account.student_name_snapshot,
-      matricule: account.matricule_snapshot,
-    });
+    current.students.push({ studentId: account.student_id, studentName: account.student_name_snapshot, matricule: account.matricule_snapshot });
     current.totalAmount += Number(account.total_amount ?? 0);
     current.paidAmount += Number(account.paid_amount ?? 0);
     current.balanceAmount += Number(account.balance_amount ?? 0);
@@ -239,7 +318,5 @@ export async function listFamilyFinancialRows(
     families.set(key, current);
   }
 
-  return [...families.values()].sort(
-    (left, right) => right.overdueAmount - left.overdueAmount || right.balanceAmount - left.balanceAmount,
-  );
+  return [...families.values()].sort((left, right) => right.overdueAmount - left.overdueAmount || right.balanceAmount - left.balanceAmount);
 }
