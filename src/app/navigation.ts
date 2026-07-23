@@ -11,9 +11,11 @@ export const navigation: NavigationGroup[] = [
     match: "/scolarite",
     items: [
       { type: "title", label: "Parcours scolarité" },
+      { type: "link", label: "Cockpit", icon: "pi-gauge", to: "/scolarite" },
       { type: "link", label: "Élèves", icon: "pi-users", to: "/scolarite/eleves" },
-      { type: "link", label: "Admissions", icon: "pi-inbox", to: "/scolarite/admissions" },
+      { type: "link", label: "Inscriptions", icon: "pi-user-plus", to: "/scolarite/inscriptions" },
       { type: "link", label: "Réinscriptions", icon: "pi-refresh", to: "/scolarite/reinscriptions" },
+      { type: "link", label: "Préinscriptions", icon: "pi-calendar-plus", to: "/scolarite/preinscriptions" },
       { type: "link", label: "Préparation de rentrée", icon: "pi-sitemap", to: "/scolarite/preparation-rentree" },
       { type: "link", label: "Assiduité", icon: "pi-calendar-minus", to: "/scolarite/assiduite" },
       { type: "link", label: "Suivi documentaire", icon: "pi-folder-open", to: "/scolarite/documents" },
