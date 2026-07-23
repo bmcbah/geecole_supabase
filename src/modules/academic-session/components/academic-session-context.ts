@@ -2,6 +2,15 @@ import { createContext, useContext } from "react";
 import type { Institution } from "../../institutions/types/institution";
 import type { AcademicYear } from "../../settings/types/settings";
 
+export type FunctionalProfile =
+  | "owner"
+  | "admin"
+  | "secretary"
+  | "teacher"
+  | "finance"
+  | "parent"
+  | "student";
+
 export interface AcademicSessionValue {
   institutions: Institution[];
   institution: Institution | null;
@@ -12,6 +21,7 @@ export interface AcademicSessionValue {
   loading: boolean;
   failure: string;
   canChangeYear: boolean;
+  functionalProfile: FunctionalProfile | null;
   setInstitutionId: (id: string) => void;
   setYearId: (id: string) => void;
   refresh: () => Promise<void>;
