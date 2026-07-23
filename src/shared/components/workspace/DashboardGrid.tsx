@@ -12,12 +12,12 @@ type DashboardGridItemProps = {
 };
 
 const spanClasses: Record<NonNullable<DashboardGridItemProps["span"]>, string> = {
-  1: "xl:col-span-1",
-  2: "xl:col-span-2",
-  3: "xl:col-span-3",
-  4: "xl:col-span-4",
-  5: "xl:col-span-5",
-  6: "xl:col-span-6",
+  1: "lg:col-span-1",
+  2: "lg:col-span-2",
+  3: "lg:col-span-3",
+  4: "lg:col-span-4",
+  5: "lg:col-span-5",
+  6: "lg:col-span-6",
 };
 
 const joinClassNames = (...values: Array<string | false | undefined>) =>
@@ -27,7 +27,7 @@ export function DashboardGrid({ children, className }: DashboardGridProps) {
   return (
     <div
       className={joinClassNames(
-        "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6",
+        "grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6",
         className,
       )}
     >
