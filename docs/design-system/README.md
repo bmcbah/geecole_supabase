@@ -56,6 +56,93 @@ Le header n’est jamais placé dans une card.
 
 Les actions globales sont dans le header. Les actions d’un onglet sont placées dans cet onglet. Les actions de masse apparaissent au-dessus de la table lorsque des lignes sont sélectionnées.
 
+## Règle d’or : structure standard d’un workspace
+
+Chaque workspace GeeCole respecte la même hiérarchie visuelle afin de garantir une expérience cohérente, lisible et prévisible dans toute l’application.
+
+### HeaderPage
+
+Le `HeaderPage` contient :
+
+- le titre ;
+- la description ;
+- les actions principales ;
+- les éventuels onglets de navigation du workspace.
+
+Lorsqu’un workspace possède des onglets de navigation, ils sont intégrés dans le `HeaderPage`, immédiatement sous le titre et les actions, sur sa `border-bottom`.
+
+Les onglets ne doivent jamais être placés sous les filtres, dans une card ou dans le contenu principal.
+
+### Toolbar
+
+La toolbar est toujours affichée sur une seule ligne horizontale sur desktop.
+
+Elle peut contenir :
+
+- la recherche ;
+- les filtres rapides ;
+- les actions rapides ;
+- les actions de masse ;
+- l’export ;
+- les commandes secondaires regroupées.
+
+Aucun retour à la ligne n’est autorisé sur desktop. Lorsque l’espace devient insuffisant, il faut réduire les contrôles secondaires ou les regrouper dans un menu `Plus` ou `Actions`, sans casser la toolbar sur plusieurs lignes.
+
+### Zone de filtres
+
+Les filtres avancés sont placés sous la toolbar, dans une zone dédiée.
+
+Ils sont organisés en colonnes afin d’optimiser l’espace vertical, la lisibilité et la comparaison des critères.
+
+Les filtres avancés ne doivent pas être mélangés avec les actions principales de la toolbar.
+
+### Contenu principal
+
+Le contenu principal commence immédiatement sous la zone de filtres. Il peut contenir une `DataTable`, un `TreeView`, un dashboard, un rapport ou tout autre composant métier adapté au workspace.
+
+La pagination et les informations de synthèse sont placées dans le pied du contenu lorsqu’elles sont nécessaires.
+
+### Hiérarchie visuelle obligatoire
+
+```text
+HeaderPage
+├── Titre
+├── Description
+├── Actions
+└── Onglets éventuels sur la border-bottom
+
+Toolbar — une seule ligne
+├── Recherche
+├── Filtres rapides
+├── Actions rapides
+├── Actions de masse
+└── Export / Actions secondaires
+
+Zone de filtres — en colonnes
+├── Filtre 1
+├── Filtre 2
+├── Filtre 3
+└── Autres filtres
+
+Contenu principal
+└── Tableau / TreeView / Dashboard / Rapport
+
+Pagination / Pied de page si nécessaire
+```
+
+### Règles obligatoires
+
+- Une seule toolbar par workspace.
+- La toolbar reste sur une seule ligne sur desktop.
+- Les filtres avancés sont toujours placés sous la toolbar.
+- Les filtres avancés sont organisés en colonnes.
+- Les onglets de navigation sont toujours intégrés au `HeaderPage`.
+- Les onglets utilisent la `border-bottom` du `HeaderPage`.
+- Les onglets ne sont jamais placés sous les filtres ni dans le contenu principal.
+- Les filtres ne sont jamais mélangés aux actions principales.
+
+Sur mobile, les filtres peuvent être empilés verticalement. La toolbar conserve néanmoins une seule ligne horizontale et peut devenir scrollable horizontalement si nécessaire.
+
 ## Statuts et cycle de vie
 
 Un statut n’est jamais édité avec une liste déroulante dans un formulaire.
