@@ -20,6 +20,11 @@ const InvitationPage = lazy(() =>
     default: module.InvitationPage,
   })),
 );
+const SchoolingOverviewPage = lazy(() =>
+  import("../../modules/schooling/pages/SchoolingOverviewPage").then((module) => ({
+    default: module.SchoolingOverviewPage,
+  })),
+);
 const StudentsPage = lazy(() =>
   import("../../modules/schooling/pages/StudentsPage").then((module) => ({
     default: module.StudentsPage,
@@ -157,6 +162,7 @@ export function AppRouter() {
               path="/gestion-financiere/configuration/:section"
               element={<SettingsPage />}
             />
+            <Route path="/scolarite" element={<SchoolingOverviewPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
             <Route
               path="/scolarite/inscriptions/nouvelle"

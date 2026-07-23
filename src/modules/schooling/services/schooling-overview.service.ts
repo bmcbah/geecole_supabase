@@ -43,7 +43,7 @@ export async function getSchoolingOverview(
       query
         .eq("institution_id", institutionId)
         .eq("academic_year_id", academicYearId)
-        .in("status", ["draft", "pending", "pre_registered"]),
+        .in("status", ["draft", "pre_registered"]),
     ),
     countRows("enrollments", (query) =>
       query
@@ -169,7 +169,6 @@ export async function getSchoolingOverview(
       : "Dossier d’inscription";
     const statusLabel: Record<string, string> = {
       draft: "Dossier enregistré en brouillon",
-      pending: "Dossier soumis au contrôle",
       pre_registered: "Préinscription enregistrée",
       confirmed: "Inscription confirmée",
       rejected: "Dossier rejeté",
