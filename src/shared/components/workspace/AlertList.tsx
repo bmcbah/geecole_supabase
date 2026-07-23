@@ -1,15 +1,6 @@
 import { Button } from "primereact/button";
+import type { WorkspaceAlert } from "../../types/workspace";
 import { StatusBadge } from "./StatusBadge";
-
-export type WorkspaceAlert = {
-  id: string;
-  title: string;
-  description: string;
-  count: number;
-  severity: "blocking" | "warning" | "information";
-  domain: string;
-  route: string;
-};
 
 type AlertListProps = {
   items: WorkspaceAlert[];
@@ -35,7 +26,9 @@ export function AlertList({
           <span className="mx-auto grid size-10 place-items-center rounded-full bg-emerald-50 text-emerald-700">
             <i className="pi pi-check" />
           </span>
-          <p className="mt-3 text-sm font-semibold text-slate-900">{emptyLabel}</p>
+          <p className="mt-3 text-sm font-semibold text-slate-900">
+            {emptyLabel}
+          </p>
         </div>
       </div>
     );
