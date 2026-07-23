@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "primereact/button";
-import { Card } from "primereact/card";
 import { Checkbox } from "primereact/checkbox";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
-import { Steps } from "primereact/steps";
 import { Tag } from "primereact/tag";
+import type { Database } from "../../../shared/lib/supabase/database.types";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { listAnnualAcademicLevels } from "../../settings/services/academic-structure.service";
 import { SchoolingPanel } from "../components/SchoolingPanel";
@@ -22,10 +21,18 @@ import {
   searchGuardians,
   type GuardianLinkInput,
 } from "../services/schooling.service";
-import type { Database } from "../../../shared/lib/supabase/database.types";
 import type { DuplicateCandidate, EnrollmentInput } from "../types/schooling";
 
 type Guardian = Database["public"]["Tables"]["guardians"]["Row"];
+type StepId = "identity" | "guardians" | "schooling" | "review";
+
+type LocalDraft = {
+  form: EnrollmentInput;
+  additionalGuardians: GuardianLinkInput[];
+  documents: string[];
+  step: StepId;
+  savedAt: string;
+};
 
 const initial: EnrollmentInput = {
   firstName: "",
@@ -42,7 +49,7 @@ const initial: EnrollmentInput = {
   kind: "pre_registered",
 };
 
-const emptyAdditionalGuardian: GuardianLinkInput = {
+const emptyGuardian: GuardianLinkInput = {
   firstName: "",
   lastName: "",
   phone: "",
@@ -52,22 +59,12 @@ const emptyAdditionalGuardian: GuardianLinkInput = {
   emergency: false,
 };
 
-const relationshipOptions = [
+const relationships = [
   { label: "Père", value: "father" },
   { label: "Mère", value: "mother" },
   { label: "Tuteur", value: "guardian" },
   { label: "Autre", value: "other" },
 ];
-
-const stepItems = [
-  "Recherche",
-  "Identité",
-  "Responsable",
-  "Scolarité",
-  "Documents",
-  "Frais",
-  "Récapitulatif",
-].map((label) => ({ label }));
 
 const requiredDocuments = [
   "Extrait de naissance",
@@ -75,30 +72,82 @@ const requiredDocuments = [
   "Bulletin précédent",
 ];
 
+const steps: Array<{ id: StepId; label: string; description: string; icon: string }> = [
+  {
+    id: "identity",
+    label: "Identité",
+    description: "Informations de l’élève",
+    icon: "pi-user",
+  },
+  {
+    id: "guardians",
+    label: "Responsables",
+    description: "Contacts et liens familiaux",
+    icon: "pi-users",
+  },
+  {
+    id: "schooling",
+    label: "Scolarité",
+    description: "Niveau, dossier et pièces",
+    icon: "pi-graduation-cap",
+  },
+  {
+    id: "review",
+    label: "Validation",
+    description: "Contrôle avant enregistrement",
+    icon: "pi-check-circle",
+  },
+];
+
+const fieldClass =
+  "h-11 w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500";
+
 export function EnrollmentPage() {
   const navigate = useNavigate();
   const { institutionId, yearId, year } = useAcademicSession();
-  const [active, setActive] = useState(0);
-  const [form, setForm] = useState(initial);
+  const [step, setStep] = useState<StepId>("identity");
+  const [form, setForm] = useState<EnrollmentInput>(initial);
   const [levels, setLevels] = useState<
     Awaited<ReturnType<typeof listAnnualAcademicLevels>>
   >([]);
   const [policy, setPolicy] = useState<EnrollmentPolicy | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
   const [guardianQuery, setGuardianQuery] = useState("");
-  const [guardians, setGuardians] = useState<Guardian[]>([]);
+  const [guardianResults, setGuardianResults] = useState<Guardian[]>([]);
   const [additionalGuardians, setAdditionalGuardians] = useState<GuardianLinkInput[]>([]);
-  const [additionalQuery, setAdditionalQuery] = useState("");
-  const [additionalResults, setAdditionalResults] = useState<Guardian[]>([]);
-  const [guardianDraft, setGuardianDraft] = useState<GuardianLinkInput>(
-    emptyAdditionalGuardian,
-  );
+  const [guardianDraft, setGuardianDraft] = useState<GuardianLinkInput>(emptyGuardian);
   const [documents, setDocuments] = useState<string[]>([]);
   const [failure, setFailure] = useState("");
+  const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const draftKey = useMemo(
+    () => `geecole.enrollment-draft.${institutionId}.${yearId}`,
+    [institutionId, yearId],
+  );
 
   useEffect(() => {
     if (!institutionId || !yearId) return;
+
+    const raw = localStorage.getItem(draftKey);
+    if (raw) {
+      try {
+        const draft = JSON.parse(raw) as LocalDraft;
+        setForm(draft.form);
+        setAdditionalGuardians(draft.additionalGuardians ?? []);
+        setDocuments(draft.documents ?? []);
+        setStep(draft.step ?? "identity");
+        setNotice(
+          `Brouillon restauré · ${new Intl.DateTimeFormat("fr-FR", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date(draft.savedAt))}`,
+        );
+      } catch {
+        localStorage.removeItem(draftKey);
+      }
+    }
+
     void Promise.all([
       listAnnualAcademicLevels(yearId),
       getEnrollmentPolicy(institutionId),
@@ -108,15 +157,13 @@ export function EnrollmentPage() {
         setPolicy(policyData);
         setForm((current) => ({
           ...current,
-          kind: policyData.allow_pre_registration
-            ? "pre_registered"
-            : "confirmed",
+          kind:
+            current.kind ||
+            (policyData.allow_pre_registration ? "pre_registered" : "confirmed"),
         }));
       })
-      .catch(() =>
-        setFailure("Impossible de préparer le parcours d’inscription."),
-      );
-  }, [institutionId, yearId]);
+      .catch(() => setFailure("Impossible de préparer le parcours d’inscription."));
+  }, [draftKey, institutionId, yearId]);
 
   const levelOptions = useMemo(
     () =>
@@ -127,14 +174,39 @@ export function EnrollmentPage() {
     [levels],
   );
 
-  const set = (key: keyof EnrollmentInput, value: string) =>
-    setForm((current) => ({ ...current, [key]: value }));
+  const selectedLevel = levelOptions.find((item) => item.value === form.annualLevelId);
+  const currentIndex = steps.findIndex((item) => item.id === step);
 
-  const findDuplicates = async () => {
-    if (!form.firstName || !form.lastName) {
-      setFailure("Saisissez le nom et le prénom pour rechercher l’élève.");
-      return false;
+  const set = (key: keyof EnrollmentInput, value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
+    setNotice("");
+  };
+
+  const saveDraft = () => {
+    if (!institutionId || !yearId) return;
+    const draft: LocalDraft = {
+      form,
+      additionalGuardians,
+      documents,
+      step,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+    setFailure("");
+    setNotice("Brouillon enregistré sur cet appareil.");
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(draftKey);
+    setNotice("");
+  };
+
+  const searchDuplicates = async () => {
+    if (form.firstName.trim().length < 2 || form.lastName.trim().length < 2) {
+      setFailure("Saisissez au moins le prénom et le nom de l’élève.");
+      return;
     }
+    setFailure("");
     setDuplicates(
       await findDuplicateCandidates(
         institutionId,
@@ -142,76 +214,79 @@ export function EnrollmentPage() {
         form.lastName,
       ),
     );
-    return true;
   };
 
-  const next = async () => {
-    setFailure("");
-    try {
-      if (active === 0 && !(await findDuplicates())) return;
-      if (active === 1 && (!form.firstName || !form.lastName)) {
-        throw new Error("L’identité est incomplète.");
-      }
-      if (
-        active === 2 &&
-        (!form.guardianFirstName ||
-          !form.guardianLastName ||
-          form.guardianPhone.length < 8)
-      ) {
-        throw new Error("Sélectionnez ou créez un responsable principal.");
-      }
-      if (active === 3 && !form.annualLevelId) {
-        throw new Error("Sélectionnez le niveau demandé.");
-      }
-      setActive((value) => Math.min(6, value + 1));
-    } catch (error) {
-      setFailure(error instanceof Error ? error.message : "Étape incomplète.");
-    }
+  const searchExistingGuardians = async () => {
+    setGuardianResults(await searchGuardians(institutionId, guardianQuery));
   };
 
   const chooseGuardian = (guardian: Guardian) => {
-    set("guardianFirstName", guardian.first_name);
-    set("guardianLastName", guardian.last_name);
-    set("guardianPhone", guardian.primary_phone);
-    setGuardians([]);
+    setForm((current) => ({
+      ...current,
+      guardianFirstName: guardian.first_name,
+      guardianLastName: guardian.last_name,
+      guardianPhone: guardian.primary_phone,
+    }));
     setGuardianQuery(`${guardian.first_name} ${guardian.last_name}`);
+    setGuardianResults([]);
   };
 
-  const chooseAdditionalGuardian = (guardian: Guardian) => {
-    setGuardianDraft({
-      ...emptyAdditionalGuardian,
-      guardianId: guardian.id,
-      firstName: guardian.first_name,
-      lastName: guardian.last_name,
-      phone: guardian.primary_phone,
-    });
-    setAdditionalResults([]);
-    setAdditionalQuery(`${guardian.first_name} ${guardian.last_name}`);
-  };
-
-  const addAdditionalGuardian = () => {
+  const addGuardian = () => {
     if (
       !guardianDraft.firstName.trim() ||
       !guardianDraft.lastName.trim() ||
       guardianDraft.phone.trim().length < 8
     ) {
-      setFailure("Complétez le nom, le prénom et le téléphone du responsable.");
+      setFailure("Complétez le prénom, le nom et le téléphone du responsable.");
       return;
     }
-    const alreadyAdded = additionalGuardians.some(
-      (item) =>
-        (guardianDraft.guardianId && item.guardianId === guardianDraft.guardianId) ||
-        item.phone.trim() === guardianDraft.phone.trim(),
-    );
-    const sameAsPrimary = guardianDraft.phone.trim() === form.guardianPhone.trim();
-    if (alreadyAdded || sameAsPrimary) {
-      setFailure("Ce responsable a déjà été ajouté.");
+    if (
+      additionalGuardians.some(
+        (item) => item.phone.trim() === guardianDraft.phone.trim(),
+      ) ||
+      guardianDraft.phone.trim() === form.guardianPhone.trim()
+    ) {
+      setFailure("Ce responsable est déjà lié au dossier.");
       return;
     }
     setAdditionalGuardians((current) => [...current, guardianDraft]);
-    setGuardianDraft(emptyAdditionalGuardian);
-    setAdditionalQuery("");
+    setGuardianDraft(emptyGuardian);
     setFailure("");
+  };
+
+  const validateStep = () => {
+    if (step === "identity") {
+      if (!form.firstName.trim() || !form.lastName.trim()) {
+        throw new Error("Le prénom et le nom de l’élève sont obligatoires.");
+      }
+    }
+    if (step === "guardians") {
+      if (
+        !form.guardianFirstName.trim() ||
+        !form.guardianLastName.trim() ||
+        form.guardianPhone.trim().length < 8
+      ) {
+        throw new Error("Le responsable principal est incomplet.");
+      }
+    }
+    if (step === "schooling" && !form.annualLevelId) {
+      throw new Error("Sélectionnez un niveau.");
+    }
+  };
+
+  const next = () => {
+    setFailure("");
+    try {
+      validateStep();
+      setStep(steps[Math.min(currentIndex + 1, steps.length - 1)].id);
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : "Étape incomplète.");
+    }
+  };
+
+  const previous = () => {
+    setFailure("");
+    setStep(steps[Math.max(currentIndex - 1, 0)].id);
   };
 
   const confirmationBlocked =
@@ -231,11 +306,13 @@ export function EnrollmentPage() {
     }
     if (confirmationBlocked) {
       setFailure(
-        "Cette inscription ne peut pas être confirmée tant que les exigences de l’établissement ne sont pas satisfaites.",
+        "La confirmation est bloquée par une règle de l’établissement. Enregistrez une préinscription ou complétez les exigences.",
       );
       return;
     }
+
     setSaving(true);
+    setFailure("");
     try {
       await createEnrollment(
         institutionId,
@@ -243,7 +320,8 @@ export function EnrollmentPage() {
         parsed.data,
         additionalGuardians,
       );
-      void navigate("/scolarite/eleves");
+      clearDraft();
+      void navigate("/scolarite/inscriptions");
     } catch (error) {
       setFailure(
         error instanceof Error
@@ -261,224 +339,245 @@ export function EnrollmentPage() {
 
   return (
     <SchoolingPanel
-      className="enrollment-page medium-controls"
+      className="w-full"
       path={`Scolarité · ${year?.name ?? "Année scolaire"} · Inscription`}
-      title="Inscrire un élève"
-      description="Le dossier peut être enregistré progressivement sans perdre les informations."
+      title="Nouvelle inscription"
+      description="Créez le dossier dans un parcours compact. Le brouillon reste disponible sur cet appareil jusqu’à la validation."
       actions={
         <Button
           label="Quitter"
           icon="pi pi-times"
           severity="secondary"
           text
-          onClick={() => void navigate("/scolarite/eleves")}
+          onClick={() => void navigate("/scolarite/inscriptions")}
         />
       }
     >
-      <Card className="overflow-hidden">
-        <div className="space-y-5">
-          <Steps model={stepItems} activeIndex={active} readOnly />
+      <div className="grid min-h-[680px] overflow-hidden border border-slate-200 bg-white lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="border-b border-slate-200 bg-slate-50/70 p-5 lg:border-b-0 lg:border-r">
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+              Dossier d’inscription
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Les informations sont organisées par mission, sans multiplier les écrans.
+            </p>
+          </div>
 
-          {failure ? (
-            <Message
-              severity="error"
-              text={failure}
-              className="schooling-message"
-            />
-          ) : null}
-
-          {active === 0 ? (
-            <div className="enrollment-step">
-              <h2>Rechercher avant de créer</h2>
-              <p>Cette vérification évite de recréer un élève déjà connu.</p>
-              <div className="schooling-form-grid">
-                <label className="field">
-                  <span>Prénom de l’élève</span>
-                  <InputText
-                    value={form.firstName}
-                    onChange={(event) => set("firstName", event.target.value)}
-                  />
-                </label>
-                <label className="field">
-                  <span>Nom de l’élève</span>
-                  <InputText
-                    value={form.lastName}
-                    onChange={(event) => set("lastName", event.target.value)}
-                  />
-                </label>
-              </div>
-              {duplicates.length > 0 ? (
-                <Message
-                  severity="warn"
-                  text={`${duplicates.length} dossier(s) ressemblant(s) trouvé(s). Ouvrez la fiche existante avant de créer un doublon.`}
-                />
-              ) : null}
-              {duplicates.map((item) => (
-                <div className="duplicate-row" key={item.id}>
-                  <span>
-                    <strong>{item.fullName}</strong>
-                    <small>
-                      {item.matricule} · {item.birthDate || "Date inconnue"}
+          <nav className="space-y-1" aria-label="Étapes de l’inscription">
+            {steps.map((item, index) => {
+              const active = item.id === step;
+              const completed = index < currentIndex;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition ${
+                    active
+                      ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200"
+                      : "text-slate-600 hover:bg-white/80 hover:text-slate-950"
+                  }`}
+                  onClick={() => setStep(item.id)}
+                >
+                  <span
+                    className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-md text-xs ${
+                      active || completed
+                        ? "bg-emerald-600 text-white"
+                        : "border border-slate-300 bg-white text-slate-500"
+                    }`}
+                  >
+                    <i className={`pi ${completed ? "pi-check" : item.icon}`} />
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block text-sm font-semibold">{item.label}</strong>
+                    <small className="mt-0.5 block text-xs leading-5 text-slate-500">
+                      {item.description}
                     </small>
                   </span>
-                  <Button
-                    label="Ouvrir la fiche"
-                    text
-                    onClick={() =>
-                      void navigate(`/scolarite/eleves/${item.id}`)
-                    }
-                  />
-                </div>
-              ))}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="mt-8 border-t border-slate-200 pt-5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500">Progression</span>
+              <strong className="text-slate-900">
+                {currentIndex + 1}/{steps.length}
+              </strong>
             </div>
-          ) : null}
-
-          {active === 1 ? (
-            <div className="enrollment-step">
-              <h2>Identité de l’élève</h2>
-              <div className="schooling-form-grid">
-                <label className="field"><span>Prénom *</span><InputText value={form.firstName} onChange={(event) => set("firstName", event.target.value)} /></label>
-                <label className="field"><span>Nom *</span><InputText value={form.lastName} onChange={(event) => set("lastName", event.target.value)} /></label>
-                <label className="field"><span>Sexe *</span><Dropdown value={form.gender} options={[{ label: "Masculin", value: "male" }, { label: "Féminin", value: "female" }, { label: "Autre", value: "other" }]} onChange={(event) => set("gender", String(event.value))} /></label>
-                <label className="field"><span>Date de naissance</span><InputText type="date" value={form.birthDate} onChange={(event) => set("birthDate", event.target.value)} /></label>
-                <label className="field"><span>Lieu de naissance</span><InputText value={form.birthPlace} onChange={(event) => set("birthPlace", event.target.value)} /></label>
-                <label className="field"><span>Adresse</span><InputText value={form.address} onChange={(event) => set("address", event.target.value)} /></label>
-              </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-emerald-600 transition-all"
+                style={{ width: `${((currentIndex + 1) / steps.length) * 100}%` }}
+              />
             </div>
-          ) : null}
+          </div>
+        </aside>
 
-          {active === 2 ? (
-            <div className="enrollment-step space-y-5">
-              <div>
-                <h2>Responsable principal</h2>
-                <div className="guardian-search">
-                  <label className="field">
-                    <span>Rechercher par nom ou téléphone</span>
-                    <span className="p-inputgroup">
-                      <InputText value={guardianQuery} onChange={(event) => setGuardianQuery(event.target.value)} placeholder="Ex. 620 00 00 00" />
-                      <Button label="Rechercher" icon="pi pi-search" onClick={() => void searchGuardians(institutionId, guardianQuery).then(setGuardians)} />
-                    </span>
-                  </label>
-                  {guardians.map((guardian) => (
-                    <button type="button" className="guardian-result" key={guardian.id} onClick={() => chooseGuardian(guardian)}>
-                      <strong>{guardian.first_name} {guardian.last_name}</strong>
-                      <span>{guardian.primary_phone}</span>
-                    </button>
-                  ))}
-                </div>
-                <Message severity="info" text="Si le responsable existe, sélectionnez-le. Sinon, complétez les champs ci-dessous." />
-                <div className="schooling-form-grid">
-                  <label className="field"><span>Prénom *</span><InputText value={form.guardianFirstName} onChange={(event) => set("guardianFirstName", event.target.value)} /></label>
-                  <label className="field"><span>Nom *</span><InputText value={form.guardianLastName} onChange={(event) => set("guardianLastName", event.target.value)} /></label>
-                  <label className="field"><span>Téléphone *</span><InputText value={form.guardianPhone} onChange={(event) => set("guardianPhone", event.target.value)} /></label>
-                  <label className="field"><span>Lien avec l’élève</span><Dropdown value={form.guardianRelationship} options={relationshipOptions} onChange={(event) => set("guardianRelationship", String(event.value))} /></label>
-                </div>
-              </div>
+        <main className="flex min-w-0 flex-col">
+          <div className="min-h-0 flex-1 p-5 sm:p-7 lg:p-8">
+            {failure ? <Message severity="error" text={failure} className="mb-5 w-full" /> : null}
+            {notice ? <Message severity="success" text={notice} className="mb-5 w-full" /> : null}
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold text-slate-900">Autres responsables</h3>
-                    <p className="text-sm text-slate-600">Ajoutez un autre parent, tuteur ou contact après le responsable principal.</p>
+            {step === "identity" ? (
+              <section className="max-w-5xl">
+                <div className="border-b border-slate-200 pb-5">
+                  <h2 className="text-lg font-semibold text-slate-950">Identité de l’élève</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Commencez par vérifier qu’aucun dossier similaire n’existe déjà.
+                  </p>
+                </div>
+
+                <div className="mt-6 grid gap-x-6 gap-y-5 md:grid-cols-2">
+                  <Field label="Prénom *">
+                    <InputText className={fieldClass} value={form.firstName} onChange={(event) => set("firstName", event.target.value)} />
+                  </Field>
+                  <Field label="Nom *">
+                    <InputText className={fieldClass} value={form.lastName} onChange={(event) => set("lastName", event.target.value)} />
+                  </Field>
+                  <Field label="Sexe *">
+                    <Dropdown className={fieldClass} value={form.gender} options={[{ label: "Masculin", value: "male" }, { label: "Féminin", value: "female" }, { label: "Autre", value: "other" }]} onChange={(event) => set("gender", String(event.value))} />
+                  </Field>
+                  <Field label="Date de naissance">
+                    <InputText className={fieldClass} type="date" value={form.birthDate} onChange={(event) => set("birthDate", event.target.value)} />
+                  </Field>
+                  <Field label="Lieu de naissance">
+                    <InputText className={fieldClass} value={form.birthPlace} onChange={(event) => set("birthPlace", event.target.value)} />
+                  </Field>
+                  <Field label="Adresse">
+                    <InputText className={fieldClass} value={form.address} onChange={(event) => set("address", event.target.value)} />
+                  </Field>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5">
+                  <Button label="Rechercher les doublons" icon="pi pi-search" outlined onClick={() => void searchDuplicates()} />
+                  <span className="text-sm text-slate-500">Recherche par prénom et nom dans l’établissement.</span>
+                </div>
+
+                {duplicates.length ? (
+                  <div className="mt-5 divide-y divide-slate-200 border-y border-slate-200">
+                    {duplicates.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-4 py-3">
+                        <div>
+                          <strong className="block text-sm text-slate-900">{item.fullName}</strong>
+                          <span className="text-xs text-slate-500">{item.matricule} · {item.birthDate || "Date inconnue"}</span>
+                        </div>
+                        <Button label="Ouvrir" icon="pi pi-arrow-right" text onClick={() => void navigate(`/scolarite/eleves/${item.id}`)} />
+                      </div>
+                    ))}
                   </div>
-                  <Tag value={`${additionalGuardians.length} ajouté${additionalGuardians.length > 1 ? "s" : ""}`} severity="info" />
+                ) : null}
+              </section>
+            ) : null}
+
+            {step === "guardians" ? (
+              <section className="max-w-5xl space-y-8">
+                <div className="border-b border-slate-200 pb-5">
+                  <h2 className="text-lg font-semibold text-slate-950">Responsables de l’élève</h2>
+                  <p className="mt-1 text-sm text-slate-500">Recherchez d’abord un contact existant avant d’en créer un nouveau.</p>
                 </div>
-                <div className="guardian-search mb-3">
-                  <label className="field">
-                    <span>Rechercher par nom ou téléphone</span>
-                    <span className="p-inputgroup">
-                      <InputText value={additionalQuery} onChange={(event) => setAdditionalQuery(event.target.value)} placeholder="Nom ou téléphone" />
-                      <Button label="Rechercher" icon="pi pi-search" onClick={() => void searchGuardians(institutionId, additionalQuery).then(setAdditionalResults)} />
-                    </span>
-                  </label>
-                  {additionalResults.map((guardian) => (
-                    <button type="button" className="guardian-result" key={guardian.id} onClick={() => chooseAdditionalGuardian(guardian)}>
-                      <strong>{guardian.first_name} {guardian.last_name}</strong>
-                      <span>{guardian.primary_phone}</span>
-                    </button>
-                  ))}
-                </div>
-                <Message severity="info" text="Si le responsable existe, sélectionnez-le. Sinon, complétez les champs ci-dessous puis ajoutez-le." />
-                <div className="schooling-form-grid">
-                  <label className="field"><span>Prénom</span><InputText value={guardianDraft.firstName} disabled={Boolean(guardianDraft.guardianId)} onChange={(event) => setGuardianDraft((value) => ({ ...value, firstName: event.target.value }))} /></label>
-                  <label className="field"><span>Nom</span><InputText value={guardianDraft.lastName} disabled={Boolean(guardianDraft.guardianId)} onChange={(event) => setGuardianDraft((value) => ({ ...value, lastName: event.target.value }))} /></label>
-                  <label className="field"><span>Téléphone</span><InputText value={guardianDraft.phone} disabled={Boolean(guardianDraft.guardianId)} onChange={(event) => setGuardianDraft((value) => ({ ...value, phone: event.target.value }))} /></label>
-                  <label className="field"><span>Lien avec l’élève</span><Dropdown value={guardianDraft.relationship} options={relationshipOptions} onChange={(event) => setGuardianDraft((value) => ({ ...value, relationship: String(event.value) }))} /></label>
-                </div>
-                <div className="guardian-permissions mt-3">
-                  {([ ["financial", "Responsable financier"], ["emergency", "Contact d’urgence"] ] as const).map(([key, label]) => (
-                    <label key={key}><Checkbox checked={guardianDraft[key]} onChange={(event) => setGuardianDraft((value) => ({ ...value, [key]: Boolean(event.checked) }))} /><span>{label}</span></label>
-                  ))}
-                </div>
-                <div className="mt-3 flex justify-end"><Button label="Ajouter ce responsable" icon="pi pi-user-plus" outlined onClick={addAdditionalGuardian} /></div>
-                <div className="mt-4 space-y-2">
-                  {additionalGuardians.map((guardian, index) => (
-                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3" key={`${guardian.guardianId ?? guardian.phone}-${index}`}>
-                      <span><strong className="block text-sm">{guardian.firstName} {guardian.lastName}</strong><small>{guardian.phone} · {relationshipOptions.find((item) => item.value === guardian.relationship)?.label}</small></span>
-                      <Button icon="pi pi-trash" text rounded severity="danger" aria-label="Retirer" onClick={() => setAdditionalGuardians((current) => current.filter((_, currentIndex) => currentIndex !== index))} />
+
+                <div>
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <InputText className={fieldClass} value={guardianQuery} placeholder="Nom ou téléphone" onChange={(event) => setGuardianQuery(event.target.value)} />
+                    <Button label="Rechercher" icon="pi pi-search" onClick={() => void searchExistingGuardians()} />
+                  </div>
+                  {guardianResults.length ? (
+                    <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200">
+                      {guardianResults.map((guardian) => (
+                        <button key={guardian.id} type="button" className="flex w-full items-center justify-between py-3 text-left hover:bg-slate-50" onClick={() => chooseGuardian(guardian)}>
+                          <span><strong className="block text-sm text-slate-900">{guardian.first_name} {guardian.last_name}</strong><small className="text-xs text-slate-500">{guardian.primary_phone}</small></span>
+                          <i className="pi pi-chevron-right text-xs text-slate-400" />
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  ) : null}
                 </div>
-              </div>
-            </div>
-          ) : null}
 
-          {active === 3 ? (
-            <div className="enrollment-step">
-              <h2>Scolarité demandée</h2>
-              <div className="schooling-form-grid">
-                <label className="field"><span>Cycle et niveau *</span><Dropdown value={form.annualLevelId} options={levelOptions} filter onChange={(event) => set("annualLevelId", String(event.value))} /></label>
-                <label className="field"><span>Type de dossier</span><Dropdown value={form.kind} options={[...(policy?.allow_pre_registration ? [{ label: "Préinscription", value: "pre_registered" }] : []), ...(policy?.allow_direct_enrollment ? [{ label: "Inscription confirmée", value: "confirmed" }] : [])]} onChange={(event) => set("kind", String(event.value))} /></label>
-              </div>
-              {policy?.require_class_assignment ? <Message severity="warn" text="Cet établissement exige une classe. La confirmation sera disponible après la mise en place des classes." /> : null}
-            </div>
-          ) : null}
+                <div className="grid gap-x-6 gap-y-5 md:grid-cols-2">
+                  <Field label="Prénom du responsable *"><InputText className={fieldClass} value={form.guardianFirstName} onChange={(event) => set("guardianFirstName", event.target.value)} /></Field>
+                  <Field label="Nom du responsable *"><InputText className={fieldClass} value={form.guardianLastName} onChange={(event) => set("guardianLastName", event.target.value)} /></Field>
+                  <Field label="Téléphone *"><InputText className={fieldClass} value={form.guardianPhone} onChange={(event) => set("guardianPhone", event.target.value)} /></Field>
+                  <Field label="Lien avec l’élève"><Dropdown className={fieldClass} value={form.guardianRelationship} options={relationships} onChange={(event) => set("guardianRelationship", String(event.value))} /></Field>
+                </div>
 
-          {active === 4 ? (
-            <div className="enrollment-step">
-              <h2>Documents</h2>
-              <p>Cochez uniquement les pièces réellement reçues.</p>
-              {requiredDocuments.map((document) => (
-                <label className="document-row" key={document}>
-                  <Checkbox checked={documents.includes(document)} onChange={(event) => setDocuments((current) => event.checked ? [...current, document] : current.filter((item) => item !== document))} />
-                  <span>{document}</span>
-                </label>
-              ))}
-              {!policy?.allow_missing_documents ? <Message severity="warn" text="Toutes les pièces sont obligatoires pour confirmer l’inscription." /> : null}
-            </div>
-          ) : null}
+                <div className="border-t border-slate-200 pt-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div><h3 className="text-base font-semibold text-slate-950">Autres responsables</h3><p className="mt-1 text-sm text-slate-500">Ajoutez les autres parents ou contacts utiles.</p></div>
+                    <Tag value={`${additionalGuardians.length} ajouté(s)`} severity="secondary" />
+                  </div>
+                  <div className="mt-5 grid gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-4">
+                    <Field label="Prénom"><InputText className={fieldClass} value={guardianDraft.firstName} onChange={(event) => setGuardianDraft((current) => ({ ...current, firstName: event.target.value }))} /></Field>
+                    <Field label="Nom"><InputText className={fieldClass} value={guardianDraft.lastName} onChange={(event) => setGuardianDraft((current) => ({ ...current, lastName: event.target.value }))} /></Field>
+                    <Field label="Téléphone"><InputText className={fieldClass} value={guardianDraft.phone} onChange={(event) => setGuardianDraft((current) => ({ ...current, phone: event.target.value }))} /></Field>
+                    <Field label="Lien"><Dropdown className={fieldClass} value={guardianDraft.relationship} options={relationships} onChange={(event) => setGuardianDraft((current) => ({ ...current, relationship: String(event.value) }))} /></Field>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-5">
+                    <ToggleLabel label="Responsable financier" checked={guardianDraft.financial} onChange={(checked) => setGuardianDraft((current) => ({ ...current, financial: checked }))} />
+                    <ToggleLabel label="Contact d’urgence" checked={guardianDraft.emergency} onChange={(checked) => setGuardianDraft((current) => ({ ...current, emergency: checked }))} />
+                    <Button label="Ajouter" icon="pi pi-user-plus" outlined onClick={addGuardian} />
+                  </div>
+                  {additionalGuardians.length ? (
+                    <div className="mt-5 divide-y divide-slate-200 border-y border-slate-200">
+                      {additionalGuardians.map((guardian, index) => (
+                        <div key={`${guardian.phone}-${index}`} className="flex items-center justify-between gap-4 py-3">
+                          <div><strong className="block text-sm text-slate-900">{guardian.firstName} {guardian.lastName}</strong><span className="text-xs text-slate-500">{guardian.phone} · {relationships.find((item) => item.value === guardian.relationship)?.label}</span></div>
+                          <Button icon="pi pi-trash" text rounded severity="danger" aria-label="Retirer" onClick={() => setAdditionalGuardians((current) => current.filter((_, itemIndex) => itemIndex !== index))} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
 
-          {active === 5 ? (
-            <div className="enrollment-step">
-              <h2>Frais applicables</h2>
-              <Message severity="info" text="Les frais configurés pour le niveau seront générés au moment de la confirmation dans le prochain lot Finance scolaire." />
-              {policy?.require_payment_before_confirmation ? <Message severity="warn" text="Un paiement est obligatoire avant confirmation selon les règles de l’établissement." /> : null}
-            </div>
-          ) : null}
+            {step === "schooling" ? (
+              <section className="max-w-5xl">
+                <div className="border-b border-slate-200 pb-5"><h2 className="text-lg font-semibold text-slate-950">Scolarité demandée</h2><p className="mt-1 text-sm text-slate-500">Définissez le niveau et l’état initial du dossier.</p></div>
+                <div className="mt-6 grid gap-x-6 gap-y-5 md:grid-cols-2">
+                  <Field label="Cycle et niveau *"><Dropdown className={fieldClass} value={form.annualLevelId} options={levelOptions} filter placeholder="Sélectionner un niveau" onChange={(event) => set("annualLevelId", String(event.value ?? ""))} /></Field>
+                  <Field label="Type de dossier"><Dropdown className={fieldClass} value={form.kind} options={[...(policy?.allow_pre_registration ? [{ label: "Préinscription", value: "pre_registered" }] : []), ...(policy?.allow_direct_enrollment ? [{ label: "Inscription confirmée", value: "confirmed" }] : [])]} onChange={(event) => set("kind", String(event.value))} /></Field>
+                </div>
+                <div className="mt-8 border-t border-slate-200 pt-6"><div className="flex items-center justify-between"><div><h3 className="text-base font-semibold text-slate-950">Documents reçus</h3><p className="mt-1 text-sm text-slate-500">Cochez uniquement les pièces réellement remises.</p></div><Tag value={`${documents.length}/${requiredDocuments.length}`} severity="secondary" /></div><div className="mt-4 divide-y divide-slate-200 border-y border-slate-200">{requiredDocuments.map((document) => <label key={document} className="flex cursor-pointer items-center justify-between gap-4 py-3"><span className="text-sm font-medium text-slate-800">{document}</span><Checkbox checked={documents.includes(document)} onChange={(event) => setDocuments((current) => event.checked ? [...current, document] : current.filter((item) => item !== document))} /></label>)}</div></div>
+              </section>
+            ) : null}
 
-          {active === 6 ? (
-            <div className="enrollment-step enrollment-summary">
-              <h2>Récapitulatif</h2>
-              <dl>
-                <div><dt>Élève</dt><dd>{form.firstName} {form.lastName}</dd></div>
-                <div><dt>Responsable principal</dt><dd>{form.guardianFirstName} {form.guardianLastName} · {form.guardianPhone}</dd></div>
-                <div><dt>Autres responsables</dt><dd>{additionalGuardians.length}</dd></div>
-                <div><dt>Niveau</dt><dd>{levelOptions.find((item) => item.value === form.annualLevelId)?.label}</dd></div>
-                <div><dt>Documents</dt><dd>{documents.length}/{requiredDocuments.length} reçus</dd></div>
-                <div><dt>Statut</dt><dd>{form.kind === "confirmed" ? "Inscription confirmée" : "Préinscription"}</dd></div>
-              </dl>
-              {confirmationBlocked ? <Message severity="warn" text="La confirmation est bloquée par une règle de l’établissement. Enregistrez plutôt une préinscription ou complétez les exigences." /> : null}
-            </div>
-          ) : null}
+            {step === "review" ? (
+              <section className="max-w-5xl">
+                <div className="border-b border-slate-200 pb-5"><h2 className="text-lg font-semibold text-slate-950">Vérification du dossier</h2><p className="mt-1 text-sm text-slate-500">Contrôlez les informations avant l’enregistrement dans Supabase.</p></div>
+                <dl className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
+                  <Summary label="Élève" value={`${form.firstName || "—"} ${form.lastName || ""}`} />
+                  <Summary label="Responsable principal" value={form.guardianFirstName ? `${form.guardianFirstName} ${form.guardianLastName} · ${form.guardianPhone}` : "Non renseigné"} />
+                  <Summary label="Niveau" value={selectedLevel?.label ?? "Non sélectionné"} />
+                  <Summary label="Documents" value={`${documents.length}/${requiredDocuments.length} reçu(s)`} />
+                  <Summary label="État initial" value={form.kind === "confirmed" ? "Inscription confirmée" : "Préinscription"} />
+                </dl>
+                {confirmationBlocked ? <Message className="mt-5 w-full" severity="warn" text="La confirmation directe est bloquée par une règle de l’établissement. Choisissez la préinscription ou complétez les exigences." /> : null}
+              </section>
+            ) : null}
+          </div>
 
-          <footer className="enrollment-actions">
-            <Button label="Enregistrer le brouillon" severity="secondary" text disabled />
-            <span className="dialog-spacer" />
-            {active > 0 ? <Button label="Précédent" severity="secondary" outlined onClick={() => setActive((value) => value - 1)} /> : null}
-            {active < 6 ? <Button label="Continuer" icon="pi pi-arrow-right" iconPos="right" onClick={() => void next()} /> : <Button label={form.kind === "confirmed" ? "Confirmer l’inscription" : "Enregistrer la préinscription"} icon="pi pi-check" loading={saving} disabled={confirmationBlocked} onClick={() => void submit()} />}
+          <footer className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:px-7 lg:px-8">
+            <Button label="Enregistrer le brouillon" icon="pi pi-save" severity="secondary" outlined onClick={saveDraft} />
+            <span className="flex-1" />
+            {currentIndex > 0 ? <Button label="Précédent" severity="secondary" text onClick={previous} /> : null}
+            {step !== "review" ? <Button label="Continuer" icon="pi pi-arrow-right" iconPos="right" onClick={next} /> : <Button label={form.kind === "confirmed" ? "Confirmer l’inscription" : "Enregistrer la préinscription"} icon="pi pi-check" loading={saving} disabled={confirmationBlocked} onClick={() => void submit()} />}
           </footer>
-        </div>
-      </Card>
+        </main>
+      </div>
     </SchoolingPanel>
   );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block min-w-0"><span className="mb-2 block text-sm font-medium text-slate-700">{label}</span>{children}</label>;
+}
+
+function ToggleLabel({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-700"><Checkbox checked={checked} onChange={(event) => onChange(Boolean(event.checked))} /><span>{label}</span></label>;
+}
+
+function Summary({ label, value }: { label: string; value: string }) {
+  return <div className="grid gap-2 py-4 sm:grid-cols-[220px_minmax(0,1fr)]"><dt className="text-sm font-medium text-slate-500">{label}</dt><dd className="m-0 text-sm font-semibold text-slate-900">{value}</dd></div>;
 }
