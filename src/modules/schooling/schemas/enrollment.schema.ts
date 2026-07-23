@@ -17,6 +17,6 @@ export const enrollmentSchema = z.object({
     .min(1, "Le nom du responsable est obligatoire"),
   guardianPhone: z.string().trim().min(8, "Le téléphone est obligatoire"),
   guardianRelationship: z.string().trim().min(1),
-  annualLevelId: z.string().uuid("Sélectionnez un niveau"),
+  annualLevelId: z.string().trim().min(1, "Sélectionnez un niveau"),
   kind: z.enum(["pre_registered", "confirmed"]),
 });
