@@ -15,6 +15,8 @@ export type EnrollmentWorkflowRow = {
   id: string;
   status: EnrollmentWorkflowStatus;
   admission_date: string;
+  created_at: string;
+  updated_at: string;
   level_name_snapshot: string;
   cycle_name_snapshot: string;
   cancellation_reason: string | null;
@@ -32,13 +34,13 @@ export async function listEnrollmentWorkflows(institutionId: string, academicYea
   const { data, error } = await client
     .from("enrollments")
     .select(`
-      id,status,admission_date,level_name_snapshot,cycle_name_snapshot,cancellation_reason,
+      id,status,admission_date,created_at,updated_at,level_name_snapshot,cycle_name_snapshot,cancellation_reason,
       student:students!inner(id,matricule,first_name,last_name,birth_date),
       assignment:class_assignments(class_id,class_name_snapshot,ends_on)
     `)
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
-    .order("created_at", { ascending: false });
+    .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => ({
     ...row,
@@ -135,6 +137,7 @@ export async function createAttendanceBatch(input: {
     institution_id: input.institutionId,
     academic_year_id: input.academicYearId,
     enrollment_id: enrollmentId,
+    class_id: input.classId || null,
     attendance_date: input.date,
     slot_label: input.slot?.trim() || null,
     kind: input.kind,
