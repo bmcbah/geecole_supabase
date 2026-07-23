@@ -15,7 +15,9 @@ export type NavigationDivider = {
 };
 
 export type NavigationEntry =
-  NavigationLink | NavigationTitle | NavigationDivider;
+  | NavigationLink
+  | NavigationTitle
+  | NavigationDivider;
 
 export type NavigationGroup = {
   label: string;
@@ -31,6 +33,12 @@ export const navigation: NavigationGroup[] = [
     icon: "pi-graduation-cap",
     match: "/scolarite",
     items: [
+      {
+        type: "link",
+        label: "Vue d’ensemble",
+        icon: "pi-chart-bar",
+        to: "/scolarite",
+      },
       {
         type: "link",
         label: "Élèves",
@@ -141,19 +149,54 @@ export const navigation: NavigationGroup[] = [
     match: "/personnel",
     items: [
       { type: "title", label: "Pilotage" },
-      { type: "link", label: "Vue d’ensemble", icon: "pi-chart-bar", to: "/personnel" },
+      {
+        type: "link",
+        label: "Vue d’ensemble",
+        icon: "pi-chart-bar",
+        to: "/personnel",
+      },
       { type: "divider" },
       { type: "title", label: "Dossiers" },
-      { type: "link", label: "Employés", icon: "pi-users", to: "/personnel/employes" },
+      {
+        type: "link",
+        label: "Employés",
+        icon: "pi-users",
+        to: "/personnel/employes",
+      },
       { type: "divider" },
       { type: "title", label: "Gestion RH" },
-      { type: "link", label: "Présences et heures", icon: "pi-clock", to: "/personnel/heures" },
-      { type: "link", label: "Congés et absences", icon: "pi-calendar-minus", to: "/personnel/conges" },
-      { type: "link", label: "Avances", icon: "pi-wallet", to: "/personnel/avances" },
-      { type: "link", label: "Sanctions", icon: "pi-exclamation-triangle", to: "/personnel/sanctions" },
+      {
+        type: "link",
+        label: "Présences et heures",
+        icon: "pi-clock",
+        to: "/personnel/heures",
+      },
+      {
+        type: "link",
+        label: "Congés et absences",
+        icon: "pi-calendar-minus",
+        to: "/personnel/conges",
+      },
+      {
+        type: "link",
+        label: "Avances",
+        icon: "pi-wallet",
+        to: "/personnel/avances",
+      },
+      {
+        type: "link",
+        label: "Sanctions",
+        icon: "pi-exclamation-triangle",
+        to: "/personnel/sanctions",
+      },
       { type: "divider" },
       { type: "title", label: "Rémunération" },
-      { type: "link", label: "Paie", icon: "pi-money-bill", to: "/personnel/paie" },
+      {
+        type: "link",
+        label: "Paie",
+        icon: "pi-money-bill",
+        to: "/personnel/paie",
+      },
     ],
   },
   {
@@ -222,15 +265,60 @@ export const navigation: NavigationGroup[] = [
       },
       { type: "divider" },
       { type: "title", label: "Personnel" },
-      { type: "link", label: "Fonctions", icon: "pi-briefcase", to: "/parametrage/personnel/fonctions" },
-      { type: "link", label: "Types de contrat", icon: "pi-file", to: "/parametrage/personnel/contrats" },
-      { type: "link", label: "Types d’activité", icon: "pi-clock", to: "/parametrage/personnel/activites" },
-      { type: "link", label: "Types de prime", icon: "pi-plus-circle", to: "/parametrage/personnel/primes" },
-      { type: "link", label: "Types de retenue", icon: "pi-minus-circle", to: "/parametrage/personnel/retenues" },
-      { type: "link", label: "Types d’avance", icon: "pi-wallet", to: "/parametrage/personnel/avances" },
-      { type: "link", label: "Congés et absences", icon: "pi-calendar", to: "/parametrage/personnel/conges" },
-      { type: "link", label: "Types de sanction", icon: "pi-exclamation-triangle", to: "/parametrage/personnel/sanctions" },
-      { type: "link", label: "Types de documents", icon: "pi-file", to: "/parametrage/personnel/documents" },
+      {
+        type: "link",
+        label: "Fonctions",
+        icon: "pi-briefcase",
+        to: "/parametrage/personnel/fonctions",
+      },
+      {
+        type: "link",
+        label: "Types de contrat",
+        icon: "pi-file",
+        to: "/parametrage/personnel/contrats",
+      },
+      {
+        type: "link",
+        label: "Types d’activité",
+        icon: "pi-clock",
+        to: "/parametrage/personnel/activites",
+      },
+      {
+        type: "link",
+        label: "Types de prime",
+        icon: "pi-plus-circle",
+        to: "/parametrage/personnel/primes",
+      },
+      {
+        type: "link",
+        label: "Types de retenue",
+        icon: "pi-minus-circle",
+        to: "/parametrage/personnel/retenues",
+      },
+      {
+        type: "link",
+        label: "Types d’avance",
+        icon: "pi-wallet",
+        to: "/parametrage/personnel/avances",
+      },
+      {
+        type: "link",
+        label: "Congés et absences",
+        icon: "pi-calendar",
+        to: "/parametrage/personnel/conges",
+      },
+      {
+        type: "link",
+        label: "Types de sanction",
+        icon: "pi-exclamation-triangle",
+        to: "/parametrage/personnel/sanctions",
+      },
+      {
+        type: "link",
+        label: "Types de documents",
+        icon: "pi-file",
+        to: "/parametrage/personnel/documents",
+      },
       { type: "divider" },
       { type: "title", label: "Organisation scolaire" },
       {
@@ -289,6 +377,8 @@ export const navigation: NavigationGroup[] = [
   },
 ];
 
-export const getNavigationLinks = (group: NavigationGroup): NavigationLink[] =>
+export const getNavigationLinks = (
+  group: NavigationGroup,
+): NavigationLink[] =>
   group.items?.filter((item): item is NavigationLink => item.type === "link") ??
   [];
