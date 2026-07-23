@@ -20,6 +20,12 @@ const labelBySeverity = {
   information: "Information",
 } as const;
 
+const accentBySeverity = {
+  blocking: "border-l-red-500",
+  warning: "border-l-amber-500",
+  information: "border-l-sky-500",
+} as const;
+
 export function AlertList({
   items,
   onOpen,
@@ -32,9 +38,7 @@ export function AlertList({
           <span className="mx-auto grid size-10 place-items-center rounded-full bg-emerald-50 text-emerald-700">
             <i className="pi pi-check" />
           </span>
-          <p className="mt-3 text-sm font-semibold text-slate-900">
-            {emptyLabel}
-          </p>
+          <p className="mt-3 text-sm font-semibold text-slate-900">{emptyLabel}</p>
         </div>
       </div>
     );
@@ -45,7 +49,7 @@ export function AlertList({
       {items.map((item) => (
         <div
           key={item.id}
-          className="grid gap-3 px-4 py-4 sm:grid-cols-[150px_minmax(0,1fr)_56px_auto] sm:items-center"
+          className={`grid border-l-4 gap-3 px-4 py-4 sm:grid-cols-[138px_minmax(0,1fr)_48px_auto] sm:items-center ${accentBySeverity[item.severity]}`}
         >
           <div className="flex flex-wrap gap-1.5 sm:flex-col sm:items-start">
             <StatusBadge
@@ -62,9 +66,7 @@ export function AlertList({
               {item.description}
             </span>
           </div>
-          <strong className="text-xl font-semibold text-slate-950">
-            {item.count}
-          </strong>
+          <strong className="text-xl font-semibold text-slate-950">{item.count}</strong>
           <Button
             label="Ouvrir"
             icon="pi pi-arrow-right"
