@@ -1,4 +1,4 @@
-import type { WorkspaceAlert } from "../../../shared/components/workspace/AlertList";
+import type { WorkspaceAlert } from "../../../shared/types/workspace";
 
 export type SchoolingDashboardKpis = {
   enrolledStudents: number;
