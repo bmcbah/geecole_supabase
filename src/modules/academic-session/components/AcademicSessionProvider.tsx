@@ -7,7 +7,7 @@ import {
 import type { Institution } from "../../institutions/types/institution";
 import { listAcademicYears } from "../../settings/services/settings.service";
 import type { AcademicYear } from "../../settings/types/settings";
-import { AcademicSessionContext } from "./academic-session-context";
+import { AcademicSessionContext, type FunctionalProfile } from "./academic-session-context";
 
 const institutionKey = "geecole.institution";
 const yearKey = (institutionId: string) => `geecole.year.${institutionId}`;
@@ -22,11 +22,13 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [failure, setFailure] = useState("");
   const [canChangeYear, setCanChangeYear] = useState(true);
+  const [functionalProfile, setFunctionalProfile] = useState<FunctionalProfile | null>(null);
 
   const loadInstitutions = useCallback(async () => {
     if (!userId) {
       setInstitutions([]);
       setInstitutionIdState("");
+      setFunctionalProfile(null);
       setLoading(false);
       return;
     }
@@ -68,6 +70,7 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
     if (!institutionId || !userId) {
       setYears([]);
       setYearIdState("");
+      setFunctionalProfile(null);
       return () => {
         cancelled = true;
       };
@@ -85,6 +88,7 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
         if (cancelled) return;
 
         setYears(data);
+        setFunctionalProfile(membership.role as FunctionalProfile);
         const allowed = !["parent", "student"].includes(membership.role);
         setCanChangeYear(allowed);
         const stored = localStorage.getItem(yearKey(institutionId));
@@ -97,6 +101,7 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
       })
       .catch(() => {
         if (!cancelled) {
+          setFunctionalProfile(null);
           setFailure("Impossible de charger les années scolaires.");
         }
       })
@@ -146,6 +151,7 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
       loading,
       failure,
       canChangeYear,
+      functionalProfile,
       setInstitutionId,
       setYearId,
       refresh,
@@ -160,6 +166,7 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
       loading,
       failure,
       canChangeYear,
+      functionalProfile,
       setInstitutionId,
       setYearId,
       refresh,
