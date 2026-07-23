@@ -109,7 +109,7 @@ export function SchoolingCockpitPage() {
   }, [metrics, profile]);
 
   const alerts = workItems.filter((item) => item.count > 0 && ["Urgent", "Aujourd’hui"].includes(item.priority));
-  const recentItems = useMemo<RecentItem[]>(() => enrollments.slice(0, 6).map((item) => ({
+  const recentItems = useMemo<RecentItem[]>(() => enrollments.slice(0, 8).map((item) => ({
     id: item.id,
     label: `${item.student.first_name} ${item.student.last_name}`,
     detail: item.status === "confirmed" ? "Inscription confirmée" : item.status === "pre_registered" ? "Préinscription enregistrée" : "Dossier mis à jour",
@@ -127,14 +127,31 @@ export function SchoolingCockpitPage() {
       alert={failure ? <Message severity="error" text={failure} /> : undefined}
       toolbar={<div className="flex items-center justify-between gap-3"><Tag value={profileLabels[profile] ?? profile} severity="info" /><Button label="Actualiser" icon="pi pi-refresh" size="small" outlined loading={loading} onClick={() => void load()} /></div>}
     >
-      <div className="space-y-6">
-        {alerts.length ? <section className="grid gap-3 md:grid-cols-2">{alerts.map((item) => <button key={item.id} type="button" className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 text-left" onClick={() => void navigate(item.route)}><span><strong className="block text-sm text-slate-900">{item.label}</strong><small className="text-slate-600">Une action est attendue dans ce module.</small></span><Tag value={String(item.count)} severity="warning" /></button>)}</section> : null}
+      <div className="space-y-4">
+        <section className="grid gap-4 xl:grid-cols-2">
+          <article className="flex h-[320px] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-4 py-3"><h2 className="m-0 text-base font-semibold">Actions récentes</h2><p className="m-0 text-sm text-slate-500">Dernières opérations visibles dans votre périmètre.</p></div>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <DataTable value={recentItems} dataKey="id" size="small" emptyMessage="Aucune activité récente."><Column field="label" header="Dossier" /><Column field="detail" header="Action" /><Column header="Date" body={(item: RecentItem) => new Intl.DateTimeFormat("fr-GN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.date))} /><Column header="" body={(item: RecentItem) => <Button icon="pi pi-arrow-right" text rounded aria-label="Ouvrir" onClick={() => void navigate(item.route)} />} /></DataTable>
+            </div>
+          </article>
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{kpis.map(([label, value, icon]) => <article key={String(label)} className="rounded-xl border border-slate-200 bg-white p-4"><div className="mb-3 flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><i className={`pi ${icon} text-slate-400`} /></div><strong className="text-2xl font-semibold text-slate-900">{value}</strong></article>)}</section>
+          <article className="flex h-[320px] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-4 py-3"><h2 className="m-0 text-base font-semibold">Alertes du module</h2><p className="m-0 text-sm text-slate-500">Situations nécessitant une attention immédiate.</p></div>
+            <div className="min-h-0 flex-1 space-y-2 overflow-auto p-4">
+              {alerts.length ? alerts.map((item) => <button key={item.id} type="button" className="flex w-full items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3 text-left" onClick={() => void navigate(item.route)}><span><strong className="block text-sm text-slate-900">{item.label}</strong><small className="text-slate-600">Une action est attendue dans ce module.</small></span><Tag value={String(item.count)} severity="warning" /></button>) : <Message severity="success" text="Aucune alerte critique pour le moment." />}
+            </div>
+          </article>
+        </section>
 
-        <section><div className="mb-3"><h2 className="m-0 text-base font-semibold">Cockpit</h2><p className="m-0 text-sm text-slate-500">Les tâches prioritaires correspondant à votre fonction.</p></div><DataTable value={workItems.filter((item) => item.count > 0)} dataKey="id" size="small" emptyMessage="Aucune tâche prioritaire."><Column header="Priorité" body={(item: WorkItem) => <Tag value={item.priority} severity={severity[item.priority]} />} /><Column field="label" header="Travail à réaliser" /><Column field="count" header="Nombre" /><Column header="Action" body={(item: WorkItem) => <Button label="Ouvrir" icon="pi pi-arrow-right" iconPos="right" text size="small" onClick={() => void navigate(item.route)} />} /></DataTable></section>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {kpis.map(([label, value, icon]) => <article key={String(label)} className="flex h-[150px] flex-col justify-between overflow-auto rounded-xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><i className={`pi ${icon} text-slate-400`} /></div><strong className="text-3xl font-semibold text-slate-900">{value}</strong><small className="text-slate-500">Indicateur adapté à votre fonction.</small></article>)}
+        </section>
 
-        <section><div className="mb-3"><h2 className="m-0 text-base font-semibold">Tâches récentes</h2><p className="m-0 text-sm text-slate-500">Dernières opérations visibles dans le périmètre de la scolarité.</p></div><DataTable value={recentItems} dataKey="id" size="small" emptyMessage="Aucune activité récente."><Column field="label" header="Dossier" /><Column field="detail" header="Action" /><Column header="Date" body={(item: RecentItem) => new Intl.DateTimeFormat("fr-GN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.date))} /><Column header="" body={(item: RecentItem) => <Button icon="pi pi-arrow-right" text rounded aria-label="Ouvrir" onClick={() => void navigate(item.route)} />} /></DataTable></section>
+        <section className="flex h-[360px] min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 px-4 py-3"><h2 className="m-0 text-base font-semibold">Cockpit</h2><p className="m-0 text-sm text-slate-500">Les tâches prioritaires correspondant à votre fonction.</p></div>
+          <div className="min-h-0 flex-1 overflow-auto"><DataTable value={workItems.filter((item) => item.count > 0)} dataKey="id" size="small" emptyMessage="Aucune tâche prioritaire."><Column header="Priorité" body={(item: WorkItem) => <Tag value={item.priority} severity={severity[item.priority]} />} /><Column field="label" header="Travail à réaliser" /><Column field="count" header="Nombre" /><Column header="Action" body={(item: WorkItem) => <Button label="Ouvrir" icon="pi pi-arrow-right" iconPos="right" text size="small" onClick={() => void navigate(item.route)} />} /></DataTable></div>
+        </section>
       </div>
     </SchoolingPanel>
   );
