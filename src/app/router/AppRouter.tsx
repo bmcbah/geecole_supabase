@@ -20,6 +20,11 @@ const InvitationPage = lazy(() =>
     default: module.InvitationPage,
   })),
 );
+const SchoolingOverviewPage = lazy(() =>
+  import("../../modules/schooling/pages/SchoolingOverviewPage").then(
+    (module) => ({ default: module.SchoolingOverviewPage }),
+  ),
+);
 const StudentsPage = lazy(() =>
   import("../../modules/schooling/pages/StudentsPage").then((module) => ({
     default: module.StudentsPage,
@@ -60,24 +65,96 @@ const FinancialPaymentsPage = lazy(() =>
     (module) => ({ default: module.FinancialPaymentsPage }),
   ),
 );
-const EmployeesPage = lazy(() => import("../../modules/personnel/pages/EmployeesPage").then((module) => ({ default: module.EmployeesPage })));
-const PersonnelDashboardPage = lazy(() => import("../../modules/personnel/pages/PersonnelDashboardPage").then((module) => ({ default: module.PersonnelDashboardPage })));
-const EmployeeProfilePage = lazy(() => import("../../modules/personnel/pages/EmployeeProfilePage").then((module) => ({ default: module.EmployeeProfilePage })));
-const WorkEntriesPage = lazy(() => import("../../modules/personnel/pages/WorkEntriesPage").then((module) => ({ default: module.WorkEntriesPage })));
-const LeaveRequestsPage = lazy(() => import("../../modules/personnel/pages/LeaveRequestsPage").then((module) => ({ default: module.LeaveRequestsPage })));
-const SalaryAdvancesPage = lazy(() => import("../../modules/personnel/pages/SalaryAdvancesPage").then((module) => ({ default: module.SalaryAdvancesPage })));
-const EmployeeSanctionsPage = lazy(() => import("../../modules/personnel/pages/EmployeeSanctionsPage").then((module) => ({ default: module.EmployeeSanctionsPage })));
-const PayrollPage = lazy(() => import("../../modules/personnel/pages/PayrollPage").then((module) => ({ default: module.PayrollPage })));
-const PayrollStatementPage = lazy(() => import("../../modules/personnel/pages/PayrollStatementPage").then((module) => ({ default: module.PayrollStatementPage })));
-const PersonnelFunctionsSettingsPage = lazy(() => import("../../modules/personnel/pages/PersonnelFunctionsSettingsPage").then((module) => ({ default: module.PersonnelFunctionsSettingsPage })));
-const ContractTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/ContractTypesSettingsPage").then((module) => ({ default: module.ContractTypesSettingsPage })));
-const WorkTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/WorkTypesSettingsPage").then((module) => ({ default: module.WorkTypesSettingsPage })));
-const BonusTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/BonusTypesSettingsPage").then((module) => ({ default: module.BonusTypesSettingsPage })));
-const DeductionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/DeductionTypesSettingsPage").then((module) => ({ default: module.DeductionTypesSettingsPage })));
-const AdvanceTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/AdvanceTypesSettingsPage").then((module) => ({ default: module.AdvanceTypesSettingsPage })));
-const LeaveTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/LeaveTypesSettingsPage").then((module) => ({ default: module.LeaveTypesSettingsPage })));
-const SanctionTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/SanctionTypesSettingsPage").then((module) => ({ default: module.SanctionTypesSettingsPage })));
-const DocumentTypesSettingsPage = lazy(() => import("../../modules/personnel/pages/DocumentTypesSettingsPage").then((module) => ({ default: module.DocumentTypesSettingsPage })));
+const EmployeesPage = lazy(() =>
+  import("../../modules/personnel/pages/EmployeesPage").then((module) => ({
+    default: module.EmployeesPage,
+  })),
+);
+const PersonnelDashboardPage = lazy(() =>
+  import("../../modules/personnel/pages/PersonnelDashboardPage").then(
+    (module) => ({ default: module.PersonnelDashboardPage }),
+  ),
+);
+const EmployeeProfilePage = lazy(() =>
+  import("../../modules/personnel/pages/EmployeeProfilePage").then((module) => ({
+    default: module.EmployeeProfilePage,
+  })),
+);
+const WorkEntriesPage = lazy(() =>
+  import("../../modules/personnel/pages/WorkEntriesPage").then((module) => ({
+    default: module.WorkEntriesPage,
+  })),
+);
+const LeaveRequestsPage = lazy(() =>
+  import("../../modules/personnel/pages/LeaveRequestsPage").then((module) => ({
+    default: module.LeaveRequestsPage,
+  })),
+);
+const SalaryAdvancesPage = lazy(() =>
+  import("../../modules/personnel/pages/SalaryAdvancesPage").then((module) => ({
+    default: module.SalaryAdvancesPage,
+  })),
+);
+const EmployeeSanctionsPage = lazy(() =>
+  import("../../modules/personnel/pages/EmployeeSanctionsPage").then((module) => ({
+    default: module.EmployeeSanctionsPage,
+  })),
+);
+const PayrollPage = lazy(() =>
+  import("../../modules/personnel/pages/PayrollPage").then((module) => ({
+    default: module.PayrollPage,
+  })),
+);
+const PayrollStatementPage = lazy(() =>
+  import("../../modules/personnel/pages/PayrollStatementPage").then((module) => ({
+    default: module.PayrollStatementPage,
+  })),
+);
+const PersonnelFunctionsSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/PersonnelFunctionsSettingsPage").then(
+    (module) => ({ default: module.PersonnelFunctionsSettingsPage }),
+  ),
+);
+const ContractTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/ContractTypesSettingsPage").then(
+    (module) => ({ default: module.ContractTypesSettingsPage }),
+  ),
+);
+const WorkTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/WorkTypesSettingsPage").then((module) => ({
+    default: module.WorkTypesSettingsPage,
+  })),
+);
+const BonusTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/BonusTypesSettingsPage").then(
+    (module) => ({ default: module.BonusTypesSettingsPage }),
+  ),
+);
+const DeductionTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/DeductionTypesSettingsPage").then(
+    (module) => ({ default: module.DeductionTypesSettingsPage }),
+  ),
+);
+const AdvanceTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/AdvanceTypesSettingsPage").then(
+    (module) => ({ default: module.AdvanceTypesSettingsPage }),
+  ),
+);
+const LeaveTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/LeaveTypesSettingsPage").then(
+    (module) => ({ default: module.LeaveTypesSettingsPage }),
+  ),
+);
+const SanctionTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/SanctionTypesSettingsPage").then(
+    (module) => ({ default: module.SanctionTypesSettingsPage }),
+  ),
+);
+const DocumentTypesSettingsPage = lazy(() =>
+  import("../../modules/personnel/pages/DocumentTypesSettingsPage").then(
+    (module) => ({ default: module.DocumentTypesSettingsPage }),
+  ),
+);
 const NotesWorkspacePage = lazy(() =>
   import("../../modules/notes/pages/NotesWorkspacePage").then((module) => ({
     default: module.NotesWorkspacePage,
@@ -157,6 +234,7 @@ export function AppRouter() {
               path="/gestion-financiere/configuration/:section"
               element={<SettingsPage />}
             />
+            <Route path="/scolarite" element={<SchoolingOverviewPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
             <Route
               path="/scolarite/inscriptions/nouvelle"
@@ -188,31 +266,64 @@ export function AppRouter() {
             />
             <Route path="/personnel" element={<PersonnelDashboardPage />} />
             <Route path="/personnel/employes" element={<EmployeesPage />} />
-            <Route path="/personnel/employes/:employeeId" element={<EmployeeProfilePage />} />
+            <Route
+              path="/personnel/employes/:employeeId"
+              element={<EmployeeProfilePage />}
+            />
             <Route path="/personnel/heures" element={<WorkEntriesPage />} />
             <Route path="/personnel/conges" element={<LeaveRequestsPage />} />
             <Route path="/personnel/avances" element={<SalaryAdvancesPage />} />
             <Route path="/personnel/sanctions" element={<EmployeeSanctionsPage />} />
             <Route path="/personnel/paie" element={<PayrollPage />} />
-            <Route path="/personnel/paie/:periodId/bulletins/:entryId" element={<PayrollStatementPage />} />
-            <Route path="/parametrage/personnel/fonctions" element={<PersonnelFunctionsSettingsPage />} />
-            <Route path="/parametrage/personnel/contrats" element={<ContractTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/activites" element={<WorkTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/primes" element={<BonusTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/retenues" element={<DeductionTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/avances" element={<AdvanceTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/conges" element={<LeaveTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/sanctions" element={<SanctionTypesSettingsPage />} />
-            <Route path="/parametrage/personnel/documents" element={<DocumentTypesSettingsPage />} />
-            <Route path="/parametrage/catalogues-personnel" element={<Navigate to="/parametrage/personnel/fonctions" replace />} />
+            <Route
+              path="/personnel/paie/:periodId/bulletins/:entryId"
+              element={<PayrollStatementPage />}
+            />
+            <Route
+              path="/parametrage/personnel/fonctions"
+              element={<PersonnelFunctionsSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/contrats"
+              element={<ContractTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/activites"
+              element={<WorkTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/primes"
+              element={<BonusTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/retenues"
+              element={<DeductionTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/avances"
+              element={<AdvanceTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/conges"
+              element={<LeaveTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/sanctions"
+              element={<SanctionTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/personnel/documents"
+              element={<DocumentTypesSettingsPage />}
+            />
+            <Route
+              path="/parametrage/catalogues-personnel"
+              element={<Navigate to="/parametrage/personnel/fonctions" replace />}
+            />
             <Route
               path="/notes-bulletins"
               element={<Navigate to="/notes-bulletins/cahiers" replace />}
             />
-            <Route
-              path="/notes-bulletins/cahiers"
-              element={<NotesWorkspacePage />}
-            />
+            <Route path="/notes-bulletins/cahiers" element={<NotesWorkspacePage />} />
             <Route
               path="/notes-bulletins/periodes"
               element={<AcademicPeriodsManagementPage />}
