@@ -44,7 +44,7 @@ export function DashboardGridItem({
   return (
     <div
       className={joinClassNames(
-        "min-w-0 md:col-span-1",
+        "col-span-1 min-w-0",
         spanClasses[span],
         className,
       )}
