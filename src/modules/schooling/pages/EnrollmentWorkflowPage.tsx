@@ -17,7 +17,6 @@ import {
   createEnrollment,
   findDuplicateCandidates,
   searchGuardians,
-  type GuardianLinkInput,
 } from "../services/schooling.service";
 import {
   confirmEnrollment,
@@ -26,7 +25,6 @@ import {
   hasBlockingValidation,
   listEnrollmentDocumentRequirements,
   saveEnrollmentDocuments,
-  submitEnrollment,
   type DocumentRequirement,
   type EnrollmentValidationResult,
 } from "../services/enrollment-workflow.service";
@@ -88,8 +86,8 @@ export function EnrollmentWorkflowPage() {
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
   const [guardianQuery, setGuardianQuery] = useState("");
   const [guardianResults, setGuardianResults] = useState<Guardian[]>([]);
-  const [additionalGuardians] = useState<GuardianLinkInput[]>([]);
   const [validations, setValidations] = useState<EnrollmentValidationResult[]>([]);
+  const [persistedStudentId, setPersistedStudentId] = useState<string | null>(null);
   const [failure, setFailure] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -122,24 +120,22 @@ export function EnrollmentWorkflowPage() {
       ? [{ label: "Enregistrer une préinscription", value: "pre_registered" }]
       : []),
     ...(policy?.allow_direct_enrollment
-      ? [{ label: "Confirmer l’inscription", value: "confirmed" }]
+      ? [{ label: "Contrôler puis confirmer", value: "confirmed" }]
       : []),
   ], [policy]);
 
   const set = (key: keyof EnrollmentInput, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
 
-  const findDuplicates = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim()) {
-      throw new Error("Saisissez le nom et le prénom avant la recherche.");
-    }
-    setDuplicates(await findDuplicateCandidates(institutionId, form.firstName, form.lastName));
-  };
-
   const next = async () => {
     setFailure("");
     try {
-      if (active === 0) await findDuplicates();
+      if (active === 0) {
+        if (!form.firstName.trim() || !form.lastName.trim()) {
+          throw new Error("Saisissez le nom et le prénom avant la recherche.");
+        }
+        setDuplicates(await findDuplicateCandidates(institutionId, form.firstName, form.lastName));
+      }
       if (active === 1 && (!form.firstName.trim() || !form.lastName.trim())) {
         throw new Error("L’identité est incomplète.");
       }
@@ -168,6 +164,11 @@ export function EnrollmentWorkflowPage() {
   };
 
   const submit = async () => {
+    if (persistedStudentId) {
+      void navigate(`/scolarite/eleves/${persistedStudentId}`);
+      return;
+    }
+
     const parsed = enrollmentSchema.safeParse({ ...form, kind: "pre_registered" });
     if (!parsed.success) {
       setFailure(parsed.error.issues[0]?.message ?? "Dossier incomplet.");
@@ -182,9 +183,10 @@ export function EnrollmentWorkflowPage() {
         institutionId,
         yearId,
         { ...parsed.data, kind: "pre_registered" },
-        additionalGuardians,
       );
       const studentId = await getEnrollmentStudentId(enrollmentId);
+      setPersistedStudentId(studentId);
+
       await saveEnrollmentDocuments(
         institutionId,
         studentId,
@@ -197,12 +199,12 @@ export function EnrollmentWorkflowPage() {
         const results = await evaluateEnrollment(enrollmentId);
         setValidations(results);
         if (hasBlockingValidation(results)) {
-          setFailure("Le dossier a été préinscrit, mais sa confirmation est bloquée par les contrôles ci-dessous.");
+          setFailure(
+            "La préinscription est enregistrée, mais la confirmation est bloquée. Corrigez le dossier depuis la fiche élève.",
+          );
           return;
         }
         await confirmEnrollment(enrollmentId);
-      } else {
-        await submitEnrollment(enrollmentId);
       }
 
       void navigate(`/scolarite/eleves/${studentId}`);
@@ -220,7 +222,7 @@ export function EnrollmentWorkflowPage() {
       className="enrollment-page medium-controls"
       path={`Scolarité · ${year?.name ?? "Année scolaire"} · Inscription`}
       title="Inscrire un élève"
-      description="La décision finale est contrôlée par les règles de l’établissement avant confirmation."
+      description="Le serveur contrôle les règles de l’établissement avant toute confirmation."
       actions={<Button label="Quitter" icon="pi pi-times" severity="secondary" text onClick={() => void navigate("/scolarite/eleves")} />}
     >
       <Card className="overflow-hidden">
@@ -290,7 +292,7 @@ export function EnrollmentWorkflowPage() {
                 <label className="field"><span>Cycle et niveau *</span><Dropdown value={form.annualLevelId} options={levelOptions} filter onChange={(event) => set("annualLevelId", String(event.value))} /></label>
                 <label className="field"><span>Action finale</span><Dropdown value={action} options={actionOptions} onChange={(event) => setAction(event.value as FinalAction)} /></label>
               </div>
-              {policy?.require_class_assignment ? <Message severity="warn" text="Une classe est obligatoire avant confirmation. Le serveur bloquera la confirmation tant qu’aucune classe active n’est affectée." /> : null}
+              {policy?.require_class_assignment ? <Message severity="warn" text="Une classe active sera obligatoire pour confirmer l’inscription." /> : null}
             </section>
           ) : null}
 
@@ -310,8 +312,8 @@ export function EnrollmentWorkflowPage() {
           {active === 5 ? (
             <section className="enrollment-step">
               <h2>Frais applicables</h2>
-              <Message severity="info" text="La génération financière reste découplée. Les frais seront produits par le module Finances après confirmation lorsque son contrat d’intégration sera activé." />
-              {policy?.require_payment_before_confirmation ? <Message severity="warn" text="La politique exige un paiement avant confirmation. Le moteur serveur signalera ce blocage tant que l’intégration financière n’est pas disponible." /> : null}
+              <Message severity="info" text="La génération des frais reste gérée par le module Finances après confirmation." />
+              {policy?.require_payment_before_confirmation ? <Message severity="warn" text="La politique exige un paiement avant confirmation, mais le contrôle financier serveur n’est pas encore raccordé." /> : null}
             </section>
           ) : null}
 
@@ -323,7 +325,7 @@ export function EnrollmentWorkflowPage() {
                 <div><dt>Responsable</dt><dd>{form.guardianFirstName} {form.guardianLastName} · {form.guardianPhone}</dd></div>
                 <div><dt>Niveau</dt><dd>{levelOptions.find((item) => item.value === form.annualLevelId)?.label}</dd></div>
                 <div><dt>Documents reçus</dt><dd>{providedRequirementIds.length}/{requirements.length}</dd></div>
-                <div><dt>Action</dt><dd>{action === "confirmed" ? "Confirmer l’inscription" : "Enregistrer la préinscription"}</dd></div>
+                <div><dt>Action</dt><dd>{action === "confirmed" ? "Contrôler et confirmer" : "Enregistrer la préinscription"}</dd></div>
               </dl>
               {validations.map((validation) => (
                 <Message key={validation.id} severity={validationSeverity(validation.severity)} text={`${validation.domain} · ${validation.message_key}`} />
@@ -333,10 +335,10 @@ export function EnrollmentWorkflowPage() {
 
           <footer className="enrollment-actions">
             <span className="dialog-spacer" />
-            {active > 0 ? <Button label="Précédent" severity="secondary" outlined onClick={() => setActive((value) => value - 1)} /> : null}
+            {active > 0 && !persistedStudentId ? <Button label="Précédent" severity="secondary" outlined onClick={() => setActive((value) => value - 1)} /> : null}
             {active < 6
               ? <Button label="Continuer" icon="pi pi-arrow-right" iconPos="right" onClick={() => void next()} />
-              : <Button label={action === "confirmed" ? "Contrôler et confirmer" : "Enregistrer la préinscription"} icon="pi pi-check" loading={saving} onClick={() => void submit()} />}
+              : <Button label={persistedStudentId ? "Ouvrir le dossier enregistré" : action === "confirmed" ? "Contrôler et confirmer" : "Enregistrer la préinscription"} icon="pi pi-check" loading={saving} onClick={() => void submit()} />}
           </footer>
         </div>
       </Card>
