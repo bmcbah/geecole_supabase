@@ -10,16 +10,8 @@ import { useAcademicSession } from "../../academic-session/components/academic-s
 import { SchoolingPanel } from "../components/SchoolingPanel";
 import { changeEnrollmentStatus, listEnrollmentWorkflows, type EnrollmentWorkflowRow, type EnrollmentWorkflowStatus } from "../services/schooling-workflows.service";
 
-const labels: Partial<Record<EnrollmentWorkflowStatus, string>> = {
-  draft: "Brouillon",
-  confirmed: "Confirmée",
-  cancelled: "Annulée",
-  transferred: "Transférée",
-  rejected: "Refusée",
-  withdrawn: "Retirée",
-};
-
-const severity = (status: EnrollmentWorkflowStatus) => status === "confirmed" ? "success" : status === "draft" ? "secondary" : status === "cancelled" || status === "rejected" ? "danger" : "warning";
+const labels: Partial<Record<EnrollmentWorkflowStatus, string>> = { draft: "Brouillon", confirmed: "Confirmée", cancelled: "Annulée", transferred: "Transférée", rejected: "Refusée", withdrawn: "Retirée" };
+const severity = (status: EnrollmentWorkflowStatus): "success" | "secondary" | "danger" | "warning" => status === "confirmed" ? "success" : status === "draft" ? "secondary" : status === "cancelled" || status === "rejected" ? "danger" : "warning";
 
 export function InscriptionsWorkspacePage() {
   const navigate = useNavigate();
@@ -29,6 +21,7 @@ export function InscriptionsWorkspacePage() {
   const [view, setView] = useState<"to-review" | "confirmed" | "history">("to-review");
   const [selected, setSelected] = useState<EnrollmentWorkflowRow | null>(null);
   const [target, setTarget] = useState<EnrollmentWorkflowStatus>("confirmed");
+  const [transitionVisible, setTransitionVisible] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState("");
@@ -69,12 +62,14 @@ export function InscriptionsWorkspacePage() {
   const openTransition = (status: EnrollmentWorkflowStatus) => {
     setTarget(status);
     setReason("");
+    setTransitionVisible(true);
   };
 
   const apply = async () => {
     if (!selected) return;
     try {
       await changeEnrollmentStatus(selected.id, target, reason);
+      setTransitionVisible(false);
       setReason("");
       await load();
     } catch (error) {
@@ -94,7 +89,7 @@ export function InscriptionsWorkspacePage() {
     >
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          {[ ["to-review", "À valider", counters.toReview, "pi-inbox"], ["confirmed", "Validées", counters.confirmed, "pi-check-circle"], ["history", "Historique", counters.history, "pi-history"] ].map(([id, label, count, icon]) => <button key={String(id)} type="button" className={`flex items-center justify-between rounded-xl border p-4 text-left ${view === id ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-200"}`} onClick={() => setView(id as typeof view)}><span><span className="block text-xs font-semibold uppercase text-slate-500">{label}</span><strong className="mt-1 block text-2xl text-slate-950">{count}</strong></span><i className={`pi ${icon} text-xl text-emerald-600`} /></button>)}
+          {([ ["to-review", "À valider", counters.toReview, "pi-inbox"], ["confirmed", "Validées", counters.confirmed, "pi-check-circle"], ["history", "Historique", counters.history, "pi-history"] ] as const).map(([id, label, count, icon]) => <button key={id} type="button" className={`flex items-center justify-between rounded-xl border p-4 text-left ${view === id ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-200"}`} onClick={() => setView(id)}><span><span className="block text-xs font-semibold uppercase text-slate-500">{label}</span><strong className="mt-1 block text-2xl text-slate-950">{count}</strong></span><i className={`pi ${icon} text-xl text-emerald-600`} /></button>)}
         </div>
 
         <div className="grid min-h-[560px] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -117,7 +112,7 @@ export function InscriptionsWorkspacePage() {
         </div>
       </div>
 
-      <Dialog header={target === "confirmed" ? "Valider l’inscription" : target === "rejected" ? "Refuser le dossier" : "Annuler l’inscription"} visible={Boolean(selected && target !== selected.status && (target === "confirmed" || reason !== "" || ["rejected", "cancelled"].includes(target)))} onHide={() => setTarget(selected?.status ?? "confirmed")} style={{ width: "min(520px, 95vw)" }} footer={<div className="flex justify-end gap-2"><Button label="Fermer" text severity="secondary" onClick={() => setTarget(selected?.status ?? "confirmed")} /><Button label="Confirmer" disabled={["rejected", "cancelled"].includes(target) && !reason.trim()} onClick={() => void apply().then(() => setTarget(selected?.status ?? "confirmed"))} /></div>}>
+      <Dialog header={target === "confirmed" ? "Valider l’inscription" : target === "rejected" ? "Refuser le dossier" : "Annuler l’inscription"} visible={transitionVisible} onHide={() => setTransitionVisible(false)} style={{ width: "min(520px, 95vw)" }} footer={<div className="flex justify-end gap-2"><Button label="Fermer" text severity="secondary" onClick={() => setTransitionVisible(false)} /><Button label="Confirmer" disabled={["rejected", "cancelled"].includes(target) && !reason.trim()} onClick={() => void apply()} /></div>}>
         <p className="mb-4 text-sm text-slate-600">Cette action sera conservée dans l’historique du dossier.</p>
         <label className="block"><span className="mb-2 block text-sm font-semibold">Motif {["rejected", "cancelled"].includes(target) ? "obligatoire" : "facultatif"}</span><InputTextarea className="w-full" rows={4} value={reason} onChange={(event) => setReason(event.target.value)} /></label>
       </Dialog>
