@@ -1,0 +1,53 @@
+name: Format PR 38
+
+on:
+  push:
+    branches:
+      - docs/scolarite-workspaces-v2
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/scolarite-workspaces-v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format scoped files
+        run: |
+          npx prettier --write \
+            docs/design-system/README.md \
+            docs/modules/scolarite/business.md \
+            docs/modules/scolarite/ux.md \
+            src/app/navigation.ts \
+            src/app/router/AppRouter.tsx \
+            src/modules/schooling/domain/schooling-dashboard.ts \
+            src/modules/schooling/pages/SchoolingOverviewPage.tsx \
+            src/modules/schooling/services/schooling-dashboard.service.ts \
+            src/shared/components/workspace/AlertList.tsx \
+            src/shared/components/workspace/DashboardGrid.tsx \
+            src/shared/components/workspace/DashboardKpiCard.tsx \
+            src/shared/components/workspace/StatusBadge.tsx \
+            src/shared/components/workspace/Workspace.tsx \
+            src/shared/components/workspace/WorkspaceHeader.tsx \
+            src/shared/types/workspace.ts \
+            supabase/migrations/20260723170000_schooling_dashboard.sql
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs src supabase
+          if git diff --cached --quiet; then
+            echo "No formatting changes"
+          else
+            git commit -m "style: formater la vue d’ensemble scolarité"
+            git push origin HEAD:docs/scolarite-workspaces-v2
+          fi
