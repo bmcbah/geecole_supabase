@@ -36,50 +36,50 @@ export async function listStudents(
     .select("*")
     .eq("institution_id", institutionId)
     .eq("academic_year_id", yearId)
-    .neq("status", "cancelled")
+    .eq("status", "confirmed")
     .order("created_at", { ascending: false });
   if (error) throw error;
   if (!enrollments.length) return [];
+
   const studentIds = [...new Set(enrollments.map((item) => item.student_id))];
-  const { data: students, error: studentError } = await supabase
-    .from("students")
-    .select("*")
-    .in("id", studentIds);
-  if (studentError) throw studentError;
-  const { data: links, error: linkError } = await supabase
-    .from("student_guardians")
-    .select("*")
-    .in("student_id", studentIds)
-    .eq("is_primary_contact", true);
-  if (linkError) throw linkError;
-  const guardianIds = links.map((item) => item.guardian_id);
+  const enrollmentIds = enrollments.map((item) => item.id);
+  const [studentsResult, linksResult, assignmentsResult] = await Promise.all([
+    supabase.from("students").select("*").in("id", studentIds),
+    supabase.from("student_guardians").select("*").in("student_id", studentIds).eq("is_primary_contact", true),
+    supabase.from("class_assignments").select("enrollment_id,class_name_snapshot,ends_on").in("enrollment_id", enrollmentIds).is("ends_on", null),
+  ]);
+  if (studentsResult.error) throw studentsResult.error;
+  if (linksResult.error) throw linksResult.error;
+  if (assignmentsResult.error) throw assignmentsResult.error;
+
+  const guardianIds = linksResult.data.map((item) => item.guardian_id);
   const { data: guardians, error: guardianError } = guardianIds.length
     ? await supabase.from("guardians").select("*").in("id", guardianIds)
     : { data: [], error: null };
   if (guardianError) throw guardianError;
+
   return enrollments.flatMap((enrollment) => {
-    const student = students.find((item) => item.id === enrollment.student_id);
+    const student = studentsResult.data.find((item) => item.id === enrollment.student_id);
     if (!student) return [];
-    const link = links.find((item) => item.student_id === student.id);
+    const link = linksResult.data.find((item) => item.student_id === student.id);
     const guardian = guardians.find((item) => item.id === link?.guardian_id);
-    return [
-      {
-        id: student.id,
-        enrollmentId: enrollment.id,
-        matricule: student.matricule,
-        firstName: student.first_name,
-        lastName: student.last_name,
-        gender: student.gender,
-        birthDate: student.birth_date,
-        status: enrollment.status as StudentListItem["status"],
-        cycleName: enrollment.cycle_name_snapshot,
-        levelName: enrollment.level_name_snapshot,
-        guardianName: guardian
-          ? `${guardian.first_name} ${guardian.last_name}`
-          : "Non renseigné",
-        guardianPhone: guardian?.primary_phone ?? "",
-      },
-    ];
+    const assignment = assignmentsResult.data.find((item) => item.enrollment_id === enrollment.id);
+    return [{
+      id: student.id,
+      enrollmentId: enrollment.id,
+      matricule: student.matricule,
+      firstName: student.first_name,
+      lastName: student.last_name,
+      gender: student.gender,
+      birthDate: student.birth_date,
+      status: enrollment.status as StudentListItem["status"],
+      cycleName: enrollment.cycle_name_snapshot,
+      levelName: enrollment.level_name_snapshot,
+      className: assignment?.class_name_snapshot ?? "",
+      guardianId: guardian?.id ?? null,
+      guardianName: guardian ? `${guardian.first_name} ${guardian.last_name}` : "Non renseigné",
+      guardianPhone: guardian?.primary_phone ?? "",
+    }];
   });
 }
 
