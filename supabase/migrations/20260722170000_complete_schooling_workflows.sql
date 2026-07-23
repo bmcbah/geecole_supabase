@@ -103,6 +103,15 @@ alter table public.student_attendance_records enable row level security;
 alter table public.schooling_document_requirements enable row level security;
 alter table public.enrollment_documents enable row level security;
 
+drop policy if exists enrollment_history_select_member on public.enrollment_status_history;
+drop policy if exists enrollment_history_manage_schooling on public.enrollment_status_history;
+drop policy if exists attendance_select_member on public.student_attendance_records;
+drop policy if exists attendance_manage_schooling on public.student_attendance_records;
+drop policy if exists schooling_requirements_select_member on public.schooling_document_requirements;
+drop policy if exists schooling_requirements_manage_admin on public.schooling_document_requirements;
+drop policy if exists enrollment_documents_select_member on public.enrollment_documents;
+drop policy if exists enrollment_documents_manage_schooling on public.enrollment_documents;
+
 create policy enrollment_history_select_member on public.enrollment_status_history for select to authenticated
 using (public.is_active_member(institution_id));
 create policy enrollment_history_manage_schooling on public.enrollment_status_history for all to authenticated
