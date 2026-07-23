@@ -20,6 +20,8 @@ export interface StudentListItem {
   status: EnrollmentStatus;
   cycleName: string;
   levelName: string;
+  className: string;
+  guardianId: string | null;
   guardianName: string;
   guardianPhone: string;
 }
