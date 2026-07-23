@@ -271,7 +271,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1440px] p-4 md:p-2 xl:p-4"><Outlet /></main>
+        <main className="w-full min-w-0 p-4 md:p-4 xl:p-6"><Outlet /></main>
       </section>
     </div>
   );
