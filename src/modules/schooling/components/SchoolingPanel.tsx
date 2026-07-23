@@ -16,47 +16,30 @@ type SchoolingPanelProps = {
   className?: string;
 };
 
-const joinClassNames = (...values: Array<string | false | undefined>) =>
-  values.filter(Boolean).join(" ");
+const joinClassNames = (...values: Array<string | false | undefined>) => values.filter(Boolean).join(" ");
 
-export function SchoolingPanel({
-  title,
-  path = "Scolarité",
-  description,
-  meta,
-  actions,
-  alert,
-  toolbar,
-  children,
-  backLabel = "Retour",
-  onBack,
-  className,
-}: SchoolingPanelProps) {
+export function SchoolingPanel({ title, path = "Scolarité", description, meta, actions, alert, toolbar, children, backLabel = "Retour", onBack, className }: SchoolingPanelProps) {
   return (
-    <section className={joinClassNames("space-y-4", className)}>
+    <section className={joinClassNames(
+      "w-full space-y-4",
+      "[&_.p-inputtext]:w-full [&_.p-inputtext]:rounded-lg",
+      "[&_.p-dropdown]:w-full [&_.p-dropdown]:rounded-lg",
+      "[&_.p-inputtextarea]:w-full [&_.p-inputtextarea]:rounded-lg",
+      "[&_.p-multiselect]:w-full [&_.p-multiselect]:rounded-lg",
+      "[&_.p-button]:rounded-lg",
+      className,
+    )}>
       <PageHeader
         eyebrow={path}
         title={title}
         description={description}
         meta={meta}
         actions={actions}
-        backAction={
-          onBack ? (
-            <Button
-              label={backLabel}
-              icon="pi pi-arrow-left"
-              text
-              size="small"
-              className="!px-0"
-              onClick={onBack}
-            />
-          ) : undefined
-        }
+        backAction={onBack ? <Button label={backLabel} icon="pi pi-arrow-left" text size="small" className="!px-0" onClick={onBack} /> : undefined}
       />
-
       {alert}
-      {toolbar ? <div className="border-b border-slate-200 pb-3">{toolbar}</div> : null}
-      <div className="min-w-0">{children}</div>
+      {toolbar ? <div className="border-b border-slate-200 pb-4">{toolbar}</div> : null}
+      <div className="min-w-0 w-full">{children}</div>
     </section>
   );
 }
