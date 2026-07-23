@@ -1,0 +1,37 @@
+name: Expand workspace width
+
+on:
+  push:
+    branches:
+      - docs/scolarite-workspaces-v2
+
+permissions:
+  contents: write
+
+jobs:
+  update-layout:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/scolarite-workspaces-v2
+      - name: Remove restrictive workspace max width
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/app/layout/AppLayout.tsx')
+          content = path.read_text()
+          old = '<main className="mx-auto max-w-[1440px] p-4 md:p-2 xl:p-4"><Outlet /></main>'
+          new = '<main className="w-full min-w-0 p-4 md:p-4 xl:p-6"><Outlet /></main>'
+          if old not in content:
+              raise SystemExit('Expected AppLayout main container not found')
+          path.write_text(content.replace(old, new))
+          PY
+      - name: Commit layout correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/layout/AppLayout.tsx
+          git commit -m "fix: rendre les workspaces fluides" || exit 0
+          git push origin HEAD:docs/scolarite-workspaces-v2
