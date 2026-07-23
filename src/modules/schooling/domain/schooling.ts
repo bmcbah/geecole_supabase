@@ -1,6 +1,7 @@
 export type EnrollmentStatus =
   | "draft"
   | "pre_registered"
+  | "pending"
   | "confirmed"
   | "rejected"
   | "withdrawn"
@@ -64,6 +65,7 @@ export type NewGuardianLinkInput = Omit<GuardianLinkInput, "guardianId"> & {
 export const enrollmentStatusLabels: Record<EnrollmentStatus, string> = {
   draft: "Brouillon",
   pre_registered: "Préinscrit",
+  pending: "En attente",
   confirmed: "Inscrit",
   rejected: "Rejeté",
   withdrawn: "Retiré",
