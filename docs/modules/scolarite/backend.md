@@ -108,6 +108,27 @@ Un transfert exige également une destination.
 - `change_enrollment_status(...)` : façade de compatibilité pour le code existant ;
 - `reenroll_student(...)` : prépare une inscription annuelle liée à l'inscription source.
 
+## Intégration frontend
+
+### Assistant d'inscription
+
+L'assistant crée d'abord une préinscription, enregistre les pièces configurées, puis :
+
+- conserve le statut `pre_registered` lorsqu'une préinscription est demandée ;
+- appelle `evaluate_enrollment`, puis `confirm_enrollment` pour une inscription directe ;
+- conserve le dossier créé et affiche les blocages lorsque la confirmation échoue.
+
+### Fiche élève
+
+L'action « Contrôler et confirmer » utilise le même contrat serveur :
+
+1. `evaluate_enrollment` recalcule les contrôles ;
+2. les blocages, avertissements et informations sont affichés ;
+3. `confirm_enrollment` n'est appelée qu'en absence de résultat `blocking` ;
+4. la fiche est rechargée après succès.
+
+La fiche ne doit jamais confirmer une inscription par une mise à jour directe du statut ou par un appel non contrôlé à l'ancienne façade.
+
 ## Réinscription
 
 La fonction `reenroll_student` conserve sa signature historique pour ne pas casser les consommateurs existants.
@@ -172,7 +193,8 @@ Ne sont pas encore branchés dans le moteur :
 - dérogation explicite sur un contrôle bloquant ;
 - notifications aux responsables ;
 - génération du certificat ou reçu d'inscription ;
-- synchronisation automatique des cours depuis les affectations.
+- synchronisation automatique des cours depuis les affectations ;
+- restitution complète de l'historique dans la fiche élève.
 
 Ces opérations nécessitent un contrat explicite avec les modules Finances, Documents et Notes. Elles ne doivent pas être simulées ni couplées implicitement.
 
@@ -187,4 +209,5 @@ Ces opérations nécessitent un contrat explicite avec les modules Finances, Doc
 - réinscription directe confirmée ;
 - refus sur année clôturée ;
 - refus pour un utilisateur sans rôle autorisé ;
+- confirmation depuis l'assistant et depuis la fiche élève ;
 - régénération des types TypeScript Supabase.
