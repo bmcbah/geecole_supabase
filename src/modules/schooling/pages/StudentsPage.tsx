@@ -9,6 +9,8 @@ import { Message } from "primereact/message";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { useAcademicSession } from "../../academic-session/components/academic-session-context";
 import { MetricIcon } from "../../../shared/components/data-display/MetricIcon";
+import { AdvancedFilterPanel } from "../../../shared/components/workspace/AdvancedFilterPanel";
+import { SmartFilterBar } from "../../../shared/components/workspace/SmartFilterBar";
 import { EnrollmentStatusTag } from "../components/EnrollmentStatusTag";
 import { SchoolingPanel } from "../components/SchoolingPanel";
 import { listStudents } from "../services/schooling.service";
@@ -104,17 +106,7 @@ export function StudentsPage() {
     });
   }, [students, query, status, level, cycle, gender, contact, guardian, birthFrom, birthTo]);
 
-  const activeFilterCount = [
-    query,
-    status,
-    level,
-    cycle,
-    gender,
-    contact,
-    guardian,
-    birthFrom,
-    birthTo,
-  ].filter(Boolean).length;
+  const activeFilterCount = [query, status, level, cycle, gender, contact, guardian, birthFrom, birthTo].filter(Boolean).length;
 
   const resetFilters = () => {
     setQuery("");
@@ -129,143 +121,137 @@ export function StudentsPage() {
   };
 
   if (!yearId) {
-    return (
-      <Message
-        severity="warn"
-        text="Créez ou sélectionnez une année scolaire avant de gérer les élèves."
-      />
-    );
+    return <Message severity="warn" text="Créez ou sélectionnez une année scolaire avant de gérer les élèves." />;
   }
 
   const toolbar = (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="p-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
-          <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_220px]">
-            <label className="block min-w-0">
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
-              <span className="p-input-icon-left block w-full">
-                <i className="pi pi-search left-3 text-sm text-slate-400" />
-                <InputText
-                  className={`${controlClass} pl-9`}
-                  value={query}
-                  placeholder="Nom, matricule, responsable ou téléphone"
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </span>
-            </label>
-
-            <label className="block min-w-0">
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span>
-              <Dropdown
-                className={controlClass}
-                value={status}
-                options={[
-                  { label: "Tous les statuts", value: "" },
-                  { label: "Préinscrits", value: "pre_registered" },
-                  { label: "Inscrits", value: "confirmed" },
-                  { label: "Transférés", value: "transferred" },
-                ]}
-                onChange={(event) => setStatus(String(event.value))}
+    <SmartFilterBar
+      primary={
+        <div className="grid min-w-0 grid-cols-[minmax(180px,1fr)] gap-3 md:grid-cols-[minmax(220px,1fr)_180px] xl:grid-cols-[minmax(320px,1fr)_220px_220px]">
+          <label className="block min-w-0">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
+            <span className="p-input-icon-left block w-full">
+              <i className="pi pi-search left-3 text-sm text-slate-400" />
+              <InputText
+                className={`${controlClass} pl-9`}
+                value={query}
+                placeholder="Nom, matricule, responsable ou téléphone"
+                onChange={(event) => setQuery(event.target.value)}
               />
-            </label>
-
-            <label className="block min-w-0">
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Niveau</span>
-              <Dropdown
-                className={controlClass}
-                value={level}
-                options={levelOptions}
-                onChange={(event) => setLevel(String(event.value))}
-              />
-            </label>
-          </div>
-
-          <div className="ml-auto flex min-h-10 flex-wrap items-center justify-end gap-2">
-            {activeFilterCount > 0 ? (
-              <Button
-                label="Réinitialiser"
-                icon="pi pi-filter-slash"
-                severity="secondary"
-                text
-                onClick={resetFilters}
-              />
-            ) : null}
-            <Button
-              label={advanced ? "Masquer" : "Plus de filtres"}
-              icon={advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
-              severity="secondary"
-              outlined
-              badge={activeFilterCount > 0 ? String(activeFilterCount) : undefined}
-              onClick={() => setAdvanced((value) => !value)}
+            </span>
+          </label>
+          <label className="hidden min-w-0 md:block">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span>
+            <Dropdown
+              className={controlClass}
+              value={status}
+              options={[
+                { label: "Tous les statuts", value: "" },
+                { label: "Préinscrits", value: "pre_registered" },
+                { label: "Inscrits", value: "confirmed" },
+                { label: "Transférés", value: "transferred" },
+              ]}
+              onChange={(event) => setStatus(String(event.value))}
             />
-          </div>
+          </label>
+          <label className="hidden min-w-0 xl:block">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Niveau</span>
+            <Dropdown className={controlClass} value={level} options={levelOptions} onChange={(event) => setLevel(String(event.value))} />
+          </label>
         </div>
-      </div>
-
-      {advanced ? (
-        <div className="border-t border-emerald-100 bg-emerald-50/35 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h3 className="m-0 text-sm font-semibold text-slate-900">Filtres avancés</h3>
-              <p className="mt-0.5 text-xs text-slate-500">Affinez la liste sans quitter la toolbar.</p>
+      }
+      actions={
+        <>
+          {activeFilterCount > 0 ? (
+            <Button label="Réinitialiser" icon="pi pi-filter-slash" severity="secondary" text onClick={resetFilters} />
+          ) : null}
+          <Button
+            label={advanced ? "Masquer" : "Plus de filtres"}
+            icon={advanced ? "pi pi-chevron-up" : "pi pi-sliders-h"}
+            severity="secondary"
+            outlined
+            badge={activeFilterCount > 0 ? String(activeFilterCount) : undefined}
+            onClick={() => setAdvanced((value) => !value)}
+          />
+        </>
+      }
+      advanced={
+        advanced ? (
+          <AdvancedFilterPanel
+            description="Affinez la liste sans quitter le workspace."
+            icon={<MetricIcon icon="pi-sliders-h" />}
+          >
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <label className="md:hidden">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span>
+                <Dropdown
+                  className={controlClass}
+                  value={status}
+                  options={[
+                    { label: "Tous les statuts", value: "" },
+                    { label: "Préinscrits", value: "pre_registered" },
+                    { label: "Inscrits", value: "confirmed" },
+                    { label: "Transférés", value: "transferred" },
+                  ]}
+                  onChange={(event) => setStatus(String(event.value))}
+                />
+              </label>
+              <label className="xl:hidden">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Niveau</span>
+                <Dropdown className={controlClass} value={level} options={levelOptions} onChange={(event) => setLevel(String(event.value))} />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Cycle</span>
+                <Dropdown className={controlClass} value={cycle} options={cycleOptions} onChange={(event) => setCycle(String(event.value))} />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Sexe</span>
+                <Dropdown
+                  className={controlClass}
+                  value={gender}
+                  options={[
+                    { label: "Tous", value: "" },
+                    { label: "Féminin", value: "female" },
+                    { label: "Masculin", value: "male" },
+                    { label: "Autre", value: "other" },
+                  ]}
+                  onChange={(event) => setGender(String(event.value))}
+                />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Responsable joignable</span>
+                <Dropdown
+                  className={controlClass}
+                  value={contact}
+                  options={[
+                    { label: "Tous", value: "" },
+                    { label: "Avec téléphone", value: "present" },
+                    { label: "Sans téléphone", value: "missing" },
+                  ]}
+                  onChange={(event) => setContact(String(event.value))}
+                />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Responsable principal</span>
+                <Dropdown className={controlClass} value={guardian} filter options={guardianOptions} onChange={(event) => setGuardian(String(event.value))} />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Naissance à partir du</span>
+                <InputText className={controlClass} type="date" value={birthFrom} onChange={(event) => setBirthFrom(event.target.value)} />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Naissance jusqu’au</span>
+                <InputText className={controlClass} type="date" value={birthTo} onChange={(event) => setBirthTo(event.target.value)} />
+              </label>
             </div>
-            <MetricIcon icon="pi-sliders-h" />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Cycle</span>
-              <Dropdown className={controlClass} value={cycle} options={cycleOptions} onChange={(event) => setCycle(String(event.value))} />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Sexe</span>
-              <Dropdown
-                className={controlClass}
-                value={gender}
-                options={[
-                  { label: "Tous", value: "" },
-                  { label: "Féminin", value: "female" },
-                  { label: "Masculin", value: "male" },
-                  { label: "Autre", value: "other" },
-                ]}
-                onChange={(event) => setGender(String(event.value))}
-              />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Responsable joignable</span>
-              <Dropdown
-                className={controlClass}
-                value={contact}
-                options={[
-                  { label: "Tous", value: "" },
-                  { label: "Avec téléphone", value: "present" },
-                  { label: "Sans téléphone", value: "missing" },
-                ]}
-                onChange={(event) => setContact(String(event.value))}
-              />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Responsable principal</span>
-              <Dropdown className={controlClass} value={guardian} filter options={guardianOptions} onChange={(event) => setGuardian(String(event.value))} />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Naissance à partir du</span>
-              <InputText className={controlClass} type="date" value={birthFrom} onChange={(event) => setBirthFrom(event.target.value)} />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Naissance jusqu’au</span>
-              <InputText className={controlClass} type="date" value={birthTo} onChange={(event) => setBirthTo(event.target.value)} />
-            </label>
-          </div>
-        </div>
-      ) : null}
-    </section>
+          </AdvancedFilterPanel>
+        ) : undefined
+      }
+    />
   );
 
   return (
     <SchoolingPanel
-      className="medium-controls"
       path={`Scolarité · ${year?.name ?? "Année scolaire"}`}
       title="Élèves"
       description="Retrouvez les élèves inscrits ou préinscrits pour l’année de travail."
@@ -309,39 +295,38 @@ export function StudentsPage() {
           <div className="max-w-sm">
             <MetricIcon icon="pi-users" size="md" tone="slate" className="mx-auto" />
             <h3 className="mt-4 text-sm font-semibold text-slate-900">Aucun élève trouvé</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              Modifiez les filtres ou créez une nouvelle inscription pour commencer.
-            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-500">Modifiez les filtres ou créez une nouvelle inscription pour commencer.</p>
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <DataTable
             value={filtered}
             dataKey="id"
             paginator
-            rows={10}
-            rowsPerPageOptions={[10, 25, 50]}
+            rows={25}
+            rowsPerPageOptions={[25, 50, 100]}
             emptyMessage="Aucun élève ne correspond à cette recherche."
-            onRowClick={(event) => void navigate(`/scolarite/eleves/${event.data.id}`)}
-            rowClassName={() => "cursor-pointer transition-colors hover:bg-emerald-50/40"}
-            className="text-sm"
-            tableStyle={{ minWidth: "920px" }}
+            className="text-sm [&_.p-datatable-table]:min-w-[920px]"
           >
             <Column
               header="Élève"
               sortable
               sortField="lastName"
               body={(item: StudentListItem) => (
-                <div className="flex min-w-0 items-center gap-3 py-1">
+                <button
+                  type="button"
+                  className={`${resetButtonClass} flex min-w-0 cursor-pointer items-center gap-3 py-1 text-left`}
+                  onClick={() => void navigate(`/scolarite/eleves/${item.id}`)}
+                >
                   <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold leading-none text-emerald-700 ring-1 ring-emerald-100">
-                    <span className="block leading-none">{item.firstName[0]}{item.lastName[0]}</span>
+                    {item.firstName[0]}{item.lastName[0]}
                   </span>
-                  <div className="min-w-0">
-                    <strong className="block truncate text-sm font-semibold text-slate-900">{item.firstName} {item.lastName}</strong>
+                  <span className="min-w-0">
+                    <strong className="block truncate text-sm font-semibold text-slate-900 hover:text-emerald-700">{item.firstName} {item.lastName}</strong>
                     <span className="mt-0.5 block truncate text-xs text-slate-400">{item.matricule}</span>
-                  </div>
-                </div>
+                  </span>
+                </button>
               )}
             />
             <Column field="cycleName" header="Cycle" sortable body={(item: StudentListItem) => <span className="text-sm text-slate-700">{item.cycleName || "—"}</span>} />
@@ -364,10 +349,7 @@ export function StudentsPage() {
                   type="button"
                   className={`${resetButtonClass} flex size-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-700`}
                   aria-label={`Ouvrir ${item.firstName} ${item.lastName}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void navigate(`/scolarite/eleves/${item.id}`);
-                  }}
+                  onClick={() => void navigate(`/scolarite/eleves/${item.id}`)}
                 >
                   <i className="pi pi-chevron-right text-xs leading-none" />
                 </button>
