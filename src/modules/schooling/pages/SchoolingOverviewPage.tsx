@@ -4,7 +4,6 @@ import { Button } from "primereact/button";
 import { Message } from "primereact/message";
 import { Skeleton } from "primereact/skeleton";
 import { AlertList } from "../../../shared/components/workspace/AlertList";
-import { DashboardGrid, DashboardGridItem } from "../../../shared/components/workspace/DashboardGrid";
 import { DashboardKpiCard } from "../../../shared/components/workspace/DashboardKpiCard";
 import { Workspace } from "../../../shared/components/workspace/Workspace";
 import { WorkspaceHeader } from "../../../shared/components/workspace/WorkspaceHeader";
@@ -125,7 +124,7 @@ export function SchoolingOverviewPage() {
       }
       feedback={failure ? <Message severity="error" text={failure} /> : undefined}
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         <section aria-labelledby="schooling-kpis-title">
           <div className="mb-3">
             <h2 id="schooling-kpis-title" className="m-0 text-base font-semibold text-slate-950">
@@ -135,89 +134,81 @@ export function SchoolingOverviewPage() {
               Les volumes qui demandent une lecture immédiate à l’entrée du module.
             </p>
           </div>
-          <DashboardGrid>
-            {loading && !data
-              ? Array.from({ length: 6 }, (_, index) => (
-                  <DashboardGridItem key={index}>
-                    <Skeleton height="9rem" borderRadius="0.375rem" />
-                  </DashboardGridItem>
-                ))
-              : kpis.map((kpi) => (
-                  <DashboardGridItem key={kpi.id}>
+
+          <div className="overflow-x-auto pb-1">
+            <div className="grid min-w-[1120px] grid-cols-6 gap-3">
+              {loading && !data
+                ? Array.from({ length: 6 }, (_, index) => (
+                    <Skeleton key={index} height="8rem" borderRadius="0.5rem" />
+                  ))
+                : kpis.map((kpi) => (
                     <DashboardKpiCard
+                      key={kpi.id}
                       label={kpi.label}
                       value={kpi.value}
                       description={kpi.description}
                       icon={kpi.icon}
                       onOpen={() => navigate(kpi.route)}
                     />
-                  </DashboardGridItem>
-                ))}
-          </DashboardGrid>
+                  ))}
+            </div>
+          </div>
         </section>
 
-        <DashboardGrid>
-          <DashboardGridItem span={3}>
-            <section className="h-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-              <header className="border-b border-slate-200 px-4 py-3">
-                <h2 className="m-0 text-base font-semibold text-slate-950">
-                  Actions récentes
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  Dernières opérations enregistrées dans le parcours d’inscription.
-                </p>
-              </header>
-              <div className="divide-y divide-slate-100">
-                {data?.recentActions.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="flex w-full items-center gap-3 border-0 bg-white px-4 py-3 text-left transition hover:bg-slate-50"
-                    onClick={() => navigate(action.route)}
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-md bg-emerald-50 text-emerald-700">
-                      <i className="pi pi-history text-sm" />
+        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+          <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+            <header className="border-b border-slate-200 px-4 py-3">
+              <h2 className="m-0 text-base font-semibold text-slate-950">Actions récentes</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Dernières opérations enregistrées dans le parcours d’inscription.
+              </p>
+            </header>
+            <div className="divide-y divide-slate-100">
+              {data?.recentActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="flex w-full items-center gap-3 border-0 bg-white px-4 py-3 text-left transition hover:bg-slate-50"
+                  onClick={() => navigate(action.route)}
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700">
+                    <i className="pi pi-history text-sm" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <strong className="block truncate text-sm font-semibold text-slate-950">
+                      {action.title}
+                    </strong>
+                    <span className="mt-0.5 block truncate text-xs text-slate-500">
+                      {action.description}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-semibold text-slate-950">
-                        {action.title}
-                      </strong>
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">
-                        {action.description}
-                      </span>
-                    </span>
-                    <time className="shrink-0 text-xs text-slate-400">
-                      {formatDate(action.occurredAt)}
-                    </time>
-                    <i className="pi pi-chevron-right text-[10px] text-slate-400" />
-                  </button>
-                ))}
-                {!loading && !data?.recentActions.length ? (
-                  <div className="px-4 py-12 text-center text-sm text-slate-500">
-                    Aucune action récente dans cette année scolaire.
-                  </div>
-                ) : null}
-              </div>
-            </section>
-          </DashboardGridItem>
+                  </span>
+                  <time className="shrink-0 text-xs text-slate-400">
+                    {formatDate(action.occurredAt)}
+                  </time>
+                  <i className="pi pi-chevron-right text-[10px] text-slate-400" />
+                </button>
+              ))}
+              {!loading && !data?.recentActions.length ? (
+                <div className="px-4 py-12 text-center text-sm text-slate-500">
+                  Aucune action récente dans cette année scolaire.
+                </div>
+              ) : null}
+            </div>
+          </section>
 
-          <DashboardGridItem span={3}>
-            <section className="h-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-              <header className="border-b border-slate-200 px-4 py-3">
-                <h2 className="m-0 text-base font-semibold text-slate-950">
-                  Alertes du module
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  Contrôles administratifs, assiduité, notes et bulletins à traiter.
-                </p>
-              </header>
-              <AlertList
-                items={data?.alerts ?? []}
-                onOpen={(alert) => navigate(alert.route)}
-              />
-            </section>
-          </DashboardGridItem>
-        </DashboardGrid>
+          <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+            <header className="border-b border-slate-200 px-4 py-3">
+              <h2 className="m-0 text-base font-semibold text-slate-950">Alertes du module</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Contrôles administratifs, assiduité, notes et bulletins à traiter.
+              </p>
+            </header>
+            <AlertList
+              items={data?.alerts ?? []}
+              onOpen={(alert) => navigate(alert.route)}
+            />
+          </section>
+        </div>
       </div>
     </Workspace>
   );
