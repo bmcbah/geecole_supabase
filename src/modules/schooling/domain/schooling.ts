@@ -20,6 +20,7 @@ export interface StudentListItem {
   status: EnrollmentStatus;
   cycleName: string;
   levelName: string;
+  className: string;
   guardianName: string;
   guardianPhone: string;
 }
