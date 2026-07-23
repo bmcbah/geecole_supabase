@@ -16,7 +16,7 @@ export function WorkspaceHeader({
   tabs,
 }: WorkspaceHeaderProps) {
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-slate-200 bg-transparent">
       <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -26,7 +26,7 @@ export function WorkspaceHeader({
             {meta ? <div className="flex flex-wrap items-center gap-2">{meta}</div> : null}
           </div>
           {description ? (
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="mt-1 max-w-3xl text-sm leading-5 text-slate-600">
               {description}
             </p>
           ) : null}
