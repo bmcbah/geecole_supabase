@@ -13,7 +13,9 @@ const StudentProfilePage = lazy(() => import("../../modules/schooling/pages/Stud
 const EnrollmentPage = lazy(() => import("../../modules/schooling/pages/EnrollmentPage").then((module) => ({ default: module.EnrollmentPage })));
 const ReenrollmentPage = lazy(() => import("../../modules/schooling/pages/ReenrollmentPage").then((module) => ({ default: module.ReenrollmentPage })));
 const BatchReenrollmentPage = lazy(() => import("../../modules/schooling/pages/BatchReenrollmentPage").then((module) => ({ default: module.BatchReenrollmentPage })));
-const AdmissionsWorkspacePage = lazy(() => import("../../modules/schooling/pages/AdmissionsWorkspacePage").then((module) => ({ default: module.AdmissionsWorkspacePage })));
+const SchoolingCockpitPage = lazy(() => import("../../modules/schooling/pages/SchoolingCockpitPage").then((module) => ({ default: module.SchoolingCockpitPage })));
+const InscriptionsWorkspacePage = lazy(() => import("../../modules/schooling/pages/InscriptionsWorkspacePage").then((module) => ({ default: module.InscriptionsWorkspacePage })));
+const PreEnrollmentsWorkspacePage = lazy(() => import("../../modules/schooling/pages/PreEnrollmentsWorkspacePage").then((module) => ({ default: module.PreEnrollmentsWorkspacePage })));
 const AttendanceWorkspacePage = lazy(() => import("../../modules/schooling/pages/AttendanceWorkspacePage").then((module) => ({ default: module.AttendanceWorkspacePage })));
 const DocumentsWorkspacePage = lazy(() => import("../../modules/schooling/pages/DocumentsWorkspacePage").then((module) => ({ default: module.DocumentsWorkspacePage })));
 const SchoolYearPreparationWorkspacePage = lazy(() => import("../../modules/schooling/pages/SchoolYearPreparationWorkspacePage").then((module) => ({ default: module.SchoolYearPreparationWorkspacePage })));
@@ -60,8 +62,11 @@ export function AppRouter() {
             <Route path="/etablissement" element={<Navigate to="/parametrage/etablissement" replace />} />
             <Route path="/parametrage/:section?" element={<SettingsPage />} />
             <Route path="/gestion-financiere/configuration/:section" element={<SettingsPage />} />
+            <Route path="/scolarite" element={<SchoolingCockpitPage />} />
             <Route path="/scolarite/eleves" element={<StudentsPage />} />
-            <Route path="/scolarite/admissions" element={<AdmissionsWorkspacePage />} />
+            <Route path="/scolarite/inscriptions" element={<InscriptionsWorkspacePage />} />
+            <Route path="/scolarite/preinscriptions" element={<PreEnrollmentsWorkspacePage />} />
+            <Route path="/scolarite/admissions" element={<Navigate to="/scolarite/inscriptions" replace />} />
             <Route path="/scolarite/assiduite" element={<AttendanceWorkspacePage />} />
             <Route path="/scolarite/documents" element={<DocumentsWorkspacePage />} />
             <Route path="/scolarite/preparation-rentree" element={<SchoolYearPreparationWorkspacePage />} />
