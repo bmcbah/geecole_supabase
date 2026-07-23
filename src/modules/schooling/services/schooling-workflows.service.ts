@@ -30,14 +30,19 @@ export type EnrollmentWorkflowRow = {
   assignment: Array<{ class_id: string; class_name: string }>;
 };
 
-export async function listEnrollmentWorkflows(institutionId: string, academicYearId: string) {
+export async function listEnrollmentWorkflows(
+  institutionId: string,
+  academicYearId: string,
+) {
   const { data, error } = await client
     .from("enrollments")
-    .select(`
+    .select(
+      `
       id,status,admission_date,created_at,updated_at,level_name_snapshot,cycle_name_snapshot,cancellation_reason,
       student:students!inner(id,matricule,first_name,last_name,birth_date),
       assignment:class_assignments(class_id,class_name_snapshot,ends_on)
-    `)
+    `,
+    )
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
     .order("updated_at", { ascending: false });
@@ -47,7 +52,10 @@ export async function listEnrollmentWorkflows(institutionId: string, academicYea
     student: Array.isArray(row.student) ? row.student[0] : row.student,
     assignment: (row.assignment ?? [])
       .filter((item: any) => !item.ends_on)
-      .map((item: any) => ({ class_id: item.class_id, class_name: item.class_name_snapshot ?? "Classe" })),
+      .map((item: any) => ({
+        class_id: item.class_id,
+        class_name: item.class_name_snapshot ?? "Classe",
+      })),
   })) as EnrollmentWorkflowRow[];
 }
 
@@ -73,28 +81,42 @@ export type AttendanceRow = {
   reason: string | null;
   enrollment: {
     id: string;
-    student: { id: string; matricule: string; first_name: string; last_name: string };
+    student: {
+      id: string;
+      matricule: string;
+      first_name: string;
+      last_name: string;
+    };
   };
 };
 
-export async function listAttendance(institutionId: string, academicYearId: string) {
+export async function listAttendance(
+  institutionId: string,
+  academicYearId: string,
+) {
   const { data, error } = await client
     .from("student_attendance_records")
-    .select(`
+    .select(
+      `
       id,attendance_date,slot_label,kind,justification_status,reason,
       enrollment:enrollments!inner(id,student:students!inner(id,matricule,first_name,last_name))
-    `)
+    `,
+    )
     .eq("institution_id", institutionId)
     .eq("academic_year_id", academicYearId)
     .order("attendance_date", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => {
-    const enrollment = Array.isArray(row.enrollment) ? row.enrollment[0] : row.enrollment;
+    const enrollment = Array.isArray(row.enrollment)
+      ? row.enrollment[0]
+      : row.enrollment;
     return {
       ...row,
       enrollment: {
         ...enrollment,
-        student: Array.isArray(enrollment?.student) ? enrollment.student[0] : enrollment?.student,
+        student: Array.isArray(enrollment?.student)
+          ? enrollment.student[0]
+          : enrollment?.student,
       },
     };
   }) as AttendanceRow[];
@@ -143,7 +165,9 @@ export async function createAttendanceBatch(input: {
     kind: input.kind,
     reason: input.reason?.trim() || null,
   }));
-  const { error } = await client.from("student_attendance_records").insert(rows);
+  const { error } = await client
+    .from("student_attendance_records")
+    .insert(rows);
   if (error) throw error;
 }
 
@@ -159,7 +183,8 @@ export async function updateAttendanceJustification(
   if (error) throw error;
 }
 
-export type EnrollmentDocumentStatus = "requested" | "received" | "verified" | "rejected" | "expired";
+export type EnrollmentDocumentStatus =
+  "requested" | "received" | "verified" | "rejected" | "expired";
 
 export type EnrollmentDocumentRow = {
   id: string;
@@ -175,33 +200,50 @@ export type EnrollmentDocumentRow = {
     id: string;
     level_name_snapshot: string;
     cycle_name_snapshot: string;
-    student: { id: string; matricule: string; first_name: string; last_name: string };
-    class_assignments: Array<{ class_name_snapshot: string; ends_on: string | null }>;
+    student: {
+      id: string;
+      matricule: string;
+      first_name: string;
+      last_name: string;
+    };
+    class_assignments: Array<{
+      class_name_snapshot: string;
+      ends_on: string | null;
+    }>;
   };
 };
 
-export async function listEnrollmentDocuments(institutionId: string, academicYearId: string) {
+export async function listEnrollmentDocuments(
+  institutionId: string,
+  academicYearId: string,
+) {
   const { data, error } = await client
     .from("enrollment_documents")
-    .select(`
+    .select(
+      `
       id,document_code,document_name,status,storage_path,rejection_reason,verified_at,created_at,updated_at,
       enrollment:enrollments!inner(
         id,academic_year_id,level_name_snapshot,cycle_name_snapshot,
         student:students!inner(id,matricule,first_name,last_name),
         class_assignments(class_name_snapshot,ends_on)
       )
-    `)
+    `,
+    )
     .eq("institution_id", institutionId)
     .eq("enrollment.academic_year_id", academicYearId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => {
-    const enrollment = Array.isArray(row.enrollment) ? row.enrollment[0] : row.enrollment;
+    const enrollment = Array.isArray(row.enrollment)
+      ? row.enrollment[0]
+      : row.enrollment;
     return {
       ...row,
       enrollment: {
         ...enrollment,
-        student: Array.isArray(enrollment?.student) ? enrollment.student[0] : enrollment?.student,
+        student: Array.isArray(enrollment?.student)
+          ? enrollment.student[0]
+          : enrollment?.student,
         class_assignments: enrollment?.class_assignments ?? [],
       },
     };
@@ -215,9 +257,13 @@ export async function updateEnrollmentDocumentStatus(
 ) {
   const patch: Record<string, unknown> = {
     status,
-    rejection_reason: status === "rejected" ? rejectionReason?.trim() || null : null,
+    rejection_reason:
+      status === "rejected" ? rejectionReason?.trim() || null : null,
   };
   if (status === "verified") patch.verified_at = new Date().toISOString();
-  const { error } = await client.from("enrollment_documents").update(patch).eq("id", id);
+  const { error } = await client
+    .from("enrollment_documents")
+    .update(patch)
+    .eq("id", id);
   if (error) throw error;
 }

@@ -81,7 +81,8 @@ const formatActivityDate = (value: string) => {
 
 export function SchoolingCockpitPage() {
   const navigate = useNavigate();
-  const { institutionId, yearId, year, functionalProfile } = useAcademicSession();
+  const { institutionId, yearId, year, functionalProfile } =
+    useAcademicSession();
   const [enrollments, setEnrollments] = useState<EnrollmentWorkflowRow[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [documents, setDocuments] = useState<EnrollmentDocumentRow[]>([]);
@@ -93,24 +94,30 @@ export function SchoolingCockpitPage() {
     setLoading(true);
     setFailure("");
 
-    const [enrollmentResult, attendanceResult, documentResult] = await Promise.allSettled([
-      listEnrollmentWorkflows(institutionId, yearId),
-      listAttendance(institutionId, yearId),
-      listEnrollmentDocuments(institutionId, yearId),
-    ]);
+    const [enrollmentResult, attendanceResult, documentResult] =
+      await Promise.allSettled([
+        listEnrollmentWorkflows(institutionId, yearId),
+        listAttendance(institutionId, yearId),
+        listEnrollmentDocuments(institutionId, yearId),
+      ]);
 
     const errors: string[] = [];
-    if (enrollmentResult.status === "fulfilled") setEnrollments(enrollmentResult.value);
+    if (enrollmentResult.status === "fulfilled")
+      setEnrollments(enrollmentResult.value);
     else errors.push("les inscriptions");
 
-    if (attendanceResult.status === "fulfilled") setAttendance(attendanceResult.value);
+    if (attendanceResult.status === "fulfilled")
+      setAttendance(attendanceResult.value);
     else errors.push("l’assiduité");
 
-    if (documentResult.status === "fulfilled") setDocuments(documentResult.value);
+    if (documentResult.status === "fulfilled")
+      setDocuments(documentResult.value);
     else errors.push("les documents");
 
     if (errors.length) {
-      setFailure(`Certaines données n’ont pas pu être chargées : ${errors.join(", ")}.`);
+      setFailure(
+        `Certaines données n’ont pas pu être chargées : ${errors.join(", ")}.`,
+      );
     }
     setLoading(false);
   }, [institutionId, yearId]);
@@ -118,9 +125,13 @@ export function SchoolingCockpitPage() {
   useEffect(() => void load(), [load]);
 
   const metrics = useMemo(() => {
-    const confirmed = enrollments.filter((item) => item.status === "confirmed").length;
+    const confirmed = enrollments.filter(
+      (item) => item.status === "confirmed",
+    ).length;
     const drafts = enrollments.filter((item) => item.status === "draft").length;
-    const preRegistered = enrollments.filter((item) => item.status === "pre_registered").length;
+    const preRegistered = enrollments.filter(
+      (item) => item.status === "pre_registered",
+    ).length;
     const withoutClass = enrollments.filter(
       (item) => item.status === "confirmed" && !item.assignment[0]?.class_name,
     ).length;
@@ -128,7 +139,9 @@ export function SchoolingCockpitPage() {
       (item) => item.justification_status !== "justified",
     ).length;
     const today = new Date().toISOString().slice(0, 10);
-    const attendanceToday = attendance.filter((item) => item.attendance_date === today).length;
+    const attendanceToday = attendance.filter(
+      (item) => item.attendance_date === today,
+    ).length;
     const documentsToReview = documents.filter((item) =>
       ["received", "rejected", "expired"].includes(item.status),
     ).length;
@@ -315,7 +328,8 @@ export function SchoolingCockpitPage() {
         id: "without-class",
         priority: "Urgent",
         label: "Affecter les élèves sans classe",
-        description: "Ouvrir la liste des élèves confirmés et compléter leur parcours scolaire.",
+        description:
+          "Ouvrir la liste des élèves confirmés et compléter leur parcours scolaire.",
         count: metrics.withoutClass,
         route: "/scolarite/eleves",
       },
@@ -323,7 +337,8 @@ export function SchoolingCockpitPage() {
         id: "documents",
         priority: "Aujourd’hui",
         label: "Contrôler les documents reçus",
-        description: "Valider ou rejeter les pièces qui attendent une décision.",
+        description:
+          "Valider ou rejeter les pièces qui attendent une décision.",
         count: metrics.documentsToReview,
         route: "/scolarite/documents",
       },
@@ -337,14 +352,16 @@ export function SchoolingCockpitPage() {
       },
     ];
 
-    if (profile === "teacher") return common.filter((item) => item.id === "attendance");
+    if (profile === "teacher")
+      return common.filter((item) => item.id === "attendance");
     if (profile === "finance") {
       return [
         {
           id: "pending",
           priority: "À traiter",
           label: "Suivre les dossiers non confirmés",
-          description: "Les dossiers non confirmés ne sont pas encore dans l’effectif officiel.",
+          description:
+            "Les dossiers non confirmés ne sont pas encore dans l’effectif officiel.",
           count: metrics.pending,
           route: "/scolarite/inscriptions",
         },
@@ -373,7 +390,8 @@ export function SchoolingCockpitPage() {
   }, [metrics, profile]);
 
   const alerts = workItems.filter(
-    (item) => item.count > 0 && ["Urgent", "Aujourd’hui"].includes(item.priority),
+    (item) =>
+      item.count > 0 && ["Urgent", "Aujourd’hui"].includes(item.priority),
   );
 
   const recentItems = useMemo<RecentItem[]>(
@@ -398,7 +416,8 @@ export function SchoolingCockpitPage() {
     [enrollments],
   );
 
-  if (!yearId) return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+  if (!yearId)
+    return <Message severity="warn" text="Sélectionnez une année scolaire." />;
 
   const overviewCards = [
     {
@@ -418,10 +437,16 @@ export function SchoolingCockpitPage() {
                 <i className="pi pi-history text-sm" />
               </span>
               <span className="min-w-0 flex-1">
-                <strong className="block truncate text-sm font-semibold text-slate-900">{item.label}</strong>
-                <small className="mt-0.5 block truncate text-xs text-slate-500">{item.detail}</small>
+                <strong className="block truncate text-sm font-semibold text-slate-900">
+                  {item.label}
+                </strong>
+                <small className="mt-0.5 block truncate text-xs text-slate-500">
+                  {item.detail}
+                </small>
               </span>
-              <time className="shrink-0 text-xs text-slate-400">{formatActivityDate(item.date)}</time>
+              <time className="shrink-0 text-xs text-slate-400">
+                {formatActivityDate(item.date)}
+              </time>
               <i className="pi pi-chevron-right text-[10px] text-slate-400" />
             </button>
           ))}
@@ -449,8 +474,12 @@ export function SchoolingCockpitPage() {
                 <i className="pi pi-exclamation-triangle text-sm" />
               </span>
               <span className="min-w-0 flex-1">
-                <strong className="block text-sm font-semibold text-slate-900">{item.label}</strong>
-                <small className="mt-0.5 block text-xs text-slate-500">{item.description}</small>
+                <strong className="block text-sm font-semibold text-slate-900">
+                  {item.label}
+                </strong>
+                <small className="mt-0.5 block text-xs text-slate-500">
+                  {item.description}
+                </small>
               </span>
               <Tag value={String(item.count)} severity="warning" />
             </button>
@@ -462,8 +491,12 @@ export function SchoolingCockpitPage() {
             <span className="mx-auto grid size-10 place-items-center rounded-full bg-emerald-50 text-emerald-700">
               <i className="pi pi-check" />
             </span>
-            <p className="mt-3 text-sm font-semibold text-slate-900">Aucune alerte prioritaire</p>
-            <p className="mt-1 text-xs text-slate-500">Les contrôles principaux sont à jour.</p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">
+              Aucune alerte prioritaire
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Les contrôles principaux sont à jour.
+            </p>
           </div>
         </div>
       ),
@@ -493,8 +526,12 @@ export function SchoolingCockpitPage() {
       <div className="space-y-6">
         <section>
           <div className="mb-3">
-            <h2 className="m-0 text-base font-semibold text-slate-950">À retenir maintenant</h2>
-            <p className="mt-1 text-sm text-slate-500">Activité récente et alertes du périmètre courant.</p>
+            <h2 className="m-0 text-base font-semibold text-slate-950">
+              À retenir maintenant
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Activité récente et alertes du périmètre courant.
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
             {overviewCards.map((card, index) => (
@@ -503,10 +540,16 @@ export function SchoolingCockpitPage() {
                 className={`${adaptiveSpan(index, overviewCards.length)} flex min-h-[292px] min-w-0 flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm`}
               >
                 <header className="border-b border-slate-200 px-4 py-3">
-                  <h3 className="m-0 text-sm font-semibold text-slate-950">{card.title}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{card.description}</p>
+                  <h3 className="m-0 text-sm font-semibold text-slate-950">
+                    {card.title}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {card.description}
+                  </p>
                 </header>
-                <div className="min-h-0 flex-1 overflow-y-auto">{card.content}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  {card.content}
+                </div>
               </article>
             ))}
           </div>
@@ -515,10 +558,17 @@ export function SchoolingCockpitPage() {
         <section>
           <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="m-0 text-base font-semibold text-slate-950">Indicateurs de pilotage</h2>
-              <p className="mt-1 text-sm text-slate-500">Les chiffres utiles à votre fonction, sans dupliquer les workflows.</p>
+              <h2 className="m-0 text-base font-semibold text-slate-950">
+                Indicateurs de pilotage
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Les chiffres utiles à votre fonction, sans dupliquer les
+                workflows.
+              </p>
             </div>
-            <span className="text-xs font-medium text-slate-400">Année {year?.name ?? "active"}</span>
+            <span className="text-xs font-medium text-slate-400">
+              Année {year?.name ?? "active"}
+            </span>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
             {kpis.map((kpi, index) => (
@@ -529,13 +579,19 @@ export function SchoolingCockpitPage() {
                 onClick={() => kpi.route && void navigate(kpi.route)}
               >
                 <span className="flex w-full items-start justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{kpi.label}</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    {kpi.label}
+                  </span>
                   <span className="grid size-8 shrink-0 place-items-center rounded-md bg-slate-50 text-slate-500 transition group-hover:bg-emerald-50 group-hover:text-emerald-700">
                     <i className={`pi ${kpi.icon} text-sm`} />
                   </span>
                 </span>
-                <strong className="mt-3 block text-3xl font-semibold tracking-tight text-slate-950">{kpi.value}</strong>
-                <span className="mt-2 block text-xs leading-5 text-slate-500">{kpi.description}</span>
+                <strong className="mt-3 block text-3xl font-semibold tracking-tight text-slate-950">
+                  {kpi.value}
+                </strong>
+                <span className="mt-2 block text-xs leading-5 text-slate-500">
+                  {kpi.description}
+                </span>
               </button>
             ))}
           </div>
@@ -544,34 +600,55 @@ export function SchoolingCockpitPage() {
         <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <header className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 px-4 py-3">
             <div>
-              <h2 className="m-0 text-base font-semibold text-slate-950">Travail à traiter</h2>
-              <p className="mt-1 text-sm text-slate-500">Les missions prioritaires correspondant à votre profil.</p>
+              <h2 className="m-0 text-base font-semibold text-slate-950">
+                Travail à traiter
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Les missions prioritaires correspondant à votre profil.
+              </p>
             </div>
             <span className="text-sm font-semibold text-slate-700">
-              {workItems.filter((item) => item.count > 0).length} file(s) active(s)
+              {workItems.filter((item) => item.count > 0).length} file(s)
+              active(s)
             </span>
           </header>
           <div className="divide-y divide-slate-100">
-            {workItems.filter((item) => item.count > 0).map((item) => (
-              <div key={item.id} className="grid gap-3 px-4 py-4 md:grid-cols-[130px_minmax(0,1fr)_80px_auto] md:items-center">
-                <Tag value={item.priority} severity={prioritySeverity[item.priority]} />
-                <div className="min-w-0">
-                  <strong className="block text-sm font-semibold text-slate-900">{item.label}</strong>
-                  <span className="mt-1 block text-xs leading-5 text-slate-500">{item.description}</span>
+            {workItems
+              .filter((item) => item.count > 0)
+              .map((item) => (
+                <div
+                  key={item.id}
+                  className="grid gap-3 px-4 py-4 md:grid-cols-[130px_minmax(0,1fr)_80px_auto] md:items-center"
+                >
+                  <Tag
+                    value={item.priority}
+                    severity={prioritySeverity[item.priority]}
+                  />
+                  <div className="min-w-0">
+                    <strong className="block text-sm font-semibold text-slate-900">
+                      {item.label}
+                    </strong>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">
+                      {item.description}
+                    </span>
+                  </div>
+                  <strong className="text-2xl font-semibold text-slate-950">
+                    {item.count}
+                  </strong>
+                  <Button
+                    label="Ouvrir"
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    severity="secondary"
+                    text
+                    onClick={() => void navigate(item.route)}
+                  />
                 </div>
-                <strong className="text-2xl font-semibold text-slate-950">{item.count}</strong>
-                <Button
-                  label="Ouvrir"
-                  icon="pi pi-arrow-right"
-                  iconPos="right"
-                  severity="secondary"
-                  text
-                  onClick={() => void navigate(item.route)}
-                />
-              </div>
-            ))}
+              ))}
             {!workItems.some((item) => item.count > 0) ? (
-              <div className="px-4 py-10 text-center text-sm text-slate-500">Aucune tâche prioritaire dans votre périmètre.</div>
+              <div className="px-4 py-10 text-center text-sm text-slate-500">
+                Aucune tâche prioritaire dans votre périmètre.
+              </div>
             ) : null}
           </div>
         </section>

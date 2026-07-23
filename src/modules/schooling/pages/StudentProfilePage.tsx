@@ -87,7 +87,9 @@ export function StudentProfilePage() {
     return (
       now.getFullYear() -
       birth.getFullYear() -
-      (now < new Date(now.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0)
+      (now < new Date(now.getFullYear(), birth.getMonth(), birth.getDate())
+        ? 1
+        : 0)
     );
   }, [detail?.student.birth_date]);
 
@@ -150,7 +152,9 @@ export function StudentProfilePage() {
               icon="pi pi-refresh"
               severity="secondary"
               outlined
-              onClick={() => void navigate(`/scolarite/eleves/${studentId}/reinscription`)}
+              onClick={() =>
+                void navigate(`/scolarite/eleves/${studentId}/reinscription`)
+              }
             />
           ) : null}
           <StudentProfileActions
@@ -175,17 +179,24 @@ export function StudentProfilePage() {
             />
             <div className="min-w-0">
               <div className="flex flex-wrap gap-2">
-                <Tag value={active ? "Élève actif" : "Élève inactif"} severity={active ? "success" : "warning"} />
+                <Tag
+                  value={active ? "Élève actif" : "Élève inactif"}
+                  severity={active ? "success" : "warning"}
+                />
                 <Tag
                   value={
                     enrollmentLabels[enrollment?.status ?? "draft"] ??
                     enrollment?.status ??
                     "Sans inscription"
                   }
-                  severity={enrollment?.status === "confirmed" ? "success" : "info"}
+                  severity={
+                    enrollment?.status === "confirmed" ? "success" : "info"
+                  }
                 />
               </div>
-              <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-950">{fullName}</h1>
+              <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-950">
+                {fullName}
+              </h1>
               <p className="mt-1 text-sm text-slate-500">
                 {student.matricule} · {year?.name ?? "Année non définie"}
                 {age !== null ? ` · ${age} ans` : ""}
@@ -196,15 +207,22 @@ export function StudentProfilePage() {
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-slate-200 bg-slate-200 sm:grid-cols-4">
             {stats.map(([label, value]) => (
               <div key={label} className="min-w-0 bg-white px-3 py-3">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">{label}</span>
-                <strong className="mt-1 block truncate text-sm font-semibold text-slate-900">{value}</strong>
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  {label}
+                </span>
+                <strong className="mt-1 block truncate text-sm font-semibold text-slate-900">
+                  {value}
+                </strong>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <nav className="overflow-x-auto border-b border-slate-200 bg-white" aria-label="Sections du dossier élève">
+      <nav
+        className="overflow-x-auto border-b border-slate-200 bg-white"
+        aria-label="Sections du dossier élève"
+      >
         <div className="grid min-w-[980px] grid-cols-7">
           {tabs.map((tab) => (
             <button
@@ -231,8 +249,12 @@ export function StudentProfilePage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
               <div className="border-b border-slate-100 pb-3">
-                <h2 className="m-0 text-base font-semibold text-slate-950">Identité</h2>
-                <p className="mt-1 text-xs text-slate-500">Informations personnelles du dossier.</p>
+                <h2 className="m-0 text-base font-semibold text-slate-950">
+                  Identité
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Informations personnelles du dossier.
+                </p>
               </div>
               <dl className="divide-y divide-slate-100">
                 {[
@@ -241,9 +263,14 @@ export function StudentProfilePage() {
                   ["Nationalité", student.nationality || "Non renseignée"],
                   ["Adresse", student.address || "Non renseignée"],
                 ].map(([label, value]) => (
-                  <div key={label} className="grid gap-2 py-3 sm:grid-cols-[160px_1fr]">
+                  <div
+                    key={label}
+                    className="grid gap-2 py-3 sm:grid-cols-[160px_1fr]"
+                  >
                     <dt className="text-sm text-slate-500">{label}</dt>
-                    <dd className="m-0 text-sm font-semibold text-slate-900">{value}</dd>
+                    <dd className="m-0 text-sm font-semibold text-slate-900">
+                      {value}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -252,8 +279,12 @@ export function StudentProfilePage() {
             <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
-                  <h2 className="m-0 text-base font-semibold text-slate-950">Situation administrative</h2>
-                  <p className="mt-1 text-xs text-slate-500">État de la personne et de son inscription annuelle.</p>
+                  <h2 className="m-0 text-base font-semibold text-slate-950">
+                    Situation administrative
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    État de la personne et de son inscription annuelle.
+                  </p>
                 </div>
                 <Button
                   label="Ouvrir le workflow"
@@ -266,17 +297,24 @@ export function StudentProfilePage() {
               <dl className="divide-y divide-slate-100">
                 <div className="grid gap-2 py-3 sm:grid-cols-[180px_1fr]">
                   <dt className="text-sm text-slate-500">État de l’élève</dt>
-                  <dd className="m-0 text-sm font-semibold text-slate-900">{active ? "Actif" : "Inactif"}</dd>
+                  <dd className="m-0 text-sm font-semibold text-slate-900">
+                    {active ? "Actif" : "Inactif"}
+                  </dd>
                 </div>
                 <div className="grid gap-2 py-3 sm:grid-cols-[180px_1fr]">
-                  <dt className="text-sm text-slate-500">Inscription annuelle</dt>
+                  <dt className="text-sm text-slate-500">
+                    Inscription annuelle
+                  </dt>
                   <dd className="m-0 text-sm font-semibold text-slate-900">
-                    {enrollmentLabels[enrollment?.status ?? "draft"] ?? "Sans inscription"}
+                    {enrollmentLabels[enrollment?.status ?? "draft"] ??
+                      "Sans inscription"}
                   </dd>
                 </div>
                 <div className="grid gap-2 py-3 sm:grid-cols-[180px_1fr]">
                   <dt className="text-sm text-slate-500">Classe actuelle</dt>
-                  <dd className="m-0 text-sm font-semibold text-slate-900">{className}</dd>
+                  <dd className="m-0 text-sm font-semibold text-slate-900">
+                    {className}
+                  </dd>
                 </div>
               </dl>
             </section>
@@ -310,7 +348,10 @@ export function StudentProfilePage() {
               enrollmentId={enrollment.id}
             />
           ) : (
-            <Message severity="info" text="Une inscription active est nécessaire." />
+            <Message
+              severity="info"
+              text="Une inscription active est nécessaire."
+            />
           )
         ) : null}
         {activeTab === "results" ? (
@@ -329,7 +370,10 @@ export function StudentProfilePage() {
               yearId={yearId}
             />
           ) : (
-            <Message severity="info" text="Une inscription active est nécessaire." />
+            <Message
+              severity="info"
+              text="Une inscription active est nécessaire."
+            />
           )
         ) : null}
         {activeTab === "finances" ? (

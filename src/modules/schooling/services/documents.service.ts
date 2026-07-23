@@ -71,7 +71,10 @@ export async function getSchoolFileUrl(path: string) {
   return data.signedUrl;
 }
 
-export async function updateStudentAvatar(studentId: string, path: string | null) {
+export async function updateStudentAvatar(
+  studentId: string,
+  path: string | null,
+) {
   const { error } = await supabase
     .from("students")
     .update({ photo_url: path })

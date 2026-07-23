@@ -95,7 +95,10 @@ export function DocumentsWorkspacePage() {
     const query = search.trim().toLocaleLowerCase("fr");
     return items.filter((item) => {
       const student = item.enrollment.student;
-      const haystack = `${student.first_name} ${student.last_name} ${student.matricule} ${item.document_name}`.toLocaleLowerCase("fr");
+      const haystack =
+        `${student.first_name} ${student.last_name} ${student.matricule} ${item.document_name}`.toLocaleLowerCase(
+          "fr",
+        );
       return (
         (!query || haystack.includes(query)) &&
         (!status || item.status === status) &&
@@ -150,9 +153,12 @@ export function DocumentsWorkspacePage() {
     setDocumentName("");
   };
 
-  const activeFilterCount = [search, status, documentName].filter(Boolean).length;
+  const activeFilterCount = [search, status, documentName].filter(
+    Boolean,
+  ).length;
 
-  if (!yearId) return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+  if (!yearId)
+    return <Message severity="warn" text="Sélectionnez une année scolaire." />;
 
   return (
     <SchoolingPanel
@@ -161,7 +167,8 @@ export function DocumentsWorkspacePage() {
       description="Contrôlez les pièces administratives des inscriptions depuis une file unique et cohérente."
       meta={
         <span className="text-sm text-slate-500">
-          <strong className="text-slate-900">{filtered.length}</strong> document(s)
+          <strong className="text-slate-900">{filtered.length}</strong>{" "}
+          document(s)
         </span>
       }
       actions={
@@ -178,7 +185,9 @@ export function DocumentsWorkspacePage() {
       toolbar={
         <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_240px_220px_auto] xl:items-end">
           <label className="min-w-0">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+              Rechercher
+            </span>
             <span className="p-input-icon-left block w-full">
               <i className="pi pi-search" />
               <InputText
@@ -190,7 +199,9 @@ export function DocumentsWorkspacePage() {
             </span>
           </label>
           <label>
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Document</span>
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+              Document
+            </span>
             <Dropdown
               className={controlClass}
               value={documentName}
@@ -199,7 +210,9 @@ export function DocumentsWorkspacePage() {
             />
           </label>
           <label>
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Statut</span>
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+              Statut
+            </span>
             <Dropdown
               className={controlClass}
               value={status}
@@ -220,7 +233,10 @@ export function DocumentsWorkspacePage() {
         </div>
       }
     >
-      <nav className="overflow-x-auto border-b border-slate-200 bg-white" aria-label="États des documents">
+      <nav
+        className="overflow-x-auto border-b border-slate-200 bg-white"
+        aria-label="États des documents"
+      >
         <div className="flex min-w-max items-center gap-6 px-1">
           {statusTabs.map((tab) => {
             const active = status === tab.value;
@@ -229,7 +245,9 @@ export function DocumentsWorkspacePage() {
                 key={tab.label}
                 type="button"
                 className={`${buttonReset} relative flex h-11 items-center gap-2 px-1 text-sm font-medium transition ${
-                  active ? "text-emerald-700" : "text-slate-500 hover:text-slate-900"
+                  active
+                    ? "text-emerald-700"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
                 onClick={() => setStatus(tab.value)}
               >
@@ -272,7 +290,8 @@ export function DocumentsWorkspacePage() {
             body={(row: EnrollmentDocumentRow) => (
               <div>
                 <strong className="block text-sm font-semibold text-slate-900">
-                  {row.enrollment.student.first_name} {row.enrollment.student.last_name}
+                  {row.enrollment.student.first_name}{" "}
+                  {row.enrollment.student.last_name}
                 </strong>
                 <small className="block text-xs text-slate-500">
                   {row.enrollment.student.matricule}
@@ -378,7 +397,9 @@ export function DocumentsWorkspacePage() {
         }
       >
         <label>
-          <span className="mb-1.5 block text-sm font-medium text-slate-700">Motif du rejet</span>
+          <span className="mb-1.5 block text-sm font-medium text-slate-700">
+            Motif du rejet
+          </span>
           <InputTextarea
             className="w-full rounded-md"
             rows={4}

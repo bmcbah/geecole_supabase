@@ -62,11 +62,16 @@ export function StudentDocumentsPanel({
     documents.find((item) => item.requirement_id === requirementId);
 
   const completed = useMemo(
-    () => requirements.filter((item) => documentFor(item.id)?.status === "provided").length,
+    () =>
+      requirements.filter((item) => documentFor(item.id)?.status === "provided")
+        .length,
     [documents, requirements],
   );
 
-  const upload = async (requirement: Requirement, event: FileUploadHandlerEvent) => {
+  const upload = async (
+    requirement: Requirement,
+    event: FileUploadHandlerEvent,
+  ) => {
     const file = event.files[0];
     if (!file) return;
     const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -88,7 +93,10 @@ export function StudentDocumentsPanel({
 
   return (
     <div className="w-full space-y-4">
-      <nav className="flex items-center gap-6 border-b border-slate-200 bg-white" aria-label="Dossiers documentaires">
+      <nav
+        className="flex items-center gap-6 border-b border-slate-200 bg-white"
+        aria-label="Dossiers documentaires"
+      >
         <button
           type="button"
           className={`${buttonReset} relative flex h-11 items-center gap-2 px-1 text-sm font-medium ${
@@ -99,7 +107,10 @@ export function StudentDocumentsPanel({
           onClick={() => setFolder("administrative")}
         >
           Documents administratifs
-          <Tag value={`${completed}/${requirements.length}`} severity="secondary" />
+          <Tag
+            value={`${completed}/${requirements.length}`}
+            severity="secondary"
+          />
           {folder === "administrative" ? (
             <span className="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-600" />
           ) : null}
@@ -126,18 +137,30 @@ export function StudentDocumentsPanel({
       {folder === "administrative" ? (
         <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <header className="border-b border-slate-200 px-4 py-3">
-            <h2 className="m-0 text-sm font-semibold text-slate-950">Documents administratifs</h2>
-            <p className="mt-1 text-xs text-slate-500">Pièces demandées, état du contrôle et fichier associé.</p>
+            <h2 className="m-0 text-sm font-semibold text-slate-950">
+              Documents administratifs
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Pièces demandées, état du contrôle et fichier associé.
+            </p>
           </header>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
                 <tr>
-                  <th className="border-b border-slate-200 px-4 py-3">Document</th>
-                  <th className="w-40 border-b border-slate-200 px-4 py-3">Exigence</th>
-                  <th className="w-52 border-b border-slate-200 px-4 py-3">Statut</th>
-                  <th className="w-48 border-b border-slate-200 px-4 py-3 text-right">Fichier</th>
+                  <th className="border-b border-slate-200 px-4 py-3">
+                    Document
+                  </th>
+                  <th className="w-40 border-b border-slate-200 px-4 py-3">
+                    Exigence
+                  </th>
+                  <th className="w-52 border-b border-slate-200 px-4 py-3">
+                    Statut
+                  </th>
+                  <th className="w-48 border-b border-slate-200 px-4 py-3 text-right">
+                    Fichier
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -149,18 +172,30 @@ export function StudentDocumentsPanel({
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <span className="grid size-8 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-500">
-                            <i className={document?.file_path ? "pi pi-file-pdf" : "pi pi-file"} />
+                            <i
+                              className={
+                                document?.file_path
+                                  ? "pi pi-file-pdf"
+                                  : "pi pi-file"
+                              }
+                            />
                           </span>
                           <div>
-                            <strong className="block text-sm font-semibold text-slate-900">{requirement.name}</strong>
+                            <strong className="block text-sm font-semibold text-slate-900">
+                              {requirement.name}
+                            </strong>
                             <span className="text-xs text-slate-500">
-                              {document?.file_path ? "Fichier déposé" : "Aucun fichier"}
+                              {document?.file_path
+                                ? "Fichier déposé"
+                                : "Aucun fichier"}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-600">
-                        {requirement.required_for_confirmation ? "Obligatoire" : "Facultatif"}
+                        {requirement.required_for_confirmation
+                          ? "Obligatoire"
+                          : "Facultatif"}
                       </td>
                       <td className="px-4 py-3">
                         <Dropdown
@@ -169,7 +204,10 @@ export function StudentDocumentsPanel({
                           options={[
                             { label: "À fournir", value: "missing" },
                             { label: "Fourni", value: "provided" },
-                            { label: "Non applicable", value: "not_applicable" },
+                            {
+                              label: "Non applicable",
+                              value: "not_applicable",
+                            },
                             { label: "Refusé / illisible", value: "rejected" },
                           ]}
                           onChange={(event) =>
@@ -193,14 +231,20 @@ export function StudentDocumentsPanel({
                           name="document"
                           accept="image/png,image/jpeg,image/webp,application/pdf"
                           maxFileSize={10_000_000}
-                          chooseLabel={document?.file_path ? "Remplacer" : "Déposer"}
+                          chooseLabel={
+                            document?.file_path ? "Remplacer" : "Déposer"
+                          }
                           chooseOptions={{
-                            icon: document?.file_path ? "pi pi-refresh" : "pi pi-upload",
+                            icon: document?.file_path
+                              ? "pi pi-refresh"
+                              : "pi pi-upload",
                             className: "p-button-sm p-button-outlined",
                           }}
                           customUpload
                           auto
-                          uploadHandler={(event) => void upload(requirement, event)}
+                          uploadHandler={(event) =>
+                            void upload(requirement, event)
+                          }
                         />
                       </td>
                     </tr>
@@ -219,8 +263,12 @@ export function StudentDocumentsPanel({
       ) : (
         <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <header className="border-b border-slate-200 px-4 py-3">
-            <h2 className="m-0 text-sm font-semibold text-slate-950">Bulletins générés</h2>
-            <p className="mt-1 text-xs text-slate-500">Versions classées par période scolaire.</p>
+            <h2 className="m-0 text-sm font-semibold text-slate-950">
+              Bulletins générés
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Versions classées par période scolaire.
+            </p>
           </header>
           <div className="divide-y divide-slate-100">
             {bulletins.map((bulletin) => (
@@ -233,8 +281,12 @@ export function StudentDocumentsPanel({
                     <i className="pi pi-file-pdf" />
                   </span>
                   <div>
-                    <strong className="block text-sm font-semibold text-slate-900">Bulletin {bulletin.periodName}</strong>
-                    <span className="text-xs text-slate-500">Version {bulletin.version}</span>
+                    <strong className="block text-sm font-semibold text-slate-900">
+                      Bulletin {bulletin.periodName}
+                    </strong>
+                    <span className="text-xs text-slate-500">
+                      Version {bulletin.version}
+                    </span>
                   </div>
                 </div>
                 <span className="text-sm text-slate-600">
@@ -242,7 +294,9 @@ export function StudentDocumentsPanel({
                 </span>
                 <Tag
                   value={bulletin.status}
-                  severity={bulletin.status === "published" ? "success" : "info"}
+                  severity={
+                    bulletin.status === "published" ? "success" : "info"
+                  }
                 />
                 <Button
                   label="Ouvrir"
@@ -254,7 +308,9 @@ export function StudentDocumentsPanel({
               </div>
             ))}
             {!bulletins.length ? (
-              <div className="px-4 py-10 text-center text-sm text-slate-500">Aucun bulletin généré.</div>
+              <div className="px-4 py-10 text-center text-sm text-slate-500">
+                Aucun bulletin généré.
+              </div>
             ) : null}
           </div>
         </section>

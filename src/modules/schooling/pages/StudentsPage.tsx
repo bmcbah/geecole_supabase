@@ -96,15 +96,27 @@ export function StudentsPage() {
   useEffect(() => void load(), [load]);
 
   const levelOptions = useMemo(
-    () => uniqueOptions(students.map((item) => item.levelName), "Tous les niveaux"),
+    () =>
+      uniqueOptions(
+        students.map((item) => item.levelName),
+        "Tous les niveaux",
+      ),
     [students],
   );
   const cycleOptions = useMemo(
-    () => uniqueOptions(students.map((item) => item.cycleName), "Tous les cycles"),
+    () =>
+      uniqueOptions(
+        students.map((item) => item.cycleName),
+        "Tous les cycles",
+      ),
     [students],
   );
   const classOptions = useMemo(
-    () => uniqueOptions(students.map((item) => item.className), "Toutes les classes"),
+    () =>
+      uniqueOptions(
+        students.map((item) => item.className),
+        "Toutes les classes",
+      ),
     [students],
   );
   const guardianOptions = useMemo(
@@ -121,9 +133,10 @@ export function StudentsPage() {
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fr");
     return students.filter((student) => {
-      const searchable = `${student.firstName} ${student.lastName} ${student.matricule} ${student.guardianName} ${student.guardianPhone}`.toLocaleLowerCase(
-        "fr",
-      );
+      const searchable =
+        `${student.firstName} ${student.lastName} ${student.matricule} ${student.guardianName} ${student.guardianPhone}`.toLocaleLowerCase(
+          "fr",
+        );
       return (
         (!normalized || searchable.includes(normalized)) &&
         (!level || student.levelName === level) &&
@@ -297,9 +310,15 @@ export function StudentsPage() {
           <ProgressSpinner className="size-10" strokeWidth="4" />
         </div>
       ) : groupByGuardian ? (
-        <GuardianGroupedList groups={guardianGroups} onOpen={(id) => navigate(`/scolarite/eleves/${id}`)} />
+        <GuardianGroupedList
+          groups={guardianGroups}
+          onOpen={(id) => navigate(`/scolarite/eleves/${id}`)}
+        />
       ) : (
-        <StudentsTable students={filtered} onOpen={(id) => navigate(`/scolarite/eleves/${id}`)} />
+        <StudentsTable
+          students={filtered}
+          onOpen={(id) => navigate(`/scolarite/eleves/${id}`)}
+        />
       )}
     </SchoolingPanel>
   );

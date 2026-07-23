@@ -50,17 +50,20 @@ export async function listStudents(
     ),
   ];
 
-  const [{ data: students, error: studentError }, { data: links, error: linkError }, annualLevelsResult] =
-    await Promise.all([
-      supabase.from("students").select("*").in("id", studentIds),
-      supabase.from("student_guardians").select("*").in("student_id", studentIds),
-      annualLevelIds.length
-        ? supabase
-            .from("academic_year_levels")
-            .select("id,level_name_snapshot,cycle_name_snapshot")
-            .in("id", annualLevelIds)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+  const [
+    { data: students, error: studentError },
+    { data: links, error: linkError },
+    annualLevelsResult,
+  ] = await Promise.all([
+    supabase.from("students").select("*").in("id", studentIds),
+    supabase.from("student_guardians").select("*").in("student_id", studentIds),
+    annualLevelIds.length
+      ? supabase
+          .from("academic_year_levels")
+          .select("id,level_name_snapshot,cycle_name_snapshot")
+          .in("id", annualLevelIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   if (studentError) throw studentError;
   if (linkError) throw linkError;

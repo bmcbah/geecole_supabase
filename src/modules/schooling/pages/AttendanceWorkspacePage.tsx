@@ -83,7 +83,8 @@ export function AttendanceWorkspacePage() {
     ]);
 
     const errors: string[] = [];
-    if (attendanceResult.status === "fulfilled") setItems(attendanceResult.value);
+    if (attendanceResult.status === "fulfilled")
+      setItems(attendanceResult.value);
     else errors.push("les absences et retards");
 
     if (enrollmentResult.status === "fulfilled") {
@@ -103,7 +104,9 @@ export function AttendanceWorkspacePage() {
   const levelOptions = useMemo(
     () =>
       Array.from(
-        new Set(enrollments.map((item) => item.level_name_snapshot).filter(Boolean)),
+        new Set(
+          enrollments.map((item) => item.level_name_snapshot).filter(Boolean),
+        ),
       )
         .sort((left, right) => left.localeCompare(right, "fr"))
         .map((value) => ({ label: value, value })),
@@ -116,7 +119,8 @@ export function AttendanceWorkspacePage() {
         new Set(
           enrollments
             .filter(
-              (item) => !levelFilter || item.level_name_snapshot === levelFilter,
+              (item) =>
+                !levelFilter || item.level_name_snapshot === levelFilter,
             )
             .map((item) => item.currentAssignment?.class_name_snapshot)
             .filter((value): value is string => Boolean(value)),
@@ -132,7 +136,9 @@ export function AttendanceWorkspacePage() {
       Array.from(
         new Set(
           enrollments
-            .filter((item) => !groupLevel || item.level_name_snapshot === groupLevel)
+            .filter(
+              (item) => !groupLevel || item.level_name_snapshot === groupLevel,
+            )
             .map((item) => item.currentAssignment?.class_name_snapshot)
             .filter((value): value is string => Boolean(value)),
         ),
@@ -155,8 +161,13 @@ export function AttendanceWorkspacePage() {
     const query = search.trim().toLocaleLowerCase("fr");
     return items.filter((item) => {
       const student = item.enrollment.student;
-      const haystack = `${student.first_name} ${student.last_name} ${student.matricule}`.toLocaleLowerCase("fr");
-      const enrollment = enrollments.find((row) => row.id === item.enrollment.id);
+      const haystack =
+        `${student.first_name} ${student.last_name} ${student.matricule}`.toLocaleLowerCase(
+          "fr",
+        );
+      const enrollment = enrollments.find(
+        (row) => row.id === item.enrollment.id,
+      );
       return (
         (!query || haystack.includes(query)) &&
         (!status || item.justification_status === status) &&
@@ -166,12 +177,23 @@ export function AttendanceWorkspacePage() {
           enrollment?.currentAssignment?.class_name_snapshot === classFilter)
       );
     });
-  }, [classFilter, enrollments, items, levelFilter, search, status, typeFilter]);
+  }, [
+    classFilter,
+    enrollments,
+    items,
+    levelFilter,
+    search,
+    status,
+    typeFilter,
+  ]);
 
   const groupRows = useMemo(() => {
     const query = groupSearch.trim().toLocaleLowerCase("fr");
     return enrollments.filter((item) => {
-      const haystack = `${item.student.first_name} ${item.student.last_name} ${item.student.matricule}`.toLocaleLowerCase("fr");
+      const haystack =
+        `${item.student.first_name} ${item.student.last_name} ${item.student.matricule}`.toLocaleLowerCase(
+          "fr",
+        );
       return (
         (!query || haystack.includes(query)) &&
         (!groupLevel || item.level_name_snapshot === groupLevel) &&
@@ -250,7 +272,8 @@ export function AttendanceWorkspacePage() {
     }
   };
 
-  if (!yearId) return <Message severity="warn" text="Sélectionnez une année scolaire." />;
+  if (!yearId)
+    return <Message severity="warn" text="Sélectionnez une année scolaire." />;
 
   return (
     <SchoolingPanel
@@ -259,7 +282,8 @@ export function AttendanceWorkspacePage() {
       description="Saisissez les absences et retards, puis traitez les justificatifs dans une seule file de travail."
       meta={
         <span className="text-sm text-slate-500">
-          <strong className="text-slate-900">{filtered.length}</strong> événement(s)
+          <strong className="text-slate-900">{filtered.length}</strong>{" "}
+          événement(s)
         </span>
       }
       actions={
@@ -283,7 +307,9 @@ export function AttendanceWorkspacePage() {
         <>
           <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_220px_auto] xl:items-end">
             <label className="min-w-0">
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Rechercher</span>
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Rechercher
+              </span>
               <span className="p-input-icon-left block w-full">
                 <i className="pi pi-search" />
                 <InputText
@@ -295,16 +321,23 @@ export function AttendanceWorkspacePage() {
               </span>
             </label>
             <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Type</span>
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Type
+              </span>
               <Dropdown
                 className={controlClass}
                 value={typeFilter}
-                options={[{ label: "Tous les types", value: "" }, ...typeOptions]}
+                options={[
+                  { label: "Tous les types", value: "" },
+                  ...typeOptions,
+                ]}
                 onChange={(event) => setTypeFilter(String(event.value ?? ""))}
               />
             </label>
             <label>
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Justification</span>
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Justification
+              </span>
               <Dropdown
                 className={controlClass}
                 value={status}
@@ -328,11 +361,16 @@ export function AttendanceWorkspacePage() {
           {advanced ? (
             <div className="grid gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 md:grid-cols-2 xl:grid-cols-[220px_220px_auto] xl:items-end">
               <label>
-                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Niveau</span>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  Niveau
+                </span>
                 <Dropdown
                   className={controlClass}
                   value={levelFilter}
-                  options={[{ label: "Tous les niveaux", value: "" }, ...levelOptions]}
+                  options={[
+                    { label: "Tous les niveaux", value: "" },
+                    ...levelOptions,
+                  ]}
                   onChange={(event) => {
                     setLevelFilter(String(event.value ?? ""));
                     setClassFilter("");
@@ -340,12 +378,19 @@ export function AttendanceWorkspacePage() {
                 />
               </label>
               <label>
-                <span className="mb-1.5 block text-xs font-semibold text-slate-600">Classe</span>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  Classe
+                </span>
                 <Dropdown
                   className={controlClass}
                   value={classFilter}
-                  options={[{ label: "Toutes les classes", value: "" }, ...classOptions]}
-                  onChange={(event) => setClassFilter(String(event.value ?? ""))}
+                  options={[
+                    { label: "Toutes les classes", value: "" },
+                    ...classOptions,
+                  ]}
+                  onChange={(event) =>
+                    setClassFilter(String(event.value ?? ""))
+                  }
                 />
               </label>
               <div className="flex items-center gap-2 xl:justify-end">
@@ -380,7 +425,9 @@ export function AttendanceWorkspacePage() {
             header="Date"
             sortable
             body={(row: AttendanceRow) =>
-              new Date(`${row.attendance_date}T00:00:00`).toLocaleDateString("fr-FR")
+              new Date(`${row.attendance_date}T00:00:00`).toLocaleDateString(
+                "fr-FR",
+              )
             }
           />
           <Column
@@ -388,7 +435,8 @@ export function AttendanceWorkspacePage() {
             body={(row: AttendanceRow) => (
               <div>
                 <strong className="block text-sm font-semibold text-slate-900">
-                  {row.enrollment.student.first_name} {row.enrollment.student.last_name}
+                  {row.enrollment.student.first_name}{" "}
+                  {row.enrollment.student.last_name}
                 </strong>
                 <small className="block text-xs text-slate-500">
                   {row.enrollment.student.matricule}
@@ -459,7 +507,9 @@ export function AttendanceWorkspacePage() {
       >
         <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Élève</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">
+              Élève
+            </span>
             <Dropdown
               className={controlClass}
               filter
@@ -532,7 +582,10 @@ export function AttendanceWorkspacePage() {
               <Dropdown
                 className={controlClass}
                 value={groupLevel}
-                options={[{ label: "Tous les niveaux", value: "" }, ...levelOptions]}
+                options={[
+                  { label: "Tous les niveaux", value: "" },
+                  ...levelOptions,
+                ]}
                 onChange={(event) => {
                   setGroupLevel(String(event.value ?? ""));
                   setGroupClass("");
@@ -549,7 +602,9 @@ export function AttendanceWorkspacePage() {
               />
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2">
-              <strong className="text-sm text-slate-900">Élèves concernés</strong>
+              <strong className="text-sm text-slate-900">
+                Élèves concernés
+              </strong>
               <Button
                 label="Sélectionner la liste filtrée"
                 severity="secondary"
@@ -564,7 +619,9 @@ export function AttendanceWorkspacePage() {
               size="small"
               scrollable
               scrollHeight="360px"
-              selection={groupRows.filter((item) => selectedIds.includes(item.id))}
+              selection={groupRows.filter((item) =>
+                selectedIds.includes(item.id),
+              )}
               onSelectionChange={(event) =>
                 setSelectedIds(
                   (event.value as EnrollmentRow[]).map((item) => item.id),
@@ -572,7 +629,10 @@ export function AttendanceWorkspacePage() {
               }
               emptyMessage="Aucun élève inscrit ne correspond aux filtres."
             >
-              <Column selectionMode="multiple" headerStyle={{ width: "3rem" }} />
+              <Column
+                selectionMode="multiple"
+                headerStyle={{ width: "3rem" }}
+              />
               <Column
                 header="Élève"
                 body={(row: EnrollmentRow) => (
@@ -580,7 +640,9 @@ export function AttendanceWorkspacePage() {
                     <strong className="block text-sm text-slate-900">
                       {row.student.first_name} {row.student.last_name}
                     </strong>
-                    <small className="text-xs text-slate-500">{row.student.matricule}</small>
+                    <small className="text-xs text-slate-500">
+                      {row.student.matricule}
+                    </small>
                   </div>
                 )}
               />
@@ -612,7 +674,9 @@ function AttendanceFields(props: {
   return (
     <>
       <label>
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">Date</span>
+        <span className="mb-1.5 block text-sm font-medium text-slate-700">
+          Date
+        </span>
         <InputText
           className={controlClass}
           type="date"
@@ -621,7 +685,9 @@ function AttendanceFields(props: {
         />
       </label>
       <label>
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">Type</span>
+        <span className="mb-1.5 block text-sm font-medium text-slate-700">
+          Type
+        </span>
         <Dropdown
           className={controlClass}
           value={props.kind}
@@ -630,7 +696,9 @@ function AttendanceFields(props: {
         />
       </label>
       <label>
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">Créneau</span>
+        <span className="mb-1.5 block text-sm font-medium text-slate-700">
+          Créneau
+        </span>
         <InputText
           className={controlClass}
           value={props.slot}
@@ -639,7 +707,9 @@ function AttendanceFields(props: {
         />
       </label>
       <label>
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">Motif ou observation</span>
+        <span className="mb-1.5 block text-sm font-medium text-slate-700">
+          Motif ou observation
+        </span>
         <InputTextarea
           className="w-full rounded-md"
           rows={3}

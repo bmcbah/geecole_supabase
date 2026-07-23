@@ -7,7 +7,10 @@ import {
 import type { Institution } from "../../institutions/types/institution";
 import { listAcademicYears } from "../../settings/services/settings.service";
 import type { AcademicYear } from "../../settings/types/settings";
-import { AcademicSessionContext, type FunctionalProfile } from "./academic-session-context";
+import {
+  AcademicSessionContext,
+  type FunctionalProfile,
+} from "./academic-session-context";
 
 const institutionKey = "geecole.institution";
 const yearKey = (institutionId: string) => `geecole.year.${institutionId}`;
@@ -22,7 +25,8 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   const [loading, setLoading] = useState(true);
   const [failure, setFailure] = useState("");
   const [canChangeYear, setCanChangeYear] = useState(true);
-  const [functionalProfile, setFunctionalProfile] = useState<FunctionalProfile | null>(null);
+  const [functionalProfile, setFunctionalProfile] =
+    useState<FunctionalProfile | null>(null);
 
   const loadInstitutions = useCallback(async () => {
     if (!userId) {
@@ -115,7 +119,8 @@ export function AcademicSessionProvider({ children }: React.PropsWithChildren) {
   }, [institutionId, userId]);
 
   const setInstitutionId = useCallback(
-    (id: string) => setInstitutionIdState((current) => (current === id ? current : id)),
+    (id: string) =>
+      setInstitutionIdState((current) => (current === id ? current : id)),
     [],
   );
 
