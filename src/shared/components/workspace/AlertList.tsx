@@ -14,6 +14,12 @@ const toneBySeverity = {
   information: "info",
 } as const;
 
+const labelBySeverity = {
+  blocking: "Blocage",
+  warning: "Avertissement",
+  information: "Information",
+} as const;
+
 export function AlertList({
   items,
   onOpen,
@@ -39,12 +45,15 @@ export function AlertList({
       {items.map((item) => (
         <div
           key={item.id}
-          className="grid gap-3 px-4 py-4 sm:grid-cols-[120px_minmax(0,1fr)_56px_auto] sm:items-center"
+          className="grid gap-3 px-4 py-4 sm:grid-cols-[150px_minmax(0,1fr)_56px_auto] sm:items-center"
         >
-          <StatusBadge
-            label={item.domain}
-            tone={toneBySeverity[item.severity]}
-          />
+          <div className="flex flex-wrap gap-1.5 sm:flex-col sm:items-start">
+            <StatusBadge
+              label={labelBySeverity[item.severity]}
+              tone={toneBySeverity[item.severity]}
+            />
+            <StatusBadge label={item.domain} tone="neutral" />
+          </div>
           <div className="min-w-0">
             <strong className="block text-sm font-semibold text-slate-950">
               {item.title}
