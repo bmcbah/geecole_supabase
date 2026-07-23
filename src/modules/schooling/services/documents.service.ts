@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared/lib/supabase/client";
 import type { Database } from "../../../shared/lib/supabase/database.types";
+
 export async function listDocumentRequirements(institutionId: string) {
   const { data, error } = await supabase
     .from("document_requirements")
@@ -10,6 +11,7 @@ export async function listDocumentRequirements(institutionId: string) {
   if (error) throw error;
   return data;
 }
+
 export async function saveDocumentRequirement(
   input: Database["public"]["Tables"]["document_requirements"]["Insert"],
   id?: string,
@@ -21,6 +23,7 @@ export async function saveDocumentRequirement(
   if (error) throw error;
   return data;
 }
+
 export async function listStudentDocuments(
   studentId: string,
   enrollmentId?: string,
@@ -34,6 +37,7 @@ export async function listStudentDocuments(
   if (error) throw error;
   return data;
 }
+
 export async function saveStudentDocument(
   input: Database["public"]["Tables"]["student_documents"]["Insert"],
 ) {
@@ -45,6 +49,7 @@ export async function saveStudentDocument(
   if (error) throw error;
   return data;
 }
+
 export async function uploadSchoolFile(path: string, file: File) {
   const { data, error } = await supabase.storage
     .from("school-admin")
@@ -52,6 +57,12 @@ export async function uploadSchoolFile(path: string, file: File) {
   if (error) throw error;
   return data.path;
 }
+
+export async function removeSchoolFile(path: string) {
+  const { error } = await supabase.storage.from("school-admin").remove([path]);
+  if (error) throw error;
+}
+
 export async function getSchoolFileUrl(path: string) {
   const { data, error } = await supabase.storage
     .from("school-admin")
@@ -59,10 +70,16 @@ export async function getSchoolFileUrl(path: string) {
   if (error) throw error;
   return data.signedUrl;
 }
-export async function updateStudentAvatar(studentId: string, path: string) {
+
+export async function updateStudentAvatar(studentId: string, path: string | null) {
   const { error } = await supabase
     .from("students")
     .update({ photo_url: path })
     .eq("id", studentId);
   if (error) throw error;
+}
+
+export async function deleteStudentAvatar(studentId: string, path: string) {
+  await removeSchoolFile(path);
+  await updateStudentAvatar(studentId, null);
 }
