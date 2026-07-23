@@ -40,28 +40,54 @@ export async function listStudents(
     .order("created_at", { ascending: false });
   if (error) throw error;
   if (!enrollments.length) return [];
+
   const studentIds = [...new Set(enrollments.map((item) => item.student_id))];
-  const { data: students, error: studentError } = await supabase
-    .from("students")
-    .select("*")
-    .in("id", studentIds);
+  const annualLevelIds = [
+    ...new Set(
+      enrollments
+        .map((item) => item.academic_year_level_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const [{ data: students, error: studentError }, { data: links, error: linkError }, annualLevelsResult] =
+    await Promise.all([
+      supabase.from("students").select("*").in("id", studentIds),
+      supabase.from("student_guardians").select("*").in("student_id", studentIds),
+      annualLevelIds.length
+        ? supabase
+            .from("academic_year_levels")
+            .select("id,level_name_snapshot,cycle_name_snapshot")
+            .in("id", annualLevelIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
   if (studentError) throw studentError;
-  const { data: links, error: linkError } = await supabase
-    .from("student_guardians")
-    .select("*")
-    .in("student_id", studentIds)
-    .eq("is_primary_contact", true);
   if (linkError) throw linkError;
-  const guardianIds = links.map((item) => item.guardian_id);
+  if (annualLevelsResult.error) throw annualLevelsResult.error;
+
+  const guardianIds = [
+    ...new Set((links ?? []).map((item) => item.guardian_id)),
+  ];
   const { data: guardians, error: guardianError } = guardianIds.length
     ? await supabase.from("guardians").select("*").in("id", guardianIds)
     : { data: [], error: null };
   if (guardianError) throw guardianError;
+
   return enrollments.flatMap((enrollment) => {
     const student = students.find((item) => item.id === enrollment.student_id);
     if (!student) return [];
-    const link = links.find((item) => item.student_id === student.id);
+
+    const studentLinks = (links ?? []).filter(
+      (item) => item.student_id === student.id,
+    );
+    const link =
+      studentLinks.find((item) => item.is_primary_contact) ?? studentLinks[0];
     const guardian = guardians.find((item) => item.id === link?.guardian_id);
+    const annualLevel = (annualLevelsResult.data ?? []).find(
+      (item) => item.id === enrollment.academic_year_level_id,
+    );
+
     return [
       {
         id: student.id,
@@ -72,8 +98,14 @@ export async function listStudents(
         gender: student.gender,
         birthDate: student.birth_date,
         status: enrollment.status as StudentListItem["status"],
-        cycleName: enrollment.cycle_name_snapshot,
-        levelName: enrollment.level_name_snapshot,
+        cycleName:
+          enrollment.cycle_name_snapshot?.trim() ||
+          annualLevel?.cycle_name_snapshot?.trim() ||
+          "Cycle non défini",
+        levelName:
+          enrollment.level_name_snapshot?.trim() ||
+          annualLevel?.level_name_snapshot?.trim() ||
+          "Niveau non défini",
         guardianName: guardian
           ? `${guardian.first_name} ${guardian.last_name}`
           : "Non renseigné",
