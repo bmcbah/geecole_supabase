@@ -56,6 +56,35 @@ const mapInstallment = (row: any): FinancialInstallment => ({
   balanceAmount: Number(row.balance_amount),
 });
 
+async function enrichWithFinancialResponsibles(accounts: FinancialAccount[]) {
+  if (!accounts.length) return accounts;
+  const studentIds = [...new Set(accounts.map((account) => account.studentId))];
+  const { data: links, error: linkError } = await db
+    .from("student_guardians")
+    .select("student_id,guardian_id,is_financial_responsible,is_primary_contact")
+    .in("student_id", studentIds)
+    .eq("is_financial_responsible", true);
+  if (linkError) throw linkError;
+
+  const guardianIds = [...new Set((links ?? []).map((link: any) => link.guardian_id))];
+  const { data: guardians, error: guardianError } = guardianIds.length
+    ? await db.from("guardians").select("id,first_name,last_name,primary_phone").in("id", guardianIds)
+    : { data: [], error: null };
+  if (guardianError) throw guardianError;
+
+  return accounts.map((account) => {
+    const studentLinks = (links ?? []).filter((link: any) => link.student_id === account.studentId);
+    const preferredLink = studentLinks.find((link: any) => link.is_primary_contact) ?? studentLinks[0];
+    const guardian = (guardians ?? []).find((item: any) => item.id === preferredLink?.guardian_id);
+    return {
+      ...account,
+      financialResponsibleId: guardian?.id ?? null,
+      financialResponsibleName: guardian ? `${guardian.first_name} ${guardian.last_name}`.trim() : null,
+      financialResponsiblePhone: guardian?.primary_phone ?? null,
+    };
+  });
+}
+
 export type FinancialAccountPageRequest = {
   first: number;
   rows: number;
@@ -89,6 +118,39 @@ export type FinancialGenerationResult = {
   failed: number;
   errors: FinancialGenerationError[];
 };
+
+export type FinancialGenerationReport = FinancialGenerationResult & {
+  id: string;
+  institutionId: string;
+  academicYearId: string;
+  scope: "single" | "global";
+  status: "success" | "partial" | "failed";
+  enrollmentId: string | null;
+  createdBy: string | null;
+  createdAt: string;
+};
+
+const mapGenerationResult = (result: any): FinancialGenerationResult => ({
+  generated: Number(result?.generated ?? 0),
+  regenerated: Number(result?.regenerated ?? 0),
+  skippedPaid: Number(result?.skipped_paid ?? 0),
+  failed: Number(result?.failed ?? 0),
+  errors: Array.isArray(result?.errors)
+    ? result.errors.map((item: any) => ({
+        enrollmentId: String(item.enrollment_id ?? ""),
+        studentId: String(item.student_id ?? ""),
+        studentName: String(item.student_name ?? "Élève inconnu"),
+        matricule: item.matricule ?? null,
+        levelName: item.level_name ?? null,
+        cycleName: item.cycle_name ?? null,
+        code: String(item.code ?? "UNKNOWN"),
+        message: String(item.message ?? "Erreur inconnue"),
+        detail: item.detail ?? null,
+        hint: item.hint ?? null,
+        context: item.context ?? null,
+      }))
+    : [],
+});
 
 export async function listFinancialAccountsPage(
   institutionId: string,
@@ -128,7 +190,8 @@ export async function listFinancialAccountsPage(
 
   const { data, error, count } = await query;
   if (error) throw error;
-  return { rows: (data ?? []).map(mapAccount), total: count ?? 0 };
+  const rows = await enrichWithFinancialResponsibles((data ?? []).map(mapAccount));
+  return { rows, total: count ?? 0 };
 }
 
 export async function listFinancialAccounts(
@@ -151,9 +214,10 @@ export async function getFinancialAccount(accountId: string): Promise<FinancialA
     (left: FinancialInstallment, right: FinancialInstallment) =>
       left.dueDate.localeCompare(right.dueDate) || left.sequence - right.sequence,
   );
+  const [account] = await enrichWithFinancialResponsibles([mapAccount(data)]);
 
   return {
-    ...mapAccount(data),
+    ...account,
     items: (data.items ?? []).map((row: any) => {
       const item = mapItem(row);
       return { ...item, installments: installments.filter((installment: FinancialInstallment) => installment.itemId === item.id) };
@@ -181,6 +245,54 @@ export async function generateFinancialAccount(enrollmentId: string) {
   return data as string;
 }
 
+async function persistGenerationReport(
+  institutionId: string,
+  academicYearId: string,
+  result: FinancialGenerationResult,
+) {
+  const status = result.failed === 0 ? "success" : result.generated + result.regenerated > 0 ? "partial" : "failed";
+  const { error } = await db.from("financial_generation_reports").insert({
+    institution_id: institutionId,
+    academic_year_id: academicYearId,
+    scope: "global",
+    status,
+    generated_count: result.generated,
+    regenerated_count: result.regenerated,
+    skipped_paid_count: result.skippedPaid,
+    failed_count: result.failed,
+    errors: result.errors,
+  });
+  if (error) throw error;
+}
+
+export async function listFinancialGenerationReports(
+  institutionId: string,
+  academicYearId: string,
+): Promise<FinancialGenerationReport[]> {
+  const { data, error } = await db
+    .from("financial_generation_reports")
+    .select("*")
+    .eq("institution_id", institutionId)
+    .eq("academic_year_id", academicYearId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    institutionId: row.institution_id,
+    academicYearId: row.academic_year_id,
+    scope: row.scope,
+    status: row.status,
+    enrollmentId: row.enrollment_id,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    generated: Number(row.generated_count ?? 0),
+    regenerated: Number(row.regenerated_count ?? 0),
+    skippedPaid: Number(row.skipped_paid_count ?? 0),
+    failed: Number(row.failed_count ?? 0),
+    errors: Array.isArray(row.errors) ? row.errors : [],
+  }));
+}
+
 export async function reapplyAllFinancialAccounts(
   institutionId: string,
   academicYearId: string,
@@ -191,26 +303,7 @@ export async function reapplyAllFinancialAccounts(
   });
   if (error) throw error;
 
-  const result = data as any;
-  return {
-    generated: Number(result?.generated ?? 0),
-    regenerated: Number(result?.regenerated ?? 0),
-    skippedPaid: Number(result?.skipped_paid ?? 0),
-    failed: Number(result?.failed ?? 0),
-    errors: Array.isArray(result?.errors)
-      ? result.errors.map((item: any) => ({
-          enrollmentId: String(item.enrollment_id ?? ""),
-          studentId: String(item.student_id ?? ""),
-          studentName: String(item.student_name ?? "Élève inconnu"),
-          matricule: item.matricule ?? null,
-          levelName: item.level_name ?? null,
-          cycleName: item.cycle_name ?? null,
-          code: String(item.code ?? "UNKNOWN"),
-          message: String(item.message ?? "Erreur inconnue"),
-          detail: item.detail ?? null,
-          hint: item.hint ?? null,
-          context: item.context ?? null,
-        }))
-      : [],
-  };
+  const result = mapGenerationResult(data);
+  await persistGenerationReport(institutionId, academicYearId, result);
+  return result;
 }
